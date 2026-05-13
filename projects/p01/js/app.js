@@ -35,7 +35,7 @@ var Marker = function(title, mLon, mLat){
     //setting the edning div part in content for infoWindow
     var tLast = "</div>";
     //setting image for infoWindow
-    var tImage = "<img src='https://maps.googleapis.com/maps/api/staticmap?maptype=satellite&center="+ mLat +","+ mLon +"&zoom=16&size=80x80&key=AIzaSyDzhQb_FUm8Stu3iRi_Wzj_GBPPs38T6Mw' style='float:left; margin:5px; padding: 5px; border-radius: 15px;'>";
+    var tImage = "<img src='' style='float:left; margin:5px; padding: 5px; border-radius: 15px;'>";
     //setting Heading for infoWindow
     this.title =  ko.observable(title);
     var tHeading = "<h3  style='margin-top:6px; '><span  style='background-color:#F9F6F9; padding-right:8px; padding-left:8px;'>"+ this.title() +"</span></h3>";
@@ -179,7 +179,7 @@ var ViewModel = function() {
         //finding coordinates
         places.forEach(function(dot){
             $.ajax({
-                url: "https://maps.googleapis.com/maps/api/geocode/json?address=" + dot.location + "&key=AIzaSyDzhQb_FUm8Stu3iRi_Wzj_GBPPs38T6Mw",
+                url: "",
                 dataType: "json"
             }).done(function (data){
                 var long = data.results[0].geometry.location.lng;
