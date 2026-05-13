@@ -1,0 +1,2064 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1f1c">
+<title>სიამოვნების პროგნოზის ფურცელი · Pleasure-Predicting Sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+Georgian:wght@300;400;500;600&family=Noto+Sans+Georgian:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #161a17;
+    --bg-card: #1f2521;
+    --bg-elevated: #262d28;
+    --ink: #e8e4d8;
+    --ink-dim: #9ba197;
+    --ink-faint: #5c6259;
+    --accent: #c9a96e;
+    --accent-soft: #8a7548;
+    --pleasure: #d4a574;
+    --mastery: #7da99a;
+    --border: #2d342f;
+    --danger: #b86a5e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-optical-sizing: auto;
+    overscroll-behavior: none;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* When the document is in Georgian, switch to a Georgian-tuned serif as primary */
+  html[lang="ka"] body,
+  html[lang="ka"] input[type="text"],
+  html[lang="ka"] textarea,
+  html[lang="ka"] .time-select,
+  html[lang="ka"] button.primary,
+  html[lang="ka"] .entry-activity,
+  html[lang="ka"] .empty p,
+  html[lang="ka"] .insight-text,
+  html[lang="ka"] .confirm-message,
+  html[lang="ka"] .attribution,
+  html[lang="ka"] .date-header-label,
+  html[lang="ka"] .pair-title,
+  html[lang="ka"] .toast,
+  html[lang="ka"] .footer-line {
+    font-family: 'Noto Serif Georgian', 'Fraunces', Georgia, serif;
+  }
+
+  html[lang="ka"] h1 {
+    font-family: 'Noto Serif Georgian', 'Fraunces', Georgia, serif;
+  }
+
+  /* Mono / label-style elements use Georgian sans (mono Georgian doesn't really exist) */
+  html[lang="ka"] .eyebrow,
+  html[lang="ka"] label,
+  html[lang="ka"] .tab,
+  html[lang="ka"] .scale-sub-label,
+  html[lang="ka"] .metric-label,
+  html[lang="ka"] .entry-date,
+  html[lang="ka"] .stat-label,
+  html[lang="ka"] .insight-label,
+  html[lang="ka"] .date-chip,
+  html[lang="ka"] .date-header-meta,
+  html[lang="ka"] .time-preset,
+  html[lang="ka"] button.ghost,
+  html[lang="ka"] .entry-actions button,
+  html[lang="ka"] .confirm-actions button,
+  html[lang="ka"] .footer-credit {
+    font-family: 'Noto Sans Georgian', 'JetBrains Mono', monospace;
+  }
+
+  body {
+    padding: 0 0 80px 0;
+    background-image:
+      radial-gradient(at 20% 0%, rgba(201, 169, 110, 0.06) 0px, transparent 50%),
+      radial-gradient(at 80% 100%, rgba(125, 169, 154, 0.04) 0px, transparent 50%);
+  }
+
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px 20px;
+  }
+
+  header {
+    margin-bottom: 28px;
+    padding-top: 8px;
+    position: relative;
+  }
+
+  .lang-switcher {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    gap: 2px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2px;
+  }
+
+  .lang-btn {
+    background: transparent;
+    border: none;
+    color: var(--ink-faint);
+    padding: 5px 9px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-width: 36px;
+  }
+
+  .lang-btn.active {
+    background: var(--bg-elevated);
+    color: var(--accent);
+  }
+
+  .lang-btn:not(.active):active {
+    transform: scale(0.95);
+  }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 30px;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    font-style: italic;
+  }
+
+  h1 .accent { font-style: normal; font-weight: 500; }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--ink-dim);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  .attribution {
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--ink-faint);
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-style: italic;
+  }
+
+  .attribution em {
+    color: var(--ink-dim);
+    font-style: italic;
+  }
+
+  .footer-credit {
+    text-align: center;
+    padding: 32px 20px 12px;
+    font-size: 10px;
+    line-height: 1.6;
+    color: var(--ink-faint);
+    letter-spacing: 0.03em;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .footer-credit a {
+    color: var(--accent-soft);
+    text-decoration: none;
+  }
+
+  .footer-credit .footer-line {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--ink-dim);
+    letter-spacing: 0;
+  }
+
+  /* Tab nav */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 24px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px 8px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--ink-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    background: var(--bg-elevated);
+    color: var(--accent);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset;
+  }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* Form */
+  .field { margin-bottom: 20px; }
+
+  label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 8px;
+  }
+
+  input[type="text"], textarea {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--ink);
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+
+  input[type="text"]:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent-soft);
+  }
+
+  .time-select {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--ink);
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%239ba197' d='M6 8L0 0h12z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+
+  .time-select:focus {
+    outline: none;
+    border-color: var(--accent-soft);
+  }
+
+  .time-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .time-presets {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .time-preset {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--ink-dim);
+    padding: 9px 4px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .time-preset:active { transform: scale(0.96); }
+
+  .time-preset.active {
+    background: var(--bg-elevated);
+    border-color: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  textarea { resize: none; min-height: 70px; line-height: 1.5; }
+
+  .scale-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .scale-sub-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 4px;
+  }
+
+  .scale-row {
+    display: grid;
+    gap: 5px;
+    margin-top: 2px;
+  }
+
+  .scale-row.tens { grid-template-columns: repeat(6, 1fr); }
+  .scale-row.ones { grid-template-columns: repeat(10, 1fr); }
+
+  .scale-btn {
+    aspect-ratio: 1.1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--ink-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .scale-row.ones .scale-btn { font-size: 11px; aspect-ratio: 1; }
+
+  .total-display {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 8px;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .total-num {
+    font-size: 22px;
+    font-weight: 500;
+  }
+
+  .total-num.pleasure { color: var(--pleasure); }
+  .total-num.mastery { color: var(--mastery); }
+
+  .total-num.empty { color: var(--ink-faint); }
+
+  .total-label {
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .scale-btn:active { transform: scale(0.94); }
+
+  .scale-btn.selected.pleasure {
+    background: var(--pleasure);
+    color: #1a1f1c;
+    border-color: var(--pleasure);
+    font-weight: 600;
+  }
+
+  .scale-btn.selected.mastery {
+    background: var(--mastery);
+    color: #1a1f1c;
+    border-color: var(--mastery);
+    font-weight: 600;
+  }
+
+  .scale-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-faint);
+    margin-top: 6px;
+    letter-spacing: 0.08em;
+  }
+
+  .pair {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 16px;
+    margin-bottom: 16px;
+  }
+
+  .pair-title {
+    font-style: italic;
+    font-size: 17px;
+    margin-bottom: 14px;
+    color: var(--ink);
+  }
+
+  .pair-title .quill {
+    color: var(--accent);
+    margin-right: 6px;
+  }
+
+  button.primary {
+    width: 100%;
+    background: var(--accent);
+    color: #161a17;
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: transform 0.1s;
+  }
+
+  button.primary:active { transform: scale(0.98); }
+
+  button.primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  button.ghost {
+    background: transparent;
+    color: var(--ink-dim);
+    border: 1px solid var(--border);
+    padding: 12px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  /* Log entries */
+  .entry {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+
+  .entry-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .entry-date .hint {
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  .entry-activity {
+    font-size: 18px;
+    line-height: 1.3;
+    margin-bottom: 14px;
+    font-weight: 400;
+  }
+
+  .entry-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .metric {
+    background: var(--bg-elevated);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+
+  .metric-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 6px;
+  }
+
+  .metric-values {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .pred { color: var(--ink-dim); font-size: 13px; }
+  .arrow { color: var(--ink-faint); font-size: 11px; }
+  .actual-p { color: var(--pleasure); font-size: 18px; font-weight: 500; }
+  .actual-m { color: var(--mastery); font-size: 18px; font-weight: 500; }
+  .pending { color: var(--ink-faint); font-style: italic; font-size: 13px; }
+
+  .delta {
+    font-size: 11px;
+    margin-left: 4px;
+    color: var(--ink-faint);
+  }
+  .delta.positive { color: #8db692; }
+  .delta.negative { color: var(--danger); }
+
+  .entry-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .entry-actions button {
+    flex: 1;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--ink-dim);
+    padding: 9px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .entry-actions button.complete { color: var(--accent); border-color: var(--accent-soft); }
+  .entry-actions button.delete { color: var(--danger); }
+
+  .empty {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--ink-faint);
+  }
+
+  .empty-mark {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 56px;
+    color: var(--accent-soft);
+    opacity: 0.4;
+    margin-bottom: 16px;
+    line-height: 1;
+  }
+
+  .empty p {
+    font-style: italic;
+    font-size: 15px;
+    line-height: 1.5;
+    max-width: 280px;
+    margin: 0 auto;
+  }
+
+  /* Insights */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .stat-num {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-num.pleasure { color: var(--pleasure); }
+  .stat-num.mastery { color: var(--mastery); }
+  .stat-num.accent { color: var(--accent); }
+
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-top: 6px;
+  }
+
+  .insight {
+    background: var(--bg-card);
+    border-left: 2px solid var(--accent);
+    padding: 16px 18px;
+    border-radius: 4px 12px 12px 4px;
+    margin-bottom: 14px;
+  }
+
+  .insight-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .insight-text {
+    font-style: italic;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+
+  /* Ornament */
+  .ornament {
+    text-align: center;
+    color: var(--accent-soft);
+    font-size: 14px;
+    letter-spacing: 0.5em;
+    margin: 20px 0 12px 0;
+    opacity: 0.5;
+  }
+
+  /* Date strip (horizontal scrollable) */
+  .date-strip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 4px 14px 4px;
+    margin: -4px -4px 8px -4px;
+    scrollbar-width: none;
+    scroll-snap-type: x mandatory;
+  }
+
+  .date-strip::-webkit-scrollbar { display: none; }
+
+  .date-chip {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--ink-dim);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-width: 78px;
+    text-align: left;
+  }
+
+  .date-chip:active { transform: scale(0.97); }
+
+  .date-chip.active {
+    background: var(--bg-elevated);
+    border-color: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .date-chip-label {
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    margin-bottom: 3px;
+    font-weight: 500;
+  }
+
+  .date-chip-count {
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .date-chip.active .date-chip-count {
+    color: var(--ink-dim);
+  }
+
+  .pending-dot {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  /* Date group section */
+  .date-group {
+    margin-bottom: 18px;
+    scroll-margin-top: 12px;
+  }
+
+  .date-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 0 2px;
+  }
+
+  .date-header-label {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+
+  .date-header-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* Loading */
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+    text-align: center;
+    padding: 40px;
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+
+  /* Toast */
+  /* Toast: wrapper does the centering via flexbox so it works even when
+     CSS transforms are misbehaving in embedded chat frames. */
+  .toast-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    pointer-events: none;
+    padding: 0 20px 32px 20px;
+    z-index: 9999;
+  }
+
+  .toast {
+    background: var(--accent);
+    color: #161a17;
+    padding: 14px 26px;
+    border-radius: 999px;
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    font-weight: 500;
+    font-style: italic;
+    letter-spacing: 0.01em;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateY(20px);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(201, 169, 110, 0.25);
+    max-width: 100%;
+    text-align: center;
+    pointer-events: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .toast.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  /* Confirm modal */
+  .confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .confirm-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .confirm-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px 20px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    transform: scale(0.95);
+    transition: transform 0.2s;
+  }
+
+  .confirm-overlay.show .confirm-box {
+    transform: scale(1);
+  }
+
+  .confirm-icon {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    color: var(--accent);
+    margin-bottom: 12px;
+    line-height: 1;
+  }
+
+  .confirm-message {
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+    font-style: italic;
+    color: var(--ink);
+    margin-bottom: 22px;
+    line-height: 1.4;
+  }
+
+  .confirm-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .confirm-actions button {
+    flex: 1;
+    padding: 13px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border);
+  }
+
+  .confirm-no {
+    background: transparent;
+    color: var(--ink-dim);
+  }
+
+  .confirm-yes {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #fff;
+    font-weight: 500;
+  }
+
+  .confirm-no:active, .confirm-yes:active { transform: scale(0.97); }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="lang-switcher">
+      <button class="lang-btn" data-lang="ka">ქარ</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+    </div>
+    <div class="eyebrow" data-i18n="eyebrow"></div>
+    <h1><span data-i18n="title-pre"></span> <span class="accent" data-i18n="title-accent"></span> <span data-i18n="title-post"></span></h1>
+    <p class="subtitle" data-i18n="subtitle"></p>
+    <p class="attribution" data-i18n-html="attribution"></p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-view="new" data-i18n="tab-new"></button>
+    <button class="tab" data-view="log" data-i18n="tab-log"></button>
+    <button class="tab" data-view="insights" data-i18n="tab-insights"></button>
+  </div>
+
+  <!-- NEW ENTRY -->
+  <div class="view active" id="view-new">
+    <div class="field">
+      <label data-i18n="label-activity"></label>
+      <input type="text" id="activity" data-i18n-placeholder="ph-activity" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label data-i18n="label-company"></label>
+      <input type="text" id="company" data-i18n-placeholder="ph-company" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label data-i18n="label-when"></label>
+      <div class="time-row">
+        <select id="scheduled-day" class="time-select"></select>
+        <select id="scheduled-hour" class="time-select"></select>
+      </div>
+      <div class="time-presets">
+        <button type="button" class="time-preset" data-hours="0" data-i18n="preset-now"></button>
+        <button type="button" class="time-preset" data-hours="1" data-i18n="preset-1hr"></button>
+        <button type="button" class="time-preset" data-hours="3" data-i18n="preset-3hr"></button>
+        <button type="button" class="time-preset" data-hours="24" data-i18n="preset-tmrw"></button>
+      </div>
+    </div>
+
+    <div class="pair">
+      <div class="pair-title"><span class="quill">❦</span><span data-i18n="pair-pred-mastery"></span></div>
+      <div class="scale-group">
+        <div>
+          <div class="scale-sub-label" data-i18n="sub-tens"></div>
+          <div class="scale-row tens" data-scale="pred-mastery" data-part="tens"></div>
+        </div>
+        <div>
+          <div class="scale-sub-label" data-i18n="sub-ones"></div>
+          <div class="scale-row ones" data-scale="pred-mastery" data-part="ones"></div>
+        </div>
+      </div>
+      <div class="total-display"><span class="total-label" data-i18n="total-label"></span><span class="total-num empty" data-total="pred-mastery">—</span></div>
+    </div>
+
+    <div class="pair">
+      <div class="pair-title"><span class="quill">❦</span><span data-i18n="pair-pred-pleasure"></span></div>
+      <div class="scale-group">
+        <div>
+          <div class="scale-sub-label" data-i18n="sub-tens"></div>
+          <div class="scale-row tens" data-scale="pred-pleasure" data-part="tens"></div>
+        </div>
+        <div>
+          <div class="scale-sub-label" data-i18n="sub-ones"></div>
+          <div class="scale-row ones" data-scale="pred-pleasure" data-part="ones"></div>
+        </div>
+      </div>
+      <div class="total-display"><span class="total-label" data-i18n="total-label"></span><span class="total-num empty" data-total="pred-pleasure">—</span></div>
+    </div>
+
+    <button class="primary" id="save-btn" disabled data-i18n="btn-save"></button>
+    <div class="ornament">· · ·</div>
+    <p class="subtitle" style="text-align: center; font-style: italic;" data-i18n="footer-new"></p>
+  </div>
+
+  <!-- LOG -->
+  <div class="view" id="view-log">
+    <div id="log-content"></div>
+  </div>
+
+  <!-- INSIGHTS -->
+  <div class="view" id="view-insights">
+    <div id="insights-content"></div>
+  </div>
+
+  <footer class="footer-credit">
+    <div class="footer-line">❦</div>
+    <div data-i18n="footer-1"></div>
+    <div data-i18n-html="footer-2"></div>
+    <div style="margin-top: 10px; opacity: 0.7;" data-i18n="footer-3"></div>
+    <div style="margin-top: 6px; opacity: 0.7;" data-i18n="footer-4"></div>
+  </footer>
+</div>
+
+<div class="toast-wrapper" id="toast-wrapper">
+  <div class="toast" id="toast"></div>
+</div>
+
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">❦</div>
+    <div class="confirm-message" id="confirm-message"></div>
+    <div class="confirm-actions">
+      <button class="confirm-no" id="confirm-no" data-i18n="btn-cancel"></button>
+      <button class="confirm-yes" id="confirm-yes" data-i18n="btn-delete"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Rate modal (hidden form, reuses main view) -->
+<div class="view" id="view-rate" style="display:none;">
+  <div class="field">
+    <label data-i18n="label-activity"></label>
+    <div id="rate-activity" style="font-size: 18px; padding: 14px 16px; background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border);"></div>
+  </div>
+
+  <div class="pair">
+    <div class="pair-title"><span class="quill">❦</span><span data-i18n="pair-act-mastery"></span></div>
+    <div class="scale-group">
+      <div>
+        <div class="scale-sub-label" data-i18n="sub-tens"></div>
+        <div class="scale-row tens" data-scale="act-mastery" data-part="tens"></div>
+      </div>
+      <div>
+        <div class="scale-sub-label" data-i18n="sub-ones"></div>
+        <div class="scale-row ones" data-scale="act-mastery" data-part="ones"></div>
+      </div>
+    </div>
+    <div class="total-display"><span class="total-label" data-i18n="total-label"></span><span class="total-num empty" data-total="act-mastery">—</span></div>
+  </div>
+
+  <div class="pair">
+    <div class="pair-title"><span class="quill">❦</span><span data-i18n="pair-act-pleasure"></span></div>
+    <div class="scale-group">
+      <div>
+        <div class="scale-sub-label" data-i18n="sub-tens"></div>
+        <div class="scale-row tens" data-scale="act-pleasure" data-part="tens"></div>
+      </div>
+      <div>
+        <div class="scale-sub-label" data-i18n="sub-ones"></div>
+        <div class="scale-row ones" data-scale="act-pleasure" data-part="ones"></div>
+      </div>
+    </div>
+    <div class="total-display"><span class="total-label" data-i18n="total-label"></span><span class="total-num empty" data-total="act-pleasure">—</span></div>
+  </div>
+
+  <button class="primary" id="save-rating-btn" disabled data-i18n="btn-save-rating"></button>
+  <button class="ghost" id="cancel-rating-btn" style="margin-top: 10px;" data-i18n="btn-cancel"></button>
+</div>
+
+<script>
+  // ============ I18N ============
+  const I18N = {
+    ka: {
+      'eyebrow': 'ქცევითი აქტივაცია · დ. ბერნზის მიხედვით',
+      'title-pre': '',
+      'title-accent': 'სიამოვნების',
+      'title-post': 'პროგნოზის ფურცელი',
+      'subtitle': 'მანამდე იწინასწარმეტყველე ოსტატობა და სიამოვნება; შემდეგ — შეაფასე. სხვაობა — სწორედ ეს არის მონაცემი.',
+      'attribution': 'შთაგონებულია სიამოვნების პროგნოზის ფურცლით წიგნიდან <em>The Feeling Good Handbook</em>, ავტორი დევიდ დ. ბერნზი, MD. ეს არის პირადი თვითრეფლექსიის ინსტრუმენტი და ვერ შეცვლის პროფესიონალურ ფსიქოლოგიურ დახმარებას.',
+
+      'tab-new': 'ახალი',
+      'tab-log': 'ჩანაწერები',
+      'tab-insights': 'ანალიზი',
+
+      'label-activity': 'აქტივობა',
+      'ph-activity': 'მაგ. 30-წუთიანი სიარული ტრედმილზე',
+      'label-company': 'ვისთან ერთად (ან მარტო)',
+      'ph-company': 'მარტო, მეგობართან და ა.შ.',
+      'label-when': 'როდის (დაგეგმილი დრო)',
+
+      'preset-now': 'ახლა',
+      'preset-1hr': '+1 სთ',
+      'preset-3hr': '+3 სთ',
+      'preset-tmrw': 'ხვალ',
+
+      'pair-pred-mastery': 'პროგნოზირებული ოსტატობა',
+      'pair-pred-pleasure': 'პროგნოზირებული სიამოვნება',
+      'pair-act-mastery': 'რეალური ოსტატობა',
+      'pair-act-pleasure': 'რეალური სიამოვნება',
+
+      'sub-tens': 'ათეულები',
+      'sub-ones': 'ერთეულები',
+      'total-label': 'ჯამი',
+
+      'btn-save': 'პროგნოზის შენახვა',
+      'btn-save-rating': 'რეალური შეფასების შენახვა',
+      'btn-cancel': 'გაუქმება',
+      'btn-delete': 'წაშლა',
+      'btn-rate': 'რეალურის შეფასება',
+
+      'footer-new': 'შეინახე ახლა. გააკეთე. დაბრუნდი და შეაფასე რეალობა.',
+
+      'pending': 'მოლოდინში',
+      'entry': 'ჩანაწერი',
+      'entries': 'ჩანაწერი',
+      'all': 'ყველა',
+
+      'empty-log': 'ჯერ ჩანაწერი არ არის. იწინასწარმეტყველე აქტივობა, რომ დაიწყო მტკიცებულებების შეგროვება იმაზე, რასაც გონება გეუბნება, რეალობასთან მიმართებაში.',
+      'empty-insights': 'შეაფასე ერთი დასრულებული აქტივობა მაინც, რომ ნახო ნიმუშები.',
+
+      'stat-total': 'სულ ჩანაწერი',
+      'stat-rated': 'შეფასებული',
+      'stat-mastery': 'საშ. ოსტატობა · პროგ.',
+      'stat-pleasure': 'საშ. სიამოვნება · პროგ.',
+
+      'insight-pattern': 'ნიმუში',
+      'insight-gap': 'პროგნოზის სხვაობა',
+      'insight-mastery': 'ოსტატობა',
+      'insight-pleasure': 'სიამოვნება',
+      'insight-footer': 'პროგნოზსა და რეალურს შორის სხვაობა — სწორედ ეს არის არსი. იქ გონება გატყუებს.',
+
+      'insight-pleasure-up': 'რეალობა უფრო კეთილი აღმოჩნდა, ვიდრე ვარაუდობდი. შენი პროგნოზები გაუფასურებენ იმას, რაც გსიამოვნებს.',
+      'insight-pleasure-down': 'აქტივობები პროგნოზზე უფრო დაბლა ფასდება. ღირს გავარკვიოთ, რა კონკრეტულად არ აღმოჩნდა მოსალოდნელი.',
+      'insight-mastery-up': 'უფრო შემძლე ხარ, ვიდრე საკუთარ თავს მიიჩნევ. პროგნოზირებული ოსტატობა დაბალია.',
+      'insight-mastery-down': 'ოსტატობა პროგნოზზე ქვევით მოდის. შეამოწმე, ხომ არ აღემატება დასახული ამოცანა შენს შესაძლებლობებს.',
+      'insight-neutral': 'შენი პროგნოზები რეალობასთან ახლოს მიდის. გააგრძელე მონაცემთა შეგროვება.',
+
+      'toast-saved': 'პროგნოზი შენახულია. წადი და გააკეთე.',
+      'toast-rated': 'რეალობა ჩაიწერა.',
+      'toast-deleted': 'ჩანაწერი წაიშალა.',
+      'toast-failed': 'შენახვა ვერ მოხერხდა. სცადე ხელახლა.',
+
+      'confirm-delete': 'წავშალო ეს ჩანაწერი?',
+
+      'footer-1': 'ეფუძნება სიამოვნების პროგნოზის ფურცელს',
+      'footer-2': 'წიგნიდან <strong>The Feeling Good Handbook</strong>, ავტ. დევიდ დ. ბერნზი, MD',
+      'footer-3': 'პირადი თვითრეფლექსიის ინსტრუმენტი · არ არის სამედიცინო რჩევა',
+      'footer-4': 'მონაცემები რჩება მხოლოდ შენს მოწყობილობაზე',
+
+      'hint-now': 'ახლა',
+      'hint-soon': 'მალე',
+      'hint-in-hr': 'სთ-ში',
+      'hint-in-d': 'დღეში',
+      'hint-ago-hr': 'სთ წინ',
+      'hint-ago-d': 'დღის წინ',
+
+      'day-today': 'დღეს',
+      'day-yesterday': 'გუშინ',
+      'day-tomorrow': 'ხვალ',
+      'short-today': 'დღეს',
+      'short-yest': 'გუშინ',
+      'short-tmrw': 'ხვალ',
+    },
+    en: {
+      'eyebrow': 'Behavioral Activation · After D. Burns, MD',
+      'title-pre': 'The',
+      'title-accent': 'Pleasure-Predicting',
+      'title-post': 'Sheet',
+      'subtitle': 'Predict mastery & pleasure before; rate them after. The gap is where the data lives.',
+      'attribution': 'Inspired by the Pleasure-Predicting Sheet from <em>The Feeling Good Handbook</em> by David D. Burns, MD. This tool is for personal self-reflection and is not a substitute for professional mental health care.',
+
+      'tab-new': 'New',
+      'tab-log': 'Log',
+      'tab-insights': 'Insights',
+
+      'label-activity': 'Activity',
+      'ph-activity': 'e.g. 30-min walk on treadmill',
+      'label-company': 'With Whom (or Alone)',
+      'ph-company': 'Alone, with a friend, etc.',
+      'label-when': 'When (Scheduled Time)',
+
+      'preset-now': 'Now',
+      'preset-1hr': '+1 hr',
+      'preset-3hr': '+3 hr',
+      'preset-tmrw': 'Tomorrow',
+
+      'pair-pred-mastery': 'Predicted Mastery',
+      'pair-pred-pleasure': 'Predicted Pleasure',
+      'pair-act-mastery': 'Actual Mastery',
+      'pair-act-pleasure': 'Actual Pleasure',
+
+      'sub-tens': 'Tens',
+      'sub-ones': 'Ones',
+      'total-label': 'Total',
+
+      'btn-save': 'Save Prediction',
+      'btn-save-rating': 'Save Actual Ratings',
+      'btn-cancel': 'Cancel',
+      'btn-delete': 'Delete',
+      'btn-rate': 'Rate Actual',
+
+      'footer-new': 'Save now. Do the thing. Come back to rate the reality.',
+
+      'pending': 'pending',
+      'entry': 'entry',
+      'entries': 'entries',
+      'all': 'All',
+
+      'empty-log': 'No entries yet. Predict an activity to start gathering evidence about what your mind tells you vs. what reality delivers.',
+      'empty-insights': 'Rate at least one completed activity to see patterns emerge.',
+
+      'stat-total': 'Total Entries',
+      'stat-rated': 'Rated',
+      'stat-mastery': 'Avg Mastery · pred',
+      'stat-pleasure': 'Avg Pleasure · pred',
+
+      'insight-pattern': 'Pattern',
+      'insight-gap': 'Prediction Gap',
+      'insight-mastery': 'Mastery',
+      'insight-pleasure': 'Pleasure',
+      'insight-footer': 'The gap between prediction and actual is the whole point. That\'s where your mind is lying to you.',
+
+      'insight-pleasure-up': 'Reality has been kinder than you predicted. Your forecasts undersell what you actually enjoy.',
+      'insight-pleasure-down': 'Activities are landing lower than predicted. Worth examining what specifically didn\'t deliver.',
+      'insight-mastery-up': 'You\'re more capable than you give yourself credit for. Predicted mastery runs low.',
+      'insight-mastery-down': 'Mastery is coming in below predictions. Check whether you\'re biting off too much.',
+      'insight-neutral': 'Your predictions are tracking close to reality. Keep gathering data.',
+
+      'toast-saved': 'Prediction saved. Go do it.',
+      'toast-rated': 'Reality logged.',
+      'toast-deleted': 'Entry deleted.',
+      'toast-failed': 'Save failed. Try again.',
+
+      'confirm-delete': 'Delete this entry?',
+
+      'footer-1': 'Based on the Pleasure-Predicting Sheet',
+      'footer-2': 'from <strong>The Feeling Good Handbook</strong> by David D. Burns, MD',
+      'footer-3': 'Personal self-reflection tool · not medical advice',
+      'footer-4': 'All data stays on your device',
+
+      'hint-now': 'now',
+      'hint-soon': 'soon',
+      'hint-in-hr': 'in {n} hr',
+      'hint-in-d': 'in {n} d',
+      'hint-ago-hr': '{n} hr ago',
+      'hint-ago-d': '{n} d ago',
+
+      'day-today': 'Today',
+      'day-yesterday': 'Yesterday',
+      'day-tomorrow': 'Tomorrow',
+      'short-today': 'Today',
+      'short-yest': 'Yest',
+      'short-tmrw': 'Tmrw',
+    }
+  };
+
+  const LANG_STORAGE_KEY = 'ba_lang_v1';
+  let currentLang = 'ka'; // default
+
+  function t(key, params) {
+    let str = (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key;
+    if (params) {
+      Object.keys(params).forEach(p => {
+        str = str.replace(`{${p}}`, params[p]);
+      });
+    }
+    return str;
+  }
+
+  function applyTranslations() {
+    document.documentElement.setAttribute('lang', currentLang);
+    // Text content nodes
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      el.textContent = t(el.getAttribute('data-i18n'));
+    });
+    // HTML content (for attribution / footer-2 with <em> / <strong>)
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+      el.innerHTML = t(el.getAttribute('data-i18n-html'));
+    });
+    // Placeholders
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
+    });
+    // Confirm modal default message
+    const cmsg = document.getElementById('confirm-message');
+    if (cmsg) cmsg.textContent = t('confirm-delete');
+    // Update lang button highlight
+    document.querySelectorAll('.lang-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.lang === currentLang);
+    });
+    // Re-render dynamic views since their text is built in JS
+    if (document.getElementById('view-log').classList.contains('active')) renderLog();
+    if (document.getElementById('view-insights').classList.contains('active')) renderInsights();
+    // Rebuild day select labels (Today/Tomorrow change with language)
+    if (document.getElementById('scheduled-day').options.length > 0) {
+      const currentVal = document.getElementById('scheduled-day').value;
+      populateDaySelect();
+      document.getElementById('scheduled-day').value = currentVal;
+    }
+  }
+
+  function setLang(lang) {
+    currentLang = (lang === 'en') ? 'en' : 'ka';
+    try { localStorage.setItem(LANG_STORAGE_KEY, currentLang); } catch(e) {}
+    applyTranslations();
+  }
+
+  // Load saved preference (defaults to Georgian)
+  try {
+    const saved = localStorage.getItem(LANG_STORAGE_KEY);
+    if (saved === 'en' || saved === 'ka') currentLang = saved;
+  } catch(e) {}
+
+  // ============ STATE ============
+  // For each scale key, track tens (0-100 step 10) and ones (0-9). Total = tens + ones, capped at 100.
+  const state = {
+    parts: {
+      'pred-mastery':  { tens: null, ones: null },
+      'pred-pleasure': { tens: null, ones: null },
+      'act-mastery':   { tens: null, ones: null },
+      'act-pleasure':  { tens: null, ones: null },
+    },
+    entries: [],
+    ratingEntryId: null,
+    logFilterDate: null, // null = show all dates; otherwise a day-start timestamp (ms)
+  };
+
+  // Get the resolved total for a scale key (or null if incomplete)
+  function getTotal(key) {
+    const p = state.parts[key];
+    if (p.tens === null || p.ones === null) return null;
+    // If tens is 100, ones must be 0
+    if (p.tens === 100) return 100;
+    return p.tens + p.ones;
+  }
+
+  // ============ STORAGE ============
+  // Try window.storage first (Claude persistent storage across sessions);
+  // fall back to localStorage if it's unavailable or errors out.
+  const STORAGE_KEY = 'ba_entries_v1';
+  let useWindowStorage = !!(window.storage && typeof window.storage.set === 'function');
+
+  function sortEntries() {
+    // Show entries with the most recent scheduled time first; fall back to createdAt
+    state.entries.sort((a, b) => {
+      const aTime = a.scheduledAt || a.createdAt;
+      const bTime = b.scheduledAt || b.createdAt;
+      return bTime - aTime;
+    });
+  }
+
+  async function loadEntries() {
+    // Try window.storage first
+    if (useWindowStorage) {
+      try {
+        const result = await window.storage.list('entry:');
+        if (result && result.keys && result.keys.length > 0) {
+          const loaded = [];
+          for (const key of result.keys) {
+            try {
+              const r = await window.storage.get(key);
+              if (r && r.value) loaded.push(JSON.parse(r.value));
+            } catch(e) { /* skip */ }
+          }
+          state.entries = loaded;
+          sortEntries();
+          return;
+        } else if (result) {
+          // No entries yet but storage works
+          state.entries = [];
+          // Also check localStorage for any prior data and migrate
+          loadFromLocalStorage();
+          return;
+        }
+      } catch(e) {
+        useWindowStorage = false;
+      }
+    }
+    loadFromLocalStorage();
+  }
+
+  function loadFromLocalStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          // Merge with any existing state.entries (from window.storage)
+          const existingIds = new Set(state.entries.map(e => e.id));
+          for (const e of parsed) {
+            if (!existingIds.has(e.id)) state.entries.push(e);
+          }
+          state.entries.sort((a, b) => {
+            const aTime = a.scheduledAt || a.createdAt;
+            const bTime = b.scheduledAt || b.createdAt;
+            return bTime - aTime;
+          });
+        }
+      }
+    } catch(e) { /* ignore */ }
+  }
+
+  function saveToLocalStorage() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries));
+      return true;
+    } catch(e) {
+      return false;
+    }
+  }
+
+  async function saveEntry(entry) {
+    // Update in-memory list first
+    const idx = state.entries.findIndex(e => e.id === entry.id);
+    if (idx >= 0) state.entries[idx] = entry;
+    // else: caller handles insertion
+
+    let savedSomewhere = false;
+
+    if (useWindowStorage) {
+      try {
+        await window.storage.set('entry:' + entry.id, JSON.stringify(entry));
+        savedSomewhere = true;
+      } catch(e) {
+        useWindowStorage = false;
+      }
+    }
+
+    // Always also save to localStorage as a safety net
+    if (saveToLocalStorage()) savedSomewhere = true;
+
+    if (!savedSomewhere) {
+      showToast(t('toast-failed'));
+    }
+    return savedSomewhere;
+  }
+
+  async function deleteEntry(id) {
+    state.entries = state.entries.filter(e => e.id !== id);
+    if (useWindowStorage) {
+      try { await window.storage.delete('entry:' + id); } catch(e) { /* ignore */ }
+    }
+    saveToLocalStorage();
+    return true;
+  }
+
+  // ============ SCALES ============
+  function buildScale(container, key, part) {
+    container.innerHTML = '';
+    const color = key.includes('mastery') ? 'mastery' : 'pleasure';
+    const max = part === 'tens' ? 100 : 9;
+    const step = part === 'tens' ? 10 : 1;
+    for (let i = 0; i <= max; i += step) {
+      const btn = document.createElement('button');
+      btn.className = 'scale-btn';
+      btn.textContent = i;
+      btn.dataset.value = i;
+      btn.addEventListener('click', () => selectPart(key, part, i, container, color));
+      container.appendChild(btn);
+    }
+  }
+
+  function selectPart(key, part, value, container, color) {
+    // If user picks tens=100, force ones to 0 and disable
+    state.parts[key][part] = value;
+    if (part === 'tens' && value === 100) {
+      state.parts[key].ones = 0;
+    }
+
+    // Highlight the selected button in this row
+    container.querySelectorAll('.scale-btn').forEach(b => {
+      b.classList.remove('selected', 'pleasure', 'mastery');
+      if (parseInt(b.dataset.value) === value) b.classList.add('selected', color);
+    });
+
+    // If tens=100, also visually mark ones=0 and gray out other ones buttons
+    if (part === 'tens') {
+      const onesRow = document.querySelector(`.scale-row.ones[data-scale="${key}"]`);
+      if (onesRow) {
+        if (value === 100) {
+          onesRow.querySelectorAll('.scale-btn').forEach(b => {
+            b.classList.remove('selected', 'pleasure', 'mastery');
+            if (parseInt(b.dataset.value) === 0) b.classList.add('selected', color);
+            b.style.opacity = parseInt(b.dataset.value) === 0 ? '1' : '0.3';
+            b.style.pointerEvents = parseInt(b.dataset.value) === 0 ? 'auto' : 'none';
+          });
+        } else {
+          onesRow.querySelectorAll('.scale-btn').forEach(b => {
+            b.style.opacity = '';
+            b.style.pointerEvents = '';
+          });
+        }
+      }
+    }
+
+    updateTotalDisplay(key, color);
+    updateSaveButtons();
+  }
+
+  function updateTotalDisplay(key, color) {
+    const total = getTotal(key);
+    const el = document.querySelector(`[data-total="${key}"]`);
+    if (!el) return;
+    el.classList.remove('pleasure', 'mastery', 'empty');
+    if (total === null) {
+      el.textContent = '—';
+      el.classList.add('empty');
+    } else {
+      el.textContent = total;
+      el.classList.add(color);
+    }
+  }
+
+  function resetScaleKey(key) {
+    state.parts[key].tens = null;
+    state.parts[key].ones = null;
+    document.querySelectorAll(`.scale-row[data-scale="${key}"] .scale-btn`).forEach(b => {
+      b.classList.remove('selected', 'pleasure', 'mastery');
+      b.style.opacity = '';
+      b.style.pointerEvents = '';
+    });
+    const el = document.querySelector(`[data-total="${key}"]`);
+    if (el) {
+      el.classList.remove('pleasure', 'mastery');
+      el.classList.add('empty');
+      el.textContent = '—';
+    }
+  }
+
+  function updateSaveButtons() {
+    const activity = document.getElementById('activity').value.trim();
+    const canSave = activity && getTotal('pred-mastery') !== null && getTotal('pred-pleasure') !== null;
+    document.getElementById('save-btn').disabled = !canSave;
+
+    const canRate = getTotal('act-mastery') !== null && getTotal('act-pleasure') !== null;
+    document.getElementById('save-rating-btn').disabled = !canRate;
+  }
+
+  // ============ VIEWS ============
+  function switchView(name) {
+    document.querySelectorAll('.tab').forEach(tab => tab.classList.toggle('active', tab.dataset.view === name));
+    document.querySelectorAll('.view').forEach(v => {
+      if (v.id === 'view-rate') return;
+      v.classList.toggle('active', v.id === 'view-' + name);
+    });
+    document.getElementById('view-rate').style.display = 'none';
+    if (name === 'log') renderLog();
+    if (name === 'insights') renderInsights();
+  }
+
+  // ============ NEW ENTRY ============
+  document.getElementById('save-btn').addEventListener('click', async () => {
+    const activity = document.getElementById('activity').value.trim();
+    const company = document.getElementById('company').value.trim();
+    const scheduledAt = getScheduledTimestamp();
+    const entry = {
+      id: 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      activity,
+      company,
+      predMastery: getTotal('pred-mastery'),
+      predPleasure: getTotal('pred-pleasure'),
+      actMastery: null,
+      actPleasure: null,
+      createdAt: Date.now(),
+      scheduledAt,
+      completedAt: null,
+    };
+    state.entries.unshift(entry);
+    sortEntries();
+    const ok = await saveEntry(entry);
+    if (ok) {
+      document.getElementById('activity').value = '';
+      document.getElementById('company').value = '';
+      resetScaleKey('pred-mastery');
+      resetScaleKey('pred-pleasure');
+      // Reset time to current hour
+      setTimeFromHourOffset(0);
+      document.querySelectorAll('.time-preset').forEach(b => b.classList.remove('active'));
+      updateSaveButtons();
+      showToast(t('toast-saved'));
+      switchView('log');
+    } else {
+      state.entries = state.entries.filter(e => e.id !== entry.id);
+    }
+  });
+
+  document.getElementById('activity').addEventListener('input', updateSaveButtons);
+
+  // ============ TIME PICKER ============
+  // Hour-only granularity, matching the BA pleasure-predicting sheet:
+  // pick a day (Today / Tomorrow / +N days) and an hour (0–23).
+  function populateDaySelect() {
+    const sel = document.getElementById('scheduled-day');
+    sel.innerHTML = '';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const labels = [t('day-today'), t('day-tomorrow')];
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(today.getTime() + i * 86400000);
+      const opt = document.createElement('option');
+      opt.value = d.getTime();
+      if (i < 2) {
+        opt.textContent = labels[i];
+      } else {
+        opt.textContent = d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+      }
+      sel.appendChild(opt);
+    }
+  }
+
+  function populateHourSelect() {
+    const sel = document.getElementById('scheduled-hour');
+    sel.innerHTML = '';
+    for (let h = 0; h < 24; h++) {
+      const opt = document.createElement('option');
+      opt.value = h;
+      // 12-hour format with AM/PM for readability
+      const ampm = h < 12 ? 'AM' : 'PM';
+      const h12 = h === 0 ? 12 : (h > 12 ? h - 12 : h);
+      opt.textContent = `${h12}:00 ${ampm}`;
+      sel.appendChild(opt);
+    }
+  }
+
+  // Get the timestamp from current select values
+  function getScheduledTimestamp() {
+    const dayMs = parseInt(document.getElementById('scheduled-day').value);
+    const hour = parseInt(document.getElementById('scheduled-hour').value);
+    return dayMs + hour * 3600000;
+  }
+
+  // Set selects from an offset in hours from "now" (rounded to nearest hour)
+  function setTimeFromHourOffset(hoursFromNow) {
+    const target = new Date(Date.now() + hoursFromNow * 3600000);
+    const dayStart = new Date(target);
+    dayStart.setHours(0, 0, 0, 0);
+    document.getElementById('scheduled-day').value = dayStart.getTime();
+    document.getElementById('scheduled-hour').value = target.getHours();
+  }
+
+  // Preset buttons
+  document.querySelectorAll('.time-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const hrs = parseInt(btn.dataset.hours);
+      setTimeFromHourOffset(hrs);
+      document.querySelectorAll('.time-preset').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // Clear preset highlight when user manually changes day or hour
+  ['scheduled-day', 'scheduled-hour'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => {
+      document.querySelectorAll('.time-preset').forEach(b => b.classList.remove('active'));
+    });
+  });
+
+  // Initial population + default to current hour
+  populateDaySelect();
+  populateHourSelect();
+  setTimeFromHourOffset(0);
+
+  // ============ RATE ENTRY ============
+  function openRate(id) {
+    const entry = state.entries.find(e => e.id === id);
+    if (!entry) return;
+    state.ratingEntryId = id;
+    document.getElementById('rate-activity').textContent = entry.activity;
+    resetScaleKey('act-mastery');
+    resetScaleKey('act-pleasure');
+    updateSaveButtons();
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-rate').style.display = 'block';
+    document.getElementById('view-rate').classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  document.getElementById('cancel-rating-btn').addEventListener('click', () => {
+    document.getElementById('view-rate').style.display = 'none';
+    switchView('log');
+  });
+
+  document.getElementById('save-rating-btn').addEventListener('click', async () => {
+    const entry = state.entries.find(e => e.id === state.ratingEntryId);
+    if (!entry) return;
+    entry.actMastery = getTotal('act-mastery');
+    entry.actPleasure = getTotal('act-pleasure');
+    entry.completedAt = Date.now();
+    const ok = await saveEntry(entry);
+    if (ok) {
+      document.getElementById('view-rate').style.display = 'none';
+      showToast(t('toast-rated'));
+      switchView('log');
+    }
+  });
+
+  // ============ LOG VIEW ============
+  function fmtDate(ts) {
+    const d = new Date(ts);
+    const today = new Date();
+    const yest = new Date(today.getTime() - 86400000);
+    const tomorrow = new Date(today.getTime() + 86400000);
+    // Hour-only format: e.g. "3 PM" or "12 AM"
+    const h = d.getHours();
+    const ampm = h < 12 ? 'AM' : 'PM';
+    const h12 = h === 0 ? 12 : (h > 12 ? h - 12 : h);
+    const timeStr = `${h12} ${ampm}`;
+    if (d.toDateString() === today.toDateString()) return 'Today · ' + timeStr;
+    if (d.toDateString() === yest.toDateString()) return 'Yesterday · ' + timeStr;
+    if (d.toDateString() === tomorrow.toDateString()) return 'Tomorrow · ' + timeStr;
+    return d.toLocaleDateString([], {month: 'short', day: 'numeric'}) + ' · ' + timeStr;
+  }
+
+  function timeHint(ts, isPending) {
+    if (!isPending) return '';
+    const diff = ts - Date.now();
+    const absDiff = Math.abs(diff);
+    const hrs = Math.round(absDiff / 3600000);
+    const days = Math.round(hrs / 24);
+    if (diff > 0) {
+      if (hrs < 1) return t('hint-soon');
+      if (hrs < 24) return t('hint-in-hr', { n: hrs });
+      return t('hint-in-d', { n: days });
+    } else {
+      if (hrs < 1) return t('hint-now');
+      if (hrs < 24) return t('hint-ago-hr', { n: hrs });
+      return t('hint-ago-d', { n: days });
+    }
+  }
+
+  function deltaBadge(pred, act) {
+    if (act === null) return '';
+    const d = act - pred;
+    if (d === 0) return '<span class="delta">±0</span>';
+    const cls = d > 0 ? 'positive' : 'negative';
+    const sign = d > 0 ? '+' : '';
+    return `<span class="delta ${cls}">${sign}${d}</span>`;
+  }
+
+  function renderLog() {
+    const c = document.getElementById('log-content');
+    if (state.entries.length === 0) {
+      c.innerHTML = `
+        <div class="empty">
+          <div class="empty-mark">❦</div>
+          <p>${t('empty-log')}</p>
+        </div>`;
+      return;
+    }
+
+    // Group entries by date (day-start timestamp)
+    const groups = new Map();
+    state.entries.forEach(e => {
+      const ts = e.scheduledAt || e.createdAt;
+      const d = new Date(ts);
+      d.setHours(0, 0, 0, 0);
+      const key = d.getTime();
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(e);
+    });
+
+    // Sort each group by scheduled hour (most recent first)
+    groups.forEach(arr => {
+      arr.sort((a, b) => (b.scheduledAt || b.createdAt) - (a.scheduledAt || a.createdAt));
+    });
+
+    // Sort group keys: most recent date first
+    const sortedKeys = Array.from(groups.keys()).sort((a, b) => b - a);
+
+    // Auto-correct invalid filter: if the selected date is no longer in the list,
+    // fall back to "All"
+    if (state.logFilterDate !== null && !groups.has(state.logFilterDate)) {
+      state.logFilterDate = null;
+    }
+
+    // Today / Yesterday / Tomorrow labels
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayMs = today.getTime();
+
+    function groupLabel(ms) {
+      const diffDays = Math.round((ms - todayMs) / 86400000);
+      const d = new Date(ms);
+      if (diffDays === 0) return t('day-today');
+      if (diffDays === -1) return t('day-yesterday');
+      if (diffDays === 1) return t('day-tomorrow');
+      const localeForDate = currentLang === 'ka' ? 'ka-GE' : 'en-US';
+      if (diffDays > 1 && diffDays < 7) return d.toLocaleDateString(localeForDate, { weekday: 'long' });
+      return d.toLocaleDateString(localeForDate, { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    function shortLabel(ms) {
+      const diffDays = Math.round((ms - todayMs) / 86400000);
+      const d = new Date(ms);
+      if (diffDays === 0) return t('short-today');
+      if (diffDays === -1) return t('short-yest');
+      if (diffDays === 1) return t('short-tmrw');
+      const localeForDate = currentLang === 'ka' ? 'ka-GE' : 'en-US';
+      return d.toLocaleDateString(localeForDate, { month: 'short', day: 'numeric' });
+    }
+
+    // Build date strip with an "All" chip first
+    const allActive = state.logFilterDate === null;
+    const stripChips = [
+      `<button class="date-chip ${allActive ? 'active' : ''}" data-filter="all">
+         <div class="date-chip-label">${t('all')}</div>
+         <div class="date-chip-count">${state.entries.length} ${state.entries.length === 1 ? t('entry') : t('entries')}</div>
+       </button>`,
+      ...sortedKeys.map(k => {
+        const count = groups.get(k).length;
+        const pending = groups.get(k).filter(e => e.actMastery === null).length;
+        const active = state.logFilterDate === k;
+        return `
+          <button class="date-chip ${active ? 'active' : ''}" data-filter="${k}">
+            <div class="date-chip-label">${shortLabel(k)}</div>
+            <div class="date-chip-count">
+              ${count} ${count === 1 ? t('entry') : t('entries')}
+              ${pending > 0 ? `<span class="pending-dot"></span>` : ''}
+            </div>
+          </button>`;
+      })
+    ];
+    const stripHtml = `<div class="date-strip" id="date-strip">${stripChips.join('')}</div>`;
+
+    // Decide which groups to show
+    const keysToShow = state.logFilterDate === null ? sortedKeys : [state.logFilterDate];
+
+    const groupsHtml = keysToShow.map(k => {
+      const entries = groups.get(k);
+      const entriesHtml = entries.map(e => renderEntry(e)).join('');
+      return `
+        <div class="date-group" id="d-${k}">
+          <div class="date-header">
+            <span class="date-header-label">${groupLabel(k)}</span>
+            <span class="date-header-meta">${entries.length} ${entries.length === 1 ? t('entry') : t('entries')}</span>
+          </div>
+          ${entriesHtml}
+        </div>`;
+    }).join('');
+
+    c.innerHTML = stripHtml + `<div class="entries-scroll">${groupsHtml}</div>`;
+
+    // Wire chip taps -> set filter and re-render
+    c.querySelectorAll('.date-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const f = chip.dataset.filter;
+        state.logFilterDate = (f === 'all') ? null : parseInt(f);
+        renderLog();
+        // After re-render, scroll the active chip into view horizontally
+        requestAnimationFrame(() => {
+          const active = document.querySelector('.date-chip.active');
+          if (active) active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        });
+      });
+    });
+  }
+
+  function renderEntry(e) {
+    const isPending = e.actMastery === null;
+    const displayTime = e.scheduledAt || e.createdAt;
+    const hint = timeHint(displayTime, isPending);
+    const hintHtml = hint ? ` · <span class="hint">${hint}</span>` : '';
+    // Show only the hour as the row's primary timestamp
+    const d = new Date(displayTime);
+    const h = d.getHours();
+    const ampm = h < 12 ? 'AM' : 'PM';
+    const h12 = h === 0 ? 12 : (h > 12 ? h - 12 : h);
+    const hourStr = `${h12} ${ampm}`;
+    return `
+      <div class="entry">
+        <div class="entry-date">${hourStr}${hintHtml}${e.company ? ' · ' + escapeHtml(e.company) : ''}</div>
+        <div class="entry-activity">${escapeHtml(e.activity)}</div>
+        <div class="entry-grid">
+          <div class="metric">
+            <div class="metric-label">${t('insight-mastery')}</div>
+            <div class="metric-values">
+              <span class="pred">${e.predMastery}</span>
+              <span class="arrow">→</span>
+              ${isPending
+                ? `<span class="pending">${t('pending')}</span>`
+                : `<span class="actual-m">${e.actMastery}</span>${deltaBadge(e.predMastery, e.actMastery)}`}
+            </div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">${t('insight-pleasure')}</div>
+            <div class="metric-values">
+              <span class="pred">${e.predPleasure}</span>
+              <span class="arrow">→</span>
+              ${isPending
+                ? `<span class="pending">${t('pending')}</span>`
+                : `<span class="actual-p">${e.actPleasure}</span>${deltaBadge(e.predPleasure, e.actPleasure)}`}
+            </div>
+          </div>
+        </div>
+        <div class="entry-actions">
+          ${isPending
+            ? `<button class="complete" data-action="rate" data-id="${e.id}">${t('btn-rate')}</button>`
+            : ''}
+          <button class="delete" data-action="delete" data-id="${e.id}">${t('btn-delete')}</button>
+        </div>
+      </div>`;
+  }
+
+  // Event delegation for entry action buttons (works in sandboxed previews
+  // where inline onclick handlers may be stripped)
+  document.getElementById('log-content').addEventListener('click', (ev) => {
+    const btn = ev.target.closest('button[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const id = btn.dataset.id;
+    if (action === 'rate') openRate(id);
+    else if (action === 'delete') confirmDelete(id);
+  });
+
+  // Custom confirm modal (replaces native window.confirm, which may be
+  // blocked or no-op in some embedded preview frames)
+  function showConfirm(message) {
+    return new Promise(resolve => {
+      const overlay = document.getElementById('confirm-overlay');
+      document.getElementById('confirm-message').textContent = message;
+      overlay.classList.add('show');
+      const yes = document.getElementById('confirm-yes');
+      const no = document.getElementById('confirm-no');
+      const cleanup = (result) => {
+        overlay.classList.remove('show');
+        yes.removeEventListener('click', onYes);
+        no.removeEventListener('click', onNo);
+        overlay.removeEventListener('click', onBackdrop);
+        resolve(result);
+      };
+      const onYes = () => cleanup(true);
+      const onNo = () => cleanup(false);
+      const onBackdrop = (e) => { if (e.target === overlay) cleanup(false); };
+      yes.addEventListener('click', onYes);
+      no.addEventListener('click', onNo);
+      overlay.addEventListener('click', onBackdrop);
+    });
+  }
+
+  async function confirmDelete(id) {
+    const ok = await showConfirm(t('confirm-delete'));
+    if (!ok) return;
+    const deleted = await deleteEntry(id);
+    if (deleted) {
+      renderLog();
+      showToast(t('toast-deleted'));
+    }
+  }
+
+  // ============ INSIGHTS ============
+  function renderInsights() {
+    const c = document.getElementById('insights-content');
+    const completed = state.entries.filter(e => e.actMastery !== null);
+
+    if (completed.length === 0) {
+      c.innerHTML = `
+        <div class="empty">
+          <div class="empty-mark">❦</div>
+          <p>${t('empty-insights')}</p>
+        </div>`;
+      return;
+    }
+
+    const avgPredM = avg(completed.map(e => e.predMastery));
+    const avgActM = avg(completed.map(e => e.actMastery));
+    const avgPredP = avg(completed.map(e => e.predPleasure));
+    const avgActP = avg(completed.map(e => e.actPleasure));
+    const mGap = avgActM - avgPredM;
+    const pGap = avgActP - avgPredP;
+
+    let insightKey;
+    if (pGap > 1) insightKey = 'insight-pleasure-up';
+    else if (pGap < -1) insightKey = 'insight-pleasure-down';
+    else if (mGap > 1) insightKey = 'insight-mastery-up';
+    else if (mGap < -1) insightKey = 'insight-mastery-down';
+    else insightKey = 'insight-neutral';
+
+    c.innerHTML = `
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-num accent">${state.entries.length}</div>
+          <div class="stat-label">${t('stat-total')}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num accent">${completed.length}</div>
+          <div class="stat-label">${t('stat-rated')}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num mastery">${avgActM.toFixed(1)}</div>
+          <div class="stat-label">${t('stat-mastery')} ${avgPredM.toFixed(1)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num pleasure">${avgActP.toFixed(1)}</div>
+          <div class="stat-label">${t('stat-pleasure')} ${avgPredP.toFixed(1)}</div>
+        </div>
+      </div>
+
+      <div class="insight">
+        <div class="insight-label">${t('insight-pattern')}</div>
+        <div class="insight-text">"${t(insightKey)}"</div>
+      </div>
+
+      <div class="insight">
+        <div class="insight-label">${t('insight-gap')}</div>
+        <div class="insight-text" style="font-style: normal; font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace; font-size: 13px;">
+          ${t('insight-mastery')}: ${mGap >= 0 ? '+' : ''}${mGap.toFixed(1)}<br>
+          ${t('insight-pleasure')}: ${pGap >= 0 ? '+' : ''}${pGap.toFixed(1)}
+        </div>
+      </div>
+
+      <div class="ornament">· · ·</div>
+      <p class="subtitle" style="text-align: center; font-style: italic;">
+        ${t('insight-footer')}
+      </p>
+    `;
+  }
+
+  function avg(arr) { return arr.reduce((a, b) => a + b, 0) / arr.length; }
+  function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // ============ TOAST ============
+  let toastTimer;
+  function showToast(msg) {
+    const toastEl = document.getElementById('toast');
+    if (!toastEl) return;
+    toastEl.textContent = msg;
+    // Force a reflow so reopening immediately re-triggers the animation
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2800);
+  }
+
+  // ============ INIT ============
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => switchView(tab.dataset.view));
+  });
+
+  ['pred-mastery', 'pred-pleasure', 'act-mastery', 'act-pleasure'].forEach(key => {
+    const tensRow = document.querySelector(`.scale-row.tens[data-scale="${key}"]`);
+    const onesRow = document.querySelector(`.scale-row.ones[data-scale="${key}"]`);
+    if (tensRow) buildScale(tensRow, key, 'tens');
+    if (onesRow) buildScale(onesRow, key, 'ones');
+  });
+
+  // Wire up language switcher buttons (event delegation so it works
+  // even if buttons are re-rendered)
+  document.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('.lang-btn');
+    if (!btn) return;
+    setLang(btn.dataset.lang);
+  });
+
+  // Apply translations on initial load (uses saved preference or default ka)
+  applyTranslations();
+
+  loadEntries().then(() => {
+    // Ready
+    // Re-render in case log/insights tab was active (it's not by default, but safe)
+    applyTranslations();
+  });
+</script>
+</body>
+</html>
