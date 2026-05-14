@@ -641,6 +641,26 @@
   .stat-num.mastery { color: var(--mastery); }
   .stat-num.accent { color: var(--accent); }
 
+
+  .streak-fire {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    font-size: 20px;
+    transition: opacity 0.2s, filter 0.2s;
+  }
+
+  .streak-fire.inactive {
+    opacity: 0.28;
+    filter: grayscale(1);
+  }
+
+  .streak-fire.active {
+    opacity: 1;
+    filter: drop-shadow(0 0 8px rgba(255,140,60,0.35));
+  }
+
   .stat-label {
     font-family: 'JetBrains Mono', monospace;
     font-size: 9px;
@@ -1311,6 +1331,492 @@
     padding: 30px 16px;
     line-height: 1.6;
   }
+
+
+
+  /* ===== Activity lift dashboard ===== */
+  .lift-dashboard {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 16px;
+    margin: 0 0 20px;
+  }
+
+  .lift-dashboard-header {
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  .lift-dashboard-title {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  .lift-dashboard-subtitle {
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink-dim);
+  }
+
+
+  .lift-dashboard-controls {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .dashboard-sort-label {
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0;
+  }
+
+  .dashboard-sort-select {
+    width: 100%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--ink);
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%239ba197' d='M6 8L0 0h12z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+
+  .dashboard-sort-select:focus {
+    outline: none;
+    border-color: var(--accent-soft);
+  }
+
+  .lift-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .lift-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 14px;
+  }
+
+  .lift-card-title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .lift-card-title-main {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ink);
+  }
+
+  .lift-card-title-main.mood { color: var(--mood); }
+  .lift-card-title-main.mastery { color: var(--mastery); }
+  .lift-card-title-main.pleasure { color: var(--pleasure); }
+
+  .lift-card-subtitle {
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+  }
+
+  .rank-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+  }
+
+  .rank-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  .rank-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .rank-item:first-child { padding-top: 0; }
+
+  .rank-index {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .rank-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .rank-name {
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-size: 14px;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .rank-count {
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 9px;
+    color: var(--ink-faint);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .rank-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .rank-score.mood { color: var(--mood); }
+  .rank-score.mastery { color: var(--mastery); }
+  .rank-score.pleasure { color: var(--pleasure); }
+  .rank-score.positive { color: #8db692; }
+  .rank-score.negative { color: var(--danger); }
+
+
+  .rank-score-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    min-width: 68px;
+    white-space: nowrap;
+  }
+
+  .rank-score-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 6px;
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+  }
+
+  .rank-score-label {
+    font-size: 8px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .rank-score-value {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .rank-score-value.final {
+    font-size: 14px;
+  }
+
+  .rank-score-value.mood { color: var(--mood); }
+  .rank-score-value.mastery { color: var(--mastery); }
+  .rank-score-value.pleasure { color: var(--pleasure); }
+  .rank-score-value.positive { color: #8db692; }
+  .rank-score-value.negative { color: var(--danger); }
+
+  .rank-empty {
+    color: var(--ink-faint);
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-style: italic;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 8px 0 2px;
+  }
+
+  @media (min-width: 960px) {
+    .lift-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+
+  /* ===== Deep activity analysis ===== */
+  .deep-analysis {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 16px;
+    margin: 0 0 20px;
+  }
+
+  .deep-analysis-header {
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  .deep-analysis-title {
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  .deep-analysis-subtitle {
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink-dim);
+  }
+
+  .deep-analysis-control {
+    margin-bottom: 14px;
+  }
+
+  .deep-analysis-select {
+    width: 100%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--ink);
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-size: 15px;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%239ba197' d='M6 8L0 0h12z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  .deep-analysis-select:focus {
+    outline: none;
+    border-color: var(--accent-soft);
+  }
+
+  .deep-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .deep-summary-head {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 14px;
+  }
+
+  .deep-summary-name {
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-size: 17px;
+    font-style: italic;
+    color: var(--ink);
+    margin-bottom: 5px;
+    overflow-wrap: anywhere;
+  }
+
+  .deep-summary-meta {
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .deep-metric-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .deep-metric-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 14px;
+  }
+
+  .deep-metric-title {
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-style: italic;
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+
+  .deep-metric-title.mood { color: var(--mood); }
+  .deep-metric-title.mastery { color: var(--mastery); }
+  .deep-metric-title.pleasure { color: var(--pleasure); }
+
+  .deep-metric-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .deep-metric-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+  }
+
+  .deep-metric-label {
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .deep-metric-value {
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .deep-metric-value.mood { color: var(--mood); }
+  .deep-metric-value.mastery { color: var(--mastery); }
+  .deep-metric-value.pleasure { color: var(--pleasure); }
+  .deep-metric-value.positive { color: #8db692; }
+  .deep-metric-value.negative { color: var(--danger); }
+  .deep-metric-value.empty { color: var(--ink-faint); font-style: italic; font-size: 12px; font-weight: 400; }
+
+  .deep-all-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .deep-all-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 12px 14px;
+  }
+
+  .deep-all-name {
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-size: 15px;
+    font-style: italic;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+
+  .deep-all-metrics {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .deep-all-metric {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 10px;
+    padding-top: 7px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .deep-all-metric:first-child { border-top: none; padding-top: 0; }
+
+  .deep-all-metric-label {
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .deep-all-metric-values {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 7px;
+    white-space: nowrap;
+  }
+
+  .deep-all-final,
+  .deep-all-diff {
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .deep-all-final.mood, .deep-all-diff.mood { color: var(--mood); }
+  .deep-all-final.mastery, .deep-all-diff.mastery { color: var(--mastery); }
+  .deep-all-final.pleasure, .deep-all-diff.pleasure { color: var(--pleasure); }
+  .deep-all-diff.positive { color: #8db692; }
+  .deep-all-diff.negative { color: var(--danger); }
+  .deep-all-empty { color: var(--ink-faint); font-style: italic; font-size: 11px; }
+
+  @media (min-width: 720px) {
+    .deep-metric-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .deep-all-row {
+      grid-template-columns: minmax(150px, 1.1fr) minmax(0, 2.4fr);
+      align-items: center;
+    }
+
+    .deep-all-metrics {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .deep-all-metric {
+      border-top: none;
+      padding-top: 0;
+      border-left: 1px dashed var(--border);
+      padding-left: 10px;
+    }
+
+    .deep-all-metric:first-child {
+      border-left: none;
+      padding-left: 0;
+    }
+  }
+
 
   /* ===== Data buttons (export/import) ===== */
   .data-actions {
@@ -2355,8 +2861,40 @@
 
       'stat-total': 'სულ ჩანაწერი',
       'stat-rated': 'შეფასებული',
+      'stat-current-streak': 'მიმდინარე სტრიკი',
+      'stat-best-streak': 'საუკეთესო სტრიკი',
       'stat-mastery': 'საშ. ოსტატობა · პროგ.',
       'stat-pleasure': 'საშ. სიამოვნება · პროგ.',
+
+      'dashboard-title': 'რა მუშაობს ყველაზე კარგად?',
+      'dashboard-subtitle': 'აქტივობები დალაგებულია საშუალო შედეგით. მეტი ჩანაწერი = უფრო სანდო სიგნალი.',
+      'dashboard-sort-label': 'დალაგება',
+      'dashboard-sort-diff': 'სხვაობის მიხედვით',
+      'dashboard-sort-final': 'საბოლოო ქულის მიხედვით',
+      'dashboard-mood-title': 'განწყობის ამწევები',
+      'dashboard-mood-sub': 'საბოლოო განწყობა + საშუალო აწევა',
+      'dashboard-mastery-title': 'ოსტატობის წყაროები',
+      'dashboard-mastery-sub': 'საბოლოო ოსტატობა + რეალური − პროგნოზი',
+      'dashboard-pleasure-title': 'სიამოვნების წყაროები',
+      'dashboard-pleasure-sub': 'საბოლოო სიამოვნება + რეალური − პროგნოზი',
+      'dashboard-count': '{n} ჩანაწერი',
+      'dashboard-final': 'საბოლოო',
+      'dashboard-difference': 'სხვაობა',
+      'dashboard-empty-mood': 'ჯერ არ არის საკმარისი განწყობის მონაცემი. შეაფასე განწყობა მანამდე და შემდეგ.',
+      'dashboard-empty-score': 'ჯერ არ არის საკმარისი დასრულებული შეფასება.',
+
+      'deep-analysis-title': 'ღრმა ანალიზი კონკრეტული აქტივობისთვის',
+      'deep-analysis-subtitle': 'აირჩიე ერთი აქტივობა და ნახე ერთად: საბოლოო განწყობა/ოსტატობა/სიამოვნება და მათი სხვაობა.',
+      'deep-analysis-select': 'აირჩიე აქტივობა',
+      'deep-analysis-show-all': 'ყველას ჩვენება',
+      'deep-analysis-all-name': 'ყველა აქტივობა',
+      'deep-analysis-all-subtitle': 'აქტივობები ანბანურადაა ჩამოთვლილი — თითო ხაზზე ერთად ჩანს განწყობა, ოსტატობა და სიამოვნება.',
+      'deep-analysis-no-data': 'მონაცემი არაა',
+      'deep-analysis-total': 'სულ {n} შეფასებული ჩანაწერი ამ აქტივობაზე',
+      'deep-analysis-based-on': 'დათვლილია',
+      'deep-analysis-mood': 'განწყობა',
+      'deep-analysis-mastery': 'ოსტატობა',
+      'deep-analysis-pleasure': 'სიამოვნება',
 
       'insight-pattern': 'ნიმუში',
       'insight-gap': 'პროგნოზის სხვაობა',
@@ -2414,7 +2952,7 @@
       'template-delete-confirm': 'წავშალო ეს შაბლონი?',
 
       // Chart
-      'chart-title': 'პროგნოზი vs რეალური (ბოლო 7 დღე)',
+      'chart-title': 'პროგნოზი vs რეალური (ბოლო 7 დღე · დაწყების თარიღით)',
       'chart-empty': 'მინიმუმ 2 შეფასებული აქტივობაა საჭირო გრაფიკისთვის.',
       'chart-predicted': 'პროგნოზი',
       'chart-actual': 'რეალური',
@@ -2536,8 +3074,40 @@
 
       'stat-total': 'Total Entries',
       'stat-rated': 'Rated',
+      'stat-current-streak': 'Current streak',
+      'stat-best-streak': 'Best streak',
       'stat-mastery': 'Avg Mastery · pred',
       'stat-pleasure': 'Avg Pleasure · pred',
+
+      'dashboard-title': 'What works best?',
+      'dashboard-subtitle': 'Activities are ranked by average result. More entries = a stronger signal.',
+      'dashboard-sort-label': 'Sort by',
+      'dashboard-sort-diff': 'Sort by difference',
+      'dashboard-sort-final': 'Sort by final score',
+      'dashboard-mood-title': 'Mood lifters',
+      'dashboard-mood-sub': 'Final mood + avg lift',
+      'dashboard-mastery-title': 'Mastery generators',
+      'dashboard-mastery-sub': 'Final mastery + actual − predicted',
+      'dashboard-pleasure-title': 'Pleasure generators',
+      'dashboard-pleasure-sub': 'Final pleasure + actual − predicted',
+      'dashboard-count': '{n} entries',
+      'dashboard-final': 'Final',
+      'dashboard-difference': 'Diff',
+      'dashboard-empty-mood': 'Not enough mood data yet. Rate mood before and after activities.',
+      'dashboard-empty-score': 'Not enough completed ratings yet.',
+
+      'deep-analysis-title': 'Deep analysis for one activity',
+      'deep-analysis-subtitle': 'Choose one activity and see mood, mastery, and pleasure together: final result plus average difference.',
+      'deep-analysis-select': 'Choose activity',
+      'deep-analysis-show-all': 'Show all',
+      'deep-analysis-all-name': 'All activities',
+      'deep-analysis-all-subtitle': 'Activities are listed alphabetically — mood, mastery, and pleasure stay together on one line.',
+      'deep-analysis-no-data': 'No data',
+      'deep-analysis-total': '{n} rated entries for this activity',
+      'deep-analysis-based-on': 'Based on',
+      'deep-analysis-mood': 'Mood',
+      'deep-analysis-mastery': 'Mastery',
+      'deep-analysis-pleasure': 'Pleasure',
 
       'insight-pattern': 'Pattern',
       'insight-gap': 'Prediction Gap',
@@ -2592,7 +3162,7 @@
       'toast-template-removed': 'Template removed.',
       'template-delete-confirm': 'Remove this template?',
 
-      'chart-title': 'Predicted vs Actual (Last 7 Days)',
+      'chart-title': 'Predicted vs Actual (Last 7 Days · by Start Date)',
       'chart-empty': 'Need at least 2 rated entries to draw a chart.',
       'chart-predicted': 'Predicted',
       'chart-actual': 'Actual',
@@ -2740,6 +3310,8 @@
     templates: [],
     ratingEntryId: null,
     logFilterDate: null, // null = show all dates; otherwise a day-start timestamp (ms)
+    analysisActivityKey: null,
+    dashboardSort: 'diff',
   };
 
   // Get the resolved total for a scale key (or null if incomplete)
@@ -2759,12 +3331,8 @@
   let useWindowStorage = !!(window.storage && typeof window.storage.set === 'function');
 
   function sortEntries() {
-    // Show entries with the most recent scheduled time first; fall back to createdAt
-    state.entries.sort((a, b) => {
-      const aTime = a.scheduledAt || a.createdAt;
-      const bTime = b.scheduledAt || b.createdAt;
-      return bTime - aTime;
-    });
+    // Show entries by the activity's starting/scheduled date; fall back to createdAt.
+    state.entries.sort((a, b) => entryStartTimestamp(b) - entryStartTimestamp(a));
   }
 
   async function loadEntries() {
@@ -2808,11 +3376,7 @@
           for (const e of parsed) {
             if (!existingIds.has(e.id)) state.entries.push(e);
           }
-          state.entries.sort((a, b) => {
-            const aTime = a.scheduledAt || a.createdAt;
-            const bTime = b.scheduledAt || b.createdAt;
-            return bTime - aTime;
-          });
+          state.entries.sort((a, b) => entryStartTimestamp(b) - entryStartTimestamp(a));
         }
       }
     } catch(e) { /* ignore */ }
@@ -3370,7 +3934,7 @@
     // Group entries by date (day-start timestamp)
     const groups = new Map();
     state.entries.forEach(e => {
-      const ts = e.scheduledAt || e.createdAt;
+      const ts = entryStartTimestamp(e);
       const d = new Date(ts);
       d.setHours(0, 0, 0, 0);
       const key = d.getTime();
@@ -3380,7 +3944,7 @@
 
     // Sort each group by scheduled hour (most recent first)
     groups.forEach(arr => {
-      arr.sort((a, b) => (b.scheduledAt || b.createdAt) - (a.scheduledAt || a.createdAt));
+      arr.sort((a, b) => entryStartTimestamp(b) - entryStartTimestamp(a));
     });
 
     // Sort group keys: most recent date first
@@ -3491,7 +4055,7 @@
       e.actPleasure == null ||
       e.moodBefore == null ||
       e.moodAfter == null;
-    const displayTime = e.scheduledAt || e.createdAt;
+    const displayTime = entryStartTimestamp(e);
     const hint = timeHint(displayTime, isPending);
     const hintHtml = hint ? `<span class="hint">${hint}</span>` : '';
     // Show only the hour as the row's primary timestamp
@@ -3665,7 +4229,7 @@
         validate: (v) => field !== 'activity' || v.length > 0,
       };
     } else if (meta.type === 'time') {
-      const ts = entry.scheduledAt || entry.createdAt;
+      const ts = entryStartTimestamp(entry);
       const d = new Date(ts);
       const dayStart = new Date(d);
       dayStart.setHours(0, 0, 0, 0);
@@ -3837,8 +4401,8 @@
     // Filter to the last 7 days of rated entries, sorted ascending by time
     const cutoff = Date.now() - 7 * 86400000;
     const recent = completed
-      .filter(e => (e.completedAt || e.createdAt) >= cutoff)
-      .sort((a, b) => (a.completedAt || a.createdAt) - (b.completedAt || b.createdAt));
+      .filter(e => entryStartTimestamp(e) >= cutoff)
+      .sort((a, b) => entryStartTimestamp(a) - entryStartTimestamp(b));
 
     // With zero recent entries we can't render anything useful
     if (recent.length === 0) return null;
@@ -3884,7 +4448,7 @@
     const labels = recent.map((e, i) => {
       const showEvery = recent.length > 5 ? 2 : 1;
       if (i % showEvery !== 0 && i !== recent.length - 1) return '';
-      const d = new Date(e.completedAt || e.createdAt);
+      const d = new Date(entryStartTimestamp(e));
       const lab = `${d.getMonth() + 1}/${d.getDate()}`;
       return `<text x="${xs[i].toFixed(1)}" y="${H - pad.bottom + 14}" font-size="9" fill="var(--ink-faint)" text-anchor="middle" font-family="JetBrains Mono, monospace">${lab}</text>`;
     }).join('');
@@ -3987,6 +4551,481 @@
     };
   }
 
+
+
+  function toTimestamp(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const ts = new Date(value).getTime();
+    return Number.isFinite(ts) ? ts : null;
+  }
+
+  // Primary date identity for analysis/logging: when the activity was scheduled/started.
+  // We intentionally do NOT rewrite stored data; we only resolve which timestamp to use
+  // when grouping, graphing, and calculating streaks.
+  function entryStartTimestamp(entry) {
+    if (!entry) return Date.now();
+    return toTimestamp(entry.scheduledAt) ??
+           toTimestamp(entry.createdAt) ??
+           toTimestamp(entry.completedAt) ??
+           Date.now();
+  }
+
+  function localDateKey(ts) {
+    const d = new Date(ts || Date.now());
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function completedDateKeys(entries) {
+    return [...new Set(
+      entries
+        .filter(e => e && e.actMastery !== null && e.actMastery !== undefined)
+        .map(e => localDateKey(entryStartTimestamp(e)))
+    )].sort();
+  }
+
+  function calculateCurrentStreak(entries) {
+    const tracked = new Set(completedDateKeys(entries));
+    let cursor = new Date();
+    let streak = 0;
+
+    while (tracked.has(localDateKey(cursor))) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+
+    return streak;
+  }
+
+  function calculateBestStreak(entries) {
+    const keys = completedDateKeys(entries);
+    if (!keys.length) return 0;
+
+    let best = 1;
+    let current = 1;
+
+    for (let i = 1; i < keys.length; i++) {
+      const prev = new Date(keys[i - 1] + 'T00:00:00');
+      const curr = new Date(keys[i] + 'T00:00:00');
+      const diffDays = Math.round((curr - prev) / 86400000);
+
+      if (diffDays === 1) current++;
+      else current = 1;
+
+      if (current > best) best = current;
+    }
+
+    return best;
+  }
+
+  function wasTodayTracked(entries) {
+    const today = localDateKey(Date.now());
+    return completedDateKeys(entries).includes(today);
+  }
+
+
+  function scoreOrNull(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function normalizeActivityKey(activity) {
+    return String(activity || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  }
+
+  function buildActivityRanking(entries, config) {
+    const buckets = new Map();
+
+    entries.forEach(e => {
+      const key = normalizeActivityKey(e.activity);
+      if (!key) return;
+
+      const values = config.valuesFn(e);
+      if (!values) return;
+
+      const finalValue = scoreOrNull(values.final);
+      const diffValue = scoreOrNull(values.diff);
+      if (finalValue === null || diffValue === null) return;
+
+      if (!buckets.has(key)) {
+        buckets.set(key, {
+          name: String(e.activity || '').trim().replace(/\s+/g, ' '),
+          finalTotal: 0,
+          diffTotal: 0,
+          count: 0
+        });
+      }
+
+      const bucket = buckets.get(key);
+      bucket.finalTotal += finalValue;
+      bucket.diffTotal += diffValue;
+      bucket.count += 1;
+    });
+
+    const rankBy = config.rankBy === 'diff' ? 'avgDiff' : 'avgFinal';
+
+    return [...buckets.values()]
+      .map(item => ({
+        ...item,
+        avgFinal: item.finalTotal / item.count,
+        avgDiff: item.diffTotal / item.count
+      }))
+      .sort((a, b) => (b[rankBy] - a[rankBy]) || (b.count - a.count) || a.name.localeCompare(b.name));
+  }
+
+  function formatSignedScore(value) {
+    const sign = value > 0 ? '+' : '';
+    return `${sign}${value.toFixed(1)}`;
+  }
+
+  function renderActivityRanking(items, options) {
+    if (!items.length) {
+      return `<div class="rank-empty">${t(options.emptyKey)}</div>`;
+    }
+
+    return `
+      <ol class="rank-list">
+        ${items.map((item, i) => {
+          const finalValue = item.avgFinal;
+          const diffValue = item.avgDiff;
+          const diffPolarity = diffValue > 0 ? ' positive' : diffValue < 0 ? ' negative' : '';
+          return `
+            <li class="rank-item">
+              <span class="rank-index">${i + 1}</span>
+              <span class="rank-main">
+                <span class="rank-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
+                <span class="rank-count">${t('dashboard-count', { n: item.count })}</span>
+              </span>
+              <span class="rank-score-stack">
+                <span class="rank-score-row">
+                  <span class="rank-score-label">${t('dashboard-final')}</span>
+                  <span class="rank-score-value final ${options.className}">${finalValue.toFixed(1)}</span>
+                </span>
+                <span class="rank-score-row">
+                  <span class="rank-score-label">${t('dashboard-difference')}</span>
+                  <span class="rank-score-value ${options.className}${diffPolarity}">${formatSignedScore(diffValue)}</span>
+                </span>
+              </span>
+            </li>`;
+        }).join('')}
+      </ol>`;
+  }
+
+  function renderLiftDashboard(entries) {
+    const dashboardSort = state.dashboardSort === 'final' ? 'final' : 'diff';
+
+    const moodItems = buildActivityRanking(entries, {
+      rankBy: dashboardSort,
+      valuesFn: e => {
+        const before = scoreOrNull(e.moodBefore);
+        const after = scoreOrNull(e.moodAfter);
+        return before !== null && after !== null ? { final: after, diff: after - before } : null;
+      }
+    });
+
+    const masteryItems = buildActivityRanking(entries, {
+      rankBy: dashboardSort,
+      valuesFn: e => {
+        const predicted = scoreOrNull(e.predMastery);
+        const actual = scoreOrNull(e.actMastery);
+        return predicted !== null && actual !== null ? { final: actual, diff: actual - predicted } : null;
+      }
+    });
+
+    const pleasureItems = buildActivityRanking(entries, {
+      rankBy: dashboardSort,
+      valuesFn: e => {
+        const predicted = scoreOrNull(e.predPleasure);
+        const actual = scoreOrNull(e.actPleasure);
+        return predicted !== null && actual !== null ? { final: actual, diff: actual - predicted } : null;
+      }
+    });
+
+    return `
+      <div class="lift-dashboard">
+        <div class="lift-dashboard-header">
+          <div class="lift-dashboard-title">${t('dashboard-title')}</div>
+          <div class="lift-dashboard-subtitle">${t('dashboard-subtitle')}</div>
+          <div class="lift-dashboard-controls">
+            <label class="dashboard-sort-label" for="dashboard-sort-select">${t('dashboard-sort-label')}</label>
+            <select class="dashboard-sort-select" id="dashboard-sort-select">
+              <option value="diff" ${dashboardSort === 'diff' ? 'selected' : ''}>${t('dashboard-sort-diff')}</option>
+              <option value="final" ${dashboardSort === 'final' ? 'selected' : ''}>${t('dashboard-sort-final')}</option>
+            </select>
+          </div>
+        </div>
+        <div class="lift-grid">
+          <div class="lift-card">
+            <div class="lift-card-title">
+              <div class="lift-card-title-main mood">${t('dashboard-mood-title')}</div>
+            </div>
+            <div class="lift-card-subtitle">${t('dashboard-mood-sub')}</div>
+            ${renderActivityRanking(moodItems, { className: 'mood', emptyKey: 'dashboard-empty-mood' })}
+          </div>
+          <div class="lift-card">
+            <div class="lift-card-title">
+              <div class="lift-card-title-main mastery">${t('dashboard-mastery-title')}</div>
+            </div>
+            <div class="lift-card-subtitle">${t('dashboard-mastery-sub')}</div>
+            ${renderActivityRanking(masteryItems, { className: 'mastery', emptyKey: 'dashboard-empty-score' })}
+          </div>
+          <div class="lift-card">
+            <div class="lift-card-title">
+              <div class="lift-card-title-main pleasure">${t('dashboard-pleasure-title')}</div>
+            </div>
+            <div class="lift-card-subtitle">${t('dashboard-pleasure-sub')}</div>
+            ${renderActivityRanking(pleasureItems, { className: 'pleasure', emptyKey: 'dashboard-empty-score' })}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function buildActivityOptions(entries) {
+    const buckets = new Map();
+
+    entries.forEach(e => {
+      const key = normalizeActivityKey(e.activity);
+      if (!key) return;
+
+      if (!buckets.has(key)) {
+        buckets.set(key, {
+          key,
+          name: String(e.activity || '').trim().replace(/\s+/g, ' '),
+          count: 0,
+          lastTime: 0
+        });
+      }
+
+      const bucket = buckets.get(key);
+      bucket.count += 1;
+      const time = entryStartTimestamp(e);
+      if (Number.isFinite(time) && time > bucket.lastTime) bucket.lastTime = time;
+    });
+
+    return [...buckets.values()]
+      .sort((a, b) => (b.count - a.count) || (b.lastTime - a.lastTime) || a.name.localeCompare(b.name));
+  }
+
+  function averageMetricForActivity(entries, key, valuesFn) {
+    let finalTotal = 0;
+    let diffTotal = 0;
+    let count = 0;
+
+    entries.forEach(e => {
+      if (normalizeActivityKey(e.activity) !== key) return;
+      const values = valuesFn(e);
+      if (!values) return;
+
+      const finalValue = scoreOrNull(values.final);
+      const diffValue = scoreOrNull(values.diff);
+      if (finalValue === null || diffValue === null) return;
+
+      finalTotal += finalValue;
+      diffTotal += diffValue;
+      count += 1;
+    });
+
+    if (!count) return null;
+    return {
+      avgFinal: finalTotal / count,
+      avgDiff: diffTotal / count,
+      count
+    };
+  }
+
+  function getDeepAnalysisStats(entries, key) {
+    const activityEntries = entries.filter(e => normalizeActivityKey(e.activity) === key);
+
+    return {
+      totalCount: activityEntries.length,
+      mood: averageMetricForActivity(entries, key, e => {
+        const before = scoreOrNull(e.moodBefore);
+        const after = scoreOrNull(e.moodAfter);
+        return before !== null && after !== null ? { final: after, diff: after - before } : null;
+      }),
+      mastery: averageMetricForActivity(entries, key, e => {
+        const predicted = scoreOrNull(e.predMastery);
+        const actual = scoreOrNull(e.actMastery);
+        return predicted !== null && actual !== null ? { final: actual, diff: actual - predicted } : null;
+      }),
+      pleasure: averageMetricForActivity(entries, key, e => {
+        const predicted = scoreOrNull(e.predPleasure);
+        const actual = scoreOrNull(e.actPleasure);
+        return predicted !== null && actual !== null ? { final: actual, diff: actual - predicted } : null;
+      })
+    };
+  }
+
+  function renderDeepMetricCard(type, titleKey, stats, emptyKey) {
+    if (!stats) {
+      return `
+        <div class="deep-metric-card">
+          <div class="deep-metric-title ${type}">${t(titleKey)}</div>
+          <div class="deep-metric-value empty">${t(emptyKey)}</div>
+        </div>`;
+    }
+
+    const diffPolarity = stats.avgDiff > 0 ? ' positive' : stats.avgDiff < 0 ? ' negative' : '';
+
+    return `
+      <div class="deep-metric-card">
+        <div class="deep-metric-title ${type}">${t(titleKey)}</div>
+        <div class="deep-metric-rows">
+          <div class="deep-metric-row">
+            <span class="deep-metric-label">${t('dashboard-final')}</span>
+            <span class="deep-metric-value ${type}">${stats.avgFinal.toFixed(1)}</span>
+          </div>
+          <div class="deep-metric-row">
+            <span class="deep-metric-label">${t('dashboard-difference')}</span>
+            <span class="deep-metric-value ${type}${diffPolarity}">${formatSignedScore(stats.avgDiff)}</span>
+          </div>
+          <div class="deep-metric-row">
+            <span class="deep-metric-label">${t('deep-analysis-based-on')}</span>
+            <span class="deep-metric-value ${type}">${t('dashboard-count', { n: stats.count })}</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderDeepCompactMetric(type, titleKey, stats) {
+    if (!stats) {
+      return `
+        <div class="deep-all-metric">
+          <span class="deep-all-metric-label">${t(titleKey)}</span>
+          <span class="deep-all-empty">${t('deep-analysis-no-data')}</span>
+        </div>`;
+    }
+
+    const diffPolarity = stats.avgDiff > 0 ? ' positive' : stats.avgDiff < 0 ? ' negative' : '';
+
+    return `
+      <div class="deep-all-metric">
+        <span class="deep-all-metric-label">${t(titleKey)}</span>
+        <span class="deep-all-metric-values">
+          <span class="deep-all-final ${type}" title="${t('dashboard-final')}">F ${stats.avgFinal.toFixed(1)}</span>
+          <span class="deep-all-diff ${type}${diffPolarity}" title="${t('dashboard-difference')}">Δ ${formatSignedScore(stats.avgDiff)}</span>
+        </span>
+      </div>`;
+  }
+
+  function renderDeepAnalysisAll(entries, options) {
+    const sortedOptions = [...options].sort((a, b) => a.name.localeCompare(b.name));
+
+    return `
+      <div class="deep-summary">
+        <div class="deep-summary-head">
+          <div class="deep-summary-name">${t('deep-analysis-all-name')}</div>
+          <div class="deep-summary-meta">${t('deep-analysis-all-subtitle')}</div>
+        </div>
+        <div class="deep-all-list">
+          ${sortedOptions.map(item => {
+            const stats = getDeepAnalysisStats(entries, item.key);
+            return `
+              <div class="deep-all-row">
+                <div>
+                  <div class="deep-all-name">${escapeHtml(item.name)}</div>
+                  <div class="deep-summary-meta">${t('dashboard-count', { n: item.count })}</div>
+                </div>
+                <div class="deep-all-metrics">
+                  ${renderDeepCompactMetric('mood', 'deep-analysis-mood', stats.mood)}
+                  ${renderDeepCompactMetric('mastery', 'deep-analysis-mastery', stats.mastery)}
+                  ${renderDeepCompactMetric('pleasure', 'deep-analysis-pleasure', stats.pleasure)}
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }
+
+  function renderDeepAnalysisDetails(entries, selectedKey, selectedName) {
+    const stats = getDeepAnalysisStats(entries, selectedKey);
+
+    return `
+      <div class="deep-summary">
+        <div class="deep-summary-head">
+          <div class="deep-summary-name">${escapeHtml(selectedName)}</div>
+          <div class="deep-summary-meta">${t('deep-analysis-total', { n: stats.totalCount })}</div>
+        </div>
+        <div class="deep-metric-grid">
+          ${renderDeepMetricCard('mood', 'deep-analysis-mood', stats.mood, 'dashboard-empty-mood')}
+          ${renderDeepMetricCard('mastery', 'deep-analysis-mastery', stats.mastery, 'dashboard-empty-score')}
+          ${renderDeepMetricCard('pleasure', 'deep-analysis-pleasure', stats.pleasure, 'dashboard-empty-score')}
+        </div>
+      </div>`;
+  }
+
+  function renderDeepAnalysis(entries) {
+    const options = buildActivityOptions(entries);
+    if (!options.length) return '';
+
+    const SHOW_ALL_KEY = '__all__';
+    const stillExists = state.analysisActivityKey === SHOW_ALL_KEY || options.some(item => item.key === state.analysisActivityKey);
+    if (!state.analysisActivityKey || !stillExists) {
+      state.analysisActivityKey = SHOW_ALL_KEY;
+    }
+
+    const selected = options.find(item => item.key === state.analysisActivityKey);
+    const showAllSelected = state.analysisActivityKey === SHOW_ALL_KEY || !selected;
+
+    return `
+      <div class="deep-analysis">
+        <div class="deep-analysis-header">
+          <div class="deep-analysis-title">${t('deep-analysis-title')}</div>
+          <div class="deep-analysis-subtitle">${t('deep-analysis-subtitle')}</div>
+        </div>
+        <div class="deep-analysis-control">
+          <label for="deep-analysis-select">${t('deep-analysis-select')}</label>
+          <select class="deep-analysis-select" id="deep-analysis-select">
+            <option value="${SHOW_ALL_KEY}" ${showAllSelected ? 'selected' : ''}>${t('deep-analysis-show-all')}</option>
+            ${options.map(item => `
+              <option value="${escapeHtml(item.key)}" ${item.key === state.analysisActivityKey ? 'selected' : ''}>
+                ${escapeHtml(item.name)} · ${t('dashboard-count', { n: item.count })}
+              </option>`).join('')}
+          </select>
+        </div>
+        <div id="deep-analysis-result">
+          ${showAllSelected ? renderDeepAnalysisAll(entries, options) : renderDeepAnalysisDetails(entries, selected.key, selected.name)}
+        </div>
+      </div>`;
+  }
+
+
+  function attachDashboardSortHandler() {
+    const select = document.getElementById('dashboard-sort-select');
+    if (!select) return;
+
+    select.addEventListener('change', () => {
+      state.dashboardSort = select.value === 'final' ? 'final' : 'diff';
+      renderInsights();
+    });
+  }
+
+  function attachDeepAnalysisHandlers(entries) {
+    const select = document.getElementById('deep-analysis-select');
+    const result = document.getElementById('deep-analysis-result');
+    if (!select || !result) return;
+
+    const SHOW_ALL_KEY = '__all__';
+    const options = buildActivityOptions(entries);
+
+    select.addEventListener('change', () => {
+      state.analysisActivityKey = select.value;
+      if (select.value === SHOW_ALL_KEY) {
+        result.innerHTML = renderDeepAnalysisAll(entries, options);
+        return;
+      }
+
+      const selected = options.find(item => item.key === select.value);
+      if (!selected) return;
+      result.innerHTML = renderDeepAnalysisDetails(entries, selected.key, selected.name);
+    });
+  }
+
+
+
   function renderInsights() {
     const c = document.getElementById('insights-content');
     const completed = state.entries.filter(e => e.actMastery !== null);
@@ -4015,6 +5054,9 @@
     const avgActP = avg(completed.map(e => e.actPleasure));
     const mGap = avgActM - avgPredM;
     const pGap = avgActP - avgPredP;
+    const currentStreak = calculateCurrentStreak(completed);
+    const bestStreak = calculateBestStreak(completed);
+    const todayTracked = wasTodayTracked(completed);
 
     let insightKey;
     if (pGap > 1) insightKey = 'insight-pleasure-up';
@@ -4023,6 +5065,8 @@
     else if (mGap < -1) insightKey = 'insight-mastery-down';
     else insightKey = 'insight-neutral';
 
+    const liftDashboardBlock = renderLiftDashboard(completed);
+    const deepAnalysisBlock = renderDeepAnalysis(completed);
     const chartData = renderChartSvg(completed);
     const chartBlock = chartData ? `
       <div class="chart-container">
@@ -4074,6 +5118,14 @@
           <div class="stat-label">${t('stat-rated')}</div>
         </div>
         <div class="stat-card">
+          <div class="stat-num accent">${currentStreak}</div>
+          <div class="stat-label">${t('stat-current-streak') || 'CURRENT STREAK'} <span class="streak-fire ${todayTracked ? 'active' : 'inactive'}" title="${todayTracked ? 'Today tracked' : 'Today not tracked'}">🔥</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num accent">${bestStreak}</div>
+          <div class="stat-label">${t('stat-best-streak') || 'BEST STREAK'}</div>
+        </div>
+        <div class="stat-card">
           <div class="stat-num mastery">${avgActM.toFixed(1)}</div>
           <div class="stat-label">${t('stat-mastery')} ${avgPredM.toFixed(1)}</div>
         </div>
@@ -4082,6 +5134,10 @@
           <div class="stat-label">${t('stat-pleasure')} ${avgPredP.toFixed(1)}</div>
         </div>
       </div>
+
+      ${liftDashboardBlock}
+
+      ${deepAnalysisBlock}
 
       <div class="insight">
         <div class="insight-label">${t('insight-pattern')}</div>
@@ -4104,6 +5160,8 @@
       </p>
     `;
     attachDataActionHandlers();
+    attachDashboardSortHandler();
+    attachDeepAnalysisHandlers(completed);
     attachChartHover(chartData);
   }
 
@@ -4233,7 +5291,7 @@
   }
 
   function renderTooltipCard(entry) {
-    const ts = entry.completedAt || entry.scheduledAt || entry.createdAt;
+    const ts = entryStartTimestamp(entry);
     const d = new Date(ts);
     const dateStr = d.toLocaleDateString(currentLang === 'ka' ? 'ka-GE' : 'en-US', { month: 'short', day: 'numeric' });
     const h = d.getHours();
