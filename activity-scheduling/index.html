@@ -658,6 +658,67 @@
     margin: 0 auto;
   }
 
+  /* ===== Sample data welcome banner ===== */
+  .sample-banner {
+    background: linear-gradient(135deg, rgba(201, 169, 110, 0.12), rgba(125, 169, 154, 0.08));
+    border: 1px solid var(--accent-soft);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 18px;
+    position: relative;
+  }
+
+  .sample-banner-title {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .sample-banner-msg {
+    font-family: 'Fraunces', serif;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--ink-dim);
+    margin-bottom: 12px;
+  }
+
+  .sample-banner-action {
+    background: transparent;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .sample-banner-action:hover {
+    background: var(--danger);
+    color: var(--ink);
+  }
+  .sample-banner-action:active { transform: scale(0.97); }
+
+  /* Subtle "sample" tag on individual sample entries */
+  .entry.sample-entry {
+    position: relative;
+  }
+  .entry.sample-entry::before {
+    content: '✦';
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    font-size: 11px;
+    color: var(--accent-soft);
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
   /* Insights */
   .stat-grid {
     display: grid;
@@ -3151,6 +3212,19 @@
       'edit-title-mood-after': 'შემდგომი განწყობის რედაქტირება',
       'edit-title-company': 'ვისთან ერთად — რედაქტირება',
       'toast-edit-saved': 'შენახული.',
+
+      // === Sample data (first-launch onboarding) ===
+      'sample-banner-title': '👋 მოგესალმებით — ეს ნიმუშის მონაცემებია',
+      'sample-banner-msg': 'ეს 5 ჩანაწერი ავტომატურად დაემატა, რომ დაგეხმაროს გაიგო როგორ მუშაობს აპი. ნახე Insights გრაფიკი და Log სია. შეგიძლია წაშალო ისინი ღილაკით „ნიმუშის წაშლა" ან თითო-თითო ფანქრის გვერდით სამშლელი ღილაკით.',
+      'sample-banner-action': 'ნიმუშის წაშლა',
+      'sample-toast-removed': 'ნიმუშის ჩანაწერები წაიშალა.',
+      'sample-act-walk': '30-წუთიანი სიარული',
+      'sample-act-read': 'წიგნის კითხვა',
+      'sample-act-friend': 'მეგობართან საუბარი',
+      'sample-act-work': 'პროექტზე მუშაობა',
+      'sample-act-coffee': 'ყავაზე გასვლა',
+      'sample-alone': 'მარტო',
+      'sample-with-friend': 'მეგობართან',
     },
     ru: {
       'eyebrow': 'Поведенческая активация · по Д. Бернсу, MD',
@@ -3377,6 +3451,19 @@
       'edit-title-mood-after': 'Редактировать настроение после',
       'edit-title-company': 'Редактировать “с кем”',
       'toast-edit-saved': 'Сохранено.',
+
+      // === Sample data (first-launch onboarding) ===
+      'sample-banner-title': '👋 Добро пожаловать — это примеры данных',
+      'sample-banner-msg': 'Эти 5 записей добавлены автоматически, чтобы показать как работает приложение. Посмотри график в Insights и список в Log. Можешь удалить их кнопкой «Удалить примеры» или по одной — карандашиком и кнопкой удаления.',
+      'sample-banner-action': 'Удалить примеры',
+      'sample-toast-removed': 'Примеры удалены.',
+      'sample-act-walk': 'Прогулка 30 минут',
+      'sample-act-read': 'Чтение книги',
+      'sample-act-friend': 'Разговор с другом',
+      'sample-act-work': 'Работа над проектом',
+      'sample-act-coffee': 'Поход за кофе',
+      'sample-alone': 'один',
+      'sample-with-friend': 'с другом',
     },
     en: {
       'eyebrow': 'Behavioral Activation · After D. Burns, MD',
@@ -3606,6 +3693,19 @@
       'edit-title-mood-after': 'Edit Mood After',
       'edit-title-company': 'Edit With Whom',
       'toast-edit-saved': 'Saved.',
+
+      // === Sample data (first-launch onboarding) ===
+      'sample-banner-title': '👋 Welcome — these are sample entries',
+      'sample-banner-msg': 'These 5 entries were added automatically to help you see how the app works. Check out the chart on Insights and the list on Log. You can delete them all with the "Remove samples" button, or one-by-one with each entry\'s delete button.',
+      'sample-banner-action': 'Remove samples',
+      'sample-toast-removed': 'Sample entries removed.',
+      'sample-act-walk': '30-min walk',
+      'sample-act-read': 'Reading a book',
+      'sample-act-friend': 'Call with a friend',
+      'sample-act-work': 'Project work',
+      'sample-act-coffee': 'Coffee shop visit',
+      'sample-alone': 'alone',
+      'sample-with-friend': 'with a friend',
     }
   };
 
@@ -3703,6 +3803,7 @@
   // fall back to localStorage if it's unavailable or errors out.
   const STORAGE_KEY = 'ba_entries_v1';
   const TEMPLATES_KEY = 'ba_templates_v1';
+  const SAMPLE_SEEDED_KEY = 'ba_sample_seeded_v1';
   let useWindowStorage = !!(window.storage && typeof window.storage.set === 'function');
 
   function sortEntries() {
@@ -3912,6 +4013,127 @@
     }
     saveToLocalStorage();
     return true;
+  }
+
+  // ============ SAMPLE DATA (first-launch onboarding) ============
+  // Builds 5 illustrative entries scattered across the last ~5 days so
+  // beginners immediately see a populated Log, a meaningful Insights chart,
+  // a working streak, and dashboard rankings. Each entry is marked
+  // `isSample: true` so it can be styled and removed in bulk.
+  function buildSampleEntries() {
+    const now = Date.now();
+    const DAY = 86400000;
+    // Helper: build a timestamp N days ago at hour H
+    const at = (daysAgo, hour) => {
+      const d = new Date(now - daysAgo * DAY);
+      d.setHours(hour, 0, 0, 0);
+      return d.getTime();
+    };
+
+    // Curated mix: under-predicted (reality kinder than expected), accurate,
+    // over-predicted (reality lower than expected), and rising mood lift.
+    const samples = [
+      {
+        activityKey: 'sample-act-walk',
+        companyKey: 'sample-alone',
+        scheduledAt: at(4, 8),  // 4 days ago, 8 AM
+        predMastery: 50, predPleasure: 40,
+        actMastery: 70,  actPleasure: 75,
+        moodBefore: 40,  moodAfter: 65,
+      },
+      {
+        activityKey: 'sample-act-read',
+        companyKey: 'sample-alone',
+        scheduledAt: at(3, 21),
+        predMastery: 60, predPleasure: 65,
+        actMastery: 65,  actPleasure: 70,
+        moodBefore: 55,  moodAfter: 68,
+      },
+      {
+        activityKey: 'sample-act-friend',
+        companyKey: 'sample-with-friend',
+        scheduledAt: at(2, 19),
+        predMastery: 30, predPleasure: 45,
+        actMastery: 55,  actPleasure: 82,
+        moodBefore: 35,  moodAfter: 78,
+      },
+      {
+        activityKey: 'sample-act-work',
+        companyKey: 'sample-alone',
+        scheduledAt: at(1, 11),
+        predMastery: 80, predPleasure: 30,
+        actMastery: 75,  actPleasure: 45,
+        moodBefore: 50,  moodAfter: 55,
+      },
+      {
+        activityKey: 'sample-act-coffee',
+        companyKey: 'sample-alone',
+        scheduledAt: at(0, 10),
+        predMastery: 20, predPleasure: 55,
+        actMastery: 40,  actPleasure: 80,
+        moodBefore: 45,  moodAfter: 72,
+      },
+    ];
+
+    return samples.map((s, i) => ({
+      id: 'e_sample_' + (now + i) + '_' + Math.random().toString(36).slice(2, 6),
+      activity: t(s.activityKey),
+      company: t(s.companyKey),
+      predMastery: s.predMastery,
+      predPleasure: s.predPleasure,
+      actMastery: s.actMastery,
+      actPleasure: s.actPleasure,
+      moodBefore: s.moodBefore,
+      moodAfter: s.moodAfter,
+      createdAt: s.scheduledAt - 3600000, // "saved" an hour before scheduled
+      scheduledAt: s.scheduledAt,
+      completedAt: s.scheduledAt + 1800000, // "rated" 30 min after scheduled
+      isSample: true,
+    }));
+  }
+
+  async function seedSampleData() {
+    // Only seed on a truly fresh install:
+    // - no flag stored saying we've seeded before
+    // - no existing entries (so users who deleted samples never see them again)
+    let alreadySeeded = false;
+    try { alreadySeeded = !!localStorage.getItem(SAMPLE_SEEDED_KEY); } catch(_) {}
+    if (alreadySeeded) return;
+    if (state.entries.length > 0) {
+      // Existing user — mark flag so they don't suddenly get samples later
+      try { localStorage.setItem(SAMPLE_SEEDED_KEY, '1'); } catch(_) {}
+      return;
+    }
+
+    const samples = buildSampleEntries();
+    state.entries = samples.concat(state.entries);
+    sortEntries();
+
+    // Persist each sample to both storage layers
+    for (const s of samples) {
+      if (useWindowStorage) {
+        try { await window.storage.set('entry:' + s.id, JSON.stringify(s)); } catch(_) {}
+      }
+    }
+    saveToLocalStorage();
+
+    // Mark that we've seeded so we never do it again
+    try { localStorage.setItem(SAMPLE_SEEDED_KEY, '1'); } catch(_) {}
+  }
+
+  async function removeAllSampleEntries() {
+    const sampleIds = state.entries.filter(e => e.isSample).map(e => e.id);
+    if (sampleIds.length === 0) return;
+
+    state.entries = state.entries.filter(e => !e.isSample);
+    if (useWindowStorage) {
+      for (const id of sampleIds) {
+        try { await window.storage.delete('entry:' + id); } catch(_) {}
+      }
+    }
+    saveToLocalStorage();
+    renderLog();
+    showToast(t('sample-toast-removed'));
   }
 
   // ============ SCALES ============
@@ -4396,7 +4618,24 @@
         </div>`;
     }).join('');
 
-    c.innerHTML = stripHtml + `<div class="entries-scroll">${groupsHtml}</div>`;
+    // Sample-data welcome banner: render only when at least one entry is
+    // tagged as a sample (`isSample: true`). Users can remove all samples
+    // with one click via the banner's action button.
+    const hasSamples = state.entries.some(e => e.isSample);
+    const bannerHtml = hasSamples ? `
+      <div class="sample-banner">
+        <div class="sample-banner-title">${t('sample-banner-title')}</div>
+        <div class="sample-banner-msg">${t('sample-banner-msg')}</div>
+        <button class="sample-banner-action" data-action="remove-samples">${t('sample-banner-action')}</button>
+      </div>` : '';
+
+    c.innerHTML = bannerHtml + stripHtml + `<div class="entries-scroll">${groupsHtml}</div>`;
+
+    // Wire the "remove samples" button if it's present
+    const removeBtn = c.querySelector('[data-action="remove-samples"]');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', removeAllSampleEntries);
+    }
 
     // Wire chip taps -> set filter and re-render
     c.querySelectorAll('.date-chip').forEach(chip => {
@@ -4460,7 +4699,7 @@
       </div>`;
 
     return `
-      <div class="entry">
+      <div class="entry${e.isSample ? ' sample-entry' : ''}">
         <div class="entry-date">
           ${hourStr}${hint ? ' · ' : ''}${hintHtml}${e.company ? ' · ' + escapeHtml(e.company) : ''}
           ${pencilBtn('time', e.id)}
@@ -6064,8 +6303,12 @@
   // Apply translations on initial load (uses saved preference or default ka)
   applyTranslations();
 
-  loadEntries().then(() => {
-    // Ready
+  loadEntries().then(async () => {
+    // First-launch onboarding: seed 5 sample entries if this is a fresh
+    // install. seedSampleData() bails out automatically if the user has
+    // any existing data or has been seeded before, so it's safe to call
+    // every load.
+    await seedSampleData();
     // Re-render in case log/insights tab was active (it's not by default, but safe)
     applyTranslations();
   });
