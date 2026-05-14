@@ -18,8 +18,9 @@
     --ink-faint: #5c6259;
     --accent: #c9a96e;
     --accent-soft: #8a7548;
-    --pleasure: #d4a574;
-    --mastery: #7da99a;
+    --pleasure: #e08962;  /* warm coral / terracotta — distinct from mood */
+    --mastery: #6db4a3;   /* slightly cooler teal-green */
+    --mood: #a78bca;      /* soft lavender — clearly distinct from both */
     --border: #2d342f;
     --danger: #b86a5e;
   }
@@ -85,6 +86,13 @@
   }
 
   .container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px 20px;
+  }
+
+  /* The rate view lives outside .container so we mirror its sizing here */
+  #view-rate {
     max-width: 480px;
     margin: 0 auto;
     padding: 24px 20px;
@@ -384,6 +392,7 @@
 
   .total-num.pleasure { color: var(--pleasure); }
   .total-num.mastery { color: var(--mastery); }
+  .total-num.mood { color: var(--mood); }
 
   .total-num.empty { color: var(--ink-faint); }
 
@@ -407,6 +416,13 @@
     background: var(--mastery);
     color: #1a1f1c;
     border-color: var(--mastery);
+    font-weight: 600;
+  }
+
+  .scale-btn.selected.mood {
+    background: var(--mood);
+    color: #1a1f1c;
+    border-color: var(--mood);
     font-weight: 600;
   }
 
@@ -909,6 +925,1099 @@
   }
 
   .confirm-no:active, .confirm-yes:active { transform: scale(0.97); }
+
+  /* Three-button import choice modal */
+  .confirm-actions.import-three {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .confirm-actions.import-three button {
+    flex: 1 1 0;
+    min-width: 80px;
+    padding: 12px 8px;
+    font-size: 10px;
+  }
+
+  .import-merge {
+    flex: 1;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-soft);
+    color: var(--ink);
+    padding: 13px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .import-merge:active { transform: scale(0.97); }
+
+  /* ===== Mood slider ===== */
+  .mood-field {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .mood-field-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+
+  .mood-field-label .label-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  .mood-field-label .value {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  .mood-field-label .value.empty { color: var(--ink-faint); font-style: italic; font-size: 13px; font-family: 'JetBrains Mono', monospace; font-weight: 400; }
+
+  .mood-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: var(--bg-elevated);
+    border-radius: 3px;
+    outline: none;
+    background-image: linear-gradient(to right, var(--accent-soft) 0%, var(--accent-soft) 0%, var(--bg-elevated) 0%);
+  }
+
+  .mood-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 3px solid var(--bg);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  }
+
+  .mood-slider::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 3px solid var(--bg);
+  }
+
+  .mood-slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    margin-top: 6px;
+  }
+
+  /* ===== Templates ===== */
+  .templates-section {
+    margin-bottom: 20px;
+    padding: 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .templates-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .templates-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .templates-empty {
+    color: var(--ink-faint);
+    font-style: italic;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 4px 0;
+  }
+
+  .templates-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .template-chip {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--ink);
+    padding: 8px 12px 8px 14px;
+    border-radius: 999px;
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .template-chip:active { transform: scale(0.97); }
+  .template-chip:hover { border-color: var(--accent-soft); }
+
+  .template-chip .remove {
+    color: var(--ink-faint);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 4px;
+    margin-left: 2px;
+    border-left: 1px solid var(--border);
+    padding-left: 8px;
+  }
+
+  .template-chip .remove:hover { color: var(--danger); }
+
+  .save-template-btn {
+    background: transparent;
+    border: 1px dashed var(--border);
+    color: var(--ink-dim);
+    padding: 10px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 8px;
+    width: 100%;
+    transition: all 0.15s;
+  }
+
+  .save-template-btn:hover:not(:disabled) {
+    border-color: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .save-template-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .save-template-btn.saved {
+    color: var(--accent);
+    border-color: var(--accent-soft);
+    border-style: solid;
+  }
+
+  /* ===== Chart ===== */
+  .chart-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 14px 14px;
+    margin-bottom: 20px;
+  }
+
+  .chart-title {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ink);
+    margin-bottom: 6px;
+    padding: 0 4px;
+  }
+
+  .chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 14px;
+    padding: 0 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-dim);
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legend-swatch {
+    display: inline-block;
+    width: 14px;
+    height: 3px;
+    border-radius: 2px;
+  }
+  .legend-swatch.dashed { background-image: linear-gradient(to right, currentColor 50%, transparent 50%); background-size: 4px 100%; background-color: transparent !important; }
+
+  .chart-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Chart hover interaction */
+  .chart-svg .hover-zone {
+    fill: transparent;
+    cursor: crosshair;
+  }
+
+  .chart-svg .crosshair {
+    stroke: var(--accent);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s;
+  }
+
+  .chart-svg.has-hover .crosshair { opacity: 0.55; }
+
+  .chart-svg .hover-dot {
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+  .chart-svg.has-hover .hover-dot { opacity: 1; }
+
+  .chart-svg .hover-tag {
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+  .chart-svg.has-hover .hover-tag { opacity: 1; }
+
+  .chart-svg .hover-tag rect {
+    fill: var(--bg-elevated);
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+  .chart-svg .hover-tag text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    dominant-baseline: middle;
+  }
+
+  /* Tooltip card below the chart */
+  .chart-tooltip {
+    margin-top: 14px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-family: 'Fraunces', serif;
+    min-height: 70px;
+    transition: opacity 0.2s;
+  }
+
+  .chart-tooltip.empty {
+    text-align: center;
+    color: var(--ink-faint);
+    font-style: italic;
+    font-size: 12px;
+    padding: 18px;
+  }
+
+  .chart-tooltip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  .chart-tooltip-activity {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ink);
+    flex: 1;
+    word-break: break-word;
+  }
+
+  .chart-tooltip-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .chart-tooltip-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 14px;
+  }
+
+  .chart-tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 2px 0;
+  }
+
+  .chart-tooltip-row .label {
+    color: var(--ink-faint);
+    margin-right: 6px;
+  }
+
+  .chart-tooltip-row .val {
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .chart-tooltip-row .val.pleasure { color: var(--pleasure); }
+  .chart-tooltip-row .val.mastery  { color: var(--mastery); }
+  .chart-tooltip-row .val.mood     { color: var(--mood); }
+  .chart-tooltip-row .val.empty    { color: var(--ink-faint); font-style: italic; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 400; }
+
+  @media (min-width: 720px) {
+    .chart-tooltip { padding: 18px 20px; }
+    .chart-tooltip-activity { font-size: 18px; }
+  }
+
+  .chart-empty {
+    text-align: center;
+    color: var(--ink-faint);
+    font-style: italic;
+    font-size: 13px;
+    padding: 30px 16px;
+    line-height: 1.6;
+  }
+
+  /* ===== Data buttons (export/import) ===== */
+  .data-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 24px 0 16px;
+  }
+
+  .data-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--ink-dim);
+    padding: 12px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .data-btn:hover {
+    border-color: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .data-btn:active { transform: scale(0.97); }
+
+  /* ===== Entry mood display ===== */
+  .entry-mood-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .mood-bubble {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    padding: 7px 10px;
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 8px;
+    row-gap: 2px;
+    align-items: baseline;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .mood-bubble-label {
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    flex: 1 1 100%;
+    line-height: 1.3;
+  }
+
+  .mood-bubble-value {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--mood);
+  }
+
+  .mood-bubble-value.pending {
+    color: var(--ink-faint);
+    font-style: italic;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ===== Pencil edit button ===== */
+  .edit-pencil {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--ink-faint);
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    vertical-align: middle;
+  }
+
+  .edit-pencil:active { transform: scale(0.9); }
+  .edit-pencil svg { width: 11px; height: 11px; display: block; }
+
+  /* Header-level pencil (next to activity name / time) */
+  .edit-pencil.lg {
+    width: 26px;
+    height: 26px;
+  }
+  .edit-pencil.lg svg { width: 13px; height: 13px; }
+
+  /* Activity row with pencil */
+  .entry-activity-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .entry-activity-row .entry-activity {
+    margin-bottom: 0;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Pencil placement for metric rows */
+  .metric-values {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  /* Pencil placement for mood bubbles */
+  .mood-bubble .edit-pencil {
+    margin-left: 4px;
+    width: 20px;
+    height: 20px;
+  }
+  .mood-bubble .edit-pencil svg { width: 10px; height: 10px; }
+
+  /* Date row with pencil */
+  .entry-date {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .entry-date .edit-pencil {
+    margin-left: auto;
+  }
+
+  /* ===== Edit modal ===== */
+  .edit-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 250;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .edit-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .edit-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 22px 18px;
+    max-width: 480px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    transform: scale(0.95);
+    transition: transform 0.2s;
+  }
+
+  .edit-overlay.show .edit-box { transform: scale(1); }
+
+  .edit-title {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 19px;
+    color: var(--ink);
+    margin-bottom: 18px;
+    text-align: center;
+  }
+
+  .edit-body { margin-bottom: 18px; }
+
+  .edit-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .edit-actions button {
+    flex: 1;
+    padding: 13px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border);
+  }
+
+  .edit-actions .confirm-yes {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #161a17;
+    font-weight: 500;
+  }
+
+  /* Reuse pair/scale-group styles inside the edit modal */
+  .edit-body .pair {
+    margin-bottom: 0;
+    background: var(--bg-elevated);
+  }
+
+  .edit-body input[type="text"],
+  .edit-body select.time-select {
+    width: 100%;
+  }
+
+  .edit-body .time-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .edit-body .time-row select {
+    flex: 1;
+  }
+
+  /* ===== About / How-to-use view ===== */
+  #view-about .about-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: 26px;
+    color: var(--ink);
+    margin-bottom: 24px;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+
+  .about-section {
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  .about-section:last-of-type {
+    border-bottom: none;
+  }
+
+  .about-section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+    font-weight: 500;
+  }
+
+  .about-text {
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+
+  .about-text:last-child { margin-bottom: 0; }
+
+  .about-text em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .about-text strong {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .about-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .about-step {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    border-left: 3px solid var(--accent);
+  }
+
+  .about-step-num {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .about-step p {
+    font-family: 'Fraunces', serif;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .about-tips {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .about-tips li {
+    font-family: 'Fraunces', serif;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--ink);
+    padding: 10px 0 10px 22px;
+    position: relative;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  .about-tips li:last-child {
+    border-bottom: none;
+  }
+
+  .about-tips li::before {
+    content: '❦';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    color: var(--accent);
+    font-size: 13px;
+  }
+
+  .about-privacy {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .about-privacy .about-text {
+    font-size: 14px;
+    color: var(--ink-dim);
+  }
+
+  .about-attribution {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ink-faint);
+    text-align: center;
+    padding: 0 16px;
+    margin-top: 12px;
+  }
+
+  .about-attribution em {
+    color: var(--ink-dim);
+    font-style: italic;
+  }
+
+  /* ====================================================================
+     DESKTOP RESPONSIVE STYLES
+     Mobile-first design above is preserved. These queries adapt for
+     larger screens so the app doesn't look like a stretched phone app.
+     ==================================================================== */
+
+  /* --- Tablet / small desktop (720px+) --- */
+  @media (min-width: 720px) {
+    .container,
+    #view-rate {
+      max-width: 720px;
+      padding: 36px 32px;
+    }
+
+    body {
+      padding-bottom: 60px;
+    }
+
+    /* Header proportions for wider viewports */
+    header {
+      margin-bottom: 36px;
+      padding-top: 16px;
+    }
+
+    h1 {
+      font-size: 40px;
+      line-height: 1.05;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      max-width: 580px;
+    }
+
+    .attribution {
+      font-size: 12px;
+      max-width: 600px;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+    }
+
+    /* Tabs: a touch larger and roomier */
+    .tabs {
+      padding: 6px;
+      margin-bottom: 32px;
+    }
+
+    .tab {
+      padding: 12px 16px;
+      font-size: 12px;
+    }
+
+    /* Form fields with more breathing room */
+    .field {
+      margin-bottom: 24px;
+    }
+
+    input[type="text"], textarea, .time-select {
+      padding: 16px 18px;
+      font-size: 17px;
+    }
+
+    label {
+      font-size: 11px;
+    }
+
+    /* Scale pairs: more padding, slightly larger buttons */
+    .pair {
+      padding: 22px 20px;
+      margin-bottom: 20px;
+    }
+
+    .pair-title {
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+
+    .scale-row.tens { grid-template-columns: repeat(11, 1fr); gap: 6px; }
+    .scale-row.ones { grid-template-columns: repeat(10, 1fr); gap: 6px; }
+
+    .scale-btn {
+      font-size: 14px;
+      border-radius: 8px;
+    }
+
+    .scale-row.ones .scale-btn { font-size: 13px; }
+
+    .scale-sub-label {
+      font-size: 10px;
+    }
+
+    .total-display {
+      padding: 10px;
+      margin-top: 12px;
+    }
+
+    .total-num {
+      font-size: 24px;
+    }
+
+    /* Primary button */
+    button.primary {
+      padding: 18px;
+      font-size: 17px;
+      max-width: 380px;
+      margin-left: auto;
+      margin-right: auto;
+      display: block;
+    }
+
+    /* Templates */
+    .templates-section { padding: 18px 20px; }
+    .template-chip { padding: 9px 14px 9px 16px; font-size: 14px; }
+    .template-chip .remove { font-size: 16px; padding-left: 10px; }
+
+    /* Log entries: more horizontal breathing room */
+    .entry {
+      padding: 22px 22px;
+      margin-bottom: 14px;
+    }
+
+    .entry-activity {
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    .entry-grid {
+      gap: 14px;
+    }
+
+    .metric {
+      padding: 12px 14px;
+    }
+
+    .actual-p, .actual-m {
+      font-size: 20px;
+    }
+
+    .entry-mood-row {
+      gap: 12px;
+    }
+
+    .mood-bubble {
+      padding: 9px 12px;
+    }
+
+    .mood-bubble-value {
+      font-size: 18px;
+    }
+
+    /* Entry actions: don't stretch to full width on desktop */
+    .entry-actions button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px 16px;
+    }
+
+    /* Insights stat grid */
+    .stat-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .stat-card {
+      padding: 18px;
+    }
+
+    .stat-num {
+      font-size: 32px;
+    }
+
+    /* Chart: more vertical room on wider screens */
+    .chart-container {
+      padding: 22px 20px 18px;
+    }
+
+    .chart-svg {
+      max-height: 280px;
+    }
+
+    /* Date strip: chips a touch larger */
+    .date-chip {
+      padding: 12px 18px;
+      min-width: 92px;
+    }
+
+    .date-chip-label {
+      font-size: 13px;
+    }
+
+    /* Toast */
+    .toast {
+      font-size: 16px;
+      padding: 16px 32px;
+    }
+  }
+
+  /* --- Wide desktop (960px+): two-column layouts --- */
+  @media (min-width: 960px) {
+    .container,
+    #view-rate {
+      max-width: 980px;
+      padding: 48px 40px;
+    }
+
+    /* New tab: form on the left, prediction scales on the right.
+       Gated on .active so the view still hides when another tab is selected. */
+    #view-new.active {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    /* Templates span both columns at the top */
+    #view-new .templates-section {
+      grid-column: 1 / -1;
+    }
+
+    /* Save button + footer text span both columns at the bottom */
+    #view-new > .primary,
+    #view-new > .ornament,
+    #view-new > .subtitle {
+      grid-column: 1 / -1;
+    }
+
+    /* The save button shouldn't be too wide on desktop */
+    #view-new > .primary {
+      max-width: 320px;
+    }
+
+    /* Rate view: activity + mood scales on left, mastery/pleasure on right.
+       Rate view uses inline display:block when shown, so target both states. */
+    #view-rate.active,
+    #view-rate[style*="display: block"] {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    /* The activity display and the two action buttons span both columns */
+    #view-rate > .field:first-child,
+    #view-rate > .primary,
+    #view-rate > .ghost {
+      grid-column: 1 / -1;
+    }
+
+    #view-rate > .primary,
+    #view-rate > .ghost {
+      max-width: 320px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* The log and insights tabs stay single-column but get a wider container */
+
+    /* About view: 2x2 grid for the four steps on wide screens */
+    #view-about .about-steps {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    #view-about .about-title {
+      font-size: 32px;
+      margin-bottom: 32px;
+    }
+
+    /* Date strip becomes more spacious */
+    .date-strip {
+      gap: 10px;
+    }
+
+    /* Header */
+    h1 {
+      font-size: 48px;
+    }
+  }
+
+  /* --- Extra-wide desktop (1200px+) --- */
+  @media (min-width: 1200px) {
+    .container,
+    #view-rate {
+      max-width: 1100px;
+    }
+
+    /* On very wide screens, allow chart to be even taller */
+    .chart-svg {
+      max-height: 340px;
+    }
+  }
+
+  /* Cursor feedback: only on devices with real hover (skip mobile) */
+  @media (hover: hover) and (pointer: fine) {
+    .scale-btn:hover {
+      border-color: var(--accent-soft);
+    }
+
+    .tab:not(.active):hover {
+      color: var(--ink);
+    }
+
+    .entry-actions button:hover {
+      border-color: var(--accent-soft);
+    }
+
+    button.primary:hover:not(:disabled) {
+      filter: brightness(1.08);
+    }
+
+    .date-chip:hover {
+      border-color: var(--accent-soft);
+    }
+
+    .time-preset:hover {
+      border-color: var(--accent-soft);
+      color: var(--accent);
+    }
+  }
 </style>
 </head>
 <body>
@@ -928,13 +2037,23 @@
     <button class="tab active" data-view="new" data-i18n="tab-new"></button>
     <button class="tab" data-view="log" data-i18n="tab-log"></button>
     <button class="tab" data-view="insights" data-i18n="tab-insights"></button>
+    <button class="tab" data-view="about" data-i18n="tab-about"></button>
   </div>
 
   <!-- NEW ENTRY -->
   <div class="view active" id="view-new">
+    <!-- Templates / Quick Add -->
+    <div class="templates-section">
+      <div class="templates-header">
+        <span class="templates-label" data-i18n="label-templates"></span>
+      </div>
+      <div id="templates-list-container"></div>
+    </div>
+
     <div class="field">
       <label data-i18n="label-activity"></label>
       <input type="text" id="activity" data-i18n-placeholder="ph-activity" autocomplete="off">
+      <button type="button" class="save-template-btn" id="save-template-btn" disabled data-i18n="btn-save-template"></button>
     </div>
 
     <div class="field">
@@ -1001,6 +2120,63 @@
     <div id="insights-content"></div>
   </div>
 
+  <!-- ABOUT / HOW-TO -->
+  <div class="view" id="view-about">
+    <h2 class="about-title" data-i18n="about-title"></h2>
+
+    <section class="about-section">
+      <h3 class="about-section-title" data-i18n="about-intro-title"></h3>
+      <p class="about-text" data-i18n-html="about-intro-p1"></p>
+      <p class="about-text" data-i18n="about-intro-p2"></p>
+    </section>
+
+    <section class="about-section">
+      <h3 class="about-section-title" data-i18n="about-method-title"></h3>
+      <p class="about-text" data-i18n-html="about-method-p1"></p>
+      <p class="about-text" data-i18n="about-method-p2"></p>
+    </section>
+
+    <section class="about-section">
+      <h3 class="about-section-title" data-i18n="about-howto-title"></h3>
+      <div class="about-steps">
+        <div class="about-step">
+          <div class="about-step-num" data-i18n="about-step1-title"></div>
+          <p data-i18n="about-step1-p"></p>
+        </div>
+        <div class="about-step">
+          <div class="about-step-num" data-i18n="about-step2-title"></div>
+          <p data-i18n="about-step2-p"></p>
+        </div>
+        <div class="about-step">
+          <div class="about-step-num" data-i18n="about-step3-title"></div>
+          <p data-i18n="about-step3-p"></p>
+        </div>
+        <div class="about-step">
+          <div class="about-step-num" data-i18n="about-step4-title"></div>
+          <p data-i18n="about-step4-p"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="about-section">
+      <h3 class="about-section-title" data-i18n="about-tips-title"></h3>
+      <ul class="about-tips">
+        <li data-i18n="about-tip1"></li>
+        <li data-i18n="about-tip2"></li>
+        <li data-i18n="about-tip3"></li>
+        <li data-i18n="about-tip4"></li>
+      </ul>
+    </section>
+
+    <section class="about-section about-privacy">
+      <h3 class="about-section-title" data-i18n="about-privacy-title"></h3>
+      <p class="about-text" data-i18n="about-privacy-p"></p>
+    </section>
+
+    <div class="ornament">· · ·</div>
+    <p class="about-attribution" data-i18n-html="about-attribution"></p>
+  </div>
+
   <footer class="footer-credit">
     <div class="footer-line">❦</div>
     <div data-i18n="footer-1"></div>
@@ -1025,11 +2201,68 @@
   </div>
 </div>
 
+<!-- Edit modal: in-place edit of a single entry field -->
+<div class="edit-overlay" id="edit-overlay">
+  <div class="edit-box">
+    <div class="edit-title" id="edit-title"></div>
+    <div class="edit-body" id="edit-body"></div>
+    <div class="edit-actions">
+      <button class="confirm-no" id="edit-cancel" data-i18n="btn-cancel"></button>
+      <button class="confirm-yes" id="edit-save"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Import choice modal: cancel / merge / replace -->
+<div class="confirm-overlay" id="import-choice-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">❦</div>
+    <div class="confirm-message" id="import-choice-message"></div>
+    <div class="confirm-actions import-three">
+      <button class="confirm-no" id="import-choice-cancel" data-i18n="btn-cancel"></button>
+      <button class="import-merge" id="import-choice-merge" data-i18n="btn-merge"></button>
+      <button class="confirm-yes" id="import-choice-replace" data-i18n="btn-replace"></button>
+    </div>
+  </div>
+</div>
+
 <!-- Rate modal (hidden form, reuses main view) -->
 <div class="view" id="view-rate" style="display:none;">
   <div class="field">
     <label data-i18n="label-activity"></label>
     <div id="rate-activity" style="font-size: 18px; padding: 14px 16px; background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border);"></div>
+  </div>
+
+  <!-- Mood Before -->
+  <div class="pair">
+    <div class="pair-title"><span class="quill">❦</span><span data-i18n="label-mood-before"></span></div>
+    <div class="scale-group">
+      <div>
+        <div class="scale-sub-label" data-i18n="sub-tens"></div>
+        <div class="scale-row tens" data-scale="mood-before" data-part="tens"></div>
+      </div>
+      <div>
+        <div class="scale-sub-label" data-i18n="sub-ones"></div>
+        <div class="scale-row ones" data-scale="mood-before" data-part="ones"></div>
+      </div>
+    </div>
+    <div class="total-display"><span class="total-label" data-i18n="total-label"></span><span class="total-num empty" data-total="mood-before">—</span></div>
+  </div>
+
+  <!-- Mood After -->
+  <div class="pair">
+    <div class="pair-title"><span class="quill">❦</span><span data-i18n="label-mood-after"></span></div>
+    <div class="scale-group">
+      <div>
+        <div class="scale-sub-label" data-i18n="sub-tens"></div>
+        <div class="scale-row tens" data-scale="mood-after" data-part="tens"></div>
+      </div>
+      <div>
+        <div class="scale-sub-label" data-i18n="sub-ones"></div>
+        <div class="scale-row ones" data-scale="mood-after" data-part="ones"></div>
+      </div>
+    </div>
+    <div class="total-display"><span class="total-label" data-i18n="total-label"></span><span class="total-num empty" data-total="mood-after">—</span></div>
   </div>
 
   <div class="pair">
@@ -1065,6 +2298,9 @@
   <button class="primary" id="save-rating-btn" disabled data-i18n="btn-save-rating"></button>
   <button class="ghost" id="cancel-rating-btn" style="margin-top: 10px;" data-i18n="btn-cancel"></button>
 </div>
+
+<!-- Hidden file input for JSON import -->
+<input type="file" id="import-file-input" accept=".json,application/json" style="display:none;">
 
 <script>
   // ============ I18N ============
@@ -1159,6 +2395,96 @@
       'short-today': 'დღეს',
       'short-yest': 'გუშინ',
       'short-tmrw': 'ხვალ',
+
+      // === New features ===
+      // Mood
+      'label-mood-before': 'განწყობა მანამდე',
+      'label-mood-after': 'განწყობა შემდეგ',
+      'mood-pending': 'არ შეფასებულა',
+      'mood-low': 'დაბალი',
+      'mood-high': 'მაღალი',
+
+      // Templates
+      'label-templates': 'სწრაფი წვდომა',
+      'templates-empty': 'არ არის შენახული შაბლონები. შეგიძლია „შენახვა შაბლონად" აქტივობის ჩამოწერის შემდეგ.',
+      'btn-save-template': 'შაბლონის შენახვა',
+      'btn-template-saved': '✓ შენახულია',
+      'toast-template-saved': 'შაბლონი დაემატა.',
+      'toast-template-removed': 'შაბლონი წაშლილია.',
+      'template-delete-confirm': 'წავშალო ეს შაბლონი?',
+
+      // Chart
+      'chart-title': 'პროგნოზი vs რეალური (ბოლო 7 დღე)',
+      'chart-empty': 'მინიმუმ 2 შეფასებული აქტივობაა საჭირო გრაფიკისთვის.',
+      'chart-predicted': 'პროგნოზი',
+      'chart-actual': 'რეალური',
+      'chart-pleasure': 'სიამოვნება',
+      'chart-mastery': 'ოსტატობა',
+      'chart-mood-before': 'განწყობა მანამდე',
+      'chart-mood-after': 'განწყობა შემდეგ',
+      'chart-hover-hint': 'გადაატარე კურსორი გრაფიკზე ცალკეული ჩანაწერების სანახავად',
+      'chart-pred-short': 'პროგ.',
+      'chart-act-short': 'რეალ.',
+
+      // Export / Import
+      'btn-export': 'მონაცემების ექსპორტი',
+      'btn-import': 'მონაცემების იმპორტი',
+      'btn-data': 'მონაცემები',
+      'toast-exported': 'ფაილი ჩამოიტვირთა.',
+      'toast-imported': '{n} ჩანაწერი იმპორტირებულია.',
+      'toast-import-failed': 'იმპორტი ვერ მოხერხდა. შეამოწმე ფაილის ფორმატი.',
+      'import-confirm': 'იმპორტი დაამატებს ჩანაწერებს არსებულზე. გავაგრძელო?',
+
+      // === About / How-to-use screen ===
+      'tab-about': 'შესახებ',
+      'about-title': 'როგორ გამოვიყენო ეს ხელსაწყო',
+      'about-intro-title': 'რა არის სიამოვნების პროგნოზის ფურცელი?',
+      'about-intro-p1': 'ეს არის ხელსაწყო, რომელიც აღწერილია დევიდ ბერნზის წიგნში <em>The Feeling Good Handbook</em>. იგი ეფუძნება ცნობილ ფსიქოლოგიურ აღმოჩენას: დეპრესიულ ან ჩაკეტილ მდგომარეობაში მყოფი ადამიანების გონება სისტემატურად ცდუნებაში აგდებს მათ, ეუბნება რა, რომ მომავალი აქტივობა არ მოიტანს არც სიამოვნებას, არც წარმატების შეგრძნებას. ეს არის ფსიქოლოგიური ფილტრი, არა რეალობა.',
+      'about-intro-p2': 'ფურცელი გვაძლევს მტკიცებულებას. ჯერ თქვი რას მოგცემს აქტივობა (პროგნოზი), შემდეგ გააკეთე და შეაფასე რეალური გამოცდილება. დროთა განმავლობაში დაინახავ, რომ რეალობა შენი მოლოდინისგან განსხვავდება — ხშირად მისგან უკეთესია.',
+
+      'about-method-title': 'რატომ მუშაობს',
+      'about-method-p1': 'ეს არის <strong>ქცევითი აქტივაცია (Behavioral Activation)</strong> — CBT-ის ერთ-ერთი ყველაზე ემპირიულად დადასტურებული მეთოდი დეპრესიის სამკურნალოდ. იდეა მარტივია: ნუ დაელოდები ხასიათის გაუმჯობესებას, რომ რამე გააკეთო. გააკეთე, შემდეგ ხასიათი გაუმჯობესდება.',
+      'about-method-p2': 'პროგნოზის რეალურთან შედარება გვაჩვენებს, რომ ჩვენი გონების უარყოფითი წინასწარმეტყველებები არ არის სიმართლე — ეს არის შემეცნებითი დამახინჯება (cognitive distortion). უმეტესობა ჩვენგანი დაბლა აფასებს იმას, რასაც სინამდვილეში ვისიამოვნებთ.',
+
+      'about-howto-title': 'როგორ ვისარგებლო',
+      'about-step1-title': '1. ახალი',
+      'about-step1-p': 'ჩაწერე აქტივობა, რომელსაც აპირებ. დაგეგმე დრო. შემდეგ წინასწარ შეაფასე ოსტატობა (რამდენად კარგად გააკეთებ ან რამდენი მნიშვნელობის შეგრძნებას მოგცემს) და სიამოვნება (რამდენი სიამოვნება გექნება). ორივე — 0-დან 100-მდე.',
+      'about-step2-title': '2. გააკეთე',
+      'about-step2-p': 'წადი და გააკეთე აქტივობა. არ ცადო ხასიათის ცვლილების მიღწევა წინასწარ — უბრალოდ გააკეთე.',
+      'about-step3-title': '3. ისტორია (შეფასება)',
+      'about-step3-p': 'დაბრუნდი და დააწექი „რეალურის შეფასება". შეაფასე რა მოხდა სინამდვილეში: რეალური ოსტატობა, რეალური სიამოვნება, ასევე განწყობა მანამდე და შემდეგ. ფანქარის ღილაკით შეგიძლია ნებისმიერი მნიშვნელობის შესწორება.',
+      'about-step4-title': '4. ანალიზი',
+      'about-step4-p': 'დაინახე კანონზომიერებები: სად ცდუნდება შენი გონება, რომელი აქტივობები აუმჯობესებენ ხასიათს, რა იყო შენი მცდარი მოლოდინი. ეს მონაცემები არის შენი მთავარი ხელსაწყო.',
+
+      'about-tips-title': 'რჩევები',
+      'about-tip1': 'იყავი მართალი. ნუ შეცვლი წინასწარ პროგნოზს მას შემდეგ, რაც გააკეთე — ეს ანადგურებს ხელსაწყოს მთელ აზრს.',
+      'about-tip2': 'დაიწყე პატარა აქტივობებით. ერთი 10-წუთიანი სიარული უკვე საკმარისია.',
+      'about-tip3': 'რეგულარულობა მონაცემზე უფრო მნიშვნელოვანია, ვიდრე სრულყოფა. დღეში ერთი ჩანაწერი 2 კვირის განმავლობაში გიჩვენებს კანონზომიერებებს.',
+      'about-tip4': 'არ მიიჩნიო ეს მკურნალობად. ეს არის თვითრეფლექსიის ხელსაწყო. თუ გრძნობ მძიმე დეპრესიას ან აღმოაჩენ თვითდამაზიანებელ ფიქრებს — დაუკავშირდი პროფესიონალს.',
+
+      'about-privacy-title': 'შენი მონაცემები',
+      'about-privacy-p': 'ყველაფერი ინახება მხოლოდ შენს მოწყობილობაზე. არცერთი ჩანაწერი არ იგზავნება სერვერზე ან რომელიმე სხვა ადგილას. შეგიძლია ნებისმიერ დროს გააკეთო ექსპორტი (Backup) ან გაასუფთავო ბრაუზერის მონაცემები ყველაფრის წასაშლელად.',
+      'about-attribution': 'ეფუძნება დევიდ დ. ბერნზის, MD, წიგნს <em>The Feeling Good Handbook</em>. ეს არის პირადი თვითრეფლექსიის ხელსაწყო და არ ცვლის პროფესიონალურ ფსიქოლოგიურ მკურნალობას.',
+      'import-choose-title': 'როგორ მოვახდინო იმპორტი?',
+      'import-choose-msg': '{n} ჩანაწერი ნაპოვნია ფაილში. გსურს გაერთიანდეს არსებულ მონაცემებთან, თუ ჩაანაცვლოს ისინი?',
+      'btn-merge': 'გაერთიანება',
+      'btn-replace': 'ჩანაცვლება',
+      'replace-confirm': 'ჩანაცვლება წაშლის ყველა არსებულ ჩანაწერს და დაამატებს მხოლოდ ფაილში არსებულებს. დარწმუნებული ხარ?',
+      'toast-imported-merged': 'გაერთიანდა {n} ჩანაწერი.',
+      'toast-imported-replaced': 'ჩანაცვლდა {n} ჩანაწერით.',
+
+      // === Edit ===
+      'edit-save': 'შენახვა',
+      'edit-title-activity': 'აქტივობის რედაქტირება',
+      'edit-title-time': 'დროის რედაქტირება',
+      'edit-title-pred-mastery': 'პროგ. ოსტატობის რედაქტირება',
+      'edit-title-pred-pleasure': 'პროგ. სიამოვნების რედაქტირება',
+      'edit-title-act-mastery': 'რეალური ოსტატობის რედაქტირება',
+      'edit-title-act-pleasure': 'რეალური სიამოვნების რედაქტირება',
+      'edit-title-mood-before': 'წინა განწყობის რედაქტირება',
+      'edit-title-mood-after': 'შემდგომი განწყობის რედაქტირება',
+      'edit-title-company': 'ვისთან ერთად — რედაქტირება',
+      'toast-edit-saved': 'შენახული.',
     },
     en: {
       'eyebrow': 'Behavioral Activation · After D. Burns, MD',
@@ -1250,6 +2576,92 @@
       'short-today': 'Today',
       'short-yest': 'Yest',
       'short-tmrw': 'Tmrw',
+
+      // === New features ===
+      'label-mood-before': 'Mood Before',
+      'label-mood-after': 'Mood After',
+      'mood-pending': 'not rated',
+      'mood-low': 'Low',
+      'mood-high': 'High',
+
+      'label-templates': 'Quick Add',
+      'templates-empty': 'No saved templates yet. After typing an activity, tap "Save as Template".',
+      'btn-save-template': 'Save as Template',
+      'btn-template-saved': '✓ Saved',
+      'toast-template-saved': 'Template saved.',
+      'toast-template-removed': 'Template removed.',
+      'template-delete-confirm': 'Remove this template?',
+
+      'chart-title': 'Predicted vs Actual (Last 7 Days)',
+      'chart-empty': 'Need at least 2 rated entries to draw a chart.',
+      'chart-predicted': 'Predicted',
+      'chart-actual': 'Actual',
+      'chart-pleasure': 'Pleasure',
+      'chart-mastery': 'Mastery',
+      'chart-mood-before': 'Mood Before',
+      'chart-mood-after': 'Mood After',
+      'chart-hover-hint': 'Hover over the chart to see individual entries',
+      'chart-pred-short': 'Pred.',
+      'chart-act-short': 'Actual',
+
+      'btn-export': 'Export Data',
+      'btn-import': 'Import Data',
+      'btn-data': 'Data',
+      'toast-exported': 'File downloaded.',
+      'toast-imported': '{n} entries imported.',
+      'toast-import-failed': 'Import failed. Check the file format.',
+      'import-confirm': 'Import will merge entries into existing data. Continue?',
+
+      // === About / How-to-use screen ===
+      'tab-about': 'About',
+      'about-title': 'How to Use This Tool',
+      'about-intro-title': 'What is the Pleasure-Predicting Sheet?',
+      'about-intro-p1': 'This is a tool described in David Burns\' book <em>The Feeling Good Handbook</em>. It is based on a well-known psychological finding: when people feel depressed or stuck, their minds systematically deceive them, predicting that future activities will bring neither pleasure nor a sense of accomplishment. That is a psychological filter, not reality.',
+      'about-intro-p2': 'This sheet provides evidence. First you predict what an activity will deliver, then you do it and rate the actual experience. Over time you\'ll see that reality differs from your expectations — often for the better.',
+
+      'about-method-title': 'Why It Works',
+      'about-method-p1': 'This is <strong>Behavioral Activation (BA)</strong> — one of the most empirically supported CBT techniques for treating depression. The idea is simple: don\'t wait for your mood to improve before doing things. Do them, and mood follows.',
+      'about-method-p2': 'Comparing prediction with reality shows you that your mind\'s negative forecasts aren\'t truth — they\'re a cognitive distortion. Most of us systematically underestimate how much we\'ll actually enjoy or accomplish.',
+
+      'about-howto-title': 'How to Use It',
+      'about-step1-title': '1. New',
+      'about-step1-p': 'Write down the activity you\'re planning. Schedule a time. Then predict mastery (how well you\'ll do it, or how much sense of accomplishment it will bring) and pleasure (how much you\'ll enjoy it). Both on a 0–100 scale.',
+      'about-step2-title': '2. Do It',
+      'about-step2-p': 'Go and do the activity. Don\'t try to change your mood beforehand — just do it.',
+      'about-step3-title': '3. Log (Rate Actual)',
+      'about-step3-p': 'Come back and tap "Rate Actual." Record what actually happened: real mastery, real pleasure, plus your mood before and after. The pencil button lets you edit any value at any time.',
+      'about-step4-title': '4. Insights',
+      'about-step4-p': 'See patterns: where your mind deceives you, which activities improve your mood, what your false expectations were. This data is your main tool.',
+
+      'about-tips-title': 'Tips',
+      'about-tip1': 'Be honest. Don\'t change your prediction after you\'ve done the activity — that destroys the entire point of the tool.',
+      'about-tip2': 'Start with small activities. One 10-minute walk is already enough.',
+      'about-tip3': 'Consistency matters more than perfection. One entry per day for 2 weeks will show you patterns.',
+      'about-tip4': 'Don\'t treat this as treatment. It\'s a self-reflection tool. If you\'re experiencing severe depression or notice self-harming thoughts, contact a professional.',
+
+      'about-privacy-title': 'Your Data',
+      'about-privacy-p': 'Everything stays on your device. No entry is sent to a server or anywhere else. You can export a backup any time, or clear your browser data to wipe everything.',
+      'about-attribution': 'Based on <em>The Feeling Good Handbook</em> by David D. Burns, MD. This is a personal self-reflection tool and is not a substitute for professional mental health care.',
+      'import-choose-title': 'How should we import?',
+      'import-choose-msg': 'Found {n} entries in the file. Merge them into your existing data, or replace everything?',
+      'btn-merge': 'Merge',
+      'btn-replace': 'Replace',
+      'replace-confirm': 'Replace will delete all existing entries and load only those from the file. Are you sure?',
+      'toast-imported-merged': '{n} entries merged.',
+      'toast-imported-replaced': 'Replaced with {n} entries.',
+
+      // === Edit ===
+      'edit-save': 'Save',
+      'edit-title-activity': 'Edit Activity',
+      'edit-title-time': 'Edit Time',
+      'edit-title-pred-mastery': 'Edit Predicted Mastery',
+      'edit-title-pred-pleasure': 'Edit Predicted Pleasure',
+      'edit-title-act-mastery': 'Edit Actual Mastery',
+      'edit-title-act-pleasure': 'Edit Actual Pleasure',
+      'edit-title-mood-before': 'Edit Mood Before',
+      'edit-title-mood-after': 'Edit Mood After',
+      'edit-title-company': 'Edit With Whom',
+      'toast-edit-saved': 'Saved.',
     }
   };
 
@@ -1296,6 +2708,9 @@
       populateDaySelect();
       document.getElementById('scheduled-day').value = currentVal;
     }
+    // Re-render templates list and refresh save-template button label
+    if (typeof renderTemplates === 'function') renderTemplates();
+    if (typeof updateSaveTemplateBtn === 'function') updateSaveTemplateBtn();
   }
 
   function setLang(lang) {
@@ -1318,8 +2733,11 @@
       'pred-pleasure': { tens: null, ones: null },
       'act-mastery':   { tens: null, ones: null },
       'act-pleasure':  { tens: null, ones: null },
+      'mood-before':   { tens: null, ones: null },
+      'mood-after':    { tens: null, ones: null },
     },
     entries: [],
+    templates: [],
     ratingEntryId: null,
     logFilterDate: null, // null = show all dates; otherwise a day-start timestamp (ms)
   };
@@ -1337,6 +2755,7 @@
   // Try window.storage first (Claude persistent storage across sessions);
   // fall back to localStorage if it's unavailable or errors out.
   const STORAGE_KEY = 'ba_entries_v1';
+  const TEMPLATES_KEY = 'ba_templates_v1';
   let useWindowStorage = !!(window.storage && typeof window.storage.set === 'function');
 
   function sortEntries() {
@@ -1408,6 +2827,119 @@
     }
   }
 
+  // ============ TEMPLATES ============
+  function loadTemplates() {
+    try {
+      const raw = localStorage.getItem(TEMPLATES_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) state.templates = parsed;
+      }
+    } catch(e) { /* ignore */ }
+  }
+
+  function saveTemplates() {
+    try {
+      localStorage.setItem(TEMPLATES_KEY, JSON.stringify(state.templates));
+      return true;
+    } catch(e) {
+      return false;
+    }
+  }
+
+  function addTemplate(activityText) {
+    const trimmed = activityText.trim();
+    if (!trimmed) return false;
+    // Don't duplicate
+    if (state.templates.some(t => t.toLowerCase() === trimmed.toLowerCase())) return false;
+    state.templates.unshift(trimmed);
+    // Cap at 20 templates to prevent runaway
+    if (state.templates.length > 20) state.templates = state.templates.slice(0, 20);
+    saveTemplates();
+    return true;
+  }
+
+  function removeTemplate(activityText) {
+    state.templates = state.templates.filter(t => t !== activityText);
+    saveTemplates();
+  }
+
+  function isTemplate(activityText) {
+    const trimmed = activityText.trim().toLowerCase();
+    return state.templates.some(t => t.toLowerCase() === trimmed);
+  }
+
+  function renderTemplates() {
+    const container = document.getElementById('templates-list-container');
+    if (!container) return;
+    if (state.templates.length === 0) {
+      container.innerHTML = `<div class="templates-empty">${t('templates-empty')}</div>`;
+      return;
+    }
+    container.innerHTML = `<div class="templates-list">${
+      state.templates.map((tpl, i) =>
+        `<div class="template-chip" data-tpl-index="${i}">
+          <span class="template-text">${escapeHtml(tpl)}</span>
+          <span class="remove" data-tpl-remove="${i}">×</span>
+        </div>`
+      ).join('')
+    }</div>`;
+
+    // Wire up tap-to-fill and remove
+    container.querySelectorAll('.template-chip').forEach(chip => {
+      chip.addEventListener('click', (ev) => {
+        // If remove was clicked, handle separately
+        if (ev.target.dataset.tplRemove !== undefined) {
+          ev.stopPropagation();
+          handleRemoveTemplate(parseInt(ev.target.dataset.tplRemove));
+          return;
+        }
+        const idx = parseInt(chip.dataset.tplIndex);
+        const activityInput = document.getElementById('activity');
+        if (activityInput && state.templates[idx]) {
+          activityInput.value = state.templates[idx];
+          activityInput.dispatchEvent(new Event('input'));
+          showToast(state.templates[idx]);
+          activityInput.focus();
+        }
+      });
+    });
+  }
+
+  async function handleRemoveTemplate(index) {
+    const tpl = state.templates[index];
+    if (!tpl) return;
+    const ok = await showConfirm(t('template-delete-confirm'));
+    if (!ok) return;
+    removeTemplate(tpl);
+    renderTemplates();
+    updateSaveTemplateBtn();
+    showToast(t('toast-template-removed'));
+  }
+
+  function updateSaveTemplateBtn() {
+    const btn = document.getElementById('save-template-btn');
+    if (!btn) return;
+    const activityInput = document.getElementById('activity');
+    if (!activityInput) return;
+    const val = activityInput.value.trim();
+    if (!val) {
+      btn.disabled = true;
+      btn.classList.remove('saved');
+      btn.textContent = t('btn-save-template');
+      return;
+    }
+    if (isTemplate(val)) {
+      btn.disabled = true;
+      btn.classList.add('saved');
+      btn.textContent = t('btn-template-saved');
+    } else {
+      btn.disabled = false;
+      btn.classList.remove('saved');
+      btn.textContent = t('btn-save-template');
+    }
+  }
+
   async function saveEntry(entry) {
     // Update in-memory list first
     const idx = state.entries.findIndex(e => e.id === entry.id);
@@ -1446,7 +2978,9 @@
   // ============ SCALES ============
   function buildScale(container, key, part) {
     container.innerHTML = '';
-    const color = key.includes('mastery') ? 'mastery' : 'pleasure';
+    const color = key.startsWith('mood-') ? 'mood'
+                : key.includes('mastery') ? 'mastery'
+                : 'pleasure';
     const max = part === 'tens' ? 100 : 9;
     const step = part === 'tens' ? 10 : 1;
     for (let i = 0; i <= max; i += step) {
@@ -1468,7 +3002,7 @@
 
     // Highlight the selected button in this row
     container.querySelectorAll('.scale-btn').forEach(b => {
-      b.classList.remove('selected', 'pleasure', 'mastery');
+      b.classList.remove('selected', 'pleasure', 'mastery', 'mood');
       if (parseInt(b.dataset.value) === value) b.classList.add('selected', color);
     });
 
@@ -1478,7 +3012,7 @@
       if (onesRow) {
         if (value === 100) {
           onesRow.querySelectorAll('.scale-btn').forEach(b => {
-            b.classList.remove('selected', 'pleasure', 'mastery');
+            b.classList.remove('selected', 'pleasure', 'mastery', 'mood');
             if (parseInt(b.dataset.value) === 0) b.classList.add('selected', color);
             b.style.opacity = parseInt(b.dataset.value) === 0 ? '1' : '0.3';
             b.style.pointerEvents = parseInt(b.dataset.value) === 0 ? 'auto' : 'none';
@@ -1500,7 +3034,7 @@
     const total = getTotal(key);
     const el = document.querySelector(`[data-total="${key}"]`);
     if (!el) return;
-    el.classList.remove('pleasure', 'mastery', 'empty');
+    el.classList.remove('pleasure', 'mastery', 'mood', 'empty');
     if (total === null) {
       el.textContent = '—';
       el.classList.add('empty');
@@ -1514,13 +3048,13 @@
     state.parts[key].tens = null;
     state.parts[key].ones = null;
     document.querySelectorAll(`.scale-row[data-scale="${key}"] .scale-btn`).forEach(b => {
-      b.classList.remove('selected', 'pleasure', 'mastery');
+      b.classList.remove('selected', 'pleasure', 'mastery', 'mood');
       b.style.opacity = '';
       b.style.pointerEvents = '';
     });
     const el = document.querySelector(`[data-total="${key}"]`);
     if (el) {
-      el.classList.remove('pleasure', 'mastery');
+      el.classList.remove('pleasure', 'mastery', 'mood');
       el.classList.add('empty');
       el.textContent = '—';
     }
@@ -1531,7 +3065,13 @@
     const canSave = activity && getTotal('pred-mastery') !== null && getTotal('pred-pleasure') !== null;
     document.getElementById('save-btn').disabled = !canSave;
 
-    const canRate = getTotal('act-mastery') !== null && getTotal('act-pleasure') !== null;
+    // Require all four post-activity values to enable Save Actual Ratings,
+    // so the button matches the same "fully rated" rule used by the log.
+    const canRate =
+      getTotal('act-mastery')  !== null &&
+      getTotal('act-pleasure') !== null &&
+      getTotal('mood-before')  !== null &&
+      getTotal('mood-after')   !== null;
     document.getElementById('save-rating-btn').disabled = !canRate;
   }
 
@@ -1542,7 +3082,12 @@
       if (v.id === 'view-rate') return;
       v.classList.toggle('active', v.id === 'view-' + name);
     });
-    document.getElementById('view-rate').style.display = 'none';
+    // Hide view-rate. On desktop, our grid CSS rule has `!important` and is
+    // gated on .active, so we MUST also remove .active here — otherwise the
+    // inline display:none gets overridden and view-rate stays visible.
+    const rateEl = document.getElementById('view-rate');
+    rateEl.classList.remove('active');
+    rateEl.style.display = 'none';
     if (name === 'log') renderLog();
     if (name === 'insights') renderInsights();
   }
@@ -1560,6 +3105,8 @@
       predPleasure: getTotal('pred-pleasure'),
       actMastery: null,
       actPleasure: null,
+      moodBefore: null,
+      moodAfter: null,
       createdAt: Date.now(),
       scheduledAt,
       completedAt: null,
@@ -1576,6 +3123,7 @@
       setTimeFromHourOffset(0);
       document.querySelectorAll('.time-preset').forEach(b => b.classList.remove('active'));
       updateSaveButtons();
+      updateSaveTemplateBtn();
       showToast(t('toast-saved'));
       switchView('log');
     } else {
@@ -1583,7 +3131,22 @@
     }
   });
 
-  document.getElementById('activity').addEventListener('input', updateSaveButtons);
+  document.getElementById('activity').addEventListener('input', () => {
+    updateSaveButtons();
+    updateSaveTemplateBtn();
+  });
+
+  // Save-as-template button
+  document.getElementById('save-template-btn').addEventListener('click', () => {
+    const val = document.getElementById('activity').value.trim();
+    if (!val) return;
+    const added = addTemplate(val);
+    if (added) {
+      renderTemplates();
+      updateSaveTemplateBtn();
+      showToast(t('toast-template-saved'));
+    }
+  });
 
   // ============ TIME PICKER ============
   // Hour-only granularity, matching the BA pleasure-predicting sheet:
@@ -1665,17 +3228,60 @@
     if (!entry) return;
     state.ratingEntryId = id;
     document.getElementById('rate-activity').textContent = entry.activity;
+
+    // Reset scales first so we start from a known state
     resetScaleKey('act-mastery');
     resetScaleKey('act-pleasure');
-    updateSaveButtons();
+    resetScaleKey('mood-before');
+    resetScaleKey('mood-after');
+
+    // Switch views BEFORE prefilling so the rate view is rendered/visible
+    // and selectPart can find and style its scale buttons reliably.
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-rate').style.display = 'block';
     document.getElementById('view-rate').classList.add('active');
+
+    // Pre-fill any values that were already saved (e.g., via pencil edits),
+    // so the user doesn't have to re-enter them. We do this in a microtask
+    // to ensure the just-shown view-rate has been laid out.
+    requestAnimationFrame(() => {
+      if (typeof entry.actMastery === 'number')  prefillScale('act-mastery',  entry.actMastery);
+      if (typeof entry.actPleasure === 'number') prefillScale('act-pleasure', entry.actPleasure);
+      if (typeof entry.moodBefore === 'number')  prefillScale('mood-before',  entry.moodBefore);
+      if (typeof entry.moodAfter === 'number')   prefillScale('mood-after',   entry.moodAfter);
+      updateSaveButtons();
+    });
+
     window.scrollTo(0, 0);
   }
 
+  // Pre-fill a tens/ones scale from a single numeric value (0-100).
+  // Used when reopening rate-actual on an entry that already has saved values.
+  function prefillScale(key, value) {
+    if (typeof value !== 'number' || value < 0 || value > 100) return;
+    const tens = value === 100 ? 100 : Math.floor(value / 10) * 10;
+    const ones = value === 100 ? 0 : value % 10;
+    const color = key.startsWith('mood-') ? 'mood'
+                : key.includes('mastery') ? 'mastery'
+                : 'pleasure';
+    // Find the scale rows belonging to the rate view specifically.
+    // The rate view scales live inside #view-rate so we scope the query
+    // to avoid matching any other scale rows that share the same data-scale
+    // (e.g. if the edit modal happens to be open).
+    const scope = document.getElementById('view-rate');
+    if (!scope) return;
+    const tensRow = scope.querySelector(`.scale-row.tens[data-scale="${key}"]`);
+    const onesRow = scope.querySelector(`.scale-row.ones[data-scale="${key}"]`);
+    if (tensRow) selectPart(key, 'tens', tens, tensRow, color);
+    // selectPart already handles tens=100 (forces ones=0 and disables ones row),
+    // so only manually select ones when tens is not 100.
+    if (onesRow && tens !== 100) selectPart(key, 'ones', ones, onesRow, color);
+  }
+
   document.getElementById('cancel-rating-btn').addEventListener('click', () => {
-    document.getElementById('view-rate').style.display = 'none';
+    const rateEl = document.getElementById('view-rate');
+    rateEl.classList.remove('active');
+    rateEl.style.display = 'none';
     switchView('log');
   });
 
@@ -1684,10 +3290,24 @@
     if (!entry) return;
     entry.actMastery = getTotal('act-mastery');
     entry.actPleasure = getTotal('act-pleasure');
-    entry.completedAt = Date.now();
+    entry.moodBefore = getTotal('mood-before'); // null if user didn't pick both tens and ones
+    entry.moodAfter  = getTotal('mood-after');
+
+    // Mirror the same "all four required" rule used by the log's isPending check.
+    // Only mark the entry as fully completed when every post-activity value is in,
+    // otherwise leave it pending so the Rate Actual button remains visible.
+    const allFilled =
+      entry.actMastery != null &&
+      entry.actPleasure != null &&
+      entry.moodBefore != null &&
+      entry.moodAfter != null;
+    entry.completedAt = allFilled ? Date.now() : null;
+
     const ok = await saveEntry(entry);
     if (ok) {
-      document.getElementById('view-rate').style.display = 'none';
+      const rateEl = document.getElementById('view-rate');
+      rateEl.classList.remove('active');
+      rateEl.style.display = 'none';
       showToast(t('toast-rated'));
       switchView('log');
     }
@@ -1854,43 +3474,87 @@
     });
   }
 
+  // Small pencil SVG icon for edit buttons
+  const PENCIL_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3-8 8H3v-3z"/><path d="M9.5 3.5l3 3"/></svg>';
+
+  function pencilBtn(field, id, sizeCls = '') {
+    return `<button class="edit-pencil ${sizeCls}" data-action="edit" data-field="${field}" data-id="${id}" aria-label="edit">${PENCIL_SVG}</button>`;
+  }
+
   function renderEntry(e) {
-    const isPending = e.actMastery === null;
+    // Entry is "pending" (and thus shows the Rate Actual button) until ALL four
+    // post-activity values are filled: actual mastery, actual pleasure,
+    // mood before, and mood after. The button disappears only once every
+    // value has been entered — through the rate flow or via pencil edits.
+    const isPending =
+      e.actMastery == null ||
+      e.actPleasure == null ||
+      e.moodBefore == null ||
+      e.moodAfter == null;
     const displayTime = e.scheduledAt || e.createdAt;
     const hint = timeHint(displayTime, isPending);
-    const hintHtml = hint ? ` · <span class="hint">${hint}</span>` : '';
+    const hintHtml = hint ? `<span class="hint">${hint}</span>` : '';
     // Show only the hour as the row's primary timestamp
     const d = new Date(displayTime);
     const h = d.getHours();
     const ampm = h < 12 ? 'AM' : 'PM';
     const h12 = h === 0 ? 12 : (h > 12 ? h - 12 : h);
     const hourStr = `${h12} ${ampm}`;
+
+    // Mood row: always shown so users can fill in mood retroactively via the pencil
+    const moodHtml = `
+      <div class="entry-mood-row">
+        <div class="mood-bubble">
+          <span class="mood-bubble-label">${t('label-mood-before')}</span>
+          ${e.moodBefore != null
+            ? `<span class="mood-bubble-value">${e.moodBefore}</span>`
+            : `<span class="mood-bubble-value pending">${t('mood-pending')}</span>`}
+          ${pencilBtn('mood-before', e.id)}
+        </div>
+        <div class="mood-bubble">
+          <span class="mood-bubble-label">${t('label-mood-after')}</span>
+          ${e.moodAfter != null
+            ? `<span class="mood-bubble-value">${e.moodAfter}</span>`
+            : `<span class="mood-bubble-value pending">${t('mood-pending')}</span>`}
+          ${pencilBtn('mood-after', e.id)}
+        </div>
+      </div>`;
+
     return `
       <div class="entry">
-        <div class="entry-date">${hourStr}${hintHtml}${e.company ? ' · ' + escapeHtml(e.company) : ''}</div>
-        <div class="entry-activity">${escapeHtml(e.activity)}</div>
+        <div class="entry-date">
+          ${hourStr}${hint ? ' · ' : ''}${hintHtml}${e.company ? ' · ' + escapeHtml(e.company) : ''}
+          ${pencilBtn('time', e.id)}
+        </div>
+        <div class="entry-activity-row">
+          <div class="entry-activity">${escapeHtml(e.activity)}</div>
+          ${pencilBtn('activity', e.id, 'lg')}
+        </div>
         <div class="entry-grid">
           <div class="metric">
             <div class="metric-label">${t('insight-mastery')}</div>
             <div class="metric-values">
               <span class="pred">${e.predMastery}</span>
+              ${pencilBtn('pred-mastery', e.id)}
               <span class="arrow">→</span>
-              ${isPending
-                ? `<span class="pending">${t('pending')}</span>`
-                : `<span class="actual-m">${e.actMastery}</span>${deltaBadge(e.predMastery, e.actMastery)}`}
+              ${e.actMastery == null
+                ? `<span class="pending">${t('pending')}</span>${pencilBtn('act-mastery', e.id)}`
+                : `<span class="actual-m">${e.actMastery}</span>${pencilBtn('act-mastery', e.id)}${deltaBadge(e.predMastery, e.actMastery)}`}
             </div>
           </div>
           <div class="metric">
             <div class="metric-label">${t('insight-pleasure')}</div>
             <div class="metric-values">
               <span class="pred">${e.predPleasure}</span>
+              ${pencilBtn('pred-pleasure', e.id)}
               <span class="arrow">→</span>
-              ${isPending
-                ? `<span class="pending">${t('pending')}</span>`
-                : `<span class="actual-p">${e.actPleasure}</span>${deltaBadge(e.predPleasure, e.actPleasure)}`}
+              ${e.actPleasure == null
+                ? `<span class="pending">${t('pending')}</span>${pencilBtn('act-pleasure', e.id)}`
+                : `<span class="actual-p">${e.actPleasure}</span>${pencilBtn('act-pleasure', e.id)}${deltaBadge(e.predPleasure, e.actPleasure)}`}
             </div>
           </div>
         </div>
+        ${moodHtml}
         <div class="entry-actions">
           ${isPending
             ? `<button class="complete" data-action="rate" data-id="${e.id}">${t('btn-rate')}</button>`
@@ -1909,6 +3573,7 @@
     const id = btn.dataset.id;
     if (action === 'rate') openRate(id);
     else if (action === 'delete') confirmDelete(id);
+    else if (action === 'edit') openEdit(id, btn.dataset.field);
   });
 
   // Custom confirm modal (replaces native window.confirm, which may be
@@ -1946,17 +3611,401 @@
     }
   }
 
+  // ============ EDIT MODAL ============
+  // Field metadata: maps field name -> { title key, getter, setter, type }
+  // type: 'scale' (tens+ones picker, 0-100) | 'text' | 'time'
+  const EDIT_FIELDS = {
+    'activity':      { titleKey: 'edit-title-activity',      type: 'text' },
+    'company':       { titleKey: 'edit-title-company',       type: 'text' },
+    'time':          { titleKey: 'edit-title-time',          type: 'time' },
+    'pred-mastery':  { titleKey: 'edit-title-pred-mastery',  type: 'scale', color: 'mastery' },
+    'pred-pleasure': { titleKey: 'edit-title-pred-pleasure', type: 'scale', color: 'pleasure' },
+    'act-mastery':   { titleKey: 'edit-title-act-mastery',   type: 'scale', color: 'mastery' },
+    'act-pleasure':  { titleKey: 'edit-title-act-pleasure',  type: 'scale', color: 'pleasure' },
+    'mood-before':   { titleKey: 'edit-title-mood-before',   type: 'scale', color: 'mood' },
+    'mood-after':    { titleKey: 'edit-title-mood-after',    type: 'scale', color: 'mood' },
+  };
+
+  // Map field name to entry property name
+  const FIELD_TO_PROP = {
+    'activity': 'activity',
+    'company': 'company',
+    'pred-mastery': 'predMastery',
+    'pred-pleasure': 'predPleasure',
+    'act-mastery': 'actMastery',
+    'act-pleasure': 'actPleasure',
+    'mood-before': 'moodBefore',
+    'mood-after': 'moodAfter',
+  };
+
+  let editContext = null; // { entryId, field, getValue }
+
+  function openEdit(entryId, field) {
+    const meta = EDIT_FIELDS[field];
+    if (!meta) return;
+    const entry = state.entries.find(e => e.id === entryId);
+    if (!entry) return;
+
+    document.getElementById('edit-title').textContent = t(meta.titleKey);
+    document.getElementById('edit-save').textContent = t('edit-save');
+    const body = document.getElementById('edit-body');
+
+    if (meta.type === 'text') {
+      const currentVal = field === 'activity' ? entry.activity : (entry.company || '');
+      body.innerHTML = `
+        <div class="field" style="margin-bottom: 0;">
+          <input type="text" id="edit-text-input" autocomplete="off">
+        </div>`;
+      const input = document.getElementById('edit-text-input');
+      input.value = currentVal;
+      setTimeout(() => input.focus(), 60);
+      editContext = {
+        entryId, field,
+        getValue: () => input.value.trim(),
+        validate: (v) => field !== 'activity' || v.length > 0,
+      };
+    } else if (meta.type === 'time') {
+      const ts = entry.scheduledAt || entry.createdAt;
+      const d = new Date(ts);
+      const dayStart = new Date(d);
+      dayStart.setHours(0, 0, 0, 0);
+      // Build day select options inline
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dayOpts = [];
+      // Include some past days too, since edits may be retroactive
+      for (let i = -14; i < 14; i++) {
+        const day = new Date(today.getTime() + i * 86400000);
+        const isCurrent = day.getTime() === dayStart.getTime();
+        let label;
+        if (i === 0) label = t('day-today');
+        else if (i === -1) label = t('day-yesterday');
+        else if (i === 1) label = t('day-tomorrow');
+        else label = day.toLocaleDateString(currentLang === 'ka' ? 'ka-GE' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        dayOpts.push(`<option value="${day.getTime()}" ${isCurrent ? 'selected' : ''}>${label}</option>`);
+      }
+      // Hours
+      const hour = d.getHours();
+      const hourOpts = [];
+      for (let h = 0; h < 24; h++) {
+        const ampm = h < 12 ? 'AM' : 'PM';
+        const h12 = h === 0 ? 12 : (h > 12 ? h - 12 : h);
+        hourOpts.push(`<option value="${h}" ${h === hour ? 'selected' : ''}>${h12}:00 ${ampm}</option>`);
+      }
+      body.innerHTML = `
+        <div class="time-row">
+          <select id="edit-day-select" class="time-select">${dayOpts.join('')}</select>
+          <select id="edit-hour-select" class="time-select">${hourOpts.join('')}</select>
+        </div>`;
+      editContext = {
+        entryId, field,
+        getValue: () => {
+          const dayMs = parseInt(document.getElementById('edit-day-select').value);
+          const hr = parseInt(document.getElementById('edit-hour-select').value);
+          return dayMs + hr * 3600000;
+        },
+        validate: () => true,
+      };
+    } else if (meta.type === 'scale') {
+      // Reuse the existing scale-pair structure with a dedicated key 'edit-scale'
+      body.innerHTML = `
+        <div class="pair">
+          <div class="scale-group">
+            <div>
+              <div class="scale-sub-label">${t('sub-tens')}</div>
+              <div class="scale-row tens" data-scale="edit-scale" data-part="tens"></div>
+            </div>
+            <div>
+              <div class="scale-sub-label">${t('sub-ones')}</div>
+              <div class="scale-row ones" data-scale="edit-scale" data-part="ones"></div>
+            </div>
+          </div>
+          <div class="total-display">
+            <span class="total-label">${t('total-label')}</span>
+            <span class="total-num empty" data-total="edit-scale">—</span>
+          </div>
+        </div>`;
+
+      // Register transient state.parts entry, build, and prefill
+      state.parts['edit-scale'] = { tens: null, ones: null };
+      const tensRow = body.querySelector('.scale-row.tens');
+      const onesRow = body.querySelector('.scale-row.ones');
+      // Build with the right color for this field
+      const buildEditScale = (container, part) => {
+        container.innerHTML = '';
+        const max = part === 'tens' ? 100 : 9;
+        const step = part === 'tens' ? 10 : 1;
+        for (let i = 0; i <= max; i += step) {
+          const btn = document.createElement('button');
+          btn.className = 'scale-btn';
+          btn.textContent = i;
+          btn.dataset.value = i;
+          btn.addEventListener('click', () => selectPart('edit-scale', part, i, container, meta.color));
+          container.appendChild(btn);
+        }
+      };
+      buildEditScale(tensRow, 'tens');
+      buildEditScale(onesRow, 'ones');
+
+      // Prefill from current entry value
+      const prop = FIELD_TO_PROP[field];
+      const cur = entry[prop];
+      if (typeof cur === 'number') {
+        const tens = cur === 100 ? 100 : Math.floor(cur / 10) * 10;
+        const ones = cur === 100 ? 0 : cur % 10;
+        selectPart('edit-scale', 'tens', tens, tensRow, meta.color);
+        if (cur !== 100) selectPart('edit-scale', 'ones', ones, onesRow, meta.color);
+      }
+
+      editContext = {
+        entryId, field,
+        getValue: () => getTotal('edit-scale'),
+        validate: (v) => v !== null,
+      };
+    }
+
+    // Show the modal
+    document.getElementById('edit-overlay').classList.add('show');
+  }
+
+  function closeEdit() {
+    document.getElementById('edit-overlay').classList.remove('show');
+    // Clean up transient scale state if present
+    if (state.parts['edit-scale']) delete state.parts['edit-scale'];
+    document.getElementById('edit-body').innerHTML = '';
+    editContext = null;
+  }
+
+  async function saveEdit() {
+    if (!editContext) return;
+    const { entryId, field, getValue, validate } = editContext;
+    const value = getValue();
+    if (validate && !validate(value)) {
+      // Invalid; do nothing, leave modal open
+      return;
+    }
+    const entry = state.entries.find(e => e.id === entryId);
+    if (!entry) { closeEdit(); return; }
+
+    if (field === 'time') {
+      entry.scheduledAt = value;
+    } else {
+      const prop = FIELD_TO_PROP[field];
+      if (prop) entry[prop] = value;
+    }
+
+    // If all four post-activity values are now filled, mark the entry as
+    // completed so it no longer appears as pending (and the Rate Actual
+    // button hides). If any of them is missing, treat the entry as pending again.
+    const allFilled =
+      entry.actMastery != null &&
+      entry.actPleasure != null &&
+      entry.moodBefore != null &&
+      entry.moodAfter != null;
+
+    if (allFilled && !entry.completedAt) {
+      entry.completedAt = Date.now();
+    } else if (!allFilled && entry.completedAt) {
+      entry.completedAt = null;
+    }
+
+    sortEntries();
+    const ok = await saveEntry(entry);
+    if (ok) {
+      closeEdit();
+      renderLog();
+      showToast(t('toast-edit-saved'));
+    }
+  }
+
+  // Wire up edit modal buttons + backdrop dismiss
+  document.getElementById('edit-cancel').addEventListener('click', closeEdit);
+  document.getElementById('edit-save').addEventListener('click', saveEdit);
+  document.getElementById('edit-overlay').addEventListener('click', (ev) => {
+    if (ev.target.id === 'edit-overlay') closeEdit();
+  });
+
   // ============ INSIGHTS ============
+  // ============ CHART (Predicted vs Actual, last 7 days) ============
+  // Returns SVG markup as a string. Designed for a ~340px wide mobile viewport.
+  function renderChartSvg(completed) {
+    const W = 340, H = 220;
+    const pad = { top: 14, right: 14, bottom: 28, left: 30 };
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+
+    // Filter to the last 7 days of rated entries, sorted ascending by time
+    const cutoff = Date.now() - 7 * 86400000;
+    const recent = completed
+      .filter(e => (e.completedAt || e.createdAt) >= cutoff)
+      .sort((a, b) => (a.completedAt || a.createdAt) - (b.completedAt || b.createdAt));
+
+    // With zero recent entries we can't render anything useful
+    if (recent.length === 0) return null;
+
+    // X positions: evenly spaced. For a single entry, center it horizontally.
+    const xs = recent.length === 1
+      ? [pad.left + plotW / 2]
+      : recent.map((_, i) => pad.left + (plotW * i) / (recent.length - 1));
+    // Y mapping: value 0–100 → top of plot is 100
+    const y = (v) => pad.top + plotH - (v / 100) * plotH;
+
+    const path = (vals) => vals.map((v, i) => `${i === 0 ? 'M' : 'L'}${xs[i].toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+
+    // For mood lines, an entry may have no mood data — draw only across points
+    // that have a number. Use multiple "M...L..." segments so gaps look right.
+    const sparsePath = (entries, getter) => {
+      let d = '';
+      let started = false;
+      entries.forEach((e, i) => {
+        const v = getter(e);
+        if (typeof v !== 'number') { started = false; return; }
+        const cmd = started ? 'L' : 'M';
+        d += `${cmd}${xs[i].toFixed(1)},${y(v).toFixed(1)} `;
+        started = true;
+      });
+      return d.trim();
+    };
+
+    const predP = recent.map(e => e.predPleasure);
+    const actP  = recent.map(e => e.actPleasure);
+    const predM = recent.map(e => e.predMastery);
+    const actM  = recent.map(e => e.actMastery);
+
+    // Y axis gridlines at 0, 25, 50, 75, 100
+    const gridYs = [0, 25, 50, 75, 100];
+    const gridLines = gridYs.map(v => {
+      const yy = y(v).toFixed(1);
+      return `<line x1="${pad.left}" x2="${pad.left + plotW}" y1="${yy}" y2="${yy}" stroke="var(--border)" stroke-width="1" opacity="0.5"/>
+              <text x="${pad.left - 6}" y="${(y(v) + 3).toFixed(1)}" font-size="9" fill="var(--ink-faint)" text-anchor="end" font-family="JetBrains Mono, monospace">${v}</text>`;
+    }).join('');
+
+    // Date labels under each point (show every other one if crowded)
+    const labels = recent.map((e, i) => {
+      const showEvery = recent.length > 5 ? 2 : 1;
+      if (i % showEvery !== 0 && i !== recent.length - 1) return '';
+      const d = new Date(e.completedAt || e.createdAt);
+      const lab = `${d.getMonth() + 1}/${d.getDate()}`;
+      return `<text x="${xs[i].toFixed(1)}" y="${H - pad.bottom + 14}" font-size="9" fill="var(--ink-faint)" text-anchor="middle" font-family="JetBrains Mono, monospace">${lab}</text>`;
+    }).join('');
+
+    // Dots for all 6 series. With a single entry the dots become the entire
+    // chart (no lines connect anything), so we render them in every case.
+    const dotR = recent.length === 1 ? 5 : 3;
+
+    const dotsActP = actP.map((v, i) => `<circle cx="${xs[i].toFixed(1)}" cy="${y(v).toFixed(1)}" r="${dotR}" fill="var(--pleasure)"/>`).join('');
+    const dotsActM = actM.map((v, i) => `<circle cx="${xs[i].toFixed(1)}" cy="${y(v).toFixed(1)}" r="${dotR}" fill="var(--mastery)"/>`).join('');
+
+    const dotsPredP = predP.map((v, i) =>
+      `<circle cx="${xs[i].toFixed(1)}" cy="${y(v).toFixed(1)}" r="${dotR - 1}" fill="none" stroke="var(--pleasure)" stroke-width="1.5" opacity="0.7"/>`
+    ).join('');
+    const dotsPredM = predM.map((v, i) =>
+      `<circle cx="${xs[i].toFixed(1)}" cy="${y(v).toFixed(1)}" r="${dotR - 1}" fill="none" stroke="var(--mastery)" stroke-width="1.5" opacity="0.7"/>`
+    ).join('');
+
+    const dotsMoodB = recent.map((e, i) =>
+      typeof e.moodBefore === 'number'
+        ? `<circle cx="${xs[i].toFixed(1)}" cy="${y(e.moodBefore).toFixed(1)}" r="${dotR - 1}" fill="none" stroke="var(--mood)" stroke-width="1.5" opacity="0.7"/>`
+        : ''
+    ).join('');
+    const dotsMoodA = recent.map((e, i) =>
+      typeof e.moodAfter === 'number'
+        ? `<circle cx="${xs[i].toFixed(1)}" cy="${y(e.moodAfter).toFixed(1)}" r="${dotR}" fill="var(--mood)"/>`
+        : ''
+    ).join('');
+
+    const lines = recent.length >= 2 ? `
+        <path d="${path(predP)}" fill="none" stroke="var(--pleasure)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.7"/>
+        <path d="${path(actP)}"  fill="none" stroke="var(--pleasure)" stroke-width="2.2"/>
+        <path d="${path(predM)}" fill="none" stroke="var(--mastery)"  stroke-width="1.5" stroke-dasharray="4 3" opacity="0.7"/>
+        <path d="${path(actM)}"  fill="none" stroke="var(--mastery)"  stroke-width="2.2"/>
+        <path d="${sparsePath(recent, e => e.moodBefore)}" fill="none" stroke="var(--mood)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.7"/>
+        <path d="${sparsePath(recent, e => e.moodAfter)}"  fill="none" stroke="var(--mood)" stroke-width="2.2"/>` : '';
+
+    // Hover layer: an invisible vertical "lane" over each data point, a
+    // crosshair line, six highlight dots, and six tag rectangles that show
+    // each numeric value next to its point. All are hidden by default
+    // and revealed when JS sets data-hover-index on the SVG.
+    const hoverLayer = `
+      <line class="crosshair" x1="0" y1="${pad.top}" x2="0" y2="${pad.top + plotH}"/>
+      <circle class="hover-dot dot-predP" cx="0" cy="0" r="4" fill="var(--pleasure)" opacity="0.85"/>
+      <circle class="hover-dot dot-actP"  cx="0" cy="0" r="4" fill="var(--pleasure)"/>
+      <circle class="hover-dot dot-predM" cx="0" cy="0" r="4" fill="var(--mastery)"  opacity="0.85"/>
+      <circle class="hover-dot dot-actM"  cx="0" cy="0" r="4" fill="var(--mastery)"/>
+      <circle class="hover-dot dot-moodB" cx="0" cy="0" r="4" fill="var(--mood)" opacity="0.85"/>
+      <circle class="hover-dot dot-moodA" cx="0" cy="0" r="4" fill="var(--mood)"/>
+      ${['predP','actP','predM','actM','moodB','moodA'].map(k => `
+        <g class="hover-tag tag-${k}">
+          <rect x="0" y="0" width="26" height="14" rx="3"/>
+          <text x="0" y="0" text-anchor="middle"></text>
+        </g>`).join('')}
+    `;
+
+    // Hover zones — one transparent rectangle per data point, spanning
+    // the gap between adjacent points. Each carries data-index so the
+    // listener can find which entry to show.
+    const zones = recent.map((_, i) => {
+      const halfBefore = i === 0 ? 0 : (xs[i] - xs[i-1]) / 2;
+      const halfAfter  = i === recent.length - 1 ? plotW / 2 : (xs[i+1] - xs[i]) / 2;
+      const zx = xs[i] - (halfBefore || halfAfter);
+      const zw = (halfBefore || halfAfter) + (halfAfter || halfBefore);
+      return `<rect class="hover-zone" data-index="${i}" x="${zx}" y="${pad.top}" width="${zw}" height="${plotH}"/>`;
+    }).join('');
+
+    const svg = `
+      <svg class="chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        ${gridLines}
+        ${lines}
+        ${dotsPredP}
+        ${dotsActP}
+        ${dotsPredM}
+        ${dotsActM}
+        ${dotsMoodB}
+        ${dotsMoodA}
+        ${labels}
+        ${hoverLayer}
+        ${zones}
+      </svg>`;
+
+    // Data used by the hover handler — coordinates per series + entry refs.
+    return {
+      svg,
+      points: recent.map((e, i) => ({
+        index: i,
+        x: xs[i],
+        entry: e,
+        ys: {
+          predP: y(e.predPleasure),
+          actP:  y(e.actPleasure),
+          predM: y(e.predMastery),
+          actM:  y(e.actMastery),
+          moodB: typeof e.moodBefore === 'number' ? y(e.moodBefore) : null,
+          moodA: typeof e.moodAfter  === 'number' ? y(e.moodAfter)  : null,
+        }
+      })),
+      W, H, pad, plotW, plotH,
+    };
+  }
+
   function renderInsights() {
     const c = document.getElementById('insights-content');
     const completed = state.entries.filter(e => e.actMastery !== null);
+
+    // Data-actions buttons are always shown so users can export/import even with no data yet
+    const dataActionsHtml = `
+      <div class="data-actions">
+        <button class="data-btn" id="export-btn" data-i18n="btn-export">${t('btn-export')}</button>
+        <button class="data-btn" id="import-btn" data-i18n="btn-import">${t('btn-import')}</button>
+      </div>`;
 
     if (completed.length === 0) {
       c.innerHTML = `
         <div class="empty">
           <div class="empty-mark">❦</div>
           <p>${t('empty-insights')}</p>
-        </div>`;
+        </div>
+        ${dataActionsHtml}`;
+      attachDataActionHandlers();
       return;
     }
 
@@ -1974,7 +4023,47 @@
     else if (mGap < -1) insightKey = 'insight-mastery-down';
     else insightKey = 'insight-neutral';
 
+    const chartData = renderChartSvg(completed);
+    const chartBlock = chartData ? `
+      <div class="chart-container">
+        <div class="chart-title">${t('chart-title')}</div>
+        <div class="chart-legend">
+          <span class="legend-item" style="color: var(--pleasure);">
+            <span class="legend-swatch" style="background: var(--pleasure);"></span>
+            ${t('chart-pleasure')} · ${t('chart-actual')}
+          </span>
+          <span class="legend-item" style="color: var(--pleasure);">
+            <span class="legend-swatch dashed"></span>
+            ${t('chart-pleasure')} · ${t('chart-predicted')}
+          </span>
+          <span class="legend-item" style="color: var(--mastery);">
+            <span class="legend-swatch" style="background: var(--mastery);"></span>
+            ${t('chart-mastery')} · ${t('chart-actual')}
+          </span>
+          <span class="legend-item" style="color: var(--mastery);">
+            <span class="legend-swatch dashed"></span>
+            ${t('chart-mastery')} · ${t('chart-predicted')}
+          </span>
+          <span class="legend-item" style="color: var(--mood);">
+            <span class="legend-swatch" style="background: var(--mood);"></span>
+            ${t('chart-mood-after')}
+          </span>
+          <span class="legend-item" style="color: var(--mood);">
+            <span class="legend-swatch dashed"></span>
+            ${t('chart-mood-before')}
+          </span>
+        </div>
+        ${chartData.svg}
+        <div class="chart-tooltip empty" id="chart-tooltip">${t('chart-hover-hint')}</div>
+      </div>` : `
+      <div class="chart-container">
+        <div class="chart-title">${t('chart-title')}</div>
+        <div class="chart-empty">${t('chart-empty')}</div>
+      </div>`;
+
     c.innerHTML = `
+      ${chartBlock}
+
       <div class="stat-grid">
         <div class="stat-card">
           <div class="stat-num accent">${state.entries.length}</div>
@@ -2007,12 +4096,390 @@
         </div>
       </div>
 
+      ${dataActionsHtml}
+
       <div class="ornament">· · ·</div>
       <p class="subtitle" style="text-align: center; font-style: italic;">
         ${t('insight-footer')}
       </p>
     `;
+    attachDataActionHandlers();
+    attachChartHover(chartData);
   }
+
+  // Currently-rendered chart data + helpers for the hover handler.
+  // Stored at module scope so resize/move handlers can reference it.
+  let _chartData = null;
+
+  function attachChartHover(chartData) {
+    _chartData = chartData;
+    if (!chartData) return;
+    const svg = document.querySelector('.chart-container .chart-svg');
+    if (!svg) return;
+
+    // Move handler: find the nearest data point and show its values.
+    const onMove = (clientX) => {
+      const rect = svg.getBoundingClientRect();
+      // Convert client x → svg viewBox x using the same ratio
+      const ratio = chartData.W / rect.width;
+      const svgX = (clientX - rect.left) * ratio;
+      // Pick the point with the smallest |x - svgX|
+      let best = 0, bestDist = Infinity;
+      for (let i = 0; i < chartData.points.length; i++) {
+        const d = Math.abs(chartData.points[i].x - svgX);
+        if (d < bestDist) { bestDist = d; best = i; }
+      }
+      updateHoverDisplay(best);
+    };
+
+    const onMouseMove = (ev) => onMove(ev.clientX);
+    const onTouchMove = (ev) => {
+      if (ev.touches && ev.touches[0]) {
+        onMove(ev.touches[0].clientX);
+        ev.preventDefault();
+      }
+    };
+    const onLeave = () => clearHoverDisplay();
+
+    svg.addEventListener('mousemove', onMouseMove);
+    svg.addEventListener('mouseleave', onLeave);
+    svg.addEventListener('touchstart', onTouchMove, { passive: false });
+    svg.addEventListener('touchmove',  onTouchMove, { passive: false });
+    svg.addEventListener('touchend',   onLeave);
+  }
+
+  function updateHoverDisplay(index) {
+    if (!_chartData) return;
+    const point = _chartData.points[index];
+    if (!point) return;
+    const svg = document.querySelector('.chart-container .chart-svg');
+    if (!svg) return;
+
+    const { pad, plotH, W } = _chartData;
+    const x = point.x;
+
+    // Move crosshair
+    const cross = svg.querySelector('.crosshair');
+    if (cross) {
+      cross.setAttribute('x1', x);
+      cross.setAttribute('x2', x);
+    }
+
+    const series = [
+      { key: 'predP', value: point.entry.predPleasure, yPos: point.ys.predP },
+      { key: 'actP',  value: point.entry.actPleasure,  yPos: point.ys.actP },
+      { key: 'predM', value: point.entry.predMastery,  yPos: point.ys.predM },
+      { key: 'actM',  value: point.entry.actMastery,   yPos: point.ys.actM },
+      { key: 'moodB', value: point.entry.moodBefore,   yPos: point.ys.moodB },
+      { key: 'moodA', value: point.entry.moodAfter,    yPos: point.ys.moodA },
+    ];
+
+    series.forEach(s => {
+      const dot = svg.querySelector(`.dot-${s.key}`);
+      const tag = svg.querySelector(`.tag-${s.key}`);
+      if (!dot || !tag) return;
+      // Hide if no value (e.g. mood not set on this entry)
+      if (typeof s.value !== 'number' || s.yPos == null) {
+        dot.setAttribute('opacity', '0');
+        tag.setAttribute('opacity', '0');
+        return;
+      }
+      dot.setAttribute('opacity', dot.classList.contains('dot-predP') || dot.classList.contains('dot-predM') || dot.classList.contains('dot-moodB') ? '0.85' : '1');
+      dot.setAttribute('cx', x);
+      dot.setAttribute('cy', s.yPos);
+
+      // Position tag to the side of the dot so it doesn't cover the line.
+      // Right of point unless near the right edge, in which case flip left.
+      const TAG_W = String(s.value).length >= 3 ? 30 : 24;
+      const offset = 8;
+      let tagX = x + offset;
+      if (tagX + TAG_W > W - 2) tagX = x - offset - TAG_W;
+      tag.setAttribute('opacity', '1');
+      const rect = tag.querySelector('rect');
+      const text = tag.querySelector('text');
+      rect.setAttribute('x', tagX);
+      rect.setAttribute('y', s.yPos - 7);
+      rect.setAttribute('width', TAG_W);
+      // Stroke color picks up from the series
+      const strokeColor =
+        s.key === 'predP' || s.key === 'actP' ? 'var(--pleasure)'
+      : s.key === 'predM' || s.key === 'actM' ? 'var(--mastery)'
+      : 'var(--mood)';
+      rect.setAttribute('stroke', strokeColor);
+      text.setAttribute('x', tagX + TAG_W / 2);
+      text.setAttribute('y', s.yPos + 0.5);
+      text.setAttribute('fill', strokeColor);
+      text.textContent = s.value;
+    });
+
+    svg.classList.add('has-hover');
+
+    // Update tooltip card below the chart
+    const tt = document.getElementById('chart-tooltip');
+    if (tt) {
+      tt.classList.remove('empty');
+      tt.innerHTML = renderTooltipCard(point.entry);
+    }
+  }
+
+  function clearHoverDisplay() {
+    const svg = document.querySelector('.chart-container .chart-svg');
+    if (svg) svg.classList.remove('has-hover');
+    const tt = document.getElementById('chart-tooltip');
+    if (tt) {
+      tt.classList.add('empty');
+      tt.textContent = t('chart-hover-hint');
+    }
+  }
+
+  function renderTooltipCard(entry) {
+    const ts = entry.completedAt || entry.scheduledAt || entry.createdAt;
+    const d = new Date(ts);
+    const dateStr = d.toLocaleDateString(currentLang === 'ka' ? 'ka-GE' : 'en-US', { month: 'short', day: 'numeric' });
+    const h = d.getHours();
+    const ampm = h < 12 ? 'AM' : 'PM';
+    const h12 = h === 0 ? 12 : (h > 12 ? h - 12 : h);
+
+    const cellNum = (val, cls) =>
+      typeof val === 'number'
+        ? `<span class="val ${cls}">${val}</span>`
+        : `<span class="val empty">—</span>`;
+
+    return `
+      <div class="chart-tooltip-header">
+        <div class="chart-tooltip-activity">${escapeHtml(entry.activity)}${entry.company ? ` · ${escapeHtml(entry.company)}` : ''}</div>
+        <div class="chart-tooltip-date">${dateStr} · ${h12} ${ampm}</div>
+      </div>
+      <div class="chart-tooltip-grid">
+        <div class="chart-tooltip-row">
+          <span class="label">${t('insight-mastery')} (${t('chart-pred-short')})</span>
+          ${cellNum(entry.predMastery, 'mastery')}
+        </div>
+        <div class="chart-tooltip-row">
+          <span class="label">${t('insight-mastery')} (${t('chart-act-short')})</span>
+          ${cellNum(entry.actMastery, 'mastery')}
+        </div>
+        <div class="chart-tooltip-row">
+          <span class="label">${t('insight-pleasure')} (${t('chart-pred-short')})</span>
+          ${cellNum(entry.predPleasure, 'pleasure')}
+        </div>
+        <div class="chart-tooltip-row">
+          <span class="label">${t('insight-pleasure')} (${t('chart-act-short')})</span>
+          ${cellNum(entry.actPleasure, 'pleasure')}
+        </div>
+        <div class="chart-tooltip-row">
+          <span class="label">${t('label-mood-before')}</span>
+          ${cellNum(entry.moodBefore, 'mood')}
+        </div>
+        <div class="chart-tooltip-row">
+          <span class="label">${t('label-mood-after')}</span>
+          ${cellNum(entry.moodAfter, 'mood')}
+        </div>
+      </div>`;
+  }
+
+  function attachDataActionHandlers() {
+    const exp = document.getElementById('export-btn');
+    const imp = document.getElementById('import-btn');
+    if (exp) exp.addEventListener('click', exportData);
+    if (imp) imp.addEventListener('click', triggerImport);
+  }
+
+  // ============ EXPORT / IMPORT ============
+  function exportData() {
+    const payload = {
+      app: 'pleasure-predicting-sheet',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      lang: currentLang,
+      entries: state.entries,
+      templates: state.templates,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const now = new Date();
+    const stamp = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    a.href = url;
+    a.download = `pleasure-predicting-sheet-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(t('toast-exported'));
+  }
+
+  function triggerImport() {
+    document.getElementById('import-file-input').click();
+  }
+
+  // Show the import choice modal: returns 'merge' | 'replace' | null (cancel)
+  function showImportChoice(message) {
+    return new Promise(resolve => {
+      const overlay = document.getElementById('import-choice-overlay');
+      document.getElementById('import-choice-message').textContent = message;
+      overlay.classList.add('show');
+
+      const cancelBtn  = document.getElementById('import-choice-cancel');
+      const mergeBtn   = document.getElementById('import-choice-merge');
+      const replaceBtn = document.getElementById('import-choice-replace');
+
+      const cleanup = (result) => {
+        overlay.classList.remove('show');
+        cancelBtn.removeEventListener('click', onCancel);
+        mergeBtn.removeEventListener('click', onMerge);
+        replaceBtn.removeEventListener('click', onReplace);
+        overlay.removeEventListener('click', onBackdrop);
+        resolve(result);
+      };
+      const onCancel  = () => cleanup(null);
+      const onMerge   = () => cleanup('merge');
+      const onReplace = () => cleanup('replace');
+      const onBackdrop = (e) => { if (e.target === overlay) cleanup(null); };
+
+      cancelBtn.addEventListener('click', onCancel);
+      mergeBtn.addEventListener('click', onMerge);
+      replaceBtn.addEventListener('click', onReplace);
+      overlay.addEventListener('click', onBackdrop);
+    });
+  }
+
+  async function handleImportFile(file) {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      let imported = [];
+      let importedTemplates = [];
+
+      // Accept either { entries: [...] } or a bare array
+      if (Array.isArray(data)) {
+        imported = data;
+      } else if (data && Array.isArray(data.entries)) {
+        imported = data.entries;
+        if (Array.isArray(data.templates)) importedTemplates = data.templates;
+      } else {
+        throw new Error('Invalid format');
+      }
+
+      // Validate minimum entry shape
+      const valid = imported.filter(e =>
+        e && typeof e === 'object' &&
+        typeof e.activity === 'string' &&
+        typeof e.predMastery === 'number' &&
+        typeof e.predPleasure === 'number'
+      );
+
+      if (valid.length === 0) {
+        showToast(t('toast-import-failed'));
+        return;
+      }
+
+      // Ask the user: merge into existing, replace existing, or cancel
+      const choice = await showImportChoice(t('import-choose-msg', { n: valid.length }));
+      if (!choice) return;
+
+      // If user chose "replace", require an extra confirmation since it's destructive
+      if (choice === 'replace') {
+        const confirmReplace = await showConfirm(t('replace-confirm'));
+        if (!confirmReplace) return;
+        await performImportReplace(valid, importedTemplates);
+      } else {
+        await performImportMerge(valid, importedTemplates);
+      }
+    } catch (err) {
+      console.error('Import error:', err);
+      showToast(t('toast-import-failed'));
+    }
+  }
+
+  function normalizeImportedEntry(e, takeIdOnlyIfFree, existingIds) {
+    // Generate a fresh id whenever the original would collide (or if asked to always re-id)
+    const safeId =
+      takeIdOnlyIfFree && e.id && !existingIds.has(e.id)
+        ? e.id
+        : ('e_imp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7));
+    return {
+      id: safeId,
+      activity: e.activity,
+      company: e.company || '',
+      predMastery: e.predMastery,
+      predPleasure: e.predPleasure,
+      actMastery: typeof e.actMastery === 'number' ? e.actMastery : null,
+      actPleasure: typeof e.actPleasure === 'number' ? e.actPleasure : null,
+      moodBefore: typeof e.moodBefore === 'number' ? e.moodBefore : null,
+      moodAfter: typeof e.moodAfter === 'number' ? e.moodAfter : null,
+      createdAt: e.createdAt || Date.now(),
+      scheduledAt: e.scheduledAt || e.createdAt || Date.now(),
+      completedAt: e.completedAt || null,
+    };
+  }
+
+  // Merge: keep existing entries and append imported ones (skip exact id collisions
+  // by minting fresh ids for duplicates).
+  async function performImportMerge(validEntries, importedTemplates) {
+    const existingIds = new Set(state.entries.map(e => e.id));
+    let addedCount = 0;
+    for (const e of validEntries) {
+      const normalized = normalizeImportedEntry(e, true, existingIds);
+      state.entries.push(normalized);
+      existingIds.add(normalized.id);
+      if (useWindowStorage) {
+        try { await window.storage.set('entry:' + normalized.id, JSON.stringify(normalized)); } catch(_) {}
+      }
+      addedCount++;
+    }
+    // Merge templates (deduplicated by addTemplate)
+    for (const tpl of importedTemplates) {
+      if (typeof tpl === 'string' && tpl.trim()) addTemplate(tpl);
+    }
+    sortEntries();
+    saveToLocalStorage();
+    renderInsights();
+    showToast(t('toast-imported-merged', { n: addedCount }));
+  }
+
+  // Replace: delete all existing entries (from window.storage if present and
+  // localStorage), then load only the imported ones. Templates are also replaced.
+  async function performImportReplace(validEntries, importedTemplates) {
+    // Delete every existing entry from window.storage
+    if (useWindowStorage) {
+      for (const e of state.entries) {
+        try { await window.storage.delete('entry:' + e.id); } catch(_) {}
+      }
+    }
+    // Clear in-memory state
+    state.entries = [];
+    state.templates = [];
+
+    // Write the new entries
+    const existingIds = new Set();
+    for (const e of validEntries) {
+      const normalized = normalizeImportedEntry(e, true, existingIds);
+      state.entries.push(normalized);
+      existingIds.add(normalized.id);
+      if (useWindowStorage) {
+        try { await window.storage.set('entry:' + normalized.id, JSON.stringify(normalized)); } catch(_) {}
+      }
+    }
+    // Replace templates
+    for (const tpl of importedTemplates) {
+      if (typeof tpl === 'string' && tpl.trim()) addTemplate(tpl);
+    }
+    sortEntries();
+    saveToLocalStorage();
+    saveTemplates();
+    renderInsights();
+    showToast(t('toast-imported-replaced', { n: validEntries.length }));
+  }
+
+  // Wire up file input change
+  document.getElementById('import-file-input').addEventListener('change', (ev) => {
+    const file = ev.target.files && ev.target.files[0];
+    if (file) handleImportFile(file);
+    // Reset so the same file can be selected again
+    ev.target.value = '';
+  });
 
   function avg(arr) { return arr.reduce((a, b) => a + b, 0) / arr.length; }
   function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -2036,12 +4503,19 @@
     tab.addEventListener('click', () => switchView(tab.dataset.view));
   });
 
-  ['pred-mastery', 'pred-pleasure', 'act-mastery', 'act-pleasure'].forEach(key => {
+  ['pred-mastery', 'pred-pleasure', 'act-mastery', 'act-pleasure', 'mood-before', 'mood-after'].forEach(key => {
     const tensRow = document.querySelector(`.scale-row.tens[data-scale="${key}"]`);
     const onesRow = document.querySelector(`.scale-row.ones[data-scale="${key}"]`);
     if (tensRow) buildScale(tensRow, key, 'tens');
     if (onesRow) buildScale(onesRow, key, 'ones');
   });
+
+  // Set up mood scale-pairs (handled by the standard scale init below)
+
+  // Load and render templates
+  loadTemplates();
+  renderTemplates();
+  updateSaveTemplateBtn();
 
   // Wire up language switcher buttons (event delegation so it works
   // even if buttons are re-rendered)
