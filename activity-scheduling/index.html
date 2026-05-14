@@ -7,7 +7,7 @@
 <title>სიამოვნების პროგნოზის ფურცელი · Pleasure-Predicting Sheet</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+Georgian:wght@300;400;500;600&family=Noto+Sans+Georgian:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=JetBrains+Mono:wght@400;500&family=Noto+Serif:wght@300;400;500;600&family=Noto+Serif+Georgian:wght@300;400;500;600&family=Noto+Sans:wght@400;500&family=Noto+Sans+Georgian:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #161a17;
@@ -76,6 +76,50 @@
   html[lang="ka"] .confirm-actions button,
   html[lang="ka"] .footer-credit {
     font-family: 'Noto Sans Georgian', 'JetBrains Mono', monospace;
+  }
+
+
+  html[lang="ru"] body,
+  html[lang="ru"] input[type="text"],
+  html[lang="ru"] textarea,
+  html[lang="ru"] .time-select,
+  html[lang="ru"] button.primary,
+  html[lang="ru"] .entry-activity,
+  html[lang="ru"] .empty p,
+  html[lang="ru"] .insight-text,
+  html[lang="ru"] .confirm-message,
+  html[lang="ru"] .attribution,
+  html[lang="ru"] .date-header-label,
+  html[lang="ru"] .pair-title,
+  html[lang="ru"] .toast,
+  html[lang="ru"] .footer-line {
+    font-family: 'Noto Serif', 'Fraunces', Georgia, serif;
+  }
+
+  html[lang="ru"] h1 {
+    font-family: 'Noto Serif', 'Fraunces', Georgia, serif;
+  }
+
+  html[lang="ru"] .eyebrow,
+  html[lang="ru"] label,
+  html[lang="ru"] .tab,
+  html[lang="ru"] .scale-sub-label,
+  html[lang="ru"] .metric-label,
+  html[lang="ru"] .entry-date,
+  html[lang="ru"] .stat-label,
+  html[lang="ru"] .insight-label,
+  html[lang="ru"] .date-chip,
+  html[lang="ru"] .date-header-meta,
+  html[lang="ru"] .time-preset,
+  html[lang="ru"] button.ghost,
+  html[lang="ru"] .entry-actions button,
+  html[lang="ru"] .confirm-actions button,
+  html[lang="ru"] .footer-credit,
+  html[lang="ru"] .dashboard-sort-label,
+  html[lang="ru"] .dashboard-sort-select,
+  html[lang="ru"] .chart-filter-label,
+  html[lang="ru"] .chart-filter-select {
+    font-family: 'Noto Sans', 'JetBrains Mono', monospace;
   }
 
   body {
@@ -1178,6 +1222,48 @@
     color: var(--ink-dim);
   }
 
+
+  .chart-controls {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 7px;
+    margin: 10px 4px 14px;
+  }
+
+  .chart-filter-label {
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0;
+  }
+
+  .chart-filter-select {
+    width: 100%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--ink);
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%239ba197' d='M6 8L0 0h12z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+
+  .chart-filter-select:focus {
+    outline: none;
+    border-color: var(--accent-soft);
+  }
+
   .legend-item {
     display: inline-flex;
     align-items: center;
@@ -1199,8 +1285,10 @@
   }
 
   /* Chart hover interaction */
-  .chart-svg .hover-zone {
+  .chart-svg .hover-zone,
+  .chart-svg .hover-surface {
     fill: transparent;
+    pointer-events: all;
     cursor: crosshair;
   }
 
@@ -2532,6 +2620,7 @@
     <div class="lang-switcher">
       <button class="lang-btn" data-lang="ka">ქარ</button>
       <button class="lang-btn" data-lang="en">EN</button>
+      <button class="lang-btn" data-lang="ru">RU</button>
     </div>
     <div class="eyebrow" data-i18n="eyebrow"></div>
     <h1><span data-i18n="title-pre"></span> <span class="accent" data-i18n="title-accent"></span> <span data-i18n="title-post"></span></h1>
@@ -2665,6 +2754,24 @@
     </section>
 
     <section class="about-section">
+      <h3 class="about-section-title" data-i18n="about-features-title"></h3>
+      <ul class="about-tips">
+        <li data-i18n-html="about-feature1"></li>
+        <li data-i18n-html="about-feature2"></li>
+        <li data-i18n-html="about-feature3"></li>
+        <li data-i18n-html="about-feature4"></li>
+        <li data-i18n-html="about-feature5"></li>
+        <li data-i18n-html="about-feature6"></li>
+        <li data-i18n-html="about-feature7"></li>
+        <li data-i18n-html="about-feature8"></li>
+        <li data-i18n-html="about-feature9"></li>
+        <li data-i18n-html="about-feature10"></li>
+        <li data-i18n-html="about-feature11"></li>
+        <li data-i18n-html="about-feature12"></li>
+      </ul>
+    </section>
+
+    <section class="about-section">
       <h3 class="about-section-title" data-i18n="about-tips-title"></h3>
       <ul class="about-tips">
         <li data-i18n="about-tip1"></li>
@@ -2677,6 +2784,7 @@
     <section class="about-section about-privacy">
       <h3 class="about-section-title" data-i18n="about-privacy-title"></h3>
       <p class="about-text" data-i18n="about-privacy-p"></p>
+      <p class="about-text" data-i18n="about-responsibility-p"></p>
     </section>
 
     <div class="ornament">· · ·</div>
@@ -2953,16 +3061,21 @@
 
       // Chart
       'chart-title': 'პროგნოზი vs რეალური (ბოლო 7 დღე · დაწყების თარიღით)',
-      'chart-empty': 'მინიმუმ 2 შეფასებული აქტივობაა საჭირო გრაფიკისთვის.',
+      'chart-empty': 'გრაფიკისთვის საჭიროა მინიმუმ 1 შეფასებული ბოლო აქტივობა.',
       'chart-predicted': 'პროგნოზი',
       'chart-actual': 'რეალური',
       'chart-pleasure': 'სიამოვნება',
       'chart-mastery': 'ოსტატობა',
       'chart-mood-before': 'განწყობა მანამდე',
       'chart-mood-after': 'განწყობა შემდეგ',
-      'chart-hover-hint': 'გადაატარე კურსორი გრაფიკზე ცალკეული ჩანაწერების სანახავად',
+      'chart-hover-hint': 'გადაატარე კურსორი ან შეეხე გრაფიკს — რიცხვები გამოჩნდება წერტილებთან ახლოს',
       'chart-pred-short': 'პროგ.',
       'chart-act-short': 'რეალ.',
+      'chart-filter-label': 'გრაფიკზე ჩვენება',
+      'chart-filter-all': 'ყველა',
+      'chart-filter-mood': 'მხოლოდ განწყობა',
+      'chart-filter-pleasure': 'მხოლოდ სიამოვნება',
+      'chart-filter-mastery': 'მხოლოდ ოსტატობა',
 
       // Export / Import
       'btn-export': 'მონაცემების ექსპორტი',
@@ -2994,6 +3107,20 @@
       'about-step4-title': '4. ანალიზი',
       'about-step4-p': 'დაინახე კანონზომიერებები: სად ცდუნდება შენი გონება, რომელი აქტივობები აუმჯობესებენ ხასიათს, რა იყო შენი მცდარი მოლოდინი. ეს მონაცემები არის შენი მთავარი ხელსაწყო.',
 
+      'about-features-title': 'ახალი ფუნქციების სრული ახსნა',
+      'about-feature1': '<strong>სწრაფი შაბლონები:</strong> თუ ერთი და იგივე აქტივობას ხშირად გეგმავ — მაგალითად სეირნობა, ვარჯიში, სწავლა ან მეგობართან საუბარი — შეინახე შაბლონად. შემდეგ ახალი ჩანაწერის გაკეთებისას შეგიძლია ერთი შეხებით ჩასვა და არ აკრიფო თავიდან.',
+      'about-feature2': '<strong>განწყობა მანამდე/შემდეგ:</strong> რეალური შეფასების დროს შეგიძლია ჩაწერო განწყობა აქტივობამდე და აქტივობის შემდეგ. ეს აჩვენებს არა მხოლოდ სიამოვნებასა და ოსტატობას, არამედ იმასაც, მართლა აუმჯობესებს თუ არა აქტივობა შენს ზოგად მდგომარეობას.',
+      'about-feature3': '<strong>გრაფიკის ფილტრი:</strong> Insights-ში გრაფიკზე არის არჩევანი: „ყველა“ ნაგულისხმევად აჩვენებს ყველაფერს ერთად, ხოლო „მხოლოდ განწყობა“, „მხოლოდ სიამოვნება“ და „მხოლოდ ოსტატობა“ ტოვებს მხოლოდ არჩეულ კატეგორიას, რომ გრაფიკი უფრო სუფთა და გასაგები იყოს.',
+      'about-feature4': '<strong>გრაფიკის წარწერები s/f ფორმატით:</strong> გრაფიკზე კურსორის გადატარებისას ან შეხებისას მნიშვნელობები ჩანს წერტილებთან ახლოს. s50 ნიშნავს საწყის/პროგნოზირებულ მნიშვნელობას 50-ს, ხოლო f49 ნიშნავს საბოლოო/რეალურ მნიშვნელობას 49-ს. იგივე წესია განწყობისთვის, სიამოვნებისთვის და ოსტატობისთვის.',
+      'about-feature5': '<strong>არაგადაფარული ყუთები გრაფიკზე:</strong> თუ ერთ დღეში ბევრი წერტილია ახლოს, წარწერების ყუთები ავტომატურად გადანაცვლდება ისე, რომ ერთმანეთს არ გადაეფაროს და ყველა რიცხვი წაკითხვადი დარჩეს.',
+      'about-feature6': '<strong>რა მუშაობს ყველაზე კარგად:</strong> ეს დაფა აჩვენებს, რომელი აქტივობები გაძლევს ყველაზე ძლიერ შედეგს განწყობაში, ოსტატობასა და სიამოვნებაში. თითოეულში ჩანს როგორც საბოლოო ქულა, ისე სხვაობა საწყის/პროგნოზირებულ და საბოლოო/რეალურ ქულას შორის.',
+      'about-feature7': '<strong>დალაგება სხვაობით ან საბოლოო ქულით:</strong> „სხვაობით დალაგება“ გიჩვენებს, რომელმა აქტივობამ მოგცა ყველაზე დიდი გაუმჯობესება. „საბოლოო ქულით დალაგება“ გიჩვენებს, რომელი აქტივობები სრულდება ყველაზე მაღალი შედეგით, თუნდაც გაუმჯობესება დიდი არ იყოს.',
+      'about-feature8': '<strong>შეუზღუდავი აქტივობების სია:</strong> საუკეთესო აქტივობების დაფა აღარ არის შეზღუდული მხოლოდ ტოპ 5-ით. თუ მონაცემი გაქვს, შეგიძლია ნახო ყველა აქტივობა და შეადარო უფრო ფართო სურათი.',
+      'about-feature9': '<strong>ღრმა ანალიზი ერთი აქტივობისთვის:</strong> აირჩიე კონკრეტული აქტივობა და ნახე მისი განწყობა, ოსტატობა და სიამოვნება ერთად: რამდენი იყო საბოლოო ქულა, რამდენით შეიცვალა და რამდენ ჩანაწერს ეფუძნება დასკვნა.',
+      'about-feature10': '<strong>„ყველას ჩვენება“ ღრმა ანალიზში:</strong> არჩევანში პირველი ვარიანტია „ყველას ჩვენება“. ეს არ აჩვენებს რეიტინგს, არამედ ალფაბეტურად ჩამოთვლის ყველა აქტივობას, რათა თითოეული აქტივობის განწყობა, ოსტატობა და სიამოვნება ერთ ხაზზე იყოს ერთად.',
+      'about-feature11': '<strong>დაწყების თარიღი მთავარია:</strong> გრაფიკი, სტრიკები და ანალიზი აქტივობას აკავშირებს დაგეგმილ/დაწყების დღესთან. მაგალითად, თუ აქტივობა დაიწყო გუშინ 23:00-ზე და დასრულდა 00:20-ზე, იგი მაინც გუშინდელ დღედ ჩაითვლება ანალიზში.',
+      'about-feature12': '<strong>ენა, სარეზერვო ასლი და პასუხისმგებლობა:</strong> შეგიძლია გადართო ქართული, ინგლისური და რუსული ენა. მონაცემები რჩება შენს მოწყობილობაზე, ამიტომ მნიშვნელოვანი ჩანაწერები პერიოდულად გაიტანე Export-ით. აპი შეიძლება წაიშალოს ვებიდან ან გახდეს მიუწვდომელი, და ამ შემთხვევაში ავტორი მაინც არ არის პასუხისმგებელი გამოყენებაზე, შედეგებზე, დაკარგულ წვდომაზე ან დაკარგულ მონაცემებზე.',
+
       'about-tips-title': 'რჩევები',
       'about-tip1': 'იყავი მართალი. ნუ შეცვლი წინასწარ პროგნოზს მას შემდეგ, რაც გააკეთე — ეს ანადგურებს ხელსაწყოს მთელ აზრს.',
       'about-tip2': 'დაიწყე პატარა აქტივობებით. ერთი 10-წუთიანი სიარული უკვე საკმარისია.',
@@ -3002,6 +3129,7 @@
 
       'about-privacy-title': 'შენი მონაცემები',
       'about-privacy-p': 'ყველაფერი ინახება მხოლოდ შენს მოწყობილობაზე. არცერთი ჩანაწერი არ იგზავნება სერვერზე ან რომელიმე სხვა ადგილას. შეგიძლია ნებისმიერ დროს გააკეთო ექსპორტი (Backup) ან გაასუფთავო ბრაუზერის მონაცემები ყველაფრის წასაშლელად.',
+      'about-responsibility-p': 'პასუხისმგებლობის შენიშვნა: აპი მოცემულია პირადი თვითრეფლექსიისთვის. მე არ ვარ პასუხისმგებელი იმაზე, როგორ გამოიყენებს ვინმე ამ აპს, მის შედეგებს ან მონაცემებს. აპი შეიძლება ნებისმიერ დროს წაიშალოს ვებიდან, გახდეს მიუწვდომელი ან შეიცვალოს, და ამ შემთხვევაშიც მე არ ვიღებ პასუხისმგებლობას დაკარგულ წვდომაზე, დაკარგულ მონაცემებზე ან სხვა შედეგებზე.',
       'about-attribution': 'ეფუძნება დევიდ დ. ბერნზის, MD, წიგნს <em>The Feeling Good Handbook</em>. ეს არის პირადი თვითრეფლექსიის ხელსაწყო და არ ცვლის პროფესიონალურ ფსიქოლოგიურ მკურნალობას.',
       'import-choose-title': 'როგორ მოვახდინო იმპორტი?',
       'import-choose-msg': '{n} ჩანაწერი ნაპოვნია ფაილში. გსურს გაერთიანდეს არსებულ მონაცემებთან, თუ ჩაანაცვლოს ისინი?',
@@ -3023,6 +3151,232 @@
       'edit-title-mood-after': 'შემდგომი განწყობის რედაქტირება',
       'edit-title-company': 'ვისთან ერთად — რედაქტირება',
       'toast-edit-saved': 'შენახული.',
+    },
+    ru: {
+      'eyebrow': 'Поведенческая активация · по Д. Бернсу, MD',
+      'title-pre': '',
+      'title-accent': 'Лист прогнозирования',
+      'title-post': 'удовольствия',
+      'subtitle': 'Сначала предскажи мастерство и удовольствие; после — оцени реальность. Разница и есть данные.',
+      'attribution': 'Вдохновлено листом прогнозирования удовольствия из книги <em>The Feeling Good Handbook</em>, Дэвид Д. Бернс, MD. Это инструмент для личной саморефлексии, а не замена профессиональной психологической помощи.',
+
+      'tab-new': 'Новое',
+      'tab-log': 'Журнал',
+      'tab-insights': 'Анализ',
+
+      'label-activity': 'Активность',
+      'ph-activity': 'напр. 30 минут ходьбы на дорожке',
+      'label-company': 'С кем (или один)',
+      'ph-company': 'Один, с другом и т.д.',
+      'label-when': 'Когда (запланированное время)',
+
+      'preset-now': 'Сейчас',
+      'preset-1hr': '+1 ч',
+      'preset-3hr': '+3 ч',
+      'preset-tmrw': 'Завтра',
+
+      'pair-pred-mastery': 'Прогноз мастерства',
+      'pair-pred-pleasure': 'Прогноз удовольствия',
+      'pair-act-mastery': 'Реальное мастерство',
+      'pair-act-pleasure': 'Реальное удовольствие',
+
+      'sub-tens': 'Десятки',
+      'sub-ones': 'Единицы',
+      'total-label': 'Итого',
+
+      'btn-save': 'Сохранить прогноз',
+      'btn-save-rating': 'Сохранить реальные оценки',
+      'btn-cancel': 'Отмена',
+      'btn-delete': 'Удалить',
+      'btn-rate': 'Оценить реальность',
+
+      'footer-new': 'Сохрани сейчас. Сделай. Вернись и оцени реальность.',
+
+      'pending': 'ожидает',
+      'entry': 'запись',
+      'entries': 'записей',
+      'all': 'Все',
+
+      'empty-log': 'Пока нет записей. Спрогнозируй активность, чтобы начать собирать доказательства: что говорит ум и что показывает реальность.',
+      'empty-insights': 'Оцени хотя бы одну завершённую активность, чтобы увидеть закономерности.',
+
+      'stat-total': 'Всего записей',
+      'stat-rated': 'Оценено',
+      'stat-current-streak': 'Текущая серия',
+      'stat-best-streak': 'Лучшая серия',
+      'stat-mastery': 'Сред. мастерство · прог.',
+      'stat-pleasure': 'Сред. удовольствие · прог.',
+
+      'dashboard-title': 'Что работает лучше всего?',
+      'dashboard-subtitle': 'Активности отсортированы по среднему результату. Больше записей = более надёжный сигнал.',
+      'dashboard-sort-label': 'Сортировка',
+      'dashboard-sort-diff': 'По разнице',
+      'dashboard-sort-final': 'По финальной оценке',
+      'dashboard-mood-title': 'Поднимают настроение',
+      'dashboard-mood-sub': 'Итоговое настроение + средний подъём',
+      'dashboard-mastery-title': 'Дают мастерство',
+      'dashboard-mastery-sub': 'Итоговое мастерство + реальность − прогноз',
+      'dashboard-pleasure-title': 'Дают удовольствие',
+      'dashboard-pleasure-sub': 'Итоговое удовольствие + реальность − прогноз',
+      'dashboard-count': '{n} записей',
+      'dashboard-final': 'Итог',
+      'dashboard-difference': 'Разница',
+      'dashboard-empty-mood': 'Пока мало данных о настроении. Оцени настроение до и после активностей.',
+      'dashboard-empty-score': 'Пока мало завершённых оценок.',
+
+      'deep-analysis-title': 'Глубокий анализ одной активности',
+      'deep-analysis-subtitle': 'Выбери активность и посмотри настроение, мастерство и удовольствие вместе: итоговый результат и среднюю разницу.',
+      'deep-analysis-select': 'Выбери активность',
+      'deep-analysis-show-all': 'Показать все',
+      'deep-analysis-all-name': 'Все активности',
+      'deep-analysis-all-subtitle': 'Активности показаны по алфавиту — настроение, мастерство и удовольствие остаются вместе в одной строке.',
+      'deep-analysis-no-data': 'Нет данных',
+      'deep-analysis-total': '{n} оценённых записей для этой активности',
+      'deep-analysis-based-on': 'На основе',
+      'deep-analysis-mood': 'Настроение',
+      'deep-analysis-mastery': 'Мастерство',
+      'deep-analysis-pleasure': 'Удовольствие',
+
+      'insight-pattern': 'Закономерность',
+      'insight-gap': 'Разрыв прогноза',
+      'insight-mastery': 'Мастерство',
+      'insight-pleasure': 'Удовольствие',
+      'insight-footer': 'Разница между прогнозом и реальностью — в этом весь смысл. Именно там ум тебя обманывает.',
+
+      'insight-pleasure-up': 'Реальность оказалась добрее, чем ты ожидал. Твои прогнозы недооценивают то, что тебе реально нравится.',
+      'insight-pleasure-down': 'Активности дают меньше удовольствия, чем ожидалось. Стоит понять, что именно не сработало.',
+      'insight-mastery-up': 'Ты способнее, чем думаешь. Прогноз мастерства слишком низкий.',
+      'insight-mastery-down': 'Мастерство ниже прогноза. Проверь, не берёшь ли ты слишком много сразу.',
+      'insight-neutral': 'Твои прогнозы близки к реальности. Продолжай собирать данные.',
+
+      'toast-saved': 'Прогноз сохранён. Иди сделай.',
+      'toast-rated': 'Реальность записана.',
+      'toast-deleted': 'Запись удалена.',
+      'toast-failed': 'Не удалось сохранить. Попробуй ещё раз.',
+
+      'confirm-delete': 'Удалить эту запись?',
+
+      'footer-1': 'Основано на листе прогнозирования удовольствия',
+      'footer-2': 'из книги <strong>The Feeling Good Handbook</strong>, Дэвид Д. Бернс, MD',
+      'footer-3': 'Инструмент саморефлексии · не медицинская рекомендация',
+      'footer-4': 'Все данные остаются на твоём устройстве',
+
+      'hint-now': 'сейчас',
+      'hint-soon': 'скоро',
+      'hint-in-hr': 'через {n} ч',
+      'hint-in-d': 'через {n} дн.',
+      'hint-ago-hr': '{n} ч назад',
+      'hint-ago-d': '{n} дн. назад',
+
+      'day-today': 'Сегодня',
+      'day-yesterday': 'Вчера',
+      'day-tomorrow': 'Завтра',
+      'short-today': 'Сегодня',
+      'short-yest': 'Вчера',
+      'short-tmrw': 'Завтра',
+
+      'label-mood-before': 'Настроение до',
+      'label-mood-after': 'Настроение после',
+      'mood-pending': 'не оценено',
+      'mood-low': 'Низкое',
+      'mood-high': 'Высокое',
+
+      'label-templates': 'Быстро добавить',
+      'templates-empty': 'Пока нет сохранённых шаблонов. После ввода активности нажми «Сохранить как шаблон».',
+      'btn-save-template': 'Сохранить как шаблон',
+      'btn-template-saved': '✓ Сохранено',
+      'toast-template-saved': 'Шаблон сохранён.',
+      'toast-template-removed': 'Шаблон удалён.',
+      'template-delete-confirm': 'Удалить этот шаблон?',
+
+      'chart-title': 'Прогноз vs реальность (последние 7 дней · по дате начала)',
+      'chart-empty': 'Нужна хотя бы 1 оценённая недавняя активность для графика.',
+      'chart-predicted': 'Прогноз',
+      'chart-actual': 'Реальность',
+      'chart-pleasure': 'Удовольствие',
+      'chart-mastery': 'Мастерство',
+      'chart-mood-before': 'Настроение до',
+      'chart-mood-after': 'Настроение после',
+      'chart-hover-hint': 'Наведи курсор или коснись графика, чтобы увидеть значения рядом с точками',
+      'chart-pred-short': 'Прог.',
+      'chart-act-short': 'Реал.',
+      'chart-filter-label': 'Показать на графике',
+      'chart-filter-all': 'Все',
+      'chart-filter-mood': 'Только настроение',
+      'chart-filter-pleasure': 'Только удовольствие',
+      'chart-filter-mastery': 'Только мастерство',
+
+      'btn-export': 'Экспорт данных',
+      'btn-import': 'Импорт данных',
+      'btn-data': 'Данные',
+      'toast-exported': 'Файл скачан.',
+      'toast-imported': '{n} записей импортировано.',
+      'toast-import-failed': 'Импорт не удался. Проверь формат файла.',
+      'import-confirm': 'Импорт добавит записи к текущим данным. Продолжить?',
+
+      'tab-about': 'О программе',
+      'about-title': 'Как пользоваться этим инструментом',
+      'about-intro-title': 'Что такое лист прогнозирования удовольствия?',
+      'about-intro-p1': 'Это инструмент, описанный в книге Дэвида Бернса <em>The Feeling Good Handbook</em>. Он основан на известном психологическом наблюдении: когда человек подавлен или застрял, ум систематически обманывает его, предсказывая, что будущие активности не принесут ни удовольствия, ни чувства достижения. Это психологический фильтр, а не реальность.',
+      'about-intro-p2': 'Лист даёт доказательства. Сначала ты прогнозируешь, что даст активность, затем выполняешь её и оцениваешь реальный опыт. Со временем видно, что реальность отличается от ожиданий — часто в лучшую сторону.',
+
+      'about-method-title': 'Почему это работает',
+      'about-method-p1': 'Это <strong>поведенческая активация (Behavioral Activation, BA)</strong> — одна из наиболее эмпирически подтверждённых техник CBT при депрессии. Идея простая: не жди улучшения настроения, чтобы что-то сделать. Сделай — и настроение начнёт догонять.',
+      'about-method-p2': 'Сравнение прогноза с реальностью показывает, что негативные предсказания ума не являются истиной — это когнитивное искажение. Мы часто недооцениваем, сколько удовольствия или ощущения достижения реально получим.',
+
+      'about-howto-title': 'Как пользоваться',
+      'about-step1-title': '1. Новое',
+      'about-step1-p': 'Запиши активность, которую планируешь. Назначь время. Затем заранее оцени мастерство (насколько хорошо ты это сделаешь или сколько чувства достижения это даст) и удовольствие (насколько тебе понравится). Обе оценки — от 0 до 100.',
+      'about-step2-title': '2. Сделай',
+      'about-step2-p': 'Иди и сделай активность. Не пытайся заранее изменить настроение — просто сделай.',
+      'about-step3-title': '3. Журнал (оценить реальность)',
+      'about-step3-p': 'Вернись и нажми «Оценить реальность». Запиши, что произошло на самом деле: реальное мастерство, реальное удовольствие, а также настроение до и после. Кнопка с карандашом позволяет редактировать любое значение.',
+      'about-step4-title': '4. Анализ',
+      'about-step4-p': 'Смотри закономерности: где ум тебя обманывает, какие активности улучшают настроение, какие ожидания были ложными. Эти данные — твой главный инструмент.',
+
+      'about-features-title': 'Полное объяснение новых функций',
+      'about-feature1': '<strong>Быстрые шаблоны:</strong> если ты часто планируешь одну и ту же активность — прогулку, тренировку, учёбу или разговор с другом — сохрани её как шаблон. Потом на экране новой записи её можно вставить одним нажатием, без повторного ввода.',
+      'about-feature2': '<strong>Настроение до/после:</strong> при оценке активности можно записать настроение до и после. Так ты видишь не только удовольствие и мастерство, но и то, реально ли активность сдвигает общее состояние.',
+      'about-feature3': '<strong>Фильтр графика:</strong> в разделе «Анализ» есть выбор: «Все» по умолчанию показывает всё вместе, а «Только настроение», «Только удовольствие» и «Только мастерство» оставляют на графике только выбранную категорию, чтобы картинка была чище.',
+      'about-feature4': '<strong>Подписи графика в формате s/f:</strong> при наведении или касании значения появляются рядом с точками. s50 означает стартовое/прогнозное значение 50, а f49 означает финальное/реальное значение 49. Этот формат используется для настроения, удовольствия и мастерства.',
+      'about-feature5': '<strong>Боксы на графике не перекрываются:</strong> если в один день много точек рядом, подписи автоматически сдвигаются так, чтобы не накладываться друг на друга и чтобы все числа оставались читаемыми.',
+      'about-feature6': '<strong>Что работает лучше всего:</strong> эта панель показывает, какие активности дают самый сильный результат по настроению, мастерству и удовольствию. В каждой строке видно и финальную оценку, и разницу между стартовым/прогнозным и финальным/реальным значением.',
+      'about-feature7': '<strong>Сортировка по разнице или финальной оценке:</strong> сортировка по разнице показывает, какие активности дают самый большой подъём. Сортировка по финальной оценке показывает, какие активности заканчиваются самым высоким результатом, даже если подъём был небольшим.',
+      'about-feature8': '<strong>Неограниченный список активностей:</strong> панель лучших активностей больше не ограничена топ-5. Если данные есть, можно смотреть все активности и сравнивать более широкую картину.',
+      'about-feature9': '<strong>Глубокий анализ одной активности:</strong> выбери конкретную активность и смотри настроение, мастерство и удовольствие вместе: финальную оценку, изменение и количество записей, на которых основан вывод.',
+      'about-feature10': '<strong>«Показать все» в глубоком анализе:</strong> первый вариант в списке — «Показать все». Он показывает не рейтинг, а алфавитный список всех активностей, чтобы настроение, мастерство и удовольствие каждой активности были вместе в одной строке.',
+      'about-feature11': '<strong>Дата начала главная:</strong> график, серии и анализ привязывают активность к запланированной/стартовой дате. Например, если активность началась вчера в 23:00 и закончилась в 00:20, в анализе она всё равно относится ко вчерашнему дню.',
+      'about-feature12': '<strong>Язык, резервная копия и ответственность:</strong> можно переключаться между грузинским, английским и русским языком. Данные остаются на твоём устройстве, поэтому важные записи лучше периодически сохранять через Export. Приложение может быть удалено из интернета или стать недоступным, и даже в этом случае автор не несёт ответственности за использование, результаты, потерю доступа или потерю данных.',
+
+      'about-tips-title': 'Советы',
+      'about-tip1': 'Будь честен. Не меняй прогноз после выполнения активности — иначе теряется смысл инструмента.',
+      'about-tip2': 'Начинай с маленьких активностей. Даже 10-минутной прогулки уже достаточно.',
+      'about-tip3': 'Регулярность важнее совершенства. Одна запись в день в течение 2 недель уже покажет закономерности.',
+      'about-tip4': 'Не воспринимай это как лечение. Это инструмент саморефлексии. Если у тебя тяжёлая депрессия или мысли о самоповреждении — обратись к специалисту.',
+
+      'about-privacy-title': 'Твои данные',
+      'about-privacy-p': 'Всё хранится только на твоём устройстве. Никакая запись не отправляется на сервер или куда-либо ещё. Ты можешь в любой момент экспортировать резервную копию или очистить данные браузера, чтобы всё удалить.',
+      'about-responsibility-p': 'Примечание об ответственности: приложение предоставляется для личной саморефлексии. Я не несу ответственности за то, как кто-либо использует это приложение, его результаты или данные. Приложение может быть в любой момент удалено из интернета, стать недоступным или измениться, и даже в этом случае я не несу ответственности за потерю доступа, потерю данных или любые последствия.',
+      'about-attribution': 'Основано на книге <em>The Feeling Good Handbook</em>, Дэвид Д. Бернс, MD. Это личный инструмент саморефлексии, а не замена профессиональной психологической помощи.',
+      'import-choose-title': 'Как импортировать?',
+      'import-choose-msg': 'В файле найдено {n} записей. Объединить их с текущими данными или заменить всё?',
+      'btn-merge': 'Объединить',
+      'btn-replace': 'Заменить',
+      'replace-confirm': 'Замена удалит все текущие записи и загрузит только записи из файла. Ты уверен?',
+      'toast-imported-merged': 'Объединено {n} записей.',
+      'toast-imported-replaced': 'Заменено на {n} записей.',
+
+      'edit-save': 'Сохранить',
+      'edit-title-activity': 'Редактировать активность',
+      'edit-title-time': 'Редактировать время',
+      'edit-title-pred-mastery': 'Редактировать прогноз мастерства',
+      'edit-title-pred-pleasure': 'Редактировать прогноз удовольствия',
+      'edit-title-act-mastery': 'Редактировать реальное мастерство',
+      'edit-title-act-pleasure': 'Редактировать реальное удовольствие',
+      'edit-title-mood-before': 'Редактировать настроение до',
+      'edit-title-mood-after': 'Редактировать настроение после',
+      'edit-title-company': 'Редактировать “с кем”',
+      'toast-edit-saved': 'Сохранено.',
     },
     en: {
       'eyebrow': 'Behavioral Activation · After D. Burns, MD',
@@ -3163,16 +3517,21 @@
       'template-delete-confirm': 'Remove this template?',
 
       'chart-title': 'Predicted vs Actual (Last 7 Days · by Start Date)',
-      'chart-empty': 'Need at least 2 rated entries to draw a chart.',
+      'chart-empty': 'Need at least 1 recent rated entry to draw a chart.',
       'chart-predicted': 'Predicted',
       'chart-actual': 'Actual',
       'chart-pleasure': 'Pleasure',
       'chart-mastery': 'Mastery',
       'chart-mood-before': 'Mood Before',
       'chart-mood-after': 'Mood After',
-      'chart-hover-hint': 'Hover over the chart to see individual entries',
+      'chart-hover-hint': 'Hover or touch the chart to see values beside the dots',
       'chart-pred-short': 'Pred.',
       'chart-act-short': 'Actual',
+      'chart-filter-label': 'Show on graph',
+      'chart-filter-all': 'All',
+      'chart-filter-mood': 'Mood only',
+      'chart-filter-pleasure': 'Pleasure only',
+      'chart-filter-mastery': 'Mastery only',
 
       'btn-export': 'Export Data',
       'btn-import': 'Import Data',
@@ -3203,6 +3562,20 @@
       'about-step4-title': '4. Insights',
       'about-step4-p': 'See patterns: where your mind deceives you, which activities improve your mood, what your false expectations were. This data is your main tool.',
 
+      'about-features-title': 'Full Explanation of the New Features',
+      'about-feature1': '<strong>Quick templates:</strong> if you often plan the same activity — a walk, workout, study block, or conversation with a friend — save it as a template. Next time, insert it from the New screen with one tap instead of typing it again.',
+      'about-feature2': '<strong>Mood before/after:</strong> when rating an activity, you can record mood before and mood after. This shows not only pleasure and mastery, but also whether the activity actually shifts your overall state.',
+      'about-feature3': '<strong>Graph filter:</strong> in Insights, the graph has a selector. All is the default and shows everything together. Mood only, Pleasure only, and Mastery only hide the other categories so the graph is easier to read.',
+      'about-feature4': '<strong>s/f labels on the graph:</strong> when you hover or touch the graph, values appear next to the dots. s50 means starting/predicted value 50, and f49 means final/actual value 49. The same format is used for mood, pleasure, and mastery.',
+      'about-feature5': '<strong>Non-overlapping graph boxes:</strong> when several values are close together on the same day, the value boxes automatically shift so they do not cover each other and all numbers stay readable.',
+      'about-feature6': '<strong>What works best:</strong> this dashboard shows which activities produce the strongest results for mood, mastery, and pleasure. Each row shows both the final score and the difference between starting/predicted and final/actual values.',
+      'about-feature7': '<strong>Sort by difference or final score:</strong> Sort by difference finds the biggest improvements. Sort by final score finds the activities that end with the highest result, even if the improvement was small.',
+      'about-feature8': '<strong>Unlimited activity rankings:</strong> the best-activity dashboard is no longer limited to a top 5. If data exists, you can review all activities and compare the wider pattern.',
+      'about-feature9': '<strong>Deep analysis for one activity:</strong> choose a specific activity and see mood, mastery, and pleasure together: final score, change, and how many entries the conclusion is based on.',
+      'about-feature10': '<strong>Show all in deep analysis:</strong> the first option is Show all. It does not show a ranking; it lists all activity names alphabetically so each activity keeps mood, mastery, and pleasure together on one line.',
+      'about-feature11': '<strong>Start date is primary:</strong> charts, streaks, and analysis attach an activity to its scheduled/start date. For example, if an activity started yesterday at 11 PM and ended at 12:20 AM, it still belongs to yesterday in analysis.',
+      'about-feature12': '<strong>Language, backup, and responsibility:</strong> you can switch between Georgian, English, and Russian. Data stays on your device, so export important records as a backup. The app may be removed from the web or become unavailable, and even then the author is not responsible for use, results, lost access, or lost data.',
+
       'about-tips-title': 'Tips',
       'about-tip1': 'Be honest. Don\'t change your prediction after you\'ve done the activity — that destroys the entire point of the tool.',
       'about-tip2': 'Start with small activities. One 10-minute walk is already enough.',
@@ -3211,6 +3584,7 @@
 
       'about-privacy-title': 'Your Data',
       'about-privacy-p': 'Everything stays on your device. No entry is sent to a server or anywhere else. You can export a backup any time, or clear your browser data to wipe everything.',
+      'about-responsibility-p': 'Responsibility note: this app is provided for personal self-reflection. I am not responsible for how anyone uses the app, its results, or its data. The app may be removed from the web, become unavailable, or change at any time, and I am still not responsible for lost access, lost data, or any consequences.',
       'about-attribution': 'Based on <em>The Feeling Good Handbook</em> by David D. Burns, MD. This is a personal self-reflection tool and is not a substitute for professional mental health care.',
       'import-choose-title': 'How should we import?',
       'import-choose-msg': 'Found {n} entries in the file. Merge them into your existing data, or replace everything?',
@@ -3284,7 +3658,7 @@
   }
 
   function setLang(lang) {
-    currentLang = (lang === 'en') ? 'en' : 'ka';
+    currentLang = ['ka', 'en', 'ru'].includes(lang) ? lang : 'ka';
     try { localStorage.setItem(LANG_STORAGE_KEY, currentLang); } catch(e) {}
     applyTranslations();
   }
@@ -3292,7 +3666,7 @@
   // Load saved preference (defaults to Georgian)
   try {
     const saved = localStorage.getItem(LANG_STORAGE_KEY);
-    if (saved === 'en' || saved === 'ka') currentLang = saved;
+    if (['ka', 'en', 'ru'].includes(saved)) currentLang = saved;
   } catch(e) {}
 
   // ============ STATE ============
@@ -3312,6 +3686,7 @@
     logFilterDate: null, // null = show all dates; otherwise a day-start timestamp (ms)
     analysisActivityKey: null,
     dashboardSort: 'diff',
+    chartFilter: 'all',
   };
 
   // Get the resolved total for a scale key (or null if incomplete)
@@ -4392,51 +4767,85 @@
   // ============ INSIGHTS ============
   // ============ CHART (Predicted vs Actual, last 7 days) ============
   // Returns SVG markup as a string. Designed for a ~340px wide mobile viewport.
-  function renderChartSvg(completed) {
-    const W = 340, H = 220;
-    const pad = { top: 14, right: 14, bottom: 28, left: 30 };
+  function getChartFilter() {
+    return ['all', 'mood', 'pleasure', 'mastery'].includes(state.chartFilter) ? state.chartFilter : 'all';
+  }
+
+  function visibleChartKeys(filter) {
+    const f = ['all', 'mood', 'pleasure', 'mastery'].includes(filter) ? filter : 'all';
+    if (f === 'pleasure') return ['predP', 'actP'];
+    if (f === 'mastery') return ['predM', 'actM'];
+    if (f === 'mood') return ['moodB', 'moodA'];
+    return ['predP', 'actP', 'predM', 'actM', 'moodB', 'moodA'];
+  }
+
+  function chartSeriesMeta(key) {
+    const map = {
+      predP: { color: 'var(--pleasure)', dashed: true,  label: `${t('chart-pleasure')} · ${t('chart-predicted')}`, short: 'Pp', value: e => e.predPleasure },
+      actP:  { color: 'var(--pleasure)', dashed: false, label: `${t('chart-pleasure')} · ${t('chart-actual')}`,    short: 'Pa', value: e => e.actPleasure },
+      predM: { color: 'var(--mastery)',  dashed: true,  label: `${t('chart-mastery')} · ${t('chart-predicted')}`,  short: 'Mp', value: e => e.predMastery },
+      actM:  { color: 'var(--mastery)',  dashed: false, label: `${t('chart-mastery')} · ${t('chart-actual')}`,     short: 'Ma', value: e => e.actMastery },
+      moodB: { color: 'var(--mood)',     dashed: true,  label: t('chart-mood-before'), short: 'Mb', value: e => e.moodBefore },
+      moodA: { color: 'var(--mood)',     dashed: false, label: t('chart-mood-after'),  short: 'Ma', value: e => e.moodAfter },
+    };
+    return map[key];
+  }
+
+  function renderChartLegend(filter) {
+    return visibleChartKeys(filter).map(key => {
+      const meta = chartSeriesMeta(key);
+      return `
+        <span class="legend-item" style="color: ${meta.color};">
+          <span class="legend-swatch${meta.dashed ? ' dashed' : ''}" ${meta.dashed ? '' : `style="background: ${meta.color};"`}></span>
+          ${meta.label}
+        </span>`;
+    }).join('');
+  }
+
+  // Returns SVG markup as a string. Designed for a ~340px wide mobile viewport.
+  function renderChartSvg(completed, chartFilter = 'all') {
+    const W = 340, H = 230;
+    const pad = { top: 18, right: 34, bottom: 30, left: 30 };
     const plotW = W - pad.left - pad.right;
     const plotH = H - pad.top - pad.bottom;
+    const filter = ['all', 'mood', 'pleasure', 'mastery'].includes(chartFilter) ? chartFilter : 'all';
+    const visibleKeys = visibleChartKeys(filter);
 
-    // Filter to the last 7 days of rated entries, sorted ascending by time
+    // Filter to the last 7 days of rated entries, sorted ascending by start time.
+    // Start/scheduled date is primary, so an activity finished after midnight still
+    // belongs to the day it was started/scheduled.
     const cutoff = Date.now() - 7 * 86400000;
     const recent = completed
       .filter(e => entryStartTimestamp(e) >= cutoff)
       .sort((a, b) => entryStartTimestamp(a) - entryStartTimestamp(b));
 
-    // With zero recent entries we can't render anything useful
     if (recent.length === 0) return null;
 
-    // X positions: evenly spaced. For a single entry, center it horizontally.
     const xs = recent.length === 1
       ? [pad.left + plotW / 2]
       : recent.map((_, i) => pad.left + (plotW * i) / (recent.length - 1));
-    // Y mapping: value 0–100 → top of plot is 100
     const y = (v) => pad.top + plotH - (v / 100) * plotH;
 
-    const path = (vals) => vals.map((v, i) => `${i === 0 ? 'M' : 'L'}${xs[i].toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+    const pathFromPoints = (items) => items.map((item, i) => `${i === 0 ? 'M' : 'L'}${item.x.toFixed(1)},${item.y.toFixed(1)}`).join(' ');
 
-    // For mood lines, an entry may have no mood data — draw only across points
-    // that have a number. Use multiple "M...L..." segments so gaps look right.
-    const sparsePath = (entries, getter) => {
-      let d = '';
-      let started = false;
-      entries.forEach((e, i) => {
-        const v = getter(e);
-        if (typeof v !== 'number') { started = false; return; }
-        const cmd = started ? 'L' : 'M';
-        d += `${cmd}${xs[i].toFixed(1)},${y(v).toFixed(1)} `;
-        started = true;
+    // Draw sparse series as separate segments so missing mood values create gaps.
+    const sparseLinePaths = (key) => {
+      const meta = chartSeriesMeta(key);
+      let segments = [];
+      let current = [];
+      recent.forEach((e, i) => {
+        const v = scoreOrNull(meta.value(e));
+        if (v === null) {
+          if (current.length) segments.push(current);
+          current = [];
+          return;
+        }
+        current.push({ x: xs[i], y: y(v) });
       });
-      return d.trim();
+      if (current.length) segments.push(current);
+      return segments.map(seg => pathFromPoints(seg));
     };
 
-    const predP = recent.map(e => e.predPleasure);
-    const actP  = recent.map(e => e.actPleasure);
-    const predM = recent.map(e => e.predMastery);
-    const actM  = recent.map(e => e.actMastery);
-
-    // Y axis gridlines at 0, 25, 50, 75, 100
     const gridYs = [0, 25, 50, 75, 100];
     const gridLines = gridYs.map(v => {
       const yy = y(v).toFixed(1);
@@ -4444,107 +4853,103 @@
               <text x="${pad.left - 6}" y="${(y(v) + 3).toFixed(1)}" font-size="9" fill="var(--ink-faint)" text-anchor="end" font-family="JetBrains Mono, monospace">${v}</text>`;
     }).join('');
 
-    // Date labels under each point (show every other one if crowded)
     const labels = recent.map((e, i) => {
       const showEvery = recent.length > 5 ? 2 : 1;
       if (i % showEvery !== 0 && i !== recent.length - 1) return '';
       const d = new Date(entryStartTimestamp(e));
       const lab = `${d.getMonth() + 1}/${d.getDate()}`;
-      return `<text x="${xs[i].toFixed(1)}" y="${H - pad.bottom + 14}" font-size="9" fill="var(--ink-faint)" text-anchor="middle" font-family="JetBrains Mono, monospace">${lab}</text>`;
+      return `<text x="${xs[i].toFixed(1)}" y="${H - pad.bottom + 16}" font-size="9" fill="var(--ink-faint)" text-anchor="middle" font-family="JetBrains Mono, monospace">${lab}</text>`;
     }).join('');
 
-    // Dots for all 6 series. With a single entry the dots become the entire
-    // chart (no lines connect anything), so we render them in every case.
     const dotR = recent.length === 1 ? 5 : 3;
 
-    const dotsActP = actP.map((v, i) => `<circle cx="${xs[i].toFixed(1)}" cy="${y(v).toFixed(1)}" r="${dotR}" fill="var(--pleasure)"/>`).join('');
-    const dotsActM = actM.map((v, i) => `<circle cx="${xs[i].toFixed(1)}" cy="${y(v).toFixed(1)}" r="${dotR}" fill="var(--mastery)"/>`).join('');
+    const lineMarkup = visibleKeys.map(key => {
+      const meta = chartSeriesMeta(key);
+      const paths = sparseLinePaths(key);
+      if (recent.length < 2 || !paths.length) return '';
+      return paths
+        .filter(d => d)
+        .map(d => `<path d="${d}" fill="none" stroke="${meta.color}" stroke-width="${meta.dashed ? '1.5' : '2.2'}" ${meta.dashed ? 'stroke-dasharray="4 3" opacity="0.7"' : ''}/>`)
+        .join('');
+    }).join('');
 
-    const dotsPredP = predP.map((v, i) =>
-      `<circle cx="${xs[i].toFixed(1)}" cy="${y(v).toFixed(1)}" r="${dotR - 1}" fill="none" stroke="var(--pleasure)" stroke-width="1.5" opacity="0.7"/>`
-    ).join('');
-    const dotsPredM = predM.map((v, i) =>
-      `<circle cx="${xs[i].toFixed(1)}" cy="${y(v).toFixed(1)}" r="${dotR - 1}" fill="none" stroke="var(--mastery)" stroke-width="1.5" opacity="0.7"/>`
-    ).join('');
+    const dotMarkup = visibleKeys.map(key => {
+      const meta = chartSeriesMeta(key);
+      return recent.map((e, i) => {
+        const v = scoreOrNull(meta.value(e));
+        if (v === null) return '';
+        const r = meta.dashed ? Math.max(dotR - 1, 2) : dotR;
+        return meta.dashed
+          ? `<circle cx="${xs[i].toFixed(1)}" cy="${y(v).toFixed(1)}" r="${r}" fill="none" stroke="${meta.color}" stroke-width="1.5" opacity="0.7"/>`
+          : `<circle cx="${xs[i].toFixed(1)}" cy="${y(v).toFixed(1)}" r="${r}" fill="${meta.color}"/>`;
+      }).join('');
+    }).join('');
 
-    const dotsMoodB = recent.map((e, i) =>
-      typeof e.moodBefore === 'number'
-        ? `<circle cx="${xs[i].toFixed(1)}" cy="${y(e.moodBefore).toFixed(1)}" r="${dotR - 1}" fill="none" stroke="var(--mood)" stroke-width="1.5" opacity="0.7"/>`
-        : ''
-    ).join('');
-    const dotsMoodA = recent.map((e, i) =>
-      typeof e.moodAfter === 'number'
-        ? `<circle cx="${xs[i].toFixed(1)}" cy="${y(e.moodAfter).toFixed(1)}" r="${dotR}" fill="var(--mood)"/>`
-        : ''
-    ).join('');
-
-    const lines = recent.length >= 2 ? `
-        <path d="${path(predP)}" fill="none" stroke="var(--pleasure)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.7"/>
-        <path d="${path(actP)}"  fill="none" stroke="var(--pleasure)" stroke-width="2.2"/>
-        <path d="${path(predM)}" fill="none" stroke="var(--mastery)"  stroke-width="1.5" stroke-dasharray="4 3" opacity="0.7"/>
-        <path d="${path(actM)}"  fill="none" stroke="var(--mastery)"  stroke-width="2.2"/>
-        <path d="${sparsePath(recent, e => e.moodBefore)}" fill="none" stroke="var(--mood)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.7"/>
-        <path d="${sparsePath(recent, e => e.moodAfter)}"  fill="none" stroke="var(--mood)" stroke-width="2.2"/>` : '';
-
-    // Hover layer: an invisible vertical "lane" over each data point, a
-    // crosshair line, six highlight dots, and six tag rectangles that show
-    // each numeric value next to its point. All are hidden by default
-    // and revealed when JS sets data-hover-index on the SVG.
     const hoverLayer = `
       <line class="crosshair" x1="0" y1="${pad.top}" x2="0" y2="${pad.top + plotH}"/>
-      <circle class="hover-dot dot-predP" cx="0" cy="0" r="4" fill="var(--pleasure)" opacity="0.85"/>
-      <circle class="hover-dot dot-actP"  cx="0" cy="0" r="4" fill="var(--pleasure)"/>
-      <circle class="hover-dot dot-predM" cx="0" cy="0" r="4" fill="var(--mastery)"  opacity="0.85"/>
-      <circle class="hover-dot dot-actM"  cx="0" cy="0" r="4" fill="var(--mastery)"/>
-      <circle class="hover-dot dot-moodB" cx="0" cy="0" r="4" fill="var(--mood)" opacity="0.85"/>
-      <circle class="hover-dot dot-moodA" cx="0" cy="0" r="4" fill="var(--mood)"/>
-      ${['predP','actP','predM','actM','moodB','moodA'].map(k => `
-        <g class="hover-tag tag-${k}">
-          <rect x="0" y="0" width="26" height="14" rx="3"/>
-          <text x="0" y="0" text-anchor="middle"></text>
-        </g>`).join('')}
+      ${visibleKeys.map(key => {
+        const meta = chartSeriesMeta(key);
+        return `
+          <circle class="hover-dot dot-${key}" cx="0" cy="0" r="4" fill="${meta.color}" opacity="0.85"/>
+          <g class="hover-tag tag-${key}">
+            <rect x="0" y="0" width="26" height="14" rx="3"/>
+            <text x="0" y="0" text-anchor="middle"></text>
+          </g>`;
+      }).join('')}
     `;
 
-    // Hover zones — one transparent rectangle per data point, spanning
-    // the gap between adjacent points. Each carries data-index so the
-    // listener can find which entry to show.
     const zones = recent.map((_, i) => {
-      const halfBefore = i === 0 ? 0 : (xs[i] - xs[i-1]) / 2;
-      const halfAfter  = i === recent.length - 1 ? plotW / 2 : (xs[i+1] - xs[i]) / 2;
-      const zx = xs[i] - (halfBefore || halfAfter);
-      const zw = (halfBefore || halfAfter) + (halfAfter || halfBefore);
-      return `<rect class="hover-zone" data-index="${i}" x="${zx}" y="${pad.top}" width="${zw}" height="${plotH}"/>`;
+      // The first and last points get hit zones that extend all the way to
+      // the SVG edges. This fixes the common issue where the rightmost value
+      // looks hovered visually but cannot be selected because the pointer is
+      // inside the chart padding rather than the exact plot interval.
+      let zx, zw;
+      if (recent.length === 1) {
+        zx = 0;
+        zw = W;
+      } else if (i === 0) {
+        const nextMid = (xs[0] + xs[1]) / 2;
+        zx = 0;
+        zw = nextMid;
+      } else if (i === recent.length - 1) {
+        const prevMid = (xs[i - 1] + xs[i]) / 2;
+        zx = prevMid;
+        zw = W - prevMid;
+      } else {
+        const prevMid = (xs[i - 1] + xs[i]) / 2;
+        const nextMid = (xs[i] + xs[i + 1]) / 2;
+        zx = prevMid;
+        zw = nextMid - prevMid;
+      }
+      return `<rect class="hover-zone" data-index="${i}" x="${zx.toFixed(1)}" y="0" width="${zw.toFixed(1)}" height="${H}"/>`;
     }).join('');
 
     const svg = `
       <svg class="chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <rect class="hover-surface" x="0" y="0" width="${W}" height="${H}"/>
         ${gridLines}
-        ${lines}
-        ${dotsPredP}
-        ${dotsActP}
-        ${dotsPredM}
-        ${dotsActM}
-        ${dotsMoodB}
-        ${dotsMoodA}
+        ${lineMarkup}
+        ${dotMarkup}
         ${labels}
         ${hoverLayer}
         ${zones}
       </svg>`;
 
-    // Data used by the hover handler — coordinates per series + entry refs.
     return {
       svg,
+      filter,
+      visibleKeys,
       points: recent.map((e, i) => ({
         index: i,
         x: xs[i],
         entry: e,
         ys: {
-          predP: y(e.predPleasure),
-          actP:  y(e.actPleasure),
-          predM: y(e.predMastery),
-          actM:  y(e.actMastery),
-          moodB: typeof e.moodBefore === 'number' ? y(e.moodBefore) : null,
-          moodA: typeof e.moodAfter  === 'number' ? y(e.moodAfter)  : null,
+          predP: scoreOrNull(e.predPleasure) !== null ? y(e.predPleasure) : null,
+          actP:  scoreOrNull(e.actPleasure)  !== null ? y(e.actPleasure)  : null,
+          predM: scoreOrNull(e.predMastery)  !== null ? y(e.predMastery)  : null,
+          actM:  scoreOrNull(e.actMastery)   !== null ? y(e.actMastery)   : null,
+          moodB: scoreOrNull(e.moodBefore)   !== null ? y(e.moodBefore)   : null,
+          moodA: scoreOrNull(e.moodAfter)    !== null ? y(e.moodAfter)    : null,
         }
       })),
       W, H, pad, plotW, plotH,
@@ -5003,6 +5408,17 @@
     });
   }
 
+
+  function attachChartFilterHandler() {
+    const select = document.getElementById('chart-filter-select');
+    if (!select) return;
+
+    select.addEventListener('change', () => {
+      state.chartFilter = ['all', 'mood', 'pleasure', 'mastery'].includes(select.value) ? select.value : 'all';
+      renderInsights();
+    });
+  }
+
   function attachDeepAnalysisHandlers(entries) {
     const select = document.getElementById('deep-analysis-select');
     const result = document.getElementById('deep-analysis-result');
@@ -5067,41 +5483,29 @@
 
     const liftDashboardBlock = renderLiftDashboard(completed);
     const deepAnalysisBlock = renderDeepAnalysis(completed);
-    const chartData = renderChartSvg(completed);
+    const chartFilter = getChartFilter();
+    const chartData = renderChartSvg(completed, chartFilter);
+    const chartControlsHtml = `
+      <div class="chart-controls">
+        <label class="chart-filter-label" for="chart-filter-select">${t('chart-filter-label')}</label>
+        <select class="chart-filter-select" id="chart-filter-select">
+          <option value="all" ${chartFilter === 'all' ? 'selected' : ''}>${t('chart-filter-all')}</option>
+          <option value="mood" ${chartFilter === 'mood' ? 'selected' : ''}>${t('chart-filter-mood')}</option>
+          <option value="pleasure" ${chartFilter === 'pleasure' ? 'selected' : ''}>${t('chart-filter-pleasure')}</option>
+          <option value="mastery" ${chartFilter === 'mastery' ? 'selected' : ''}>${t('chart-filter-mastery')}</option>
+        </select>
+      </div>`;
     const chartBlock = chartData ? `
       <div class="chart-container">
         <div class="chart-title">${t('chart-title')}</div>
-        <div class="chart-legend">
-          <span class="legend-item" style="color: var(--pleasure);">
-            <span class="legend-swatch" style="background: var(--pleasure);"></span>
-            ${t('chart-pleasure')} · ${t('chart-actual')}
-          </span>
-          <span class="legend-item" style="color: var(--pleasure);">
-            <span class="legend-swatch dashed"></span>
-            ${t('chart-pleasure')} · ${t('chart-predicted')}
-          </span>
-          <span class="legend-item" style="color: var(--mastery);">
-            <span class="legend-swatch" style="background: var(--mastery);"></span>
-            ${t('chart-mastery')} · ${t('chart-actual')}
-          </span>
-          <span class="legend-item" style="color: var(--mastery);">
-            <span class="legend-swatch dashed"></span>
-            ${t('chart-mastery')} · ${t('chart-predicted')}
-          </span>
-          <span class="legend-item" style="color: var(--mood);">
-            <span class="legend-swatch" style="background: var(--mood);"></span>
-            ${t('chart-mood-after')}
-          </span>
-          <span class="legend-item" style="color: var(--mood);">
-            <span class="legend-swatch dashed"></span>
-            ${t('chart-mood-before')}
-          </span>
-        </div>
+        ${chartControlsHtml}
+        <div class="chart-legend">${renderChartLegend(chartFilter)}</div>
         ${chartData.svg}
         <div class="chart-tooltip empty" id="chart-tooltip">${t('chart-hover-hint')}</div>
       </div>` : `
       <div class="chart-container">
         <div class="chart-title">${t('chart-title')}</div>
+        ${chartControlsHtml}
         <div class="chart-empty">${t('chart-empty')}</div>
       </div>`;
 
@@ -5161,6 +5565,7 @@
     `;
     attachDataActionHandlers();
     attachDashboardSortHandler();
+    attachChartFilterHandler();
     attachDeepAnalysisHandlers(completed);
     attachChartHover(chartData);
   }
@@ -5176,34 +5581,74 @@
     if (!svg) return;
 
     // Move handler: find the nearest data point and show its values.
-    const onMove = (clientX) => {
+    const clientPointToSvgX = (clientX, clientY) => {
+      // Use the browser's SVG transformation matrix instead of a simple
+      // bounding-rectangle ratio. This stays accurate when the responsive SVG is
+      // centered, letterboxed, max-height-limited, or scaled differently on wide
+      // desktop screens. Without this, the last/rightmost dot can require the
+      // mouse to be placed to the right of the visible graph before it selects.
+      if (typeof svg.createSVGPoint === 'function' && typeof svg.getScreenCTM === 'function') {
+        const matrix = svg.getScreenCTM();
+        if (matrix) {
+          const pt = svg.createSVGPoint();
+          pt.x = clientX;
+          pt.y = typeof clientY === 'number' ? clientY : svg.getBoundingClientRect().top;
+          const svgPt = pt.matrixTransform(matrix.inverse());
+          return Math.max(0, Math.min(chartData.W, svgPt.x));
+        }
+      }
+
+      // Fallback for unusual embedded browsers that do not expose SVGPoint.
       const rect = svg.getBoundingClientRect();
-      // Convert client x → svg viewBox x using the same ratio
+      if (!rect.width) return 0;
       const ratio = chartData.W / rect.width;
-      const svgX = (clientX - rect.left) * ratio;
-      // Pick the point with the smallest |x - svgX|
+      const rawSvgX = (clientX - rect.left) * ratio;
+      return Math.max(0, Math.min(chartData.W, rawSvgX));
+    };
+
+    const indexFromClientPoint = (clientX, clientY) => {
+      const svgX = clientPointToSvgX(clientX, clientY);
       let best = 0, bestDist = Infinity;
       for (let i = 0; i < chartData.points.length; i++) {
         const d = Math.abs(chartData.points[i].x - svgX);
         if (d < bestDist) { bestDist = d; best = i; }
       }
-      updateHoverDisplay(best);
+      return best;
     };
 
-    const onMouseMove = (ev) => onMove(ev.clientX);
+    const onMove = (clientX, clientY) => updateHoverDisplay(indexFromClientPoint(clientX, clientY));
+    const onMouseMove = (ev) => onMove(ev.clientX, ev.clientY);
     const onTouchMove = (ev) => {
       if (ev.touches && ev.touches[0]) {
-        onMove(ev.touches[0].clientX);
+        onMove(ev.touches[0].clientX, ev.touches[0].clientY);
         ev.preventDefault();
       }
     };
+    const onPointerMove = (ev) => {
+      if (typeof ev.clientX === 'number') onMove(ev.clientX, ev.clientY);
+    };
     const onLeave = () => clearHoverDisplay();
 
+    // Mouse/touch/pointer coverage makes the final/rightmost point reliable
+    // on desktop browsers, mobile browsers, and embedded webviews.
+    svg.style.touchAction = 'none';
     svg.addEventListener('mousemove', onMouseMove);
+    svg.addEventListener('pointermove', onPointerMove);
     svg.addEventListener('mouseleave', onLeave);
+    svg.addEventListener('pointerleave', onLeave);
     svg.addEventListener('touchstart', onTouchMove, { passive: false });
     svg.addEventListener('touchmove',  onTouchMove, { passive: false });
     svg.addEventListener('touchend',   onLeave);
+
+    svg.querySelectorAll('.hover-zone').forEach(zone => {
+      const showZone = () => updateHoverDisplay(Number(zone.dataset.index || 0));
+      zone.addEventListener('mouseenter', showZone);
+      zone.addEventListener('mousemove', showZone);
+      zone.addEventListener('pointerenter', showZone);
+      zone.addEventListener('pointermove', showZone);
+      zone.addEventListener('touchstart', (ev) => { showZone(); ev.preventDefault(); }, { passive: false });
+      zone.addEventListener('touchmove',  (ev) => { showZone(); ev.preventDefault(); }, { passive: false });
+    });
   }
 
   function updateHoverDisplay(index) {
@@ -5213,62 +5658,94 @@
     const svg = document.querySelector('.chart-container .chart-svg');
     if (!svg) return;
 
-    const { pad, plotH, W } = _chartData;
+    const { pad, W } = _chartData;
     const x = point.x;
 
-    // Move crosshair
     const cross = svg.querySelector('.crosshair');
     if (cross) {
       cross.setAttribute('x1', x);
       cross.setAttribute('x2', x);
     }
 
-    const series = [
-      { key: 'predP', value: point.entry.predPleasure, yPos: point.ys.predP },
-      { key: 'actP',  value: point.entry.actPleasure,  yPos: point.ys.actP },
-      { key: 'predM', value: point.entry.predMastery,  yPos: point.ys.predM },
-      { key: 'actM',  value: point.entry.actMastery,   yPos: point.ys.actM },
-      { key: 'moodB', value: point.entry.moodBefore,   yPos: point.ys.moodB },
-      { key: 'moodA', value: point.entry.moodAfter,    yPos: point.ys.moodA },
-    ];
+    const series = (_chartData.visibleKeys || visibleChartKeys(getChartFilter()))
+      .map(key => {
+        const meta = chartSeriesMeta(key);
+        const value = scoreOrNull(meta.value(point.entry));
+        return { key, meta, value, yPos: point.ys[key] };
+      });
 
-    series.forEach(s => {
+    // Hide anything that is not part of the current filter.
+    ['predP','actP','predM','actM','moodB','moodA'].forEach(key => {
+      if (series.some(s => s.key === key)) return;
+      const dot = svg.querySelector(`.dot-${key}`);
+      const tag = svg.querySelector(`.tag-${key}`);
+      if (dot) dot.style.opacity = '0';
+      if (tag) tag.style.opacity = '0';
+    });
+
+    const visible = series
+      .filter(s => typeof s.value === 'number' && s.yPos != null)
+      .sort((a, b) => a.yPos - b.yPos);
+
+    // Compute non-overlapping label y-positions. Values that are close together
+    // get gently stacked, then clamped inside the plot area.
+    const TAG_H = 14;
+    const GAP = 3;
+    const minY = pad.top + 2;
+    const maxY = pad.top + _chartData.plotH - TAG_H - 2;
+    visible.forEach((s, i) => { s.tagY = Math.max(minY, Math.min(maxY, s.yPos - TAG_H / 2)); });
+    for (let i = 1; i < visible.length; i++) {
+      if (visible[i].tagY < visible[i - 1].tagY + TAG_H + GAP) {
+        visible[i].tagY = visible[i - 1].tagY + TAG_H + GAP;
+      }
+    }
+    const overflow = visible.length ? visible[visible.length - 1].tagY - maxY : 0;
+    if (overflow > 0) {
+      for (let i = 0; i < visible.length; i++) visible[i].tagY -= overflow;
+      if (visible[0].tagY < minY) {
+        const lift = minY - visible[0].tagY;
+        for (let i = 0; i < visible.length; i++) visible[i].tagY += lift;
+      }
+    }
+
+    visible.forEach(s => {
       const dot = svg.querySelector(`.dot-${s.key}`);
       const tag = svg.querySelector(`.tag-${s.key}`);
       if (!dot || !tag) return;
-      // Hide if no value (e.g. mood not set on this entry)
-      if (typeof s.value !== 'number' || s.yPos == null) {
-        dot.setAttribute('opacity', '0');
-        tag.setAttribute('opacity', '0');
-        return;
-      }
-      dot.setAttribute('opacity', dot.classList.contains('dot-predP') || dot.classList.contains('dot-predM') || dot.classList.contains('dot-moodB') ? '0.85' : '1');
+      dot.style.opacity = s.meta.dashed ? '0.85' : '1';
       dot.setAttribute('cx', x);
       dot.setAttribute('cy', s.yPos);
 
-      // Position tag to the side of the dot so it doesn't cover the line.
-      // Right of point unless near the right edge, in which case flip left.
-      const TAG_W = String(s.value).length >= 3 ? 30 : 24;
+      const valuePrefix = s.meta.dashed ? 's' : 'f';
+      const valueText = `${valuePrefix}${s.value}`;
+      const TAG_W = Math.max(34, 12 + valueText.length * 7);
       const offset = 8;
-      let tagX = x + offset;
+      const preferLeft = x > W - 95;
+      let tagX = preferLeft ? x - offset - TAG_W : x + offset;
       if (tagX + TAG_W > W - 2) tagX = x - offset - TAG_W;
-      tag.setAttribute('opacity', '1');
+      if (tagX < 2) tagX = x + offset;
+
+      tag.style.opacity = '1';
       const rect = tag.querySelector('rect');
       const text = tag.querySelector('text');
       rect.setAttribute('x', tagX);
-      rect.setAttribute('y', s.yPos - 7);
+      rect.setAttribute('y', s.tagY);
       rect.setAttribute('width', TAG_W);
-      // Stroke color picks up from the series
-      const strokeColor =
-        s.key === 'predP' || s.key === 'actP' ? 'var(--pleasure)'
-      : s.key === 'predM' || s.key === 'actM' ? 'var(--mastery)'
-      : 'var(--mood)';
-      rect.setAttribute('stroke', strokeColor);
+      rect.setAttribute('stroke', s.meta.color);
       text.setAttribute('x', tagX + TAG_W / 2);
-      text.setAttribute('y', s.yPos + 0.5);
-      text.setAttribute('fill', strokeColor);
-      text.textContent = s.value;
+      text.setAttribute('y', s.tagY + TAG_H / 2 + 0.5);
+      text.setAttribute('fill', s.meta.color);
+      text.textContent = valueText;
     });
+
+    series
+      .filter(s => !(typeof s.value === 'number' && s.yPos != null))
+      .forEach(s => {
+        const dot = svg.querySelector(`.dot-${s.key}`);
+        const tag = svg.querySelector(`.tag-${s.key}`);
+        if (dot) dot.style.opacity = '0';
+        if (tag) tag.style.opacity = '0';
+      });
 
     svg.classList.add('has-hover');
 
@@ -5293,7 +5770,8 @@
   function renderTooltipCard(entry) {
     const ts = entryStartTimestamp(entry);
     const d = new Date(ts);
-    const dateStr = d.toLocaleDateString(currentLang === 'ka' ? 'ka-GE' : 'en-US', { month: 'short', day: 'numeric' });
+    const dateLocale = currentLang === 'ka' ? 'ka-GE' : currentLang === 'ru' ? 'ru-RU' : 'en-US';
+    const dateStr = d.toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' });
     const h = d.getHours();
     const ampm = h < 12 ? 'AM' : 'PM';
     const h12 = h === 0 ? 12 : (h > 12 ? h - 12 : h);
