@@ -325,6 +325,20 @@
     margin-bottom: 8px;
   }
 
+
+  .required-star {
+    color: var(--danger);
+    margin-left: 4px;
+    font-weight: 700;
+  }
+
+  .optional-hint {
+    color: var(--ink-faint);
+    margin-left: 5px;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
   input[type="text"], textarea {
     width: 100%;
     background: var(--bg-card);
@@ -583,6 +597,95 @@
     text-transform: uppercase;
     margin-bottom: 6px;
   }
+
+
+  .entry-company-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: -2px 0 8px;
+    color: var(--ink-faint);
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .entry-company-row .entry-company-value {
+    color: var(--ink-dim);
+    text-transform: none;
+    letter-spacing: 0.01em;
+    overflow-wrap: anywhere;
+  }
+
+  .entry-company-row .entry-company-value.empty {
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+
+  .entry-company-row .edit-pencil {
+    margin-left: 0;
+    width: 18px;
+    height: 18px;
+  }
+
+  .entry-company-row .edit-pencil svg { width: 9px; height: 9px; }
+
+  .entry-notes-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ink-faint);
+    border-top: 1px dashed var(--border);
+    padding-top: 8px;
+    margin: 10px 0 0;
+    min-width: 0;
+  }
+
+  .entry-notes-main {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .entry-notes-label {
+    flex: 0 0 auto;
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0;
+  }
+
+  .entry-notes-text {
+    flex: 1;
+    min-width: 0;
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 9.5px;
+    line-height: 1.25;
+    color: var(--ink-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    overflow-wrap: normal;
+  }
+
+  .entry-notes-text.empty {
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+
+  .entry-notes-row .edit-pencil {
+    margin-left: 0;
+    width: 18px;
+    height: 18px;
+    opacity: 0.8;
+  }
+
+  .entry-notes-row .edit-pencil svg { width: 9px; height: 9px; }
 
   .entry-date .hint {
     color: var(--accent);
@@ -2647,6 +2750,11 @@
     margin-left: auto;
   }
 
+  .entry-company-row .edit-pencil,
+  .entry-notes-row .edit-pencil {
+    margin-left: 0;
+  }
+
   /* ===== Edit modal ===== */
   .edit-overlay {
     position: fixed;
@@ -3256,6 +3364,48 @@
       color: var(--accent);
     }
   }
+
+
+  /* ===== Log compactness fix =====
+     Generic .empty styles are for the full empty-state screen. Inline empty
+     values such as "not specified" must not inherit that large padding. */
+  .entry-company-row .entry-company-value.empty,
+  .entry-notes-row .entry-notes-text.empty,
+  .total-num.empty,
+  .mood-field-label .value.empty,
+  .chart-tooltip-row .val.empty,
+  .deep-metric-value.empty {
+    padding: 0 !important;
+    margin: 0 !important;
+    text-align: inherit !important;
+    max-width: none !important;
+  }
+
+  .entry-company-row .entry-company-value.empty,
+  .entry-notes-row .entry-notes-text.empty {
+    display: inline !important;
+    line-height: inherit !important;
+  }
+
+  .entry-notes-row {
+    min-height: 0;
+    margin-top: 8px;
+    padding-top: 6px;
+  }
+
+  .entry-notes-main {
+    min-height: 0;
+  }
+
+  .entry-notes-row .edit-pencil,
+  .entry-company-row .edit-pencil {
+    flex: 0 0 18px;
+  }
+
+  .entry-actions {
+    margin-top: 8px;
+  }
+
 </style>
 </head>
 <body>
@@ -3291,13 +3441,13 @@
     </div>
 
     <div class="field">
-      <label data-i18n="label-activity"></label>
-      <input type="text" id="activity" data-i18n-placeholder="ph-activity" autocomplete="off">
+      <label><span data-i18n="label-activity"></span><span class="required-star" aria-label="required">*</span></label>
+      <input type="text" id="activity" data-i18n-placeholder="ph-activity" autocomplete="off" required>
       <button type="button" class="save-template-btn" id="save-template-btn" disabled data-i18n="btn-save-template"></button>
     </div>
 
     <div class="field">
-      <label data-i18n="label-company"></label>
+      <label><span data-i18n="label-company"></span><span class="optional-hint" data-i18n="optional-label"></span></label>
       <input type="text" id="company" data-i18n-placeholder="ph-company" autocomplete="off">
     </div>
 
@@ -3312,7 +3462,7 @@
     </div>
 
     <div class="field" id="scheduled-time-field">
-      <label data-i18n="label-when"></label>
+      <label><span data-i18n="label-when"></span><span class="required-star" aria-label="required">*</span></label>
       <div class="time-row">
         <select id="scheduled-day" class="time-select"></select>
         <select id="scheduled-hour" class="time-select"></select>
@@ -3326,7 +3476,7 @@
     </div>
 
     <div class="pair">
-      <div class="pair-title"><span class="quill">❦</span><span data-i18n="pair-pred-mastery"></span></div>
+      <div class="pair-title"><span class="quill">❦</span><span data-i18n="pair-pred-mastery"></span><span class="required-star" aria-label="required">*</span></div>
       <div class="scale-group">
         <div>
           <div class="scale-sub-label" data-i18n="sub-tens"></div>
@@ -3341,7 +3491,7 @@
     </div>
 
     <div class="pair">
-      <div class="pair-title"><span class="quill">❦</span><span data-i18n="pair-pred-pleasure"></span></div>
+      <div class="pair-title"><span class="quill">❦</span><span data-i18n="pair-pred-pleasure"></span><span class="required-star" aria-label="required">*</span></div>
       <div class="scale-group">
         <div>
           <div class="scale-sub-label" data-i18n="sub-tens"></div>
@@ -3353,6 +3503,11 @@
         </div>
       </div>
       <div class="total-display"><span class="total-label" data-i18n="total-label"></span><span class="total-num empty" data-total="pred-pleasure">—</span></div>
+    </div>
+
+    <div class="field">
+      <label><span data-i18n="label-notes"></span><span class="optional-hint" data-i18n="optional-label"></span></label>
+      <textarea id="notes" data-i18n-placeholder="ph-notes" autocomplete="off"></textarea>
     </div>
 
     <button class="primary" id="save-btn" disabled data-i18n="btn-save"></button>
@@ -3701,6 +3856,13 @@
       'ph-activity': 'მაგ. 30-წუთიანი სიარული ტრედმილზე',
       'label-company': 'ვისთან ერთად (ან მარტო)',
       'ph-company': 'მარტო, მეგობართან და ა.შ.',
+      'label-notes': 'შენიშვნები',
+      'ph-notes': 'არასავალდებულო — რა მოხდა, როგორ იგრძენი თავი, რა გაიგე?',
+      'optional-label': '(არასავალდებულო)',
+      'entry-company-label': 'ვისთან',
+      'company-none': 'არ არის მითითებული',
+      'entry-notes-label': 'შენიშვნები',
+      'notes-none': 'არ არის მითითებული',
       'label-when': 'როდის (დაგეგმილი დრო)',
 
       'preset-now': 'ახლა',
@@ -4032,6 +4194,7 @@
       'edit-title-mood-before': 'წინა განწყობის რედაქტირება',
       'edit-title-mood-after': 'შემდგომი განწყობის რედაქტირება',
       'edit-title-company': 'ვისთან ერთად — რედაქტირება',
+      'edit-title-notes': 'შენიშვნების რედაქტირება',
       'edit-title-tags': 'თეგების რედაქტირება',
       'toast-edit-saved': 'შენახული.',
 
@@ -4066,6 +4229,13 @@
       'ph-activity': 'напр. 30 минут ходьбы на дорожке',
       'label-company': 'С кем (или один)',
       'ph-company': 'Один, с другом и т.д.',
+      'label-notes': 'Заметки',
+      'ph-notes': 'Необязательно — что произошло, как ты себя чувствовал, что заметил?',
+      'optional-label': '(необязательно)',
+      'entry-company-label': 'С кем',
+      'company-none': 'не указано',
+      'entry-notes-label': 'Заметки',
+      'notes-none': 'не указаны',
       'label-when': 'Когда (запланированное время)',
 
       'preset-now': 'Сейчас',
@@ -4390,6 +4560,7 @@
       'edit-title-mood-before': 'Редактировать настроение до',
       'edit-title-mood-after': 'Редактировать настроение после',
       'edit-title-company': 'Редактировать “с кем”',
+      'edit-title-notes': 'Редактировать заметки',
       'edit-title-tags': 'Редактировать теги',
       'toast-edit-saved': 'Сохранено.',
 
@@ -4424,6 +4595,13 @@
       'ph-activity': 'e.g. 30-min walk on treadmill',
       'label-company': 'With Whom (or Alone)',
       'ph-company': 'Alone, with a friend, etc.',
+      'label-notes': 'Notes',
+      'ph-notes': 'Optional — what happened, how you felt, what you noticed?',
+      'optional-label': '(optional)',
+      'entry-company-label': 'With',
+      'company-none': 'not specified',
+      'entry-notes-label': 'Notes',
+      'notes-none': 'not specified',
       'label-when': 'When (Scheduled Time)',
 
       'preset-now': 'Now',
@@ -4751,6 +4929,7 @@
       'edit-title-mood-before': 'Edit Mood Before',
       'edit-title-mood-after': 'Edit Mood After',
       'edit-title-company': 'Edit With Whom',
+      'edit-title-notes': 'Edit Notes',
       'edit-title-tags': 'Edit Tags',
       'toast-edit-saved': 'Saved.',
 
@@ -5997,11 +6176,13 @@
   document.getElementById('save-btn').addEventListener('click', async () => {
     const activity = document.getElementById('activity').value.trim();
     const company = document.getElementById('company').value.trim();
+    const notes = document.getElementById('notes').value.trim();
     const scheduledAt = getScheduledTimestamp();
     const entry = {
       id: 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
       activity,
       company,
+      notes,
       predMastery: getTotal('pred-mastery'),
       predPleasure: getTotal('pred-pleasure'),
       actMastery: null,
@@ -6019,6 +6200,7 @@
     if (ok) {
       document.getElementById('activity').value = '';
       document.getElementById('company').value = '';
+      document.getElementById('notes').value = '';
       clearTagPicker('activity-tags-list');
       resetScaleKey('pred-mastery');
       resetScaleKey('pred-pleasure');
@@ -6427,6 +6609,21 @@
     const tagsHtml = state.advancedTags
       ? `<div class="entry-tags">${tagPillsHtml(entryTags, true)}${pencilBtn('tags', e.id)}</div>`
       : '';
+    const companyHtml = `
+      <div class="entry-company-row">
+        <span>${t('entry-company-label')}:</span>
+        <span class="entry-company-value${e.company ? '' : ' empty'}">${e.company ? escapeHtml(e.company) : t('company-none')}</span>
+        ${pencilBtn('company', e.id)}
+      </div>`;
+    const cleanNotes = (e.notes || '').trim();
+    const notesHtml = `
+      <div class="entry-notes-row">
+        <div class="entry-notes-main">
+          <span class="entry-notes-label">${t('entry-notes-label')}:</span>
+          <span class="entry-notes-text${cleanNotes ? '' : ' empty'}">${cleanNotes ? escapeHtml(cleanNotes) : t('notes-none')}</span>
+        </div>
+        ${pencilBtn('notes', e.id)}
+      </div>`;
 
     // Mood row: always shown so users can fill in mood retroactively via the pencil
     const moodHtml = `
@@ -6450,9 +6647,10 @@
     return `
       <div class="entry${e.isSample ? ' sample-entry' : ''}">
         <div class="entry-date">
-          ${hourStr}${hint ? ' · ' : ''}${hintHtml}${e.company ? ' · ' + escapeHtml(e.company) : ''}
+          ${hourStr}${hint ? ' · ' : ''}${hintHtml}
           ${pencilBtn('time', e.id)}
         </div>
+        ${companyHtml}
         <div class="entry-activity-row">
           <div class="entry-activity">${escapeHtml(e.activity)}</div>
           ${pencilBtn('activity', e.id, 'lg')}
@@ -6483,6 +6681,7 @@
           </div>
         </div>
         ${moodHtml}
+        ${notesHtml}
         <div class="entry-actions">
           ${isPending
             ? `<button class="complete" data-action="rate" data-id="${e.id}">${t('btn-rate')}</button>`
@@ -6545,6 +6744,7 @@
   const EDIT_FIELDS = {
     'activity':      { titleKey: 'edit-title-activity',      type: 'text' },
     'company':       { titleKey: 'edit-title-company',       type: 'text' },
+    'notes':         { titleKey: 'edit-title-notes',         type: 'textarea' },
     'time':          { titleKey: 'edit-title-time',          type: 'time' },
     'pred-mastery':  { titleKey: 'edit-title-pred-mastery',  type: 'scale', color: 'mastery' },
     'pred-pleasure': { titleKey: 'edit-title-pred-pleasure', type: 'scale', color: 'pleasure' },
@@ -6559,6 +6759,7 @@
   const FIELD_TO_PROP = {
     'activity': 'activity',
     'company': 'company',
+    'notes': 'notes',
     'pred-mastery': 'predMastery',
     'pred-pleasure': 'predPleasure',
     'act-mastery': 'actMastery',
@@ -6593,6 +6794,19 @@
         entryId, field,
         getValue: () => input.value.trim(),
         validate: (v) => field !== 'activity' || v.length > 0,
+      };
+    } else if (meta.type === 'textarea') {
+      body.innerHTML = `
+        <div class="field" style="margin-bottom: 0;">
+          <textarea id="edit-notes-input" autocomplete="off"></textarea>
+        </div>`;
+      const input = document.getElementById('edit-notes-input');
+      input.value = entry.notes || '';
+      setTimeout(() => input.focus(), 60);
+      editContext = {
+        entryId, field,
+        getValue: () => input.value.trim(),
+        validate: () => true,
       };
     } else if (meta.type === 'time') {
       const ts = entryStartTimestamp(entry);
@@ -8141,6 +8355,7 @@
       id: safeId,
       activity: e.activity,
       company: e.company || '',
+      notes: typeof e.notes === 'string' ? e.notes.trim() : '',
       predMastery: e.predMastery,
       predPleasure: e.predPleasure,
       actMastery: typeof e.actMastery === 'number' ? e.actMastery : null,
