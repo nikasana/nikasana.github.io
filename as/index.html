@@ -48,7 +48,8 @@
 
   html[data-theme="day"] .toast,
   html[data-theme="day"] button.primary,
-  html[data-theme="day"] .edit-actions .confirm-yes {
+  html[data-theme="day"] .edit-actions .confirm-yes,
+  html[data-theme="day"] .tag-add-btn {
     color: #ffffff;
   }
 
@@ -2160,6 +2161,312 @@
     font-style: italic;
   }
 
+
+  /* ===== Optional advanced activity tags ===== */
+  .tag-field {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 20px;
+  }
+
+  .tag-field[hidden] {
+    display: none !important;
+  }
+
+  .tag-help {
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--ink-faint);
+    margin: -2px 0 11px;
+    font-style: italic;
+  }
+
+  .tag-choice-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .tag-choice-wrap {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .tag-inline-remove-btn {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    margin-left: 3px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--danger);
+    border-radius: 999px;
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 16px;
+    opacity: 0.82;
+    transition: opacity 0.15s, background 0.15s, transform 0.15s;
+  }
+
+  .tag-inline-remove-btn:hover {
+    opacity: 1;
+    background: rgba(184, 106, 94, 0.13);
+  }
+
+  .tag-inline-remove-btn:active { transform: scale(0.88); }
+
+  .tag-add-row.new-tag-add-row {
+    margin: 0 0 12px;
+  }
+
+  .tag-choice {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .tag-choice input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .tag-choice span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--ink-dim);
+    border-radius: 999px;
+    padding: 8px 11px;
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+
+  .tag-choice input:checked + span {
+    border-color: var(--accent-soft);
+    color: var(--accent);
+    background: rgba(201, 169, 110, 0.10);
+  }
+
+  .entry-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin: -3px 0 13px;
+  }
+
+  .tag-pill {
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--ink-dim);
+    border-radius: 999px;
+    padding: 5px 8px;
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1.2;
+  }
+
+  .entry-tags .edit-pencil {
+    width: 20px;
+    height: 20px;
+    margin-left: 1px;
+  }
+
+  .tag-manager {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .tag-manager-title {
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 8px;
+  }
+
+  .tag-manager-help {
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--ink-faint);
+    margin: 0 0 11px;
+    font-style: italic;
+  }
+
+  .tag-add-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: stretch;
+    margin-bottom: 12px;
+  }
+
+  .tag-add-row input[type="text"] {
+    min-width: 0;
+    padding: 12px 13px;
+    font-size: 14px;
+  }
+
+  .tag-add-btn {
+    background: var(--accent);
+    border: none;
+    color: #161a17;
+    border-radius: 10px;
+    padding: 0 14px;
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    min-height: 42px;
+  }
+
+  .tag-add-btn:active { transform: scale(0.97); }
+
+  .tag-manager-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .tag-manager-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: center;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 9px 8px 11px;
+  }
+
+  .tag-manager-name {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    min-width: 0;
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    overflow-wrap: anywhere;
+  }
+
+  .tag-manager-type {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px 6px;
+    color: var(--ink-faint);
+    font-size: 8px;
+    letter-spacing: 0.08em;
+  }
+
+  .tag-remove-btn {
+    background: transparent;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    border-radius: 8px;
+    padding: 7px 9px;
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .tag-remove-btn:active { transform: scale(0.97); }
+
+  .tag-manager-empty {
+    color: var(--ink-faint);
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-style: italic;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 4px 0;
+  }
+
+  @media (max-width: 420px) {
+    .tag-add-row { grid-template-columns: 1fr; }
+    .tag-add-btn { padding: 12px 14px; }
+  }
+
+  .analysis-filter-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 14px;
+    margin-bottom: 20px;
+  }
+
+  .analysis-filter-title {
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ink);
+    margin-bottom: 6px;
+    padding: 0 2px;
+  }
+
+  .analysis-filter-subtitle {
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--ink-dim);
+    margin-bottom: 12px;
+    padding: 0 2px;
+  }
+
+  .analysis-filter-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .analysis-scope-note {
+    margin-top: 10px;
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    line-height: 1.45;
+  }
+
+  @media (min-width: 720px) {
+    .analysis-filter-grid {
+      grid-template-columns: 0.75fr 1.25fr;
+    }
+  }
+
   .scale-hidden { display: none !important; }
 
   .scale-row.words, .scale-row.half-mode { display: block; }
@@ -2826,6 +3133,28 @@
       grid-column: 1 / -1;
     }
 
+    /* When tags are off, keep scheduled time centered on its own row.
+       When tags are on, place tags + scheduled time side by side. */
+    #view-new #activity-tags-field {
+      grid-column: 1 / -1;
+    }
+
+    #view-new #scheduled-time-field {
+      grid-column: 1 / -1;
+      justify-self: center;
+      width: min(100%, 460px);
+    }
+
+    html[data-advanced-tags="on"] #view-new #activity-tags-field {
+      grid-column: 1 / 2;
+    }
+
+    html[data-advanced-tags="on"] #view-new #scheduled-time-field {
+      grid-column: 2 / 3;
+      justify-self: center;
+      width: min(100%, 460px);
+    }
+
     /* Save button + footer text span both columns at the bottom */
     #view-new > .primary,
     #view-new > .ornament,
@@ -2972,7 +3301,17 @@
       <input type="text" id="company" data-i18n-placeholder="ph-company" autocomplete="off">
     </div>
 
-    <div class="field">
+    <div class="tag-field scale-hidden" id="activity-tags-field" hidden aria-hidden="true">
+      <label data-i18n="label-activity-tags"></label>
+      <p class="tag-help" data-i18n="tag-help"></p>
+      <div class="tag-add-row new-tag-add-row">
+        <input type="text" id="new-entry-tag-input" data-i18n-placeholder="settings-tags-add-placeholder" autocomplete="off">
+        <button type="button" class="tag-add-btn" id="add-entry-tag-btn" data-i18n="settings-tags-add-btn"></button>
+      </div>
+      <div class="tag-choice-grid" id="activity-tags-list"></div>
+    </div>
+
+    <div class="field" id="scheduled-time-field">
       <label data-i18n="label-when"></label>
       <div class="time-row">
         <select id="scheduled-day" class="time-select"></select>
@@ -3096,6 +3435,31 @@
 
       <p class="settings-note" id="theme-mode-current"></p>
     </section>
+
+    <section class="settings-card">
+      <div class="settings-title" data-i18n="settings-tags-title"></div>
+      <p class="settings-description" data-i18n="settings-tags-description"></p>
+
+      <div class="settings-options" id="advanced-tags-settings">
+        <label class="settings-option">
+          <input type="radio" name="advanced-tags" value="off">
+          <span>
+            <span class="settings-option-title" data-i18n="settings-tags-off-title"></span>
+            <span class="settings-option-desc" data-i18n="settings-tags-off-desc"></span>
+          </span>
+        </label>
+        <label class="settings-option">
+          <input type="radio" name="advanced-tags" value="on">
+          <span>
+            <span class="settings-option-title" data-i18n="settings-tags-on-title"></span>
+            <span class="settings-option-desc" data-i18n="settings-tags-on-desc"></span>
+          </span>
+        </label>
+      </div>
+
+      <p class="settings-note" id="advanced-tags-current"></p>
+
+    </section>
   </div>
 
   <!-- ABOUT / HOW-TO -->
@@ -3152,6 +3516,7 @@
         <li data-i18n-html="about-feature11"></li>
         <li data-i18n-html="about-feature12"></li>
         <li data-i18n-html="about-feature13"></li>
+        <li data-i18n-html="about-feature14"></li>
       </ul>
     </section>
 
@@ -3369,13 +3734,15 @@
 
       'stat-total': 'სულ ჩანაწერი',
       'stat-rated': 'შეფასებული',
-      'stat-current-streak': 'მიმდინარე სტრიკი',
-      'stat-best-streak': 'საუკეთესო სტრიკი',
+      'stat-current-streak': 'გლობალური მიმდინარე სტრიკი',
+      'stat-best-streak': 'გლობალური საუკეთესო სტრიკი',
       'stat-mastery': 'საშ. ოსტატობა · პროგ.',
       'stat-pleasure': 'საშ. სიამოვნება · პროგ.',
 
       'dashboard-title': 'რა მუშაობს ყველაზე კარგად?',
+      'dashboard-title-tags': 'რომელი თეგები მუშაობს ყველაზე კარგად?',
       'dashboard-subtitle': 'აქტივობები დალაგებულია საშუალო შედეგით. მეტი ჩანაწერი = უფრო სანდო სიგნალი.',
+      'dashboard-subtitle-tags': 'თეგები დალაგებულია საშუალო შედეგით. ერთი ჩანაწერი შეიძლება რამდენიმე თეგში ჩაითვალოს.',
       'dashboard-sort-label': 'დალაგება',
       'dashboard-sort-diff': 'სხვაობის მიხედვით',
       'dashboard-sort-final': 'საბოლოო ქულის მიხედვით',
@@ -3392,13 +3759,20 @@
       'dashboard-empty-score': 'ჯერ არ არის საკმარისი დასრულებული შეფასება.',
 
       'deep-analysis-title': 'ღრმა ანალიზი კონკრეტული აქტივობისთვის',
+      'deep-analysis-title-tag': 'ღრმა ანალიზი კონკრეტული თეგისთვის',
       'deep-analysis-subtitle': 'აირჩიე ერთი აქტივობა და ნახე ერთად: საბოლოო განწყობა/ოსტატობა/სიამოვნება და მათი სხვაობა.',
+      'deep-analysis-subtitle-tag': 'აირჩიე ერთი თეგი და ნახე ერთად: საბოლოო განწყობა/ოსტატობა/სიამოვნება და მათი სხვაობა.',
       'deep-analysis-select': 'აირჩიე აქტივობა',
+      'deep-analysis-select-tag': 'აირჩიე თეგი',
       'deep-analysis-show-all': 'ყველას ჩვენება',
+      'deep-analysis-show-all-tags': 'ყველა თეგის ჩვენება',
       'deep-analysis-all-name': 'ყველა აქტივობა',
+      'deep-analysis-all-name-tags': 'ყველა თეგი',
       'deep-analysis-all-subtitle': 'აქტივობები ანბანურადაა ჩამოთვლილი — თითო ხაზზე ერთად ჩანს განწყობა, ოსტატობა და სიამოვნება.',
+      'deep-analysis-all-subtitle-tags': 'თეგები ანბანურადაა ჩამოთვლილი — თითო ხაზზე ერთად ჩანს განწყობა, ოსტატობა და სიამოვნება.',
       'deep-analysis-no-data': 'მონაცემი არაა',
       'deep-analysis-total': 'სულ {n} შეფასებული ჩანაწერი ამ აქტივობაზე',
+      'deep-analysis-total-tag': 'სულ {n} შეფასებული ჩანაწერი ამ თეგზე',
       'deep-analysis-based-on': 'დათვლილია',
       'deep-analysis-mood': 'განწყობა',
       'deep-analysis-mastery': 'ოსტატობა',
@@ -3476,6 +3850,54 @@
       'settings-theme-day-desc': 'თეთრი, ნათელი ფონი შავი ტექსტით — კარგი დღის სინათლეში წასაკითხად.',
       'settings-theme-current-night': 'ამჟამად ჩართულია ღამის / შავი ფერის რეჟიმი.',
       'settings-theme-current-day': 'ამჟამად ჩართულია დღის / თეთრი ფერის რეჟიმი.',
+      'settings-tags-title': 'დამატებითი აქტივობის თეგები',
+      'settings-tags-description': 'თეგები ნაგულისხმევად გამორთულია. ჩართვისას ახალ ჩანაწერში გამოჩნდება თეგების არჩევა, დამატება და წაშლა. ანალიზში შეძლებ აქტივობით ან თეგით ფილტრაციას. თეგები ინახება ჩანაწერში და არ იშლება, თუნდაც ფუნქცია ისევ გამორთო.',
+      'settings-tags-off-title': 'გამორთულია',
+      'settings-tags-off-desc': 'ახალი ჩანაწერის ეკრანი რჩება მარტივი. არსებული თეგები ინახება ფონურად, მაგრამ არ ჩანს.',
+      'settings-tags-on-title': 'ჩართულია',
+      'settings-tags-on-desc': 'დაამატე სოციალური, ვარჯიში, სწავლა და სხვა თეგები. ანალიზი შეძლებს აქტივობით ან თეგით მუშაობას.',
+      'settings-tags-current-off': 'დამატებითი თეგები ამჟამად გამორთულია.',
+      'settings-tags-current-on': 'დამატებითი თეგები ამჟამად ჩართულია.',
+      'settings-tags-manager-title': 'თეგების მართვა',
+      'settings-tags-manager-help': 'დაამატე საკუთარი თეგები ან წაშალე არასაჭირო თეგები. წაშლა ამოშლის თეგს არჩევანიდან და უკვე შენახული ჩანაწერებიდანაც.',
+      'settings-tags-add-placeholder': 'ახალი თეგი, მაგ. მუსიკა',
+      'settings-tags-add-btn': 'დამატება',
+      'settings-tags-empty': 'თეგები ჯერ არ არის დამატებული.',
+      'settings-tags-builtin': 'ძირითადი',
+      'settings-tags-custom': 'ჩემი',
+      'settings-tags-remove': 'წაშლა',
+      'settings-tags-delete-confirm': 'წავშალო თეგი „{tag}“? ის ამოიშლება ყველა შენახული ჩანაწერიდანაც.',
+      'toast-tag-added': 'თეგი დამატებულია.',
+      'toast-tag-exists': 'ასეთი თეგი უკვე არსებობს.',
+      'toast-tag-removed': 'თეგი წაშლილია.',
+      'toast-tag-invalid': 'ჩაწერე თეგის სახელი.',
+      'label-activity-tags': 'აქტივობის თეგები',
+      'tag-help': 'აირჩიე ერთი ან რამდენიმე თეგი. აქვე შეგიძლია დაამატო ახალი თეგი ან წაშალო არასაჭირო თეგი × ღილაკით.',
+      'tags-none': 'თეგი არ არის',
+      'tag-social': 'სოციალური',
+      'tag-exercise': 'ვარჯიში',
+      'tag-learning': 'სწავლა',
+      'tag-work': 'სამუშაო',
+      'tag-relaxation': 'დასვენება',
+      'tag-outside': 'გარეთ',
+      'tag-creative': 'კრეატიული',
+      'tag-chores': 'საქმეები',
+      'tag-screen': 'ეკრანი',
+      'tag-health': 'ჯანმრთელობა',
+      'analysis-filter-title': 'ანალიზის ფილტრები',
+      'analysis-filter-subtitle-tags-off': 'ამჟამად ანალიზი აქტივობებით იფილტრება. თეგებით ფილტრაციისთვის ჩართე დამატებითი თეგები პარამეტრებში. სტრიკი ყოველთვის გლობალურია და არ იფილტრება.',
+      'analysis-filter-subtitle-tags-on': 'აირჩიე, ანალიზი აქტივობებით დაიყოს თუ თეგებით. ეს მოქმედებს გრაფიკზე, შეფასებების სტატისტიკაზე, საუკეთესო შედეგების დაფაზე და ღრმა ანალიზზე. სტრიკი ყოველთვის გლობალურია და ითვლის დღეებს, რომლებშიც ჩანაწერი არსებობს.',
+      'analysis-group-label': 'დაყოფა / ფილტრის ტიპი',
+      'analysis-group-activity': 'აქტივობები',
+      'analysis-group-tag': 'თეგები',
+      'analysis-filter-activity-label': 'ფილტრი აქტივობით',
+      'analysis-filter-tag-label': 'ფილტრი თეგით',
+      'analysis-filter-all-activities': 'ყველა აქტივობა',
+      'analysis-filter-all-tags': 'ყველა თეგი',
+      'analysis-scope-all-activities': 'ნაჩვენებია ყველა შეფასებული აქტივობა.',
+      'analysis-scope-one-activity': 'ანალიზი შეზღუდულია არჩეული აქტივობით.',
+      'analysis-scope-all-tags': 'ნაჩვენებია ყველა შეფასებული ჩანაწერი; რეიტინგები თეგების მიხედვით დალაგდება.',
+      'analysis-scope-one-tag': 'ანალიზი შეზღუდულია არჩეული თეგით.',
       'sub-zero-ten': '0–10 ქულა',
       'sub-half-step': '0.0–10.0 ქულა',
       'scale-half-placeholder': 'აირჩიე ქულა…',
@@ -3570,6 +3992,7 @@
       'about-feature11': '<strong>დაწყების თარიღი მთავარია:</strong> გრაფიკი, სტრიკები და ანალიზი აქტივობას აკავშირებს დაგეგმილ/დაწყების დღესთან. მაგალითად, თუ აქტივობა დაიწყო გუშინ 23:00-ზე და დასრულდა 00:20-ზე, იგი მაინც გუშინდელ დღედ ჩაითვლება ანალიზში.',
       'about-feature12': '<strong>ენა, სარეზერვო ასლი და პასუხისმგებლობა:</strong> შეგიძლია გადართო ქართული, ინგლისური და რუსული ენა. მონაცემები რჩება შენს მოწყობილობაზე, ამიტომ მნიშვნელოვანი ჩანაწერები პერიოდულად გაიტანე Export-ით. აპი შეიძლება წაიშალოს ვებიდან ან გახდეს მიუწვდომელი, და ამ შემთხვევაში ავტორი მაინც არ არის პასუხისმგებელი გამოყენებაზე, შედეგებზე, დაკარგულ წვდომაზე ან დაკარგულ მონაცემებზე.',
       'about-feature13': '<strong>შეფასების შეყვანის პარამეტრები:</strong> პარამეტრების ჩანართში შეგიძლია აირჩიო ზუსტი 0–100, სწრაფი 0–10, ნახევარბიჯიანი 0.0–10.0 ან სიტყვიერი აღწერების რეჟიმი. ყველა ალტერნატიული რეჟიმი ისევ აპის 0–100 მონაცემთა ფორმატში გადაითარგმნება.',
+      'about-feature14': '<strong>დამატებითი აქტივობის თეგები:</strong> პარამეტრებში შეგიძლია ჩართო თეგები, დაამატო საკუთარი თეგები და წაშალო არასაჭიროები. ჩართვის შემდეგ ჩანაწერებს შეიძლება ჰქონდეს კატეგორიები, როგორიცაა სოციალური, ვარჯიში, სწავლა, სამუშაო, დასვენება და სხვა. ანალიზის ფილტრი შემდეგ მუშაობს როგორც აქტივობებით, ისე თეგებით.',
 
       'about-tips-title': 'რჩევები',
       'about-tip1': 'იყავი მართალი. ნუ შეცვლი წინასწარ პროგნოზს მას შემდეგ, რაც გააკეთე — ეს ანადგურებს ხელსაწყოს მთელ აზრს.',
@@ -3607,6 +4030,7 @@
       'edit-title-mood-before': 'წინა განწყობის რედაქტირება',
       'edit-title-mood-after': 'შემდგომი განწყობის რედაქტირება',
       'edit-title-company': 'ვისთან ერთად — რედაქტირება',
+      'edit-title-tags': 'თეგების რედაქტირება',
       'toast-edit-saved': 'შენახული.',
 
       // === Sample data (first-launch onboarding) ===
@@ -3674,13 +4098,15 @@
 
       'stat-total': 'Всего записей',
       'stat-rated': 'Оценено',
-      'stat-current-streak': 'Текущая серия',
-      'stat-best-streak': 'Лучшая серия',
+      'stat-current-streak': 'Глобальная текущая серия',
+      'stat-best-streak': 'Глобальная лучшая серия',
       'stat-mastery': 'Сред. мастерство · прог.',
       'stat-pleasure': 'Сред. удовольствие · прог.',
 
       'dashboard-title': 'Что работает лучше всего?',
+      'dashboard-title-tags': 'Какие теги работают лучше всего?',
       'dashboard-subtitle': 'Активности отсортированы по среднему результату. Больше записей = более надёжный сигнал.',
+      'dashboard-subtitle-tags': 'Теги отсортированы по среднему результату. Одна запись может попадать сразу в несколько тегов.',
       'dashboard-sort-label': 'Сортировка',
       'dashboard-sort-diff': 'По разнице',
       'dashboard-sort-final': 'По финальной оценке',
@@ -3697,13 +4123,20 @@
       'dashboard-empty-score': 'Пока мало завершённых оценок.',
 
       'deep-analysis-title': 'Глубокий анализ одной активности',
+      'deep-analysis-title-tag': 'Глубокий анализ одного тега',
       'deep-analysis-subtitle': 'Выбери активность и посмотри настроение, мастерство и удовольствие вместе: итоговый результат и среднюю разницу.',
+      'deep-analysis-subtitle-tag': 'Выбери тег и посмотри настроение, мастерство и удовольствие вместе: итоговый результат и среднюю разницу.',
       'deep-analysis-select': 'Выбери активность',
+      'deep-analysis-select-tag': 'Выбери тег',
       'deep-analysis-show-all': 'Показать все',
+      'deep-analysis-show-all-tags': 'Показать все теги',
       'deep-analysis-all-name': 'Все активности',
+      'deep-analysis-all-name-tags': 'Все теги',
       'deep-analysis-all-subtitle': 'Активности показаны по алфавиту — настроение, мастерство и удовольствие остаются вместе в одной строке.',
+      'deep-analysis-all-subtitle-tags': 'Теги показаны по алфавиту — настроение, мастерство и удовольствие остаются вместе в одной строке.',
       'deep-analysis-no-data': 'Нет данных',
       'deep-analysis-total': '{n} оценённых записей для этой активности',
+      'deep-analysis-total-tag': '{n} оценённых записей для этого тега',
       'deep-analysis-based-on': 'На основе',
       'deep-analysis-mood': 'Настроение',
       'deep-analysis-mastery': 'Мастерство',
@@ -3779,6 +4212,54 @@
       'settings-theme-day-desc': 'Белый светлый фон с чёрным текстом — удобно читать при дневном освещении.',
       'settings-theme-current-night': 'Сейчас включён ночной / чёрный режим.',
       'settings-theme-current-day': 'Сейчас включён дневной / белый режим.',
+      'settings-tags-title': 'Дополнительные теги активностей',
+      'settings-tags-description': 'Теги выключены по умолчанию. Если включить их, на экране новой записи появится выбор, добавление и удаление тегов. В анализе можно фильтровать по активности или по тегу. Теги сохраняются внутри записи и не удаляются, даже если потом выключить эту функцию.',
+      'settings-tags-off-title': 'Выключено',
+      'settings-tags-off-desc': 'Экран новой записи остаётся простым. Уже сохранённые теги остаются в фоне, но не показываются.',
+      'settings-tags-on-title': 'Включено',
+      'settings-tags-on-desc': 'Добавляй теги вроде социальное, тренировка, учёба и т.д. Анализ сможет работать по активностям или по тегам.',
+      'settings-tags-current-off': 'Дополнительные теги сейчас выключены.',
+      'settings-tags-current-on': 'Дополнительные теги сейчас включены.',
+      'settings-tags-manager-title': 'Управление тегами',
+      'settings-tags-manager-help': 'Добавляй свои теги или удаляй ненужные. Удаление уберёт тег из выбора и из уже сохранённых записей.',
+      'settings-tags-add-placeholder': 'Новый тег, например музыка',
+      'settings-tags-add-btn': 'Добавить',
+      'settings-tags-empty': 'Тегов пока нет.',
+      'settings-tags-builtin': 'базовый',
+      'settings-tags-custom': 'мой',
+      'settings-tags-remove': 'удалить',
+      'settings-tags-delete-confirm': 'Удалить тег «{tag}»? Он также будет удалён из всех сохранённых записей.',
+      'toast-tag-added': 'Тег добавлен.',
+      'toast-tag-exists': 'Такой тег уже существует.',
+      'toast-tag-removed': 'Тег удалён.',
+      'toast-tag-invalid': 'Введи название тега.',
+      'label-activity-tags': 'Теги активности',
+      'tag-help': 'Выбери один или несколько тегов. Здесь же можно добавить новый тег или удалить ненужный кнопкой ×.',
+      'tags-none': 'нет тегов',
+      'tag-social': 'социальное',
+      'tag-exercise': 'тренировка',
+      'tag-learning': 'учёба',
+      'tag-work': 'работа',
+      'tag-relaxation': 'отдых',
+      'tag-outside': 'на улице',
+      'tag-creative': 'творчество',
+      'tag-chores': 'дела',
+      'tag-screen': 'экран',
+      'tag-health': 'здоровье',
+      'analysis-filter-title': 'Фильтры анализа',
+      'analysis-filter-subtitle-tags-off': 'Сейчас анализ фильтруется по активностям. Чтобы фильтровать по тегам, включи дополнительные теги в настройках. Серия всегда глобальная и не фильтруется.',
+      'analysis-filter-subtitle-tags-on': 'Выбери, анализировать по активностям или по тегам. Это влияет на график, статистику оценок, панель лучших результатов и глубокий анализ. Серия всегда глобальная и считает дни, в которых есть записи.',
+      'analysis-group-label': 'Группировка / тип фильтра',
+      'analysis-group-activity': 'Активности',
+      'analysis-group-tag': 'Теги',
+      'analysis-filter-activity-label': 'Фильтр по активности',
+      'analysis-filter-tag-label': 'Фильтр по тегу',
+      'analysis-filter-all-activities': 'Все активности',
+      'analysis-filter-all-tags': 'Все теги',
+      'analysis-scope-all-activities': 'Показаны все оценённые активности.',
+      'analysis-scope-one-activity': 'Анализ ограничен выбранной активностью.',
+      'analysis-scope-all-tags': 'Показаны все оценённые записи; рейтинги группируются по тегам.',
+      'analysis-scope-one-tag': 'Анализ ограничен выбранным тегом.',
       'sub-zero-ten': 'Оценка 0–10',
       'sub-half-step': 'Оценка 0.0–10.0',
       'scale-half-placeholder': 'Выбери оценку…',
@@ -3869,6 +4350,7 @@
       'about-feature11': '<strong>Дата начала главная:</strong> график, серии и анализ привязывают активность к запланированной/стартовой дате. Например, если активность началась вчера в 23:00 и закончилась в 00:20, в анализе она всё равно относится ко вчерашнему дню.',
       'about-feature12': '<strong>Язык, резервная копия и ответственность:</strong> можно переключаться между грузинским, английским и русским языком. Данные остаются на твоём устройстве, поэтому важные записи лучше периодически сохранять через Export. Приложение может быть удалено из интернета или стать недоступным, и даже в этом случае автор не несёт ответственности за использование, результаты, потерю доступа или потерю данных.',
       'about-feature13': '<strong>Настройки ввода оценок:</strong> во вкладке настроек можно выбрать точный ввод 0–100, быстрый ввод 0–10, шаги по 0.5 от 0.0 до 10.0 или словесные описания. Все альтернативные режимы переводятся обратно в формат данных 0–100.',
+      'about-feature14': '<strong>Дополнительные теги активностей:</strong> в настройках можно включить теги, добавить свои теги и удалить ненужные. После включения записи могут иметь категории: социальное, тренировка, учёба, работа, отдых и другие. Затем фильтр анализа работает и по активностям, и по тегам.',
 
       'about-tips-title': 'Советы',
       'about-tip1': 'Будь честен. Не меняй прогноз после выполнения активности — иначе теряется смысл инструмента.',
@@ -3905,6 +4387,7 @@
       'edit-title-mood-before': 'Редактировать настроение до',
       'edit-title-mood-after': 'Редактировать настроение после',
       'edit-title-company': 'Редактировать “с кем”',
+      'edit-title-tags': 'Редактировать теги',
       'toast-edit-saved': 'Сохранено.',
 
       // === Sample data (first-launch onboarding) ===
@@ -3972,13 +4455,15 @@
 
       'stat-total': 'Total Entries',
       'stat-rated': 'Rated',
-      'stat-current-streak': 'Current streak',
-      'stat-best-streak': 'Best streak',
+      'stat-current-streak': 'Global current streak',
+      'stat-best-streak': 'Global best streak',
       'stat-mastery': 'Avg Mastery · pred',
       'stat-pleasure': 'Avg Pleasure · pred',
 
       'dashboard-title': 'What works best?',
+      'dashboard-title-tags': 'Which tags work best?',
       'dashboard-subtitle': 'Activities are ranked by average result. More entries = a stronger signal.',
+      'dashboard-subtitle-tags': 'Tags are ranked by average result. One entry can count toward multiple tags.',
       'dashboard-sort-label': 'Sort by',
       'dashboard-sort-diff': 'Sort by difference',
       'dashboard-sort-final': 'Sort by final score',
@@ -3995,13 +4480,20 @@
       'dashboard-empty-score': 'Not enough completed ratings yet.',
 
       'deep-analysis-title': 'Deep analysis for one activity',
+      'deep-analysis-title-tag': 'Deep analysis for one tag',
       'deep-analysis-subtitle': 'Choose one activity and see mood, mastery, and pleasure together: final result plus average difference.',
+      'deep-analysis-subtitle-tag': 'Choose one tag and see mood, mastery, and pleasure together: final result plus average difference.',
       'deep-analysis-select': 'Choose activity',
+      'deep-analysis-select-tag': 'Choose tag',
       'deep-analysis-show-all': 'Show all',
+      'deep-analysis-show-all-tags': 'Show all tags',
       'deep-analysis-all-name': 'All activities',
+      'deep-analysis-all-name-tags': 'All tags',
       'deep-analysis-all-subtitle': 'Activities are listed alphabetically — mood, mastery, and pleasure stay together on one line.',
+      'deep-analysis-all-subtitle-tags': 'Tags are listed alphabetically — mood, mastery, and pleasure stay together on one line.',
       'deep-analysis-no-data': 'No data',
       'deep-analysis-total': '{n} rated entries for this activity',
+      'deep-analysis-total-tag': '{n} rated entries for this tag',
       'deep-analysis-based-on': 'Based on',
       'deep-analysis-mood': 'Mood',
       'deep-analysis-mastery': 'Mastery',
@@ -4078,6 +4570,54 @@
       'settings-theme-day-desc': 'White bright background with black text — easier to read in daylight.',
       'settings-theme-current-night': 'Night / black color mode is currently active.',
       'settings-theme-current-day': 'Day / white color mode is currently active.',
+      'settings-tags-title': 'Advanced activity tags',
+      'settings-tags-description': 'Tags are off by default. When enabled, the New screen shows tag selection, tag adding, and tag removal. Insights can filter by activity or tag. Tags are stored inside entries and remain saved in the background even if you turn the feature off again.',
+      'settings-tags-off-title': 'Off',
+      'settings-tags-off-desc': 'Keep the New screen simple. Any saved tags stay in the background but are hidden.',
+      'settings-tags-on-title': 'On',
+      'settings-tags-on-desc': 'Add social, exercise, learning, and other tags. Insights can work by activity or by tag.',
+      'settings-tags-current-off': 'Advanced tags are currently off.',
+      'settings-tags-current-on': 'Advanced tags are currently on.',
+      'settings-tags-manager-title': 'Manage tags',
+      'settings-tags-manager-help': 'Add your own tags or remove tags you do not need. Removing a tag also removes it from already saved entries.',
+      'settings-tags-add-placeholder': 'New tag, e.g. music',
+      'settings-tags-add-btn': 'Add',
+      'settings-tags-empty': 'No tags yet.',
+      'settings-tags-builtin': 'built-in',
+      'settings-tags-custom': 'custom',
+      'settings-tags-remove': 'remove',
+      'settings-tags-delete-confirm': 'Remove “{tag}”? This will also remove it from all saved entries.',
+      'toast-tag-added': 'Tag added.',
+      'toast-tag-exists': 'That tag already exists.',
+      'toast-tag-removed': 'Tag removed.',
+      'toast-tag-invalid': 'Type a tag name first.',
+      'label-activity-tags': 'Activity tags',
+      'tag-help': 'Choose one or more tags. You can also add a new tag here or remove an unwanted tag with the × button.',
+      'tags-none': 'no tags',
+      'tag-social': 'social',
+      'tag-exercise': 'exercise',
+      'tag-learning': 'learning',
+      'tag-work': 'work',
+      'tag-relaxation': 'relaxation',
+      'tag-outside': 'outside',
+      'tag-creative': 'creative',
+      'tag-chores': 'chores',
+      'tag-screen': 'screen',
+      'tag-health': 'health',
+      'analysis-filter-title': 'Analysis filters',
+      'analysis-filter-subtitle-tags-off': 'Analysis is currently filtered by activity. Turn on advanced tags in Settings to filter by tags too. Streak stays global and is not filtered.',
+      'analysis-filter-subtitle-tags-on': 'Choose whether Insights should group and filter by activity or by tag. This affects the chart, rating stat cards, best-results dashboard, and deep analysis. Streak stays global and counts days that have entries.',
+      'analysis-group-label': 'Group / filter type',
+      'analysis-group-activity': 'Activities',
+      'analysis-group-tag': 'Tags',
+      'analysis-filter-activity-label': 'Filter by activity',
+      'analysis-filter-tag-label': 'Filter by tag',
+      'analysis-filter-all-activities': 'All activities',
+      'analysis-filter-all-tags': 'All tags',
+      'analysis-scope-all-activities': 'Showing all rated activities.',
+      'analysis-scope-one-activity': 'Analysis is limited to the selected activity.',
+      'analysis-scope-all-tags': 'Showing all rated entries; rankings are grouped by tag.',
+      'analysis-scope-one-tag': 'Analysis is limited to the selected tag.',
       'sub-zero-ten': '0–10 score',
       'sub-half-step': '0.0–10.0 score',
       'scale-half-placeholder': 'Choose a score…',
@@ -4166,9 +4706,10 @@
       'about-feature8': '<strong>Unlimited activity rankings:</strong> the best-activity dashboard is no longer limited to a top 5. If data exists, you can review all activities and compare the wider pattern.',
       'about-feature9': '<strong>Deep analysis for one activity:</strong> choose a specific activity and see mood, mastery, and pleasure together: final score, change, and how many entries the conclusion is based on.',
       'about-feature10': '<strong>Show all in deep analysis:</strong> the first option is Show all. It does not show a ranking; it lists all activity names alphabetically so each activity keeps mood, mastery, and pleasure together on one line.',
-      'about-feature11': '<strong>Start date is primary:</strong> charts, streaks, and analysis attach an activity to its scheduled/start date. For example, if an activity started yesterday at 11 PM and ended at 12:20 AM, it still belongs to yesterday in analysis.',
+      'about-feature11': '<strong>Start date is primary:</strong> charts and analysis attach an activity to its scheduled/start date. Global streaks count days with entries using that same start date, and are not narrowed by activity or tag filters. For example, if an activity started yesterday at 11 PM and ended at 12:20 AM, it still belongs to yesterday in analysis.',
       'about-feature12': '<strong>Language, backup, and responsibility:</strong> you can switch between Georgian, English, and Russian. Data stays on your device, so export important records as a backup. The app may be removed from the web or become unavailable, and even then the author is not responsible for use, results, lost access, or lost data.',
       'about-feature13': '<strong>Rating input settings:</strong> the Settings tab lets you choose between precise 0–100 input, quick 0–10 input, half-step 0.0–10.0 input, or word-description selectors. All alternative modes are translated back into the app’s 0–100 data format.',
+      'about-feature14': '<strong>Advanced activity tags:</strong> the Settings tab can turn tags on or off. Once enabled, the New tab lets you choose, add, and remove tags such as social, exercise, learning, work, relaxation, and more. The Insights filter can then work by activity or by tag.',
 
       'about-tips-title': 'Tips',
       'about-tip1': 'Be honest. Don\'t change your prediction after you\'ve done the activity — that destroys the entire point of the tool.',
@@ -4206,6 +4747,7 @@
       'edit-title-mood-before': 'Edit Mood Before',
       'edit-title-mood-after': 'Edit Mood After',
       'edit-title-company': 'Edit With Whom',
+      'edit-title-tags': 'Edit Tags',
       'toast-edit-saved': 'Saved.',
 
       // === Sample data (first-launch onboarding) ===
@@ -4228,13 +4770,23 @@
   const SCALE_MODE_VALUES = ['precise', 'ten', 'half', 'words'];
   const THEME_MODE_STORAGE_KEY = 'ba_theme_mode_v1';
   const THEME_MODE_VALUES = ['night', 'day'];
+  const ADVANCED_TAGS_STORAGE_KEY = 'ba_advanced_tags_v1';
+  const TAG_LIBRARY_STORAGE_KEY = 'ba_tag_library_v1';
+  const DEFAULT_TAG_KEYS = ['social', 'exercise', 'learning', 'work', 'relaxation', 'outside', 'creative', 'chores', 'screen', 'health'];
+  const SAMPLE_TAG_SETS = {
+    'sample-act-walk': ['exercise', 'outside', 'health'],
+    'sample-act-read': ['relaxation', 'learning'],
+    'sample-act-friend': ['social', 'relaxation'],
+    'sample-act-work': ['work', 'learning'],
+    'sample-act-coffee': ['outside', 'relaxation', 'social'],
+  };
 
   function loadScaleModePreference() {
     try {
       const saved = localStorage.getItem(SCALE_MODE_STORAGE_KEY);
       if (SCALE_MODE_VALUES.includes(saved)) return saved;
     } catch(e) { /* ignore */ }
-    return 'precise';
+    return 'words';
   }
 
   function loadThemeModePreference() {
@@ -4243,6 +4795,83 @@
       if (THEME_MODE_VALUES.includes(saved)) return saved;
     } catch(e) { /* ignore */ }
     return 'day';
+  }
+
+  function loadAdvancedTagsPreference() {
+    try {
+      return localStorage.getItem(ADVANCED_TAGS_STORAGE_KEY) === 'on';
+    } catch(e) { /* ignore */ }
+    return false;
+  }
+
+  function defaultTagLibrary() {
+    return DEFAULT_TAG_KEYS.map(key => ({ key, label: '', builtin: true }));
+  }
+
+  function cleanTagKey(raw) {
+    return String(raw || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .replace(/-+/g, '-')
+      .slice(0, 48);
+  }
+
+  function cleanTagLabel(raw) {
+    return String(raw || '').trim().replace(/\s+/g, ' ').slice(0, 36);
+  }
+
+  function normalizeTagLibrary(raw) {
+    if (!Array.isArray(raw)) return [];
+    const out = [];
+    const seen = new Set();
+
+    raw.forEach(item => {
+      let key = '';
+      let label = '';
+      let builtin = false;
+
+      if (typeof item === 'string') {
+        key = cleanTagKey(item);
+      } else if (item && typeof item === 'object') {
+        key = cleanTagKey(item.key);
+        label = cleanTagLabel(item.label);
+        builtin = item.builtin === true;
+      }
+
+      if (!key) return;
+      if (DEFAULT_TAG_KEYS.includes(key)) {
+        builtin = true;
+        label = '';
+      } else if (!label) {
+        label = key.replace(/^custom-/, '').replace(/[-_]+/g, ' ').trim() || key;
+      }
+
+      if (!seen.has(key)) {
+        out.push({ key, label, builtin });
+        seen.add(key);
+      }
+    });
+
+    return out;
+  }
+
+  function loadTagLibraryPreference() {
+    try {
+      const raw = localStorage.getItem(TAG_LIBRARY_STORAGE_KEY);
+      if (raw !== null) return normalizeTagLibrary(JSON.parse(raw));
+    } catch(e) { /* ignore */ }
+    return defaultTagLibrary();
+  }
+
+  function saveTagLibrary() {
+    try {
+      localStorage.setItem(TAG_LIBRARY_STORAGE_KEY, JSON.stringify(state.tagLibrary));
+      return true;
+    } catch(e) {
+      return false;
+    }
   }
 
   let currentLang = 'ka'; // default
@@ -4301,6 +4930,9 @@
     if (typeof renderAllScaleWidgets === 'function') renderAllScaleWidgets({ preserve: true });
     if (typeof renderScaleModeSettingsUI === 'function') renderScaleModeSettingsUI();
     if (typeof renderThemeModeSettingsUI === 'function') renderThemeModeSettingsUI();
+    if (typeof renderAdvancedTagsSettingsUI === 'function') renderAdvancedTagsSettingsUI();
+    if (typeof renderTagPickers === 'function') renderTagPickers();
+    if (typeof renderTagManager === 'function') renderTagManager();
   }
 
   function setLang(lang) {
@@ -4335,8 +4967,12 @@
     chartFilter: 'all',
     chartActivityKey: '__all__',
     chartShowAverages: false,
+    analysisGroup: 'activity',
+    analysisFilterKey: '__all__',
     scaleMode: loadScaleModePreference(),
     themeMode: loadThemeModePreference(),
+    advancedTags: loadAdvancedTagsPreference(),
+    tagLibrary: loadTagLibraryPreference(),
   };
 
   // ============ STORAGE ============
@@ -4345,6 +4981,7 @@
   const STORAGE_KEY = 'ba_entries_v1';
   const TEMPLATES_KEY = 'ba_templates_v1';
   const SAMPLE_SEEDED_KEY = 'ba_sample_seeded_v1';
+  const SAMPLE_TAGS_MIGRATED_KEY = 'ba_sample_tags_migrated_v1';
   let useWindowStorage = !!(window.storage && typeof window.storage.set === 'function');
 
   function sortEntries() {
@@ -4521,6 +5158,261 @@
     }
   }
 
+
+  // ============ ADVANCED TAGS ============
+  function getTagLibrary() {
+    if (!Array.isArray(state.tagLibrary)) state.tagLibrary = defaultTagLibrary();
+    return state.tagLibrary;
+  }
+
+  function getTagKeys() {
+    return getTagLibrary().map(tag => tag.key);
+  }
+
+  function sanitizeTags(tags) {
+    if (!Array.isArray(tags)) return [];
+    const allowed = new Set(getTagKeys());
+    const out = [];
+    tags.forEach(tag => {
+      const key = cleanTagKey(tag);
+      if (allowed.has(key) && !out.includes(key)) out.push(key);
+    });
+    return out;
+  }
+
+  function tagLabel(key) {
+    const clean = cleanTagKey(key);
+    const tag = getTagLibrary().find(item => item.key === clean);
+    if (tag && tag.builtin) return t('tag-' + clean);
+    if (tag && tag.label) return tag.label;
+    return clean || '';
+  }
+
+  function getEntryTags(entry) {
+    return sanitizeTags(entry && entry.tags);
+  }
+
+  function makeTagKey(label) {
+    const base = cleanTagKey(label) || 'tag';
+    const existing = new Set(getTagKeys());
+    let key = 'custom-' + base;
+    let i = 2;
+    while (existing.has(key)) {
+      key = 'custom-' + base + '-' + i;
+      i += 1;
+    }
+    return key;
+  }
+
+  function tagLabelExists(label) {
+    const target = cleanTagLabel(label).toLocaleLowerCase();
+    if (!target) return false;
+    return getTagLibrary().some(tag => tagLabel(tag.key).toLocaleLowerCase() === target);
+  }
+
+  function renderTagPicker(containerId, selectedTags = []) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const selected = new Set(sanitizeTags(selectedTags));
+    const tags = getTagLibrary();
+    const canManageTags = containerId === 'activity-tags-list';
+    if (!tags.length) {
+      container.innerHTML = `<div class="tag-manager-empty">${t('settings-tags-empty')}</div>`;
+      return;
+    }
+    container.innerHTML = tags.map(tag => `
+      <div class="tag-choice-wrap" data-tag-key="${escapeHtml(tag.key)}">
+        <label class="tag-choice${canManageTags ? ' has-remove' : ''}">
+          <input type="checkbox" value="${escapeHtml(tag.key)}" ${selected.has(tag.key) ? 'checked' : ''}>
+          <span>
+            ${escapeHtml(tagLabel(tag.key))}
+            ${canManageTags ? `<button type="button" class="tag-inline-remove-btn" data-remove-tag="${escapeHtml(tag.key)}" aria-label="${escapeHtml(t('settings-tags-remove'))}" title="${escapeHtml(t('settings-tags-remove'))}">×</button>` : ''}
+          </span>
+        </label>
+      </div>`).join('');
+
+    if (canManageTags) {
+      container.querySelectorAll('[data-remove-tag]').forEach(btn => {
+        btn.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          removeTagFromSettings(btn.dataset.removeTag);
+        });
+      });
+    }
+  }
+
+  function getSelectedTags(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return [];
+    return sanitizeTags(Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(input => input.value));
+  }
+
+  function clearTagPicker(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.querySelectorAll('input[type="checkbox"]').forEach(input => { input.checked = false; });
+  }
+
+  function renderTagPickers() {
+    const field = document.getElementById('activity-tags-field');
+    const showTags = !!state.advancedTags;
+    if (field) {
+      field.classList.toggle('scale-hidden', !showTags);
+      field.hidden = !showTags;
+      field.setAttribute('aria-hidden', showTags ? 'false' : 'true');
+    }
+    if (showTags) {
+      renderTagPicker('activity-tags-list', getSelectedTags('activity-tags-list'));
+    } else {
+      clearTagPicker('activity-tags-list');
+    }
+  }
+
+  function tagPillsHtml(tags, includeEmpty = false) {
+    const clean = sanitizeTags(tags);
+    if (!clean.length && !includeEmpty) return '';
+    const pills = clean.length
+      ? clean.map(key => `<span class="tag-pill">${escapeHtml(tagLabel(key))}</span>`).join('')
+      : `<span class="tag-pill">${t('tags-none')}</span>`;
+    return pills;
+  }
+
+  function renderTagManager() {
+    const manager = document.getElementById('tag-manager');
+    if (manager) manager.classList.toggle('scale-hidden', !state.advancedTags);
+
+    const list = document.getElementById('tag-manager-list');
+    if (!list) return;
+
+    const tags = getTagLibrary();
+    if (!tags.length) {
+      list.innerHTML = `<div class="tag-manager-empty">${t('settings-tags-empty')}</div>`;
+      return;
+    }
+
+    list.innerHTML = tags.map(tag => `
+      <div class="tag-manager-row" data-tag-key="${escapeHtml(tag.key)}">
+        <div class="tag-manager-name">
+          <span>${escapeHtml(tagLabel(tag.key))}</span>
+          <span class="tag-manager-type">${escapeHtml(t(tag.builtin ? 'settings-tags-builtin' : 'settings-tags-custom'))}</span>
+        </div>
+        <button type="button" class="tag-remove-btn" data-remove-tag="${escapeHtml(tag.key)}">${escapeHtml(t('settings-tags-remove'))}</button>
+      </div>`).join('');
+
+    list.querySelectorAll('[data-remove-tag]').forEach(btn => {
+      btn.addEventListener('click', () => removeTagFromSettings(btn.dataset.removeTag));
+    });
+  }
+
+  function renderAdvancedTagsSettingsUI() {
+    document.documentElement.setAttribute('data-advanced-tags', state.advancedTags ? 'on' : 'off');
+    document.querySelectorAll('input[name="advanced-tags"]').forEach(radio => {
+      radio.checked = radio.value === (state.advancedTags ? 'on' : 'off');
+    });
+    const current = document.getElementById('advanced-tags-current');
+    if (current) current.textContent = t(state.advancedTags ? 'settings-tags-current-on' : 'settings-tags-current-off');
+    renderTagPickers();
+  }
+
+  function setAdvancedTagsMode(value) {
+    const enabled = value === true || value === 'on';
+    if (state.advancedTags === enabled) {
+      renderAdvancedTagsSettingsUI();
+      return;
+    }
+    state.advancedTags = enabled;
+    if (!enabled) {
+      state.analysisGroup = 'activity';
+      state.analysisFilterKey = '__all__';
+    }
+    try { localStorage.setItem(ADVANCED_TAGS_STORAGE_KEY, enabled ? 'on' : 'off'); } catch(e) { /* ignore */ }
+    renderAdvancedTagsSettingsUI();
+    if (document.getElementById('view-log').classList.contains('active')) renderLog();
+    if (document.getElementById('view-insights').classList.contains('active')) renderInsights();
+    showToast(t('toast-settings-saved'));
+  }
+
+  function addTagFromSettings() {
+    const input = document.getElementById('new-entry-tag-input');
+    if (!input) return;
+    const label = cleanTagLabel(input.value);
+    if (!label) {
+      showToast(t('toast-tag-invalid'));
+      return;
+    }
+    if (tagLabelExists(label)) {
+      showToast(t('toast-tag-exists'));
+      return;
+    }
+
+    const selected = getSelectedTags('activity-tags-list');
+    const newTag = { key: makeTagKey(label), label, builtin: false };
+    state.tagLibrary.push(newTag);
+    saveTagLibrary();
+    input.value = '';
+    renderTagPicker('activity-tags-list', selected.concat(newTag.key));
+    if (document.getElementById('view-log').classList.contains('active')) renderLog();
+    if (document.getElementById('view-insights').classList.contains('active')) renderInsights();
+    showToast(t('toast-tag-added'));
+  }
+
+  async function saveAllEntries() {
+    let savedSomewhere = false;
+
+    if (useWindowStorage) {
+      try {
+        for (const entry of state.entries) {
+          await window.storage.set('entry:' + entry.id, JSON.stringify(entry));
+        }
+        savedSomewhere = true;
+      } catch(e) {
+        useWindowStorage = false;
+      }
+    }
+
+    if (saveToLocalStorage()) savedSomewhere = true;
+    if (!savedSomewhere) showToast(t('toast-failed'));
+    return savedSomewhere;
+  }
+
+  async function removeTagFromSettings(key) {
+    const clean = cleanTagKey(key);
+    const tag = getTagLibrary().find(item => item.key === clean);
+    if (!tag) return;
+
+    const ok = await showConfirm(t('settings-tags-delete-confirm', { tag: tagLabel(clean) }));
+    if (!ok) return;
+
+    state.tagLibrary = getTagLibrary().filter(item => item.key !== clean);
+    state.entries.forEach(entry => {
+      if (Array.isArray(entry.tags)) entry.tags = entry.tags.filter(tagKey => cleanTagKey(tagKey) !== clean);
+    });
+
+    saveTagLibrary();
+    await saveAllEntries();
+
+    state.analysisFilterKey = '__all__';
+    state.chartActivityKey = '__all__';
+    renderAdvancedTagsSettingsUI();
+    if (document.getElementById('view-log').classList.contains('active')) renderLog();
+    if (document.getElementById('view-insights').classList.contains('active')) renderInsights();
+    showToast(t('toast-tag-removed'));
+  }
+
+  function mergeTagLibrary(importedTagLibrary) {
+    const imported = normalizeTagLibrary(importedTagLibrary);
+    if (!imported.length) return;
+    const existing = new Set(getTagKeys());
+    imported.forEach(tag => {
+      if (!existing.has(tag.key)) {
+        state.tagLibrary.push(tag);
+        existing.add(tag.key);
+      }
+    });
+    saveTagLibrary();
+  }
+
   async function saveEntry(entry) {
     // Update in-memory list first
     const idx = state.entries.findIndex(e => e.id === entry.id);
@@ -4581,6 +5473,7 @@
         predMastery: 50, predPleasure: 40,
         actMastery: 70,  actPleasure: 75,
         moodBefore: 40,  moodAfter: 65,
+        tags: ['exercise', 'outside', 'health'],
       },
       {
         activityKey: 'sample-act-read',
@@ -4589,6 +5482,7 @@
         predMastery: 60, predPleasure: 65,
         actMastery: 65,  actPleasure: 70,
         moodBefore: 55,  moodAfter: 68,
+        tags: ['relaxation', 'learning'],
       },
       {
         activityKey: 'sample-act-friend',
@@ -4597,6 +5491,7 @@
         predMastery: 30, predPleasure: 45,
         actMastery: 55,  actPleasure: 82,
         moodBefore: 35,  moodAfter: 78,
+        tags: ['social', 'relaxation'],
       },
       {
         activityKey: 'sample-act-work',
@@ -4605,6 +5500,7 @@
         predMastery: 80, predPleasure: 30,
         actMastery: 75,  actPleasure: 45,
         moodBefore: 50,  moodAfter: 55,
+        tags: ['work', 'learning'],
       },
       {
         activityKey: 'sample-act-coffee',
@@ -4613,11 +5509,13 @@
         predMastery: 20, predPleasure: 55,
         actMastery: 40,  actPleasure: 80,
         moodBefore: 45,  moodAfter: 72,
+        tags: ['outside', 'relaxation', 'social'],
       },
     ];
 
     return samples.map((s, i) => ({
       id: 'e_sample_' + (now + i) + '_' + Math.random().toString(36).slice(2, 6),
+      sampleKey: s.activityKey,
       activity: t(s.activityKey),
       company: t(s.companyKey),
       predMastery: s.predMastery,
@@ -4626,11 +5524,60 @@
       actPleasure: s.actPleasure,
       moodBefore: s.moodBefore,
       moodAfter: s.moodAfter,
+      tags: sanitizeTags(SAMPLE_TAG_SETS[s.activityKey] || s.tags || []),
       createdAt: s.scheduledAt - 3600000, // "saved" an hour before scheduled
       scheduledAt: s.scheduledAt,
       completedAt: s.scheduledAt + 1800000, // "rated" 30 min after scheduled
       isSample: true,
     }));
+  }
+
+
+  function sampleKeyForEntry(entry) {
+    if (!entry || !(entry.isSample || String(entry.id || '').startsWith('e_sample_'))) return null;
+    if (entry.sampleKey && SAMPLE_TAG_SETS[entry.sampleKey]) return entry.sampleKey;
+
+    const activity = String(entry.activity || '').trim();
+    if (!activity) return null;
+
+    const languages = Object.keys(I18N || {});
+    for (const sampleKey of Object.keys(SAMPLE_TAG_SETS)) {
+      for (const lang of languages) {
+        if (I18N[lang] && I18N[lang][sampleKey] === activity) return sampleKey;
+      }
+    }
+    return null;
+  }
+
+  async function ensureSampleEntryTags() {
+    let alreadyMigrated = false;
+    try { alreadyMigrated = !!localStorage.getItem(SAMPLE_TAGS_MIGRATED_KEY); } catch(_) {}
+    if (alreadyMigrated) return false;
+
+    let changed = false;
+    state.entries.forEach(entry => {
+      const sampleKey = sampleKeyForEntry(entry);
+      if (!sampleKey) return;
+
+      const wantedTags = SAMPLE_TAG_SETS[sampleKey] || [];
+      const existingTags = Array.isArray(entry.tags)
+        ? entry.tags.map(cleanTagKey).filter(Boolean)
+        : [];
+      const mergedTags = Array.from(new Set(existingTags.concat(wantedTags)));
+
+      if (entry.sampleKey !== sampleKey) {
+        entry.sampleKey = sampleKey;
+        changed = true;
+      }
+      if (JSON.stringify(entry.tags || []) !== JSON.stringify(mergedTags)) {
+        entry.tags = mergedTags;
+        changed = true;
+      }
+    });
+
+    if (changed) await saveAllEntries();
+    try { localStorage.setItem(SAMPLE_TAGS_MIGRATED_KEY, '1'); } catch(_) {}
+    return changed;
   }
 
   async function seedSampleData() {
@@ -5037,6 +5984,7 @@
     const rateEl = document.getElementById('view-rate');
     rateEl.classList.remove('active');
     rateEl.style.display = 'none';
+    if (name === 'new') renderTagPickers();
     if (name === 'log') renderLog();
     if (name === 'insights') renderInsights();
   }
@@ -5056,6 +6004,7 @@
       actPleasure: null,
       moodBefore: null,
       moodAfter: null,
+      tags: state.advancedTags ? getSelectedTags('activity-tags-list') : [],
       createdAt: Date.now(),
       scheduledAt,
       completedAt: null,
@@ -5066,6 +6015,7 @@
     if (ok) {
       document.getElementById('activity').value = '';
       document.getElementById('company').value = '';
+      clearTagPicker('activity-tags-list');
       resetScaleKey('pred-mastery');
       resetScaleKey('pred-pleasure');
       // Reset time to current hour
@@ -5469,6 +6419,10 @@
     const ampm = h < 12 ? 'AM' : 'PM';
     const h12 = h === 0 ? 12 : (h > 12 ? h - 12 : h);
     const hourStr = `${h12} ${ampm}`;
+    const entryTags = getEntryTags(e);
+    const tagsHtml = state.advancedTags
+      ? `<div class="entry-tags">${tagPillsHtml(entryTags, true)}${pencilBtn('tags', e.id)}</div>`
+      : '';
 
     // Mood row: always shown so users can fill in mood retroactively via the pencil
     const moodHtml = `
@@ -5499,6 +6453,7 @@
           <div class="entry-activity">${escapeHtml(e.activity)}</div>
           ${pencilBtn('activity', e.id, 'lg')}
         </div>
+        ${tagsHtml}
         <div class="entry-grid">
           <div class="metric">
             <div class="metric-label">${t('insight-mastery')}</div>
@@ -5593,6 +6548,7 @@
     'act-pleasure':  { titleKey: 'edit-title-act-pleasure',  type: 'scale', color: 'pleasure' },
     'mood-before':   { titleKey: 'edit-title-mood-before',   type: 'scale', color: 'mood' },
     'mood-after':    { titleKey: 'edit-title-mood-after',    type: 'scale', color: 'mood' },
+    'tags':          { titleKey: 'edit-title-tags',          type: 'tags' },
   };
 
   // Map field name to entry property name
@@ -5605,6 +6561,7 @@
     'act-pleasure': 'actPleasure',
     'mood-before': 'moodBefore',
     'mood-after': 'moodAfter',
+    'tags': 'tags',
   };
 
   let editContext = null; // { entryId, field, getValue }
@@ -5673,6 +6630,18 @@
           const hr = parseInt(document.getElementById('edit-hour-select').value);
           return dayMs + hr * 3600000;
         },
+        validate: () => true,
+      };
+    } else if (meta.type === 'tags') {
+      body.innerHTML = `
+        <div class="tag-field" style="margin-bottom: 0;">
+          <p class="tag-help">${t('tag-help')}</p>
+          <div class="tag-choice-grid" id="edit-tags-list"></div>
+        </div>`;
+      renderTagPicker('edit-tags-list', getEntryTags(entry));
+      editContext = {
+        entryId, field,
+        getValue: () => getSelectedTags('edit-tags-list'),
         validate: () => true,
       };
     } else if (meta.type === 'scale') {
@@ -6051,16 +7020,18 @@
     return `${y}-${m}-${day}`;
   }
 
-  function completedDateKeys(entries) {
+  function entryDateKeys(entries) {
     return [...new Set(
       entries
-        .filter(e => e && e.actMastery !== null && e.actMastery !== undefined)
+        .filter(Boolean)
         .map(e => localDateKey(entryStartTimestamp(e)))
     )].sort();
   }
 
+  // Streaks are intentionally global: they are based only on which calendar
+  // days have entries, and they are never narrowed by activity or tag filters.
   function calculateCurrentStreak(entries) {
-    const tracked = new Set(completedDateKeys(entries));
+    const tracked = new Set(entryDateKeys(entries));
     let cursor = new Date();
     let streak = 0;
 
@@ -6073,7 +7044,7 @@
   }
 
   function calculateBestStreak(entries) {
-    const keys = completedDateKeys(entries);
+    const keys = entryDateKeys(entries);
     if (!keys.length) return 0;
 
     let best = 1;
@@ -6095,7 +7066,7 @@
 
   function wasTodayTracked(entries) {
     const today = localDateKey(Date.now());
-    return completedDateKeys(entries).includes(today);
+    return entryDateKeys(entries).includes(today);
   }
 
 
@@ -6109,13 +7080,29 @@
     return String(activity || '').trim().replace(/\s+/g, ' ').toLowerCase();
   }
 
-  function buildActivityRanking(entries, config) {
+  function getAnalysisGroup() {
+    if (!state.advancedTags) return 'activity';
+    return state.analysisGroup === 'tag' ? 'tag' : 'activity';
+  }
+
+  function entryMatchesGroup(entry, group, key) {
+    if (key === '__all__') return true;
+    if (group === 'tag') return getEntryTags(entry).includes(key);
+    return normalizeActivityKey(entry.activity) === key;
+  }
+
+  function getEntryGroupItems(entry, group) {
+    if (group === 'tag') {
+      return getEntryTags(entry).map(key => ({ key, name: tagLabel(key) }));
+    }
+    const key = normalizeActivityKey(entry.activity);
+    return key ? [{ key, name: String(entry.activity || '').trim().replace(/\s+/g, ' ') }] : [];
+  }
+
+  function buildGroupRanking(entries, config, group = getAnalysisGroup()) {
     const buckets = new Map();
 
     entries.forEach(e => {
-      const key = normalizeActivityKey(e.activity);
-      if (!key) return;
-
       const values = config.valuesFn(e);
       if (!values) return;
 
@@ -6123,19 +7110,23 @@
       const diffValue = scoreOrNull(values.diff);
       if (finalValue === null || diffValue === null) return;
 
-      if (!buckets.has(key)) {
-        buckets.set(key, {
-          name: String(e.activity || '').trim().replace(/\s+/g, ' '),
-          finalTotal: 0,
-          diffTotal: 0,
-          count: 0
-        });
-      }
+      getEntryGroupItems(e, group).forEach(item => {
+        if (!item.key) return;
+        if (!buckets.has(item.key)) {
+          buckets.set(item.key, {
+            key: item.key,
+            name: item.name,
+            finalTotal: 0,
+            diffTotal: 0,
+            count: 0
+          });
+        }
 
-      const bucket = buckets.get(key);
-      bucket.finalTotal += finalValue;
-      bucket.diffTotal += diffValue;
-      bucket.count += 1;
+        const bucket = buckets.get(item.key);
+        bucket.finalTotal += finalValue;
+        bucket.diffTotal += diffValue;
+        bucket.count += 1;
+      });
     });
 
     const rankBy = config.rankBy === 'diff' ? 'avgDiff' : 'avgFinal';
@@ -6189,39 +7180,40 @@
 
   function renderLiftDashboard(entries) {
     const dashboardSort = state.dashboardSort === 'final' ? 'final' : 'diff';
+    const group = getAnalysisGroup();
 
-    const moodItems = buildActivityRanking(entries, {
+    const moodItems = buildGroupRanking(entries, {
       rankBy: dashboardSort,
       valuesFn: e => {
         const before = scoreOrNull(e.moodBefore);
         const after = scoreOrNull(e.moodAfter);
         return before !== null && after !== null ? { final: after, diff: after - before } : null;
       }
-    });
+    }, group);
 
-    const masteryItems = buildActivityRanking(entries, {
+    const masteryItems = buildGroupRanking(entries, {
       rankBy: dashboardSort,
       valuesFn: e => {
         const predicted = scoreOrNull(e.predMastery);
         const actual = scoreOrNull(e.actMastery);
         return predicted !== null && actual !== null ? { final: actual, diff: actual - predicted } : null;
       }
-    });
+    }, group);
 
-    const pleasureItems = buildActivityRanking(entries, {
+    const pleasureItems = buildGroupRanking(entries, {
       rankBy: dashboardSort,
       valuesFn: e => {
         const predicted = scoreOrNull(e.predPleasure);
         const actual = scoreOrNull(e.actPleasure);
         return predicted !== null && actual !== null ? { final: actual, diff: actual - predicted } : null;
       }
-    });
+    }, group);
 
     return `
       <div class="lift-dashboard">
         <div class="lift-dashboard-header">
-          <div class="lift-dashboard-title">${t('dashboard-title')}</div>
-          <div class="lift-dashboard-subtitle">${t('dashboard-subtitle')}</div>
+          <div class="lift-dashboard-title">${t(group === 'tag' ? 'dashboard-title-tags' : 'dashboard-title')}</div>
+          <div class="lift-dashboard-subtitle">${t(group === 'tag' ? 'dashboard-subtitle-tags' : 'dashboard-subtitle')}</div>
           <div class="lift-dashboard-controls">
             <label class="dashboard-sort-label" for="dashboard-sort-select">${t('dashboard-sort-label')}</label>
             <select class="dashboard-sort-select" id="dashboard-sort-select">
@@ -6282,13 +7274,107 @@
       .sort((a, b) => (b.count - a.count) || (b.lastTime - a.lastTime) || a.name.localeCompare(b.name));
   }
 
-  function averageMetricForActivity(entries, key, valuesFn) {
+  function buildTagOptions(entries) {
+    const buckets = new Map();
+
+    entries.forEach(e => {
+      getEntryTags(e).forEach(key => {
+        if (!buckets.has(key)) {
+          buckets.set(key, {
+            key,
+            name: tagLabel(key),
+            count: 0,
+            lastTime: 0
+          });
+        }
+
+        const bucket = buckets.get(key);
+        bucket.count += 1;
+        const time = entryStartTimestamp(e);
+        if (Number.isFinite(time) && time > bucket.lastTime) bucket.lastTime = time;
+      });
+    });
+
+    return [...buckets.values()]
+      .sort((a, b) => (b.count - a.count) || (b.lastTime - a.lastTime) || a.name.localeCompare(b.name));
+  }
+
+  function buildAnalysisOptions(entries, group = getAnalysisGroup()) {
+    return group === 'tag' ? buildTagOptions(entries) : buildActivityOptions(entries);
+  }
+
+  function ensureAnalysisFilter(entries) {
+    if (!state.advancedTags) state.analysisGroup = 'activity';
+    const group = getAnalysisGroup();
+    const options = buildAnalysisOptions(entries, group);
+    const stillExists = state.analysisFilterKey === '__all__' || options.some(item => item.key === state.analysisFilterKey);
+    if (!state.analysisFilterKey || !stillExists) state.analysisFilterKey = '__all__';
+    return { group, options, filterKey: state.analysisFilterKey };
+  }
+
+  function applyAnalysisFilter(entries) {
+    const { group, filterKey } = ensureAnalysisFilter(entries);
+    return entries.filter(e => entryMatchesGroup(e, group, filterKey));
+  }
+
+  function renderAnalysisFilters(entries) {
+    const { group, options, filterKey } = ensureAnalysisFilter(entries);
+    const allLabel = group === 'tag' ? t('analysis-filter-all-tags') : t('analysis-filter-all-activities');
+    const groupSelectHtml = state.advancedTags ? `
+      <div>
+        <label class="chart-filter-label" for="analysis-group-select">${t('analysis-group-label')}</label>
+        <select class="chart-filter-select" id="analysis-group-select">
+          <option value="activity" ${group === 'activity' ? 'selected' : ''}>${t('analysis-group-activity')}</option>
+          <option value="tag" ${group === 'tag' ? 'selected' : ''}>${t('analysis-group-tag')}</option>
+        </select>
+      </div>` : '';
+    return `
+      <div class="analysis-filter-card">
+        <div class="analysis-filter-title">${t('analysis-filter-title')}</div>
+        <div class="analysis-filter-subtitle">${t(state.advancedTags ? 'analysis-filter-subtitle-tags-on' : 'analysis-filter-subtitle-tags-off')}</div>
+        <div class="analysis-filter-grid">
+          ${groupSelectHtml}
+          <div>
+            <label class="chart-filter-label" for="analysis-filter-select">${t(group === 'tag' ? 'analysis-filter-tag-label' : 'analysis-filter-activity-label')}</label>
+            <select class="chart-filter-select" id="analysis-filter-select">
+              <option value="__all__" ${filterKey === '__all__' ? 'selected' : ''}>${allLabel}</option>
+              ${options.map(item => `
+                <option value="${escapeHtml(item.key)}" ${item.key === filterKey ? 'selected' : ''}>
+                  ${escapeHtml(item.name)} · ${t('dashboard-count', { n: item.count })}
+                </option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="analysis-scope-note">${filterKey === '__all__' ? t(group === 'tag' ? 'analysis-scope-all-tags' : 'analysis-scope-all-activities') : t(group === 'tag' ? 'analysis-scope-one-tag' : 'analysis-scope-one-activity')}</div>
+      </div>`;
+  }
+
+  function attachAnalysisFilterHandlers() {
+    const groupSelect = document.getElementById('analysis-group-select');
+    const filterSelect = document.getElementById('analysis-filter-select');
+    if (groupSelect) {
+      groupSelect.addEventListener('change', () => {
+        state.analysisGroup = groupSelect.value === 'tag' ? 'tag' : 'activity';
+        state.analysisFilterKey = '__all__';
+        state.analysisActivityKey = '__all__';
+        renderInsights();
+      });
+    }
+    if (filterSelect) {
+      filterSelect.addEventListener('change', () => {
+        state.analysisFilterKey = filterSelect.value || '__all__';
+        renderInsights();
+      });
+    }
+  }
+
+  function averageMetricForGroup(entries, group, key, valuesFn) {
     let finalTotal = 0;
     let diffTotal = 0;
     let count = 0;
 
     entries.forEach(e => {
-      if (normalizeActivityKey(e.activity) !== key) return;
+      if (!entryMatchesGroup(e, group, key)) return;
       const values = valuesFn(e);
       if (!values) return;
 
@@ -6309,22 +7395,22 @@
     };
   }
 
-  function getDeepAnalysisStats(entries, key) {
-    const activityEntries = entries.filter(e => normalizeActivityKey(e.activity) === key);
+  function getDeepAnalysisStats(entries, group, key) {
+    const scopedEntries = entries.filter(e => entryMatchesGroup(e, group, key));
 
     return {
-      totalCount: activityEntries.length,
-      mood: averageMetricForActivity(entries, key, e => {
+      totalCount: scopedEntries.length,
+      mood: averageMetricForGroup(entries, group, key, e => {
         const before = scoreOrNull(e.moodBefore);
         const after = scoreOrNull(e.moodAfter);
         return before !== null && after !== null ? { final: after, diff: after - before } : null;
       }),
-      mastery: averageMetricForActivity(entries, key, e => {
+      mastery: averageMetricForGroup(entries, group, key, e => {
         const predicted = scoreOrNull(e.predMastery);
         const actual = scoreOrNull(e.actMastery);
         return predicted !== null && actual !== null ? { final: actual, diff: actual - predicted } : null;
       }),
-      pleasure: averageMetricForActivity(entries, key, e => {
+      pleasure: averageMetricForGroup(entries, group, key, e => {
         const predicted = scoreOrNull(e.predPleasure);
         const actual = scoreOrNull(e.actPleasure);
         return predicted !== null && actual !== null ? { final: actual, diff: actual - predicted } : null;
@@ -6384,18 +7470,18 @@
       </div>`;
   }
 
-  function renderDeepAnalysisAll(entries, options) {
+  function renderDeepAnalysisAll(entries, options, group = getAnalysisGroup()) {
     const sortedOptions = [...options].sort((a, b) => a.name.localeCompare(b.name));
 
     return `
       <div class="deep-summary">
         <div class="deep-summary-head">
-          <div class="deep-summary-name">${t('deep-analysis-all-name')}</div>
-          <div class="deep-summary-meta">${t('deep-analysis-all-subtitle')}</div>
+          <div class="deep-summary-name">${t(group === 'tag' ? 'deep-analysis-all-name-tags' : 'deep-analysis-all-name')}</div>
+          <div class="deep-summary-meta">${t(group === 'tag' ? 'deep-analysis-all-subtitle-tags' : 'deep-analysis-all-subtitle')}</div>
         </div>
         <div class="deep-all-list">
           ${sortedOptions.map(item => {
-            const stats = getDeepAnalysisStats(entries, item.key);
+            const stats = getDeepAnalysisStats(entries, group, item.key);
             return `
               <div class="deep-all-row">
                 <div>
@@ -6413,14 +7499,14 @@
       </div>`;
   }
 
-  function renderDeepAnalysisDetails(entries, selectedKey, selectedName) {
-    const stats = getDeepAnalysisStats(entries, selectedKey);
+  function renderDeepAnalysisDetails(entries, selectedKey, selectedName, group = getAnalysisGroup()) {
+    const stats = getDeepAnalysisStats(entries, group, selectedKey);
 
     return `
       <div class="deep-summary">
         <div class="deep-summary-head">
           <div class="deep-summary-name">${escapeHtml(selectedName)}</div>
-          <div class="deep-summary-meta">${t('deep-analysis-total', { n: stats.totalCount })}</div>
+          <div class="deep-summary-meta">${t(group === 'tag' ? 'deep-analysis-total-tag' : 'deep-analysis-total', { n: stats.totalCount })}</div>
         </div>
         <div class="deep-metric-grid">
           ${renderDeepMetricCard('mood', 'deep-analysis-mood', stats.mood, 'dashboard-empty-mood')}
@@ -6431,7 +7517,8 @@
   }
 
   function renderDeepAnalysis(entries) {
-    const options = buildActivityOptions(entries);
+    const group = getAnalysisGroup();
+    const options = buildAnalysisOptions(entries, group);
     if (!options.length) return '';
 
     const SHOW_ALL_KEY = '__all__';
@@ -6446,13 +7533,13 @@
     return `
       <div class="deep-analysis">
         <div class="deep-analysis-header">
-          <div class="deep-analysis-title">${t('deep-analysis-title')}</div>
-          <div class="deep-analysis-subtitle">${t('deep-analysis-subtitle')}</div>
+          <div class="deep-analysis-title">${t(group === 'tag' ? 'deep-analysis-title-tag' : 'deep-analysis-title')}</div>
+          <div class="deep-analysis-subtitle">${t(group === 'tag' ? 'deep-analysis-subtitle-tag' : 'deep-analysis-subtitle')}</div>
         </div>
         <div class="deep-analysis-control">
-          <label for="deep-analysis-select">${t('deep-analysis-select')}</label>
+          <label for="deep-analysis-select">${t(group === 'tag' ? 'deep-analysis-select-tag' : 'deep-analysis-select')}</label>
           <select class="deep-analysis-select" id="deep-analysis-select">
-            <option value="${SHOW_ALL_KEY}" ${showAllSelected ? 'selected' : ''}>${t('deep-analysis-show-all')}</option>
+            <option value="${SHOW_ALL_KEY}" ${showAllSelected ? 'selected' : ''}>${t(group === 'tag' ? 'deep-analysis-show-all-tags' : 'deep-analysis-show-all')}</option>
             ${options.map(item => `
               <option value="${escapeHtml(item.key)}" ${item.key === state.analysisActivityKey ? 'selected' : ''}>
                 ${escapeHtml(item.name)} · ${t('dashboard-count', { n: item.count })}
@@ -6460,7 +7547,7 @@
           </select>
         </div>
         <div id="deep-analysis-result">
-          ${showAllSelected ? renderDeepAnalysisAll(entries, options) : renderDeepAnalysisDetails(entries, selected.key, selected.name)}
+          ${showAllSelected ? renderDeepAnalysisAll(entries, options, group) : renderDeepAnalysisDetails(entries, selected.key, selected.name, group)}
         </div>
       </div>`;
   }
@@ -6510,18 +7597,19 @@
     if (!select || !result) return;
 
     const SHOW_ALL_KEY = '__all__';
-    const options = buildActivityOptions(entries);
+    const group = getAnalysisGroup();
+    const options = buildAnalysisOptions(entries, group);
 
     select.addEventListener('change', () => {
       state.analysisActivityKey = select.value;
       if (select.value === SHOW_ALL_KEY) {
-        result.innerHTML = renderDeepAnalysisAll(entries, options);
+        result.innerHTML = renderDeepAnalysisAll(entries, options, group);
         return;
       }
 
       const selected = options.find(item => item.key === select.value);
       if (!selected) return;
-      result.innerHTML = renderDeepAnalysisDetails(entries, selected.key, selected.name);
+      result.innerHTML = renderDeepAnalysisDetails(entries, selected.key, selected.name, group);
     });
   }
 
@@ -6549,15 +7637,20 @@
       return;
     }
 
-    const avgPredM = avg(completed.map(e => e.predMastery));
-    const avgActM = avg(completed.map(e => e.actMastery));
-    const avgPredP = avg(completed.map(e => e.predPleasure));
-    const avgActP = avg(completed.map(e => e.actPleasure));
+    const analysisFilterBlock = renderAnalysisFilters(completed);
+    const filteredCompleted = applyAnalysisFilter(completed);
+    const { group: activeAnalysisGroup, filterKey: activeAnalysisFilterKey } = ensureAnalysisFilter(completed);
+    const filteredAllEntries = state.entries.filter(e => entryMatchesGroup(e, activeAnalysisGroup, activeAnalysisFilterKey));
+
+    const avgPredM = avg(filteredCompleted.map(e => e.predMastery));
+    const avgActM = avg(filteredCompleted.map(e => e.actMastery));
+    const avgPredP = avg(filteredCompleted.map(e => e.predPleasure));
+    const avgActP = avg(filteredCompleted.map(e => e.actPleasure));
     const mGap = avgActM - avgPredM;
     const pGap = avgActP - avgPredP;
-    const currentStreak = calculateCurrentStreak(completed);
-    const bestStreak = calculateBestStreak(completed);
-    const todayTracked = wasTodayTracked(completed);
+    const currentStreak = calculateCurrentStreak(state.entries);
+    const bestStreak = calculateBestStreak(state.entries);
+    const todayTracked = wasTodayTracked(state.entries);
 
     let insightKey;
     if (pGap > 1) insightKey = 'insight-pleasure-up';
@@ -6566,17 +7659,11 @@
     else if (mGap < -1) insightKey = 'insight-mastery-down';
     else insightKey = 'insight-neutral';
 
-    const liftDashboardBlock = renderLiftDashboard(completed);
-    const deepAnalysisBlock = renderDeepAnalysis(completed);
+    const liftDashboardBlock = renderLiftDashboard(filteredCompleted);
+    const deepAnalysisBlock = renderDeepAnalysis(filteredCompleted);
     const chartFilter = getChartFilter();
-    const chartActivityOptions = buildActivityOptions(completed);
-    const chartActivityKey = getChartActivityKey(chartActivityOptions);
     const chartShowAverages = !!state.chartShowAverages;
-    const chartData = renderChartSvg(completed, chartFilter, chartActivityKey, chartShowAverages);
-    const chartActivityOptionsHtml = chartActivityOptions.map(item => `
-          <option value="${escapeHtml(item.key)}" ${item.key === chartActivityKey ? 'selected' : ''}>
-            ${escapeHtml(item.name)} · ${t('dashboard-count', { n: item.count })}
-          </option>`).join('');
+    const chartData = renderChartSvg(filteredCompleted, chartFilter, '__all__', chartShowAverages);
     const chartAveragesToggleHtml = `
       <label class="chart-average-toggle" for="chart-averages-toggle">
         <input type="checkbox" id="chart-averages-toggle" ${chartShowAverages ? 'checked' : ''}>
@@ -6590,11 +7677,6 @@
           <option value="mood" ${chartFilter === 'mood' ? 'selected' : ''}>${t('chart-filter-mood')}</option>
           <option value="pleasure" ${chartFilter === 'pleasure' ? 'selected' : ''}>${t('chart-filter-pleasure')}</option>
           <option value="mastery" ${chartFilter === 'mastery' ? 'selected' : ''}>${t('chart-filter-mastery')}</option>
-        </select>
-        <label class="chart-filter-label" for="chart-activity-filter-select">${t('chart-activity-filter-label')}</label>
-        <select class="chart-filter-select" id="chart-activity-filter-select">
-          <option value="__all__" ${chartActivityKey === '__all__' ? 'selected' : ''}>${t('chart-activity-filter-all')}</option>
-          ${chartActivityOptionsHtml}
         </select>
       </div>`;
     const chartBlock = chartData ? `
@@ -6615,15 +7697,17 @@
       </div>`;
 
     c.innerHTML = `
+      ${analysisFilterBlock}
+
       ${chartBlock}
 
       <div class="stat-grid">
         <div class="stat-card">
-          <div class="stat-num accent">${state.entries.length}</div>
+          <div class="stat-num accent">${filteredAllEntries.length}</div>
           <div class="stat-label">${t('stat-total')}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-num accent">${completed.length}</div>
+          <div class="stat-num accent">${filteredCompleted.length}</div>
           <div class="stat-label">${t('stat-rated')}</div>
         </div>
         <div class="stat-card">
@@ -6669,9 +7753,10 @@
       </p>
     `;
     attachDataActionHandlers();
+    attachAnalysisFilterHandlers();
     attachDashboardSortHandler();
     attachChartFilterHandler();
-    attachDeepAnalysisHandlers(completed);
+    attachDeepAnalysisHandlers(filteredCompleted);
     attachChartHover(chartData);
   }
 
@@ -6886,11 +7971,16 @@
         ? `<span class="val ${cls}">${val}</span>`
         : `<span class="val empty">—</span>`;
 
+    const tagsLine = state.advancedTags && getEntryTags(entry).length
+      ? `<div class="entry-tags" style="margin: 0 0 10px;">${tagPillsHtml(getEntryTags(entry))}</div>`
+      : '';
+
     return `
       <div class="chart-tooltip-header">
         <div class="chart-tooltip-activity">${escapeHtml(entry.activity)}${entry.company ? ` · ${escapeHtml(entry.company)}` : ''}</div>
         <div class="chart-tooltip-date">${dateStr} · ${h12} ${ampm}</div>
       </div>
+      ${tagsLine}
       <div class="chart-tooltip-grid">
         <div class="chart-tooltip-row">
           <span class="label">${t('insight-mastery')} (${t('chart-pred-short')})</span>
@@ -6935,6 +8025,7 @@
       lang: currentLang,
       entries: state.entries,
       templates: state.templates,
+      tagLibrary: state.tagLibrary,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -6992,6 +8083,7 @@
       const data = JSON.parse(text);
       let imported = [];
       let importedTemplates = [];
+      let importedTagLibrary = [];
 
       // Accept either { entries: [...] } or a bare array
       if (Array.isArray(data)) {
@@ -6999,6 +8091,7 @@
       } else if (data && Array.isArray(data.entries)) {
         imported = data.entries;
         if (Array.isArray(data.templates)) importedTemplates = data.templates;
+        if (Array.isArray(data.tagLibrary)) importedTagLibrary = data.tagLibrary;
       } else {
         throw new Error('Invalid format');
       }
@@ -7024,9 +8117,9 @@
       if (choice === 'replace') {
         const confirmReplace = await showConfirm(t('replace-confirm'));
         if (!confirmReplace) return;
-        await performImportReplace(valid, importedTemplates);
+        await performImportReplace(valid, importedTemplates, importedTagLibrary);
       } else {
-        await performImportMerge(valid, importedTemplates);
+        await performImportMerge(valid, importedTemplates, importedTagLibrary);
       }
     } catch (err) {
       console.error('Import error:', err);
@@ -7050,6 +8143,7 @@
       actPleasure: typeof e.actPleasure === 'number' ? e.actPleasure : null,
       moodBefore: typeof e.moodBefore === 'number' ? e.moodBefore : null,
       moodAfter: typeof e.moodAfter === 'number' ? e.moodAfter : null,
+      tags: sanitizeTags(e.tags),
       createdAt: e.createdAt || Date.now(),
       scheduledAt: e.scheduledAt || e.createdAt || Date.now(),
       completedAt: e.completedAt || null,
@@ -7058,7 +8152,8 @@
 
   // Merge: keep existing entries and append imported ones (skip exact id collisions
   // by minting fresh ids for duplicates).
-  async function performImportMerge(validEntries, importedTemplates) {
+  async function performImportMerge(validEntries, importedTemplates, importedTagLibrary = []) {
+    mergeTagLibrary(importedTagLibrary);
     const existingIds = new Set(state.entries.map(e => e.id));
     let addedCount = 0;
     for (const e of validEntries) {
@@ -7082,7 +8177,7 @@
 
   // Replace: delete all existing entries (from window.storage if present and
   // localStorage), then load only the imported ones. Templates are also replaced.
-  async function performImportReplace(validEntries, importedTemplates) {
+  async function performImportReplace(validEntries, importedTemplates, importedTagLibrary = []) {
     // Delete every existing entry from window.storage
     if (useWindowStorage) {
       for (const e of state.entries) {
@@ -7092,6 +8187,9 @@
     // Clear in-memory state
     state.entries = [];
     state.templates = [];
+    state.tagLibrary = normalizeTagLibrary(importedTagLibrary);
+    if (!state.tagLibrary.length) state.tagLibrary = defaultTagLibrary();
+    saveTagLibrary();
 
     // Write the new entries
     const existingIds = new Set();
@@ -7152,10 +8250,27 @@
     radio.addEventListener('change', () => setThemeMode(radio.value));
   });
 
+  document.querySelectorAll('input[name="advanced-tags"]').forEach(radio => {
+    radio.addEventListener('change', () => setAdvancedTagsMode(radio.value));
+  });
+
+  const addTagBtn = document.getElementById('add-entry-tag-btn');
+  if (addTagBtn) addTagBtn.addEventListener('click', addTagFromSettings);
+  const newTagInput = document.getElementById('new-entry-tag-input');
+  if (newTagInput) {
+    newTagInput.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        addTagFromSettings();
+      }
+    });
+  }
+
   applyThemeMode(state.themeMode);
   renderAllScaleWidgets({ preserve: false });
   renderScaleModeSettingsUI();
   renderThemeModeSettingsUI();
+  renderAdvancedTagsSettingsUI();
 
   // Set up mood scale-pairs (handled by the standard scale init below)
 
@@ -7190,6 +8305,7 @@
     // any existing data or has been seeded before, so it's safe to call
     // every load.
     await seedSampleData();
+    await ensureSampleEntryTags();
     // Re-render in case log/insights tab was active (it's not by default, but safe)
     applyTranslations();
   });
