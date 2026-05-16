@@ -22,6 +22,34 @@
     --danger: #b86a5e;
   }
 
+  html[data-theme="day"] {
+    --bg: #f7f6f0;
+    --bg-card: #ffffff;
+    --bg-elevated: #efeee7;
+    --ink: #171915;
+    --ink-dim: #4d5149;
+    --ink-faint: #777c72;
+    --accent: #8a6226;
+    --accent-soft: #b78f4f;
+    --pleasure: #b95f3d;
+    --mastery: #2c8275;
+    --mood: #7355a7;
+    --border: #d9d6ca;
+    --danger: #a84d42;
+  }
+
+  html[data-theme="day"] body {
+    background-image:
+      radial-gradient(at 20% 0%, rgba(138, 98, 38, 0.10) 0px, transparent 50%),
+      radial-gradient(at 80% 100%, rgba(44, 130, 117, 0.08) 0px, transparent 50%);
+  }
+
+  html[data-theme="day"] .toast,
+  html[data-theme="day"] button.primary,
+  html[data-theme="day"] .edit-actions .confirm-yes {
+    color: #ffffff;
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
   html, body {
@@ -2048,6 +2076,118 @@
   }
 
 
+
+
+  /* ===== Settings ===== */
+  .settings-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 16px;
+    margin-bottom: 18px;
+  }
+
+  .settings-title {
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink);
+    margin-bottom: 7px;
+  }
+
+  .settings-description {
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--ink-dim);
+    margin-bottom: 14px;
+  }
+
+  .settings-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .settings-option {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    align-items: flex-start;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 13px 14px;
+    cursor: pointer;
+    margin: 0;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .settings-option input {
+    margin-top: 3px;
+    accent-color: var(--accent);
+  }
+
+  .settings-option-title {
+    display: block;
+    font-family: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .settings-option-desc {
+    display: block;
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--ink-dim);
+  }
+
+  .settings-note {
+    margin-top: 14px;
+    padding-top: 13px;
+    border-top: 1px dashed var(--border);
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+
+  .scale-hidden { display: none !important; }
+
+  .scale-row.words { display: block; }
+
+  .scale-row.ten-mode { grid-template-columns: repeat(11, 1fr); }
+
+  .scale-word-select {
+    width: 100%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--ink);
+    font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+    font-size: 15px;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%239ba197' d='M6 8L0 0h12z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+
+  .scale-word-select:focus {
+    outline: none;
+    border-color: var(--accent-soft);
+  }
+
+
   /* ===== Data buttons (export/import) ===== */
   .data-actions {
     display: grid;
@@ -2805,6 +2945,7 @@
     <button class="tab active" data-view="new" data-i18n="tab-new"></button>
     <button class="tab" data-view="log" data-i18n="tab-log"></button>
     <button class="tab" data-view="insights" data-i18n="tab-insights"></button>
+    <button class="tab" data-view="settings" data-i18n="tab-settings"></button>
     <button class="tab" data-view="about" data-i18n="tab-about"></button>
   </div>
 
@@ -2888,6 +3029,66 @@
     <div id="insights-content"></div>
   </div>
 
+  <!-- SETTINGS -->
+  <div class="view" id="view-settings">
+    <h2 class="about-title" data-i18n="settings-title"></h2>
+
+    <section class="settings-card">
+      <div class="settings-title" data-i18n="settings-scale-title"></div>
+      <p class="settings-description" data-i18n="settings-scale-description"></p>
+
+      <div class="settings-options" id="scale-mode-settings">
+        <label class="settings-option">
+          <input type="radio" name="scale-mode" value="precise">
+          <span>
+            <span class="settings-option-title" data-i18n="settings-scale-precise-title"></span>
+            <span class="settings-option-desc" data-i18n="settings-scale-precise-desc"></span>
+          </span>
+        </label>
+        <label class="settings-option">
+          <input type="radio" name="scale-mode" value="ten">
+          <span>
+            <span class="settings-option-title" data-i18n="settings-scale-ten-title"></span>
+            <span class="settings-option-desc" data-i18n="settings-scale-ten-desc"></span>
+          </span>
+        </label>
+        <label class="settings-option">
+          <input type="radio" name="scale-mode" value="words">
+          <span>
+            <span class="settings-option-title" data-i18n="settings-scale-words-title"></span>
+            <span class="settings-option-desc" data-i18n="settings-scale-words-desc"></span>
+          </span>
+        </label>
+      </div>
+
+      <p class="settings-note" id="scale-mode-current"></p>
+    </section>
+
+    <section class="settings-card">
+      <div class="settings-title" data-i18n="settings-theme-title"></div>
+      <p class="settings-description" data-i18n="settings-theme-description"></p>
+
+      <div class="settings-options" id="theme-mode-settings">
+        <label class="settings-option">
+          <input type="radio" name="theme-mode" value="night">
+          <span>
+            <span class="settings-option-title" data-i18n="settings-theme-night-title"></span>
+            <span class="settings-option-desc" data-i18n="settings-theme-night-desc"></span>
+          </span>
+        </label>
+        <label class="settings-option">
+          <input type="radio" name="theme-mode" value="day">
+          <span>
+            <span class="settings-option-title" data-i18n="settings-theme-day-title"></span>
+            <span class="settings-option-desc" data-i18n="settings-theme-day-desc"></span>
+          </span>
+        </label>
+      </div>
+
+      <p class="settings-note" id="theme-mode-current"></p>
+    </section>
+  </div>
+
   <!-- ABOUT / HOW-TO -->
   <div class="view" id="view-about">
     <h2 class="about-title" data-i18n="about-title"></h2>
@@ -2941,6 +3142,7 @@
         <li data-i18n-html="about-feature10"></li>
         <li data-i18n-html="about-feature11"></li>
         <li data-i18n-html="about-feature12"></li>
+        <li data-i18n-html="about-feature13"></li>
       </ul>
     </section>
 
@@ -3117,6 +3319,7 @@
       'tab-new': 'ახალი',
       'tab-log': 'ჩანაწერები',
       'tab-insights': 'ანალიზი',
+      'tab-settings': 'პარამეტრები',
 
       'label-activity': 'აქტივობა',
       'ph-activity': 'მაგ. 30-წუთიანი სიარული ტრედმილზე',
@@ -3239,6 +3442,44 @@
       'mood-low': 'დაბალი',
       'mood-high': 'მაღალი',
 
+      // Scale input settings
+      'settings-title': 'პარამეტრები',
+      'settings-scale-title': 'შეფასების შეყვანის სტილი',
+      'settings-scale-description': 'აირჩიე, როგორ შეიყვანო ოსტატობის, სიამოვნებისა და განწყობის ქულები. მონაცემები კვლავ ინახება თავსებადი 0–100 ფორმატით, რათა გრაფიკები და ანალიზი არ გაფუჭდეს.',
+      'settings-scale-precise-title': 'ათეულები + ერთეულები',
+      'settings-scale-precise-desc': 'ყველაზე ზუსტი 0–100 შეყვანა: ჯერ აირჩიე ათეულები, შემდეგ ერთეულები.',
+      'settings-scale-ten-title': 'მხოლოდ 0–10',
+      'settings-scale-ten-desc': 'აირჩიე 0–10. აპი ამას ავტომატურად გადააქცევს 0–100 ქულად, მაგალითად 7 = 70.',
+      'settings-scale-words-title': 'სიტყვებით შეფასება',
+      'settings-scale-words-desc': 'აირჩიე სიტყვიერი აღწერა. თითოეული აღწერა მიბმულია 0–10 ქულაზე და ინახება 0–100 ფორმატში.',
+      'settings-current-precise': 'ამჟამად ჩართულია ზუსტი 0–100 რეჟიმი.',
+      'settings-current-ten': 'ამჟამად ჩართულია სწრაფი 0–10 რეჟიმი. შენახვისას 0–10 ქულა მრავლდება 10-ზე.',
+      'settings-current-words': 'ამჟამად ჩართულია სიტყვიერი რეჟიმი. აღწერები ითარგმნება 0–10 ქულებად და შემდეგ 0–100 ფორმატში ინახება.',
+      'settings-theme-title': 'დღის / ღამის ფერები',
+      'settings-theme-description': 'აირჩიე შავი ღამის რეჟიმი ან თეთრი დღის რეჟიმი. არჩევანი შეინახება ამ ბრაუზერში.',
+      'settings-theme-night-title': 'ღამე / შავი',
+      'settings-theme-night-desc': 'მუქი ფონი თბილი ტექსტით — კარგი საღამოს ან დაბალ განათებაში გამოსაყენებლად.',
+      'settings-theme-day-title': 'დღე / თეთრი',
+      'settings-theme-day-desc': 'თეთრი, ნათელი ფონი შავი ტექსტით — კარგი დღის სინათლეში წასაკითხად.',
+      'settings-theme-current-night': 'ამჟამად ჩართულია ღამის / შავი ფერის რეჟიმი.',
+      'settings-theme-current-day': 'ამჟამად ჩართულია დღის / თეთრი ფერის რეჟიმი.',
+      'sub-zero-ten': '0–10 ქულა',
+      'sub-word-selector': 'აღწერით არჩევა',
+      'scale-word-placeholder': 'აირჩიე აღწერა…',
+      'scale-word-0': 'საერთოდ არა / ნული',
+      'scale-word-1': 'ძლივს შესამჩნევი',
+      'scale-word-2': 'ძალიან დაბალი',
+      'scale-word-3': 'დაბალი',
+      'scale-word-4': 'საკმაოდ დაბალი',
+      'scale-word-5': 'საშუალო',
+      'scale-word-6': 'საკმაოდ კარგი',
+      'scale-word-7': 'კარგი',
+      'scale-word-8': 'ძალიან კარგი',
+      'scale-word-9': 'შესანიშნავი',
+      'scale-word-10': 'მაქსიმალური',
+      'toast-settings-saved': 'პარამეტრები შენახულია.',
+
+
       // Templates
       'label-templates': 'სწრაფი წვდომა',
       'templates-empty': 'არ არის შენახული შაბლონები. შეგიძლია „შენახვა შაბლონად" აქტივობის ჩამოწერის შემდეგ.',
@@ -3313,6 +3554,7 @@
       'about-feature10': '<strong>„ყველას ჩვენება“ ღრმა ანალიზში:</strong> არჩევანში პირველი ვარიანტია „ყველას ჩვენება“. ეს არ აჩვენებს რეიტინგს, არამედ ალფაბეტურად ჩამოთვლის ყველა აქტივობას, რათა თითოეული აქტივობის განწყობა, ოსტატობა და სიამოვნება ერთ ხაზზე იყოს ერთად.',
       'about-feature11': '<strong>დაწყების თარიღი მთავარია:</strong> გრაფიკი, სტრიკები და ანალიზი აქტივობას აკავშირებს დაგეგმილ/დაწყების დღესთან. მაგალითად, თუ აქტივობა დაიწყო გუშინ 23:00-ზე და დასრულდა 00:20-ზე, იგი მაინც გუშინდელ დღედ ჩაითვლება ანალიზში.',
       'about-feature12': '<strong>ენა, სარეზერვო ასლი და პასუხისმგებლობა:</strong> შეგიძლია გადართო ქართული, ინგლისური და რუსული ენა. მონაცემები რჩება შენს მოწყობილობაზე, ამიტომ მნიშვნელოვანი ჩანაწერები პერიოდულად გაიტანე Export-ით. აპი შეიძლება წაიშალოს ვებიდან ან გახდეს მიუწვდომელი, და ამ შემთხვევაში ავტორი მაინც არ არის პასუხისმგებელი გამოყენებაზე, შედეგებზე, დაკარგულ წვდომაზე ან დაკარგულ მონაცემებზე.',
+      'about-feature13': '<strong>შეფასების შეყვანის პარამეტრები:</strong> პარამეტრების ჩანართში შეგიძლია აირჩიო ზუსტი 0–100, სწრაფი 0–10 ან სიტყვიერი აღწერების რეჟიმი. 0–10 და სიტყვიერი რეჟიმები ისევ აპის 0–100 მონაცემთა ფორმატში გადაითარგმნება.',
 
       'about-tips-title': 'რჩევები',
       'about-tip1': 'იყავი მართალი. ნუ შეცვლი წინასწარ პროგნოზს მას შემდეგ, რაც გააკეთე — ეს ანადგურებს ხელსაწყოს მთელ აზრს.',
@@ -3376,6 +3618,7 @@
       'tab-new': 'Новое',
       'tab-log': 'Журнал',
       'tab-insights': 'Анализ',
+      'tab-settings': 'Настройки',
 
       'label-activity': 'Активность',
       'ph-activity': 'напр. 30 минут ходьбы на дорожке',
@@ -3496,6 +3739,44 @@
       'mood-low': 'Низкое',
       'mood-high': 'Высокое',
 
+      // Scale input settings
+      'settings-title': 'Настройки',
+      'settings-scale-title': 'Стиль ввода оценок',
+      'settings-scale-description': 'Выбери, как вводить оценки мастерства, удовольствия и настроения. Данные всё равно сохраняются в совместимом формате 0–100, чтобы графики и анализ продолжали работать.',
+      'settings-scale-precise-title': 'Десятки + единицы',
+      'settings-scale-precise-desc': 'Самый точный ввод 0–100: сначала выбери десятки, затем единицы.',
+      'settings-scale-ten-title': 'Только 0–10',
+      'settings-scale-ten-desc': 'Выбирай 0–10. Приложение автоматически переводит это в 0–100, например 7 = 70.',
+      'settings-scale-words-title': 'Словесные описания',
+      'settings-scale-words-desc': 'Выбирай описание словами. Каждое описание связано с оценкой 0–10 и сохраняется в формате 0–100.',
+      'settings-current-precise': 'Сейчас включён точный режим 0–100.',
+      'settings-current-ten': 'Сейчас включён быстрый режим 0–10. При сохранении оценка 0–10 умножается на 10.',
+      'settings-current-words': 'Сейчас включён словесный режим. Описания переводятся в оценки 0–10, а затем сохраняются как 0–100.',
+      'settings-theme-title': 'Дневные / ночные цвета',
+      'settings-theme-description': 'Выбери чёрный ночной режим или белый дневной режим. Выбор сохранится в этом браузере.',
+      'settings-theme-night-title': 'Ночь / чёрный',
+      'settings-theme-night-desc': 'Тёмный фон с тёплым текстом — удобно вечером или при слабом освещении.',
+      'settings-theme-day-title': 'День / белый',
+      'settings-theme-day-desc': 'Белый светлый фон с чёрным текстом — удобно читать при дневном освещении.',
+      'settings-theme-current-night': 'Сейчас включён ночной / чёрный режим.',
+      'settings-theme-current-day': 'Сейчас включён дневной / белый режим.',
+      'sub-zero-ten': 'Оценка 0–10',
+      'sub-word-selector': 'Выбор описанием',
+      'scale-word-placeholder': 'Выбери описание…',
+      'scale-word-0': 'Совсем нет / ноль',
+      'scale-word-1': 'Едва заметно',
+      'scale-word-2': 'Очень низко',
+      'scale-word-3': 'Низко',
+      'scale-word-4': 'Скорее низко',
+      'scale-word-5': 'Средне',
+      'scale-word-6': 'Скорее хорошо',
+      'scale-word-7': 'Хорошо',
+      'scale-word-8': 'Очень хорошо',
+      'scale-word-9': 'Отлично',
+      'scale-word-10': 'Максимально',
+      'toast-settings-saved': 'Настройки сохранены.',
+
+
       'label-templates': 'Быстро добавить',
       'templates-empty': 'Пока нет сохранённых шаблонов. После ввода активности нажми «Сохранить как шаблон».',
       'btn-save-template': 'Сохранить как шаблон',
@@ -3566,6 +3847,7 @@
       'about-feature10': '<strong>«Показать все» в глубоком анализе:</strong> первый вариант в списке — «Показать все». Он показывает не рейтинг, а алфавитный список всех активностей, чтобы настроение, мастерство и удовольствие каждой активности были вместе в одной строке.',
       'about-feature11': '<strong>Дата начала главная:</strong> график, серии и анализ привязывают активность к запланированной/стартовой дате. Например, если активность началась вчера в 23:00 и закончилась в 00:20, в анализе она всё равно относится ко вчерашнему дню.',
       'about-feature12': '<strong>Язык, резервная копия и ответственность:</strong> можно переключаться между грузинским, английским и русским языком. Данные остаются на твоём устройстве, поэтому важные записи лучше периодически сохранять через Export. Приложение может быть удалено из интернета или стать недоступным, и даже в этом случае автор не несёт ответственности за использование, результаты, потерю доступа или потерю данных.',
+      'about-feature13': '<strong>Настройки ввода оценок:</strong> во вкладке настроек можно выбрать точный ввод 0–100, быстрый ввод 0–10 или словесные описания. Режимы 0–10 и слов переводятся обратно в формат данных 0–100.',
 
       'about-tips-title': 'Советы',
       'about-tip1': 'Будь честен. Не меняй прогноз после выполнения активности — иначе теряется смысл инструмента.',
@@ -3628,6 +3910,7 @@
       'tab-new': 'New',
       'tab-log': 'Log',
       'tab-insights': 'Insights',
+      'tab-settings': 'Settings',
 
       'label-activity': 'Activity',
       'ph-activity': 'e.g. 30-min walk on treadmill',
@@ -3749,6 +4032,44 @@
       'mood-low': 'Low',
       'mood-high': 'High',
 
+      // Scale input settings
+      'settings-title': 'Settings',
+      'settings-scale-title': 'Rating input style',
+      'settings-scale-description': 'Choose how you want to enter mastery, pleasure, and mood scores. Data is still saved in the compatible 0–100 format so charts and analysis keep working.',
+      'settings-scale-precise-title': 'Tens + ones',
+      'settings-scale-precise-desc': 'The most precise 0–100 input: choose tens first, then ones.',
+      'settings-scale-ten-title': 'Only 0–10',
+      'settings-scale-ten-desc': 'Choose 0–10. The app automatically translates it to 0–100, for example 7 = 70.',
+      'settings-scale-words-title': 'Word descriptions',
+      'settings-scale-words-desc': 'Choose a verbal description. Each description maps to a 0–10 score and is saved as 0–100.',
+      'settings-current-precise': 'Precise 0–100 mode is currently active.',
+      'settings-current-ten': 'Quick 0–10 mode is currently active. A 0–10 score is multiplied by 10 when saved.',
+      'settings-current-words': 'Word-description mode is currently active. Descriptions are translated to 0–10 scores and then saved as 0–100.',
+      'settings-theme-title': 'Day / night colors',
+      'settings-theme-description': 'Choose black night mode or white day mode. Your choice is saved in this browser.',
+      'settings-theme-night-title': 'Night / black',
+      'settings-theme-night-desc': 'Dark background with warm text — comfortable in the evening or low light.',
+      'settings-theme-day-title': 'Day / white',
+      'settings-theme-day-desc': 'White bright background with black text — easier to read in daylight.',
+      'settings-theme-current-night': 'Night / black color mode is currently active.',
+      'settings-theme-current-day': 'Day / white color mode is currently active.',
+      'sub-zero-ten': '0–10 score',
+      'sub-word-selector': 'Description selector',
+      'scale-word-placeholder': 'Choose a description…',
+      'scale-word-0': 'None / zero',
+      'scale-word-1': 'Barely noticeable',
+      'scale-word-2': 'Very low',
+      'scale-word-3': 'Low',
+      'scale-word-4': 'Somewhat low',
+      'scale-word-5': 'Medium',
+      'scale-word-6': 'Somewhat good',
+      'scale-word-7': 'Good',
+      'scale-word-8': 'Very good',
+      'scale-word-9': 'Excellent',
+      'scale-word-10': 'Maximum',
+      'toast-settings-saved': 'Settings saved.',
+
+
       'label-templates': 'Quick Add',
       'templates-empty': 'No saved templates yet. After typing an activity, tap "Save as Template".',
       'btn-save-template': 'Save as Template',
@@ -3820,6 +4141,7 @@
       'about-feature10': '<strong>Show all in deep analysis:</strong> the first option is Show all. It does not show a ranking; it lists all activity names alphabetically so each activity keeps mood, mastery, and pleasure together on one line.',
       'about-feature11': '<strong>Start date is primary:</strong> charts, streaks, and analysis attach an activity to its scheduled/start date. For example, if an activity started yesterday at 11 PM and ended at 12:20 AM, it still belongs to yesterday in analysis.',
       'about-feature12': '<strong>Language, backup, and responsibility:</strong> you can switch between Georgian, English, and Russian. Data stays on your device, so export important records as a backup. The app may be removed from the web or become unavailable, and even then the author is not responsible for use, results, lost access, or lost data.',
+      'about-feature13': '<strong>Rating input settings:</strong> the Settings tab lets you choose between precise 0–100 input, quick 0–10 input, or word-description selectors. The 0–10 and word modes are translated back into the app’s 0–100 data format.',
 
       'about-tips-title': 'Tips',
       'about-tip1': 'Be honest. Don\'t change your prediction after you\'ve done the activity — that destroys the entire point of the tool.',
@@ -3875,6 +4197,27 @@
   };
 
   const LANG_STORAGE_KEY = 'ba_lang_v1';
+  const SCALE_MODE_STORAGE_KEY = 'ba_scale_mode_v1';
+  const SCALE_MODE_VALUES = ['precise', 'ten', 'words'];
+  const THEME_MODE_STORAGE_KEY = 'ba_theme_mode_v1';
+  const THEME_MODE_VALUES = ['night', 'day'];
+
+  function loadScaleModePreference() {
+    try {
+      const saved = localStorage.getItem(SCALE_MODE_STORAGE_KEY);
+      if (SCALE_MODE_VALUES.includes(saved)) return saved;
+    } catch(e) { /* ignore */ }
+    return 'precise';
+  }
+
+  function loadThemeModePreference() {
+    try {
+      const saved = localStorage.getItem(THEME_MODE_STORAGE_KEY);
+      if (THEME_MODE_VALUES.includes(saved)) return saved;
+    } catch(e) { /* ignore */ }
+    return 'night';
+  }
+
   let currentLang = 'ka'; // default
 
   function t(key, params) {
@@ -3920,6 +4263,9 @@
     // Re-render templates list and refresh save-template button label
     if (typeof renderTemplates === 'function') renderTemplates();
     if (typeof updateSaveTemplateBtn === 'function') updateSaveTemplateBtn();
+    if (typeof renderAllScaleWidgets === 'function') renderAllScaleWidgets({ preserve: true });
+    if (typeof renderScaleModeSettingsUI === 'function') renderScaleModeSettingsUI();
+    if (typeof renderThemeModeSettingsUI === 'function') renderThemeModeSettingsUI();
   }
 
   function setLang(lang) {
@@ -3954,16 +4300,9 @@
     chartFilter: 'all',
     chartActivityKey: '__all__',
     chartShowAverages: false,
+    scaleMode: loadScaleModePreference(),
+    themeMode: loadThemeModePreference(),
   };
-
-  // Get the resolved total for a scale key (or null if incomplete)
-  function getTotal(key) {
-    const p = state.parts[key];
-    if (p.tens === null || p.ones === null) return null;
-    // If tens is 100, ones must be 0
-    if (p.tens === 100) return 100;
-    return p.tens + p.ones;
-  }
 
   // ============ STORAGE ============
   // Try window.storage first (Claude persistent storage across sessions);
@@ -4304,11 +4643,117 @@
   }
 
   // ============ SCALES ============
+  const MAIN_SCALE_KEYS = ['pred-mastery', 'pred-pleasure', 'act-mastery', 'act-pleasure', 'mood-before', 'mood-after'];
+
+  function scaleColor(key) {
+    return key.startsWith('mood-') ? 'mood'
+         : key.includes('mastery') ? 'mastery'
+         : 'pleasure';
+  }
+
+  function clampScore(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return null;
+    return Math.max(0, Math.min(100, Math.round(n)));
+  }
+
+  function scoreToTen(value) {
+    const n = clampScore(value);
+    if (n === null) return null;
+    return Math.max(0, Math.min(10, Math.round(n / 10)));
+  }
+
+  function normalizeScoreForCurrentMode(value) {
+    const n = clampScore(value);
+    if (n === null) return null;
+    if (state.scaleMode === 'precise') return n;
+    return scoreToTen(n) * 10;
+  }
+
+  function formatTotalForCurrentMode(total) {
+    if (total === null) return '—';
+    if (state.scaleMode === 'precise') return String(total);
+    return `${scoreToTen(total)}/10`;
+  }
+
+  function ensureScaleState(key) {
+    if (!state.parts[key]) state.parts[key] = { tens: null, ones: null };
+    return state.parts[key];
+  }
+
+  function setPartsFromScore(key, score) {
+    const p = ensureScaleState(key);
+    const n = clampScore(score);
+    if (n === null) {
+      p.tens = null;
+      p.ones = null;
+      return;
+    }
+    if (n === 100) {
+      p.tens = 100;
+      p.ones = 0;
+    } else {
+      p.tens = Math.floor(n / 10) * 10;
+      p.ones = n % 10;
+    }
+  }
+
+  function updateScaleLabels(container, part) {
+    const label = container && container.previousElementSibling;
+    if (!label || !label.classList || !label.classList.contains('scale-sub-label')) return;
+    if (state.scaleMode === 'precise') {
+      label.textContent = t(part === 'tens' ? 'sub-tens' : 'sub-ones');
+    } else if (part === 'tens' && state.scaleMode === 'ten') {
+      label.textContent = t('sub-zero-ten');
+    } else if (part === 'tens' && state.scaleMode === 'words') {
+      label.textContent = t('sub-word-selector');
+    }
+  }
+
   function buildScale(container, key, part) {
+    ensureScaleState(key);
     container.innerHTML = '';
-    const color = key.startsWith('mood-') ? 'mood'
-                : key.includes('mastery') ? 'mastery'
-                : 'pleasure';
+    container.classList.remove('ten-mode', 'words');
+    const wrapper = container.parentElement;
+    if (wrapper) wrapper.classList.remove('scale-hidden');
+    const color = scaleColor(key);
+
+    if (state.scaleMode !== 'precise' && part === 'ones') {
+      if (wrapper) wrapper.classList.add('scale-hidden');
+      return;
+    }
+
+    updateScaleLabels(container, part);
+
+    if (state.scaleMode === 'words' && part === 'tens') {
+      container.classList.add('words');
+      const select = document.createElement('select');
+      select.className = 'scale-word-select';
+      select.innerHTML = `<option value="" disabled selected>${t('scale-word-placeholder')}</option>`;
+      for (let i = 0; i <= 10; i++) {
+        const opt = document.createElement('option');
+        opt.value = String(i);
+        opt.textContent = `${i} · ${t('scale-word-' + i)}`;
+        select.appendChild(opt);
+      }
+      select.addEventListener('change', () => selectTenValue(key, parseInt(select.value, 10), container, color));
+      container.appendChild(select);
+      return;
+    }
+
+    if (state.scaleMode === 'ten' && part === 'tens') {
+      container.classList.add('ten-mode');
+      for (let i = 0; i <= 10; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'scale-btn';
+        btn.textContent = i;
+        btn.dataset.value = String(i);
+        btn.addEventListener('click', () => selectTenValue(key, i, container, color));
+        container.appendChild(btn);
+      }
+      return;
+    }
+
     const max = part === 'tens' ? 100 : 9;
     const step = part === 'tens' ? 10 : 1;
     for (let i = 0; i <= max; i += step) {
@@ -4321,7 +4766,25 @@
     }
   }
 
+  function selectTenValue(key, tenValue, container, color) {
+    const ten = Math.max(0, Math.min(10, parseInt(tenValue, 10)));
+    const score = ten * 10;
+    setPartsFromScore(key, score);
+
+    container.querySelectorAll('.scale-btn').forEach(b => {
+      b.classList.remove('selected', 'pleasure', 'mastery', 'mood');
+      if (parseInt(b.dataset.value, 10) === ten) b.classList.add('selected', color);
+    });
+
+    const select = container.querySelector('.scale-word-select');
+    if (select) select.value = String(ten);
+
+    updateTotalDisplay(key, color);
+    updateSaveButtons();
+  }
+
   function selectPart(key, part, value, container, color) {
+    ensureScaleState(key);
     // If user picks tens=100, force ones to 0 and disable
     state.parts[key][part] = value;
     if (part === 'tens' && value === 100) {
@@ -4331,7 +4794,7 @@
     // Highlight the selected button in this row
     container.querySelectorAll('.scale-btn').forEach(b => {
       b.classList.remove('selected', 'pleasure', 'mastery', 'mood');
-      if (parseInt(b.dataset.value) === value) b.classList.add('selected', color);
+      if (parseInt(b.dataset.value, 10) === value) b.classList.add('selected', color);
     });
 
     // If tens=100, also visually mark ones=0 and gray out other ones buttons
@@ -4341,9 +4804,9 @@
         if (value === 100) {
           onesRow.querySelectorAll('.scale-btn').forEach(b => {
             b.classList.remove('selected', 'pleasure', 'mastery', 'mood');
-            if (parseInt(b.dataset.value) === 0) b.classList.add('selected', color);
-            b.style.opacity = parseInt(b.dataset.value) === 0 ? '1' : '0.3';
-            b.style.pointerEvents = parseInt(b.dataset.value) === 0 ? 'auto' : 'none';
+            if (parseInt(b.dataset.value, 10) === 0) b.classList.add('selected', color);
+            b.style.opacity = parseInt(b.dataset.value, 10) === 0 ? '1' : '0.3';
+            b.style.pointerEvents = parseInt(b.dataset.value, 10) === 0 ? 'auto' : 'none';
           });
         } else {
           onesRow.querySelectorAll('.scale-btn').forEach(b => {
@@ -4367,18 +4830,22 @@
       el.textContent = '—';
       el.classList.add('empty');
     } else {
-      el.textContent = total;
+      el.textContent = formatTotalForCurrentMode(total);
       el.classList.add(color);
     }
   }
 
   function resetScaleKey(key) {
-    state.parts[key].tens = null;
-    state.parts[key].ones = null;
+    const p = ensureScaleState(key);
+    p.tens = null;
+    p.ones = null;
     document.querySelectorAll(`.scale-row[data-scale="${key}"] .scale-btn`).forEach(b => {
       b.classList.remove('selected', 'pleasure', 'mastery', 'mood');
       b.style.opacity = '';
       b.style.pointerEvents = '';
+    });
+    document.querySelectorAll(`.scale-row[data-scale="${key}"] .scale-word-select`).forEach(sel => {
+      sel.value = '';
     });
     const el = document.querySelector(`[data-total="${key}"]`);
     if (el) {
@@ -4388,19 +4855,103 @@
     }
   }
 
-  function updateSaveButtons() {
-    const activity = document.getElementById('activity').value.trim();
-    const canSave = activity && getTotal('pred-mastery') !== null && getTotal('pred-pleasure') !== null;
-    document.getElementById('save-btn').disabled = !canSave;
+  function renderScaleWidget(key, scope = document) {
+    ensureScaleState(key);
+    const tensRow = scope.querySelector(`.scale-row.tens[data-scale="${key}"]`);
+    const onesRow = scope.querySelector(`.scale-row.ones[data-scale="${key}"]`);
+    if (tensRow) buildScale(tensRow, key, 'tens');
+    if (onesRow) buildScale(onesRow, key, 'ones');
+  }
 
-    // Require all four post-activity values to enable Save Actual Ratings,
-    // so the button matches the same "fully rated" rule used by the log.
-    const canRate =
-      getTotal('act-mastery')  !== null &&
-      getTotal('act-pleasure') !== null &&
-      getTotal('mood-before')  !== null &&
-      getTotal('mood-after')   !== null;
-    document.getElementById('save-rating-btn').disabled = !canRate;
+  function renderAllScaleWidgets({ preserve = true } = {}) {
+    const keys = Array.from(document.querySelectorAll('.scale-row.tens[data-scale]'))
+      .map(row => row.dataset.scale)
+      .filter((key, idx, arr) => key && arr.indexOf(key) === idx && state.parts[key]);
+    const totals = {};
+    if (preserve) keys.forEach(key => { totals[key] = getTotal(key); });
+    keys.forEach(key => {
+      renderScaleWidget(key, document);
+      resetScaleKey(key);
+      if (preserve && totals[key] !== null) prefillScale(key, totals[key], document);
+    });
+  }
+
+  // Get the resolved total for a scale key (or null if incomplete)
+  function getTotal(key) {
+    const p = state.parts[key];
+    if (!p || p.tens === null || p.ones === null) return null;
+    if (p.tens === 100) return 100;
+    return p.tens + p.ones;
+  }
+
+  function updateSaveButtons() {
+    const activityEl = document.getElementById('activity');
+    const saveBtn = document.getElementById('save-btn');
+    if (activityEl && saveBtn) {
+      const activity = activityEl.value.trim();
+      const canSave = activity && getTotal('pred-mastery') !== null && getTotal('pred-pleasure') !== null;
+      saveBtn.disabled = !canSave;
+    }
+
+    const rateBtn = document.getElementById('save-rating-btn');
+    if (rateBtn) {
+      const canRate =
+        getTotal('act-mastery')  !== null &&
+        getTotal('act-pleasure') !== null &&
+        getTotal('mood-before')  !== null &&
+        getTotal('mood-after')   !== null;
+      rateBtn.disabled = !canRate;
+    }
+  }
+
+  function renderScaleModeSettingsUI() {
+    document.querySelectorAll('input[name="scale-mode"]').forEach(radio => {
+      radio.checked = radio.value === state.scaleMode;
+    });
+    const current = document.getElementById('scale-mode-current');
+    if (current) current.textContent = t('settings-current-' + state.scaleMode);
+  }
+
+  function setScaleMode(mode) {
+    if (!SCALE_MODE_VALUES.includes(mode)) return;
+    if (state.scaleMode === mode) {
+      renderScaleModeSettingsUI();
+      return;
+    }
+    state.scaleMode = mode;
+    try { localStorage.setItem(SCALE_MODE_STORAGE_KEY, mode); } catch(e) { /* ignore */ }
+    renderAllScaleWidgets({ preserve: true });
+    renderScaleModeSettingsUI();
+    updateSaveButtons();
+    showToast(t('toast-settings-saved'));
+  }
+
+  function applyThemeMode(mode) {
+    const resolved = THEME_MODE_VALUES.includes(mode) ? mode : 'night';
+    document.documentElement.setAttribute('data-theme', resolved);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', resolved === 'day' ? '#f7f6f0' : '#1a1f1c');
+  }
+
+  function renderThemeModeSettingsUI() {
+    document.querySelectorAll('input[name="theme-mode"]').forEach(radio => {
+      radio.checked = radio.value === state.themeMode;
+    });
+    const current = document.getElementById('theme-mode-current');
+    if (current) current.textContent = t('settings-theme-current-' + state.themeMode);
+  }
+
+  function setThemeMode(mode) {
+    if (!THEME_MODE_VALUES.includes(mode)) return;
+    if (state.themeMode === mode) {
+      renderThemeModeSettingsUI();
+      return;
+    }
+    state.themeMode = mode;
+    try { localStorage.setItem(THEME_MODE_STORAGE_KEY, mode); } catch(e) { /* ignore */ }
+    applyThemeMode(mode);
+    renderThemeModeSettingsUI();
+    showToast(t('toast-settings-saved'));
   }
 
   // ============ VIEWS ============
@@ -4583,27 +5134,25 @@
     window.scrollTo(0, 0);
   }
 
-  // Pre-fill a tens/ones scale from a single numeric value (0-100).
-  // Used when reopening rate-actual on an entry that already has saved values.
-  function prefillScale(key, value) {
-    if (typeof value !== 'number' || value < 0 || value > 100) return;
-    const tens = value === 100 ? 100 : Math.floor(value / 10) * 10;
-    const ones = value === 100 ? 0 : value % 10;
-    const color = key.startsWith('mood-') ? 'mood'
-                : key.includes('mastery') ? 'mastery'
-                : 'pleasure';
-    // Find the scale rows belonging to the rate view specifically.
-    // The rate view scales live inside #view-rate so we scope the query
-    // to avoid matching any other scale rows that share the same data-scale
-    // (e.g. if the edit modal happens to be open).
-    const scope = document.getElementById('view-rate');
-    if (!scope) return;
+  // Pre-fill a scale from a single numeric value (0-100).
+  // In 0–10 and word modes, existing 0–100 scores are rounded to the nearest 0–10 step.
+  function prefillScale(key, value, scope = document) {
+    const score = normalizeScoreForCurrentMode(value);
+    if (score === null) return;
+    const color = scaleColor(key);
     const tensRow = scope.querySelector(`.scale-row.tens[data-scale="${key}"]`);
     const onesRow = scope.querySelector(`.scale-row.ones[data-scale="${key}"]`);
-    if (tensRow) selectPart(key, 'tens', tens, tensRow, color);
-    // selectPart already handles tens=100 (forces ones=0 and disables ones row),
-    // so only manually select ones when tens is not 100.
-    if (onesRow && tens !== 100) selectPart(key, 'ones', ones, onesRow, color);
+    if (!tensRow) return;
+
+    if (state.scaleMode === 'precise') {
+      const tens = score === 100 ? 100 : Math.floor(score / 10) * 10;
+      const ones = score === 100 ? 0 : score % 10;
+      selectPart(key, 'tens', tens, tensRow, color);
+      if (onesRow && tens !== 100) selectPart(key, 'ones', ones, onesRow, color);
+      return;
+    }
+
+    selectTenValue(key, scoreToTen(score), tensRow, color);
   }
 
   document.getElementById('cancel-rating-btn').addEventListener('click', () => {
@@ -5052,16 +5601,17 @@
         validate: () => true,
       };
     } else if (meta.type === 'scale') {
-      // Reuse the existing scale-pair structure with a dedicated key 'edit-scale'
+      // Reuse the existing scale-pair structure with a dedicated key 'edit-scale'.
+      // It respects the same input mode chosen in Settings.
       body.innerHTML = `
         <div class="pair">
           <div class="scale-group">
             <div>
-              <div class="scale-sub-label">${t('sub-tens')}</div>
+              <div class="scale-sub-label"></div>
               <div class="scale-row tens" data-scale="edit-scale" data-part="tens"></div>
             </div>
             <div>
-              <div class="scale-sub-label">${t('sub-ones')}</div>
+              <div class="scale-sub-label"></div>
               <div class="scale-row ones" data-scale="edit-scale" data-part="ones"></div>
             </div>
           </div>
@@ -5071,35 +5621,15 @@
           </div>
         </div>`;
 
-      // Register transient state.parts entry, build, and prefill
+      // Register transient state.parts entry, build according to current Settings, and prefill.
       state.parts['edit-scale'] = { tens: null, ones: null };
-      const tensRow = body.querySelector('.scale-row.tens');
-      const onesRow = body.querySelector('.scale-row.ones');
-      // Build with the right color for this field
-      const buildEditScale = (container, part) => {
-        container.innerHTML = '';
-        const max = part === 'tens' ? 100 : 9;
-        const step = part === 'tens' ? 10 : 1;
-        for (let i = 0; i <= max; i += step) {
-          const btn = document.createElement('button');
-          btn.className = 'scale-btn';
-          btn.textContent = i;
-          btn.dataset.value = i;
-          btn.addEventListener('click', () => selectPart('edit-scale', part, i, container, meta.color));
-          container.appendChild(btn);
-        }
-      };
-      buildEditScale(tensRow, 'tens');
-      buildEditScale(onesRow, 'ones');
+      renderScaleWidget('edit-scale', body);
 
       // Prefill from current entry value
       const prop = FIELD_TO_PROP[field];
       const cur = entry[prop];
       if (typeof cur === 'number') {
-        const tens = cur === 100 ? 100 : Math.floor(cur / 10) * 10;
-        const ones = cur === 100 ? 0 : cur % 10;
-        selectPart('edit-scale', 'tens', tens, tensRow, meta.color);
-        if (cur !== 100) selectPart('edit-scale', 'ones', ones, onesRow, meta.color);
+        prefillScale('edit-scale', cur, body);
       }
 
       editContext = {
@@ -6539,12 +7069,18 @@
     tab.addEventListener('click', () => switchView(tab.dataset.view));
   });
 
-  ['pred-mastery', 'pred-pleasure', 'act-mastery', 'act-pleasure', 'mood-before', 'mood-after'].forEach(key => {
-    const tensRow = document.querySelector(`.scale-row.tens[data-scale="${key}"]`);
-    const onesRow = document.querySelector(`.scale-row.ones[data-scale="${key}"]`);
-    if (tensRow) buildScale(tensRow, key, 'tens');
-    if (onesRow) buildScale(onesRow, key, 'ones');
+  document.querySelectorAll('input[name="scale-mode"]').forEach(radio => {
+    radio.addEventListener('change', () => setScaleMode(radio.value));
   });
+
+  document.querySelectorAll('input[name="theme-mode"]').forEach(radio => {
+    radio.addEventListener('change', () => setThemeMode(radio.value));
+  });
+
+  applyThemeMode(state.themeMode);
+  renderAllScaleWidgets({ preserve: false });
+  renderScaleModeSettingsUI();
+  renderThemeModeSettingsUI();
 
   // Set up mood scale-pairs (handled by the standard scale init below)
 
