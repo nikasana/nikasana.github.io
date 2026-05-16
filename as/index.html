@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="ka">
+<html lang="ka" data-theme="day">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#1a1f1c">
+<meta name="theme-color" content="#f7f6f0">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23161a17'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' dominant-baseline='middle' font-size='44' fill='%23c9a96e'%3E%E2%9D%A6%3C/text%3E%3C/svg%3E">
 <link rel="shortcut icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23161a17'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' dominant-baseline='middle' font-size='44' fill='%23c9a96e'%3E%E2%9D%A6%3C/text%3E%3C/svg%3E">
-<title>სიამოვნების პროგნოზის ფურცელი · Pleasure-Predicting Sheet</title>
+<title>სიამოვნების პროგნოზის ფურცელი</title>
 <style>
   :root {
     --bg: #161a17;
@@ -2162,7 +2162,7 @@
 
   .scale-hidden { display: none !important; }
 
-  .scale-row.words { display: block; }
+  .scale-row.words, .scale-row.half-mode { display: block; }
 
   .scale-row.ten-mode { grid-template-columns: repeat(11, 1fr); }
 
@@ -3055,6 +3055,13 @@
           </span>
         </label>
         <label class="settings-option">
+          <input type="radio" name="scale-mode" value="half">
+          <span>
+            <span class="settings-option-title" data-i18n="settings-scale-half-title"></span>
+            <span class="settings-option-desc" data-i18n="settings-scale-half-desc"></span>
+          </span>
+        </label>
+        <label class="settings-option">
           <input type="radio" name="scale-mode" value="words">
           <span>
             <span class="settings-option-title" data-i18n="settings-scale-words-title"></span>
@@ -3315,6 +3322,7 @@
       'title-pre': '',
       'title-accent': 'სიამოვნების',
       'title-post': 'პროგნოზის ფურცელი',
+      'browser-title': 'სიამოვნების პროგნოზის ფურცელი',
       'subtitle': 'მანამდე იწინასწარმეტყველე ოსტატობა და სიამოვნება; შემდეგ — შეაფასე. სხვაობა — სწორედ ეს არის მონაცემი.',
       'attribution': 'შთაგონებულია სიამოვნების პროგნოზის ფურცლით წიგნიდან <em>The Feeling Good Handbook</em>, ავტორი დევიდ დ. ბერნზი, MD. ეს არის პირადი თვითრეფლექსიის ინსტრუმენტი და ვერ შეცვლის პროფესიონალურ ფსიქოლოგიურ დახმარებას.',
 
@@ -3447,15 +3455,18 @@
       // Scale input settings
       'settings-title': 'პარამეტრები',
       'settings-scale-title': 'შეფასების შეყვანის სტილი',
-      'settings-scale-description': 'აირჩიე, როგორ შეიყვანო ოსტატობის, სიამოვნებისა და განწყობის ქულები. მონაცემები კვლავ ინახება თავსებადი 0–100 ფორმატით, რათა გრაფიკები და ანალიზი არ გაფუჭდეს.',
+      'settings-scale-description': 'აირჩიე, როგორ შეიყვანო ოსტატობის, სიამოვნებისა და განწყობის ქულები. შეგიძლია გამოიყენო ზუსტი 0–100, სწრაფი 0–10, ნახევარბიჯიანი 0.0–10.0 ან სიტყვიერი რეჟიმი. მონაცემები კვლავ ინახება თავსებადი 0–100 ფორმატით, რათა გრაფიკები და ანალიზი არ გაფუჭდეს.',
       'settings-scale-precise-title': 'ათეულები + ერთეულები',
       'settings-scale-precise-desc': 'ყველაზე ზუსტი 0–100 შეყვანა: ჯერ აირჩიე ათეულები, შემდეგ ერთეულები.',
       'settings-scale-ten-title': 'მხოლოდ 0–10',
       'settings-scale-ten-desc': 'აირჩიე 0–10. აპი ამას ავტომატურად გადააქცევს 0–100 ქულად, მაგალითად 7 = 70.',
+      'settings-scale-half-title': '0.5-იანი ნაბიჯები',
+      'settings-scale-half-desc': 'აირჩიე 0.0, 0.5, 1.0, 1.5 … 9.5 ან 10.0. აპი ამას ზუსტად გადააქცევს 0–100 ქულად, მაგალითად 7.5 = 75.',
       'settings-scale-words-title': 'სიტყვებით შეფასება',
       'settings-scale-words-desc': 'აირჩიე სიტყვიერი აღწერა. თითოეული აღწერა მიბმულია 0–10 ქულაზე და ინახება 0–100 ფორმატში.',
       'settings-current-precise': 'ამჟამად ჩართულია ზუსტი 0–100 რეჟიმი.',
       'settings-current-ten': 'ამჟამად ჩართულია სწრაფი 0–10 რეჟიმი. შენახვისას 0–10 ქულა მრავლდება 10-ზე.',
+      'settings-current-half': 'ამჟამად ჩართულია 0.5-იანი ნაბიჯების რეჟიმი. მაგალითად 7.5 ინახება როგორც 75/100.',
       'settings-current-words': 'ამჟამად ჩართულია სიტყვიერი რეჟიმი. აღწერები ითარგმნება 0–10 ქულებად და შემდეგ 0–100 ფორმატში ინახება.',
       'settings-theme-title': 'დღის / ღამის ფერები',
       'settings-theme-description': 'აირჩიე შავი ღამის რეჟიმი ან თეთრი დღის რეჟიმი. არჩევანი შეინახება ამ ბრაუზერში.',
@@ -3466,6 +3477,8 @@
       'settings-theme-current-night': 'ამჟამად ჩართულია ღამის / შავი ფერის რეჟიმი.',
       'settings-theme-current-day': 'ამჟამად ჩართულია დღის / თეთრი ფერის რეჟიმი.',
       'sub-zero-ten': '0–10 ქულა',
+      'sub-half-step': '0.0–10.0 ქულა',
+      'scale-half-placeholder': 'აირჩიე ქულა…',
       'sub-word-selector': 'აღწერით არჩევა',
       'scale-word-placeholder': 'აირჩიე აღწერა…',
       'scale-word-0': 'საერთოდ არა / ნული',
@@ -3535,7 +3548,7 @@
 
       'about-howto-title': 'როგორ ვისარგებლო',
       'about-step1-title': '1. ახალი',
-      'about-step1-p': 'ჩაწერე აქტივობა, რომელსაც აპირებ. დაგეგმე დრო. შემდეგ წინასწარ შეაფასე ოსტატობა (რამდენად კარგად გააკეთებ ან რამდენი მნიშვნელობის შეგრძნებას მოგცემს) და სიამოვნება (რამდენი სიამოვნება გექნება). ორივე — 0-დან 100-მდე.',
+      'about-step1-p': 'ჩაწერე აქტივობა, რომელსაც აპირებ. დაგეგმე დრო. შემდეგ წინასწარ შეაფასე ოსტატობა (რამდენად კარგად გააკეთებ ან რამდენი მნიშვნელობის შეგრძნებას მოგცემს) და სიამოვნება (რამდენი სიამოვნება გექნება). გამოიყენე შენ მიერ არჩეული შეფასების ფორმატი; მონაცემები შიგნით 0–100 ფორმატში ინახება.',
       'about-step2-title': '2. გააკეთე',
       'about-step2-p': 'წადი და გააკეთე აქტივობა. არ ცადო ხასიათის ცვლილების მიღწევა წინასწარ — უბრალოდ გააკეთე.',
       'about-step3-title': '3. ისტორია (შეფასება)',
@@ -3556,7 +3569,7 @@
       'about-feature10': '<strong>„ყველას ჩვენება“ ღრმა ანალიზში:</strong> არჩევანში პირველი ვარიანტია „ყველას ჩვენება“. ეს არ აჩვენებს რეიტინგს, არამედ ალფაბეტურად ჩამოთვლის ყველა აქტივობას, რათა თითოეული აქტივობის განწყობა, ოსტატობა და სიამოვნება ერთ ხაზზე იყოს ერთად.',
       'about-feature11': '<strong>დაწყების თარიღი მთავარია:</strong> გრაფიკი, სტრიკები და ანალიზი აქტივობას აკავშირებს დაგეგმილ/დაწყების დღესთან. მაგალითად, თუ აქტივობა დაიწყო გუშინ 23:00-ზე და დასრულდა 00:20-ზე, იგი მაინც გუშინდელ დღედ ჩაითვლება ანალიზში.',
       'about-feature12': '<strong>ენა, სარეზერვო ასლი და პასუხისმგებლობა:</strong> შეგიძლია გადართო ქართული, ინგლისური და რუსული ენა. მონაცემები რჩება შენს მოწყობილობაზე, ამიტომ მნიშვნელოვანი ჩანაწერები პერიოდულად გაიტანე Export-ით. აპი შეიძლება წაიშალოს ვებიდან ან გახდეს მიუწვდომელი, და ამ შემთხვევაში ავტორი მაინც არ არის პასუხისმგებელი გამოყენებაზე, შედეგებზე, დაკარგულ წვდომაზე ან დაკარგულ მონაცემებზე.',
-      'about-feature13': '<strong>შეფასების შეყვანის პარამეტრები:</strong> პარამეტრების ჩანართში შეგიძლია აირჩიო ზუსტი 0–100, სწრაფი 0–10 ან სიტყვიერი აღწერების რეჟიმი. 0–10 და სიტყვიერი რეჟიმები ისევ აპის 0–100 მონაცემთა ფორმატში გადაითარგმნება.',
+      'about-feature13': '<strong>შეფასების შეყვანის პარამეტრები:</strong> პარამეტრების ჩანართში შეგიძლია აირჩიო ზუსტი 0–100, სწრაფი 0–10, ნახევარბიჯიანი 0.0–10.0 ან სიტყვიერი აღწერების რეჟიმი. ყველა ალტერნატიული რეჟიმი ისევ აპის 0–100 მონაცემთა ფორმატში გადაითარგმნება.',
 
       'about-tips-title': 'რჩევები',
       'about-tip1': 'იყავი მართალი. ნუ შეცვლი წინასწარ პროგნოზს მას შემდეგ, რაც გააკეთე — ეს ანადგურებს ხელსაწყოს მთელ აზრს.',
@@ -3614,6 +3627,7 @@
       'title-pre': '',
       'title-accent': 'Лист прогнозирования',
       'title-post': 'удовольствия',
+      'browser-title': 'Лист прогнозирования удовольствия',
       'subtitle': 'Сначала предскажи мастерство и удовольствие; после — оцени реальность. Разница и есть данные.',
       'attribution': 'Вдохновлено листом прогнозирования удовольствия из книги <em>The Feeling Good Handbook</em>, Дэвид Д. Бернс, MD. Это инструмент для личной саморефлексии, а не замена профессиональной психологической помощи.',
 
@@ -3744,15 +3758,18 @@
       // Scale input settings
       'settings-title': 'Настройки',
       'settings-scale-title': 'Стиль ввода оценок',
-      'settings-scale-description': 'Выбери, как вводить оценки мастерства, удовольствия и настроения. Данные всё равно сохраняются в совместимом формате 0–100, чтобы графики и анализ продолжали работать.',
+      'settings-scale-description': 'Выбери, как вводить оценки мастерства, удовольствия и настроения. Можно использовать точный режим 0–100, быстрый 0–10, шаги по 0.5 от 0.0 до 10.0 или словесные описания. Данные всё равно сохраняются в совместимом формате 0–100, чтобы графики и анализ продолжали работать.',
       'settings-scale-precise-title': 'Десятки + единицы',
       'settings-scale-precise-desc': 'Самый точный ввод 0–100: сначала выбери десятки, затем единицы.',
       'settings-scale-ten-title': 'Только 0–10',
       'settings-scale-ten-desc': 'Выбирай 0–10. Приложение автоматически переводит это в 0–100, например 7 = 70.',
+      'settings-scale-half-title': 'Шаги по 0.5',
+      'settings-scale-half-desc': 'Выбирай 0.0, 0.5, 1.0, 1.5 … 9.5 или 10.0. Приложение точно переводит это в 0–100, например 7.5 = 75.',
       'settings-scale-words-title': 'Словесные описания',
       'settings-scale-words-desc': 'Выбирай описание словами. Каждое описание связано с оценкой 0–10 и сохраняется в формате 0–100.',
       'settings-current-precise': 'Сейчас включён точный режим 0–100.',
       'settings-current-ten': 'Сейчас включён быстрый режим 0–10. При сохранении оценка 0–10 умножается на 10.',
+      'settings-current-half': 'Сейчас включён режим шага 0.5. Например, 7.5 сохраняется как 75/100.',
       'settings-current-words': 'Сейчас включён словесный режим. Описания переводятся в оценки 0–10, а затем сохраняются как 0–100.',
       'settings-theme-title': 'Дневные / ночные цвета',
       'settings-theme-description': 'Выбери чёрный ночной режим или белый дневной режим. Выбор сохранится в этом браузере.',
@@ -3763,6 +3780,8 @@
       'settings-theme-current-night': 'Сейчас включён ночной / чёрный режим.',
       'settings-theme-current-day': 'Сейчас включён дневной / белый режим.',
       'sub-zero-ten': 'Оценка 0–10',
+      'sub-half-step': 'Оценка 0.0–10.0',
+      'scale-half-placeholder': 'Выбери оценку…',
       'sub-word-selector': 'Выбор описанием',
       'scale-word-placeholder': 'Выбери описание…',
       'scale-word-0': 'Совсем нет / ноль',
@@ -3828,7 +3847,7 @@
 
       'about-howto-title': 'Как пользоваться',
       'about-step1-title': '1. Новое',
-      'about-step1-p': 'Запиши активность, которую планируешь. Назначь время. Затем заранее оцени мастерство (насколько хорошо ты это сделаешь или сколько чувства достижения это даст) и удовольствие (насколько тебе понравится). Обе оценки — от 0 до 100.',
+      'about-step1-p': 'Запиши активность, которую планируешь. Назначь время. Затем заранее оцени мастерство (насколько хорошо ты это сделаешь или сколько чувства достижения это даст) и удовольствие (насколько тебе понравится). Используй выбранный формат оценок; внутри данные сохраняются в формате 0–100.',
       'about-step2-title': '2. Сделай',
       'about-step2-p': 'Иди и сделай активность. Не пытайся заранее изменить настроение — просто сделай.',
       'about-step3-title': '3. Журнал (оценить реальность)',
@@ -3849,7 +3868,7 @@
       'about-feature10': '<strong>«Показать все» в глубоком анализе:</strong> первый вариант в списке — «Показать все». Он показывает не рейтинг, а алфавитный список всех активностей, чтобы настроение, мастерство и удовольствие каждой активности были вместе в одной строке.',
       'about-feature11': '<strong>Дата начала главная:</strong> график, серии и анализ привязывают активность к запланированной/стартовой дате. Например, если активность началась вчера в 23:00 и закончилась в 00:20, в анализе она всё равно относится ко вчерашнему дню.',
       'about-feature12': '<strong>Язык, резервная копия и ответственность:</strong> можно переключаться между грузинским, английским и русским языком. Данные остаются на твоём устройстве, поэтому важные записи лучше периодически сохранять через Export. Приложение может быть удалено из интернета или стать недоступным, и даже в этом случае автор не несёт ответственности за использование, результаты, потерю доступа или потерю данных.',
-      'about-feature13': '<strong>Настройки ввода оценок:</strong> во вкладке настроек можно выбрать точный ввод 0–100, быстрый ввод 0–10 или словесные описания. Режимы 0–10 и слов переводятся обратно в формат данных 0–100.',
+      'about-feature13': '<strong>Настройки ввода оценок:</strong> во вкладке настроек можно выбрать точный ввод 0–100, быстрый ввод 0–10, шаги по 0.5 от 0.0 до 10.0 или словесные описания. Все альтернативные режимы переводятся обратно в формат данных 0–100.',
 
       'about-tips-title': 'Советы',
       'about-tip1': 'Будь честен. Не меняй прогноз после выполнения активности — иначе теряется смысл инструмента.',
@@ -3906,6 +3925,7 @@
       'title-pre': 'The',
       'title-accent': 'Pleasure-Predicting',
       'title-post': 'Sheet',
+      'browser-title': 'The Pleasure-Predicting Sheet',
       'subtitle': 'Predict mastery & pleasure before; rate them after. The gap is where the data lives.',
       'attribution': 'Inspired by the Pleasure-Predicting Sheet from <em>The Feeling Good Handbook</em> by David D. Burns, MD. This tool is for personal self-reflection and is not a substitute for professional mental health care.',
 
@@ -4037,15 +4057,18 @@
       // Scale input settings
       'settings-title': 'Settings',
       'settings-scale-title': 'Rating input style',
-      'settings-scale-description': 'Choose how you want to enter mastery, pleasure, and mood scores. Data is still saved in the compatible 0–100 format so charts and analysis keep working.',
+      'settings-scale-description': 'Choose how you want to enter mastery, pleasure, and mood scores. You can use precise 0–100, quick 0–10, half-step 0.0–10.0, or word-description input. Data is still saved in the compatible 0–100 format so charts and analysis keep working.',
       'settings-scale-precise-title': 'Tens + ones',
       'settings-scale-precise-desc': 'The most precise 0–100 input: choose tens first, then ones.',
       'settings-scale-ten-title': 'Only 0–10',
       'settings-scale-ten-desc': 'Choose 0–10. The app automatically translates it to 0–100, for example 7 = 70.',
+      'settings-scale-half-title': '0.5-step scale',
+      'settings-scale-half-desc': 'Choose 0.0, 0.5, 1.0, 1.5 … 9.5, or 10.0. The app translates it exactly to 0–100, for example 7.5 = 75.',
       'settings-scale-words-title': 'Word descriptions',
       'settings-scale-words-desc': 'Choose a verbal description. Each description maps to a 0–10 score and is saved as 0–100.',
       'settings-current-precise': 'Precise 0–100 mode is currently active.',
       'settings-current-ten': 'Quick 0–10 mode is currently active. A 0–10 score is multiplied by 10 when saved.',
+      'settings-current-half': '0.5-step mode is currently active. For example, 7.5 is saved as 75/100.',
       'settings-current-words': 'Word-description mode is currently active. Descriptions are translated to 0–10 scores and then saved as 0–100.',
       'settings-theme-title': 'Day / night colors',
       'settings-theme-description': 'Choose black night mode or white day mode. Your choice is saved in this browser.',
@@ -4056,6 +4079,8 @@
       'settings-theme-current-night': 'Night / black color mode is currently active.',
       'settings-theme-current-day': 'Day / white color mode is currently active.',
       'sub-zero-ten': '0–10 score',
+      'sub-half-step': '0.0–10.0 score',
+      'scale-half-placeholder': 'Choose a score…',
       'sub-word-selector': 'Description selector',
       'scale-word-placeholder': 'Choose a description…',
       'scale-word-0': 'None / zero',
@@ -4122,7 +4147,7 @@
 
       'about-howto-title': 'How to Use It',
       'about-step1-title': '1. New',
-      'about-step1-p': 'Write down the activity you\'re planning. Schedule a time. Then predict mastery (how well you\'ll do it, or how much sense of accomplishment it will bring) and pleasure (how much you\'ll enjoy it). Both on a 0–100 scale.',
+      'about-step1-p': 'Write down the activity you\'re planning. Schedule a time. Then predict mastery (how well you\'ll do it, or how much sense of accomplishment it will bring) and pleasure (how much you\'ll enjoy it). Use your selected rating format; internally the data is saved as 0–100.',
       'about-step2-title': '2. Do It',
       'about-step2-p': 'Go and do the activity. Don\'t try to change your mood beforehand — just do it.',
       'about-step3-title': '3. Log (Rate Actual)',
@@ -4143,7 +4168,7 @@
       'about-feature10': '<strong>Show all in deep analysis:</strong> the first option is Show all. It does not show a ranking; it lists all activity names alphabetically so each activity keeps mood, mastery, and pleasure together on one line.',
       'about-feature11': '<strong>Start date is primary:</strong> charts, streaks, and analysis attach an activity to its scheduled/start date. For example, if an activity started yesterday at 11 PM and ended at 12:20 AM, it still belongs to yesterday in analysis.',
       'about-feature12': '<strong>Language, backup, and responsibility:</strong> you can switch between Georgian, English, and Russian. Data stays on your device, so export important records as a backup. The app may be removed from the web or become unavailable, and even then the author is not responsible for use, results, lost access, or lost data.',
-      'about-feature13': '<strong>Rating input settings:</strong> the Settings tab lets you choose between precise 0–100 input, quick 0–10 input, or word-description selectors. The 0–10 and word modes are translated back into the app’s 0–100 data format.',
+      'about-feature13': '<strong>Rating input settings:</strong> the Settings tab lets you choose between precise 0–100 input, quick 0–10 input, half-step 0.0–10.0 input, or word-description selectors. All alternative modes are translated back into the app’s 0–100 data format.',
 
       'about-tips-title': 'Tips',
       'about-tip1': 'Be honest. Don\'t change your prediction after you\'ve done the activity — that destroys the entire point of the tool.',
@@ -4200,7 +4225,7 @@
 
   const LANG_STORAGE_KEY = 'ba_lang_v1';
   const SCALE_MODE_STORAGE_KEY = 'ba_scale_mode_v1';
-  const SCALE_MODE_VALUES = ['precise', 'ten', 'words'];
+  const SCALE_MODE_VALUES = ['precise', 'ten', 'half', 'words'];
   const THEME_MODE_STORAGE_KEY = 'ba_theme_mode_v1';
   const THEME_MODE_VALUES = ['night', 'day'];
 
@@ -4217,16 +4242,23 @@
       const saved = localStorage.getItem(THEME_MODE_STORAGE_KEY);
       if (THEME_MODE_VALUES.includes(saved)) return saved;
     } catch(e) { /* ignore */ }
-    return 'night';
+    return 'day';
   }
 
   let currentLang = 'ka'; // default
 
   function t(key, params) {
-    let str = (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key;
+    let str;
+    if (I18N[currentLang] && Object.prototype.hasOwnProperty.call(I18N[currentLang], key)) {
+      str = I18N[currentLang][key];
+    } else if (I18N.en && Object.prototype.hasOwnProperty.call(I18N.en, key)) {
+      str = I18N.en[key];
+    } else {
+      str = key;
+    }
     if (params) {
       Object.keys(params).forEach(p => {
-        str = str.replace(`{${p}}`, params[p]);
+        str = String(str).replace(`{${p}}`, params[p]);
       });
     }
     return str;
@@ -4234,6 +4266,7 @@
 
   function applyTranslations() {
     document.documentElement.setAttribute('lang', currentLang);
+    document.title = t('browser-title');
     // Text content nodes
     document.querySelectorAll('[data-i18n]').forEach(el => {
       el.textContent = t(el.getAttribute('data-i18n'));
@@ -4669,12 +4702,18 @@
     const n = clampScore(value);
     if (n === null) return null;
     if (state.scaleMode === 'precise') return n;
+    if (state.scaleMode === 'half') return Math.max(0, Math.min(100, Math.round(n / 5) * 5));
     return scoreToTen(n) * 10;
+  }
+
+  function formatHalfScore(total) {
+    return (total / 10).toFixed(1);
   }
 
   function formatTotalForCurrentMode(total) {
     if (total === null) return '—';
     if (state.scaleMode === 'precise') return String(total);
+    if (state.scaleMode === 'half') return `${formatHalfScore(total)}/10`;
     return `${scoreToTen(total)}/10`;
   }
 
@@ -4707,6 +4746,8 @@
       label.textContent = t(part === 'tens' ? 'sub-tens' : 'sub-ones');
     } else if (part === 'tens' && state.scaleMode === 'ten') {
       label.textContent = t('sub-zero-ten');
+    } else if (part === 'tens' && state.scaleMode === 'half') {
+      label.textContent = t('sub-half-step');
     } else if (part === 'tens' && state.scaleMode === 'words') {
       label.textContent = t('sub-word-selector');
     }
@@ -4715,7 +4756,7 @@
   function buildScale(container, key, part) {
     ensureScaleState(key);
     container.innerHTML = '';
-    container.classList.remove('ten-mode', 'words');
+    container.classList.remove('ten-mode', 'words', 'half-mode');
     const wrapper = container.parentElement;
     if (wrapper) wrapper.classList.remove('scale-hidden');
     const color = scaleColor(key);
@@ -4739,6 +4780,22 @@
         select.appendChild(opt);
       }
       select.addEventListener('change', () => selectTenValue(key, parseInt(select.value, 10), container, color));
+      container.appendChild(select);
+      return;
+    }
+
+    if (state.scaleMode === 'half' && part === 'tens') {
+      container.classList.add('half-mode');
+      const select = document.createElement('select');
+      select.className = 'scale-word-select scale-half-select';
+      select.innerHTML = `<option value="" disabled selected>${t('scale-half-placeholder')}</option>`;
+      for (let score = 0; score <= 100; score += 5) {
+        const opt = document.createElement('option');
+        opt.value = String(score);
+        opt.textContent = formatHalfScore(score);
+        select.appendChild(opt);
+      }
+      select.addEventListener('change', () => selectHalfScore(key, parseInt(select.value, 10), container, color));
       container.appendChild(select);
       return;
     }
@@ -4780,6 +4837,17 @@
 
     const select = container.querySelector('.scale-word-select');
     if (select) select.value = String(ten);
+
+    updateTotalDisplay(key, color);
+    updateSaveButtons();
+  }
+
+  function selectHalfScore(key, scoreValue, container, color) {
+    const score = Math.max(0, Math.min(100, Math.round(parseInt(scoreValue, 10) / 5) * 5));
+    setPartsFromScore(key, score);
+
+    const select = container.querySelector('.scale-half-select');
+    if (select) select.value = String(score);
 
     updateTotalDisplay(key, color);
     updateSaveButtons();
@@ -4929,7 +4997,7 @@
   }
 
   function applyThemeMode(mode) {
-    const resolved = THEME_MODE_VALUES.includes(mode) ? mode : 'night';
+    const resolved = THEME_MODE_VALUES.includes(mode) ? mode : 'day';
     document.documentElement.setAttribute('data-theme', resolved);
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', resolved === 'day' ? '#f7f6f0' : '#1a1f1c');
@@ -5137,7 +5205,7 @@
   }
 
   // Pre-fill a scale from a single numeric value (0-100).
-  // In 0–10 and word modes, existing 0–100 scores are rounded to the nearest 0–10 step.
+  // In 0–10, 0.5-step, and word modes, existing 0–100 scores are rounded to the nearest supported step.
   function prefillScale(key, value, scope = document) {
     const score = normalizeScoreForCurrentMode(value);
     if (score === null) return;
@@ -5151,6 +5219,11 @@
       const ones = score === 100 ? 0 : score % 10;
       selectPart(key, 'tens', tens, tensRow, color);
       if (onesRow && tens !== 100) selectPart(key, 'ones', ones, onesRow, color);
+      return;
+    }
+
+    if (state.scaleMode === 'half') {
+      selectHalfScore(key, score, tensRow, color);
       return;
     }
 
