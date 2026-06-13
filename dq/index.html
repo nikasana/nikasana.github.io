@@ -7,9 +7,6 @@
   <meta name="description" content="ასომთავრული და ნუსხური დამწერლობის ინტერაქტიული სავარჯიშო აპი." />
   <title>ძველქართული ანბანის სავარჯიშო</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root {
@@ -54,7 +51,7 @@
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: "Noto Sans Georgian", "Sylfaen", sans-serif;
+      font-family: "Sylfaen", "Noto Sans Georgian", sans-serif;
       color: var(--text);
       background:
         radial-gradient(circle at 12% 8%, rgba(201, 149, 69, .16), transparent 28%),
@@ -305,7 +302,7 @@
 
     .tabs {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 9px;
       padding: 8px;
       background: var(--surface);
@@ -680,6 +677,140 @@
       margin-top: 15px;
     }
 
+
+    .matching-shell {
+      max-width: 820px;
+      margin: 0 auto;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      background: var(--surface-solid);
+      padding: clamp(18px, 4vw, 30px);
+    }
+
+    .matching-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .matching-status {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .matching-status strong {
+      color: var(--text);
+      font-size: 18px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .matching-board {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 18px;
+      position: relative;
+    }
+
+    .matching-column-label {
+      text-align: center;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+
+    .matching-column {
+      display: grid;
+      gap: 11px;
+    }
+
+    .match-button {
+      min-height: 86px;
+      border: 2px solid var(--border);
+      border-radius: 18px;
+      background: var(--surface-2);
+      display: grid;
+      place-items: center;
+      font-size: clamp(32px, 6vw, 48px);
+      line-height: 1;
+      transition: transform .15s ease, border-color .15s ease, background .15s ease, opacity .2s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .match-button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+
+    .match-button.selected {
+      border-color: var(--accent);
+      background: rgba(201, 149, 69, .18);
+      box-shadow: 0 0 0 3px rgba(201, 149, 69, .10);
+    }
+
+    .match-button.matched {
+      border-color: var(--green);
+      background: rgba(57, 116, 90, .14);
+      color: var(--green);
+      opacity: .58;
+    }
+
+    .match-button.wrong {
+      border-color: var(--red);
+      background: rgba(168, 76, 68, .13);
+      animation: matchShake .28s ease;
+    }
+
+    @keyframes matchShake {
+      0%, 100% { transform: translateX(0); }
+      30% { transform: translateX(-6px); }
+      70% { transform: translateX(6px); }
+    }
+
+    .matching-footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .matching-counters {
+      display: flex;
+      gap: 16px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .matching-counters .good { color: var(--green); }
+    .matching-counters .bad { color: var(--red); }
+
+    .matching-result {
+      display: none;
+      margin-top: 18px;
+      border-radius: 16px;
+      background: var(--surface-2);
+      padding: 16px;
+      text-align: center;
+      line-height: 1.65;
+    }
+
+    .matching-result.visible { display: block; }
+    .matching-result strong { color: var(--primary); }
+
+    .mini-stat.wide { grid-column: 1 / -1; }
+
     .toast {
       position: fixed;
       left: 50%;
@@ -769,14 +900,19 @@
       .brand p { display: none; }
       .tabs {
         top: 76px;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        display: flex;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
         padding: 5px;
         gap: 4px;
         border-radius: 16px;
       }
+      .tabs::-webkit-scrollbar { display: none; }
       .tab {
+        flex: 0 0 104px;
         min-height: 53px;
-        padding: 6px 2px;
+        padding: 6px 4px;
         font-size: 10px;
         line-height: 1.2;
       }
@@ -791,6 +927,11 @@
       .letter-sidebar { padding: 13px; }
       .button-row .btn { flex: 1 1 calc(50% - 9px); }
       .old-text { line-height: 1.65; }
+      .matching-shell { padding: 15px; }
+      .matching-board { gap: 10px; }
+      .match-button { min-height: 72px; border-radius: 15px; }
+      .matching-footer { align-items: stretch; }
+      .matching-footer .btn { width: 100%; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -824,7 +965,7 @@
         <h2>ისწავლე ძველი ქართული დამწერლობა პრაქტიკით</h2>
         <p>
           მოხაზე თითოეული ასო, წაიკითხე ტექსტები, გაშიფრე სიტყვები და შეამოწმე ცოდნა
-          Multiple Choice სავარჯიშოებით.
+          Multiple Choice და ასოების შეწყვილების სავარჯიშოებით.
         </p>
         <div class="script-picker" aria-label="დამწერლობის არჩევა">
           <button class="active" data-script="asomtavruli">ასომთავრული</button>
@@ -850,6 +991,7 @@
           <div class="mini-stat"><strong id="readingDone">0/5</strong><span>წაკითხული ტექსტი</span></div>
           <div class="mini-stat"><strong id="typingScore">0</strong><span>სწორი პასუხი</span></div>
           <div class="mini-stat"><strong id="choiceScore">0</strong><span>სწორი არჩევანი</span></div>
+          <div class="mini-stat wide"><strong id="matchingRoundsStat">0</strong><span>დასრულებული შეწყვილების რაუნდი</span></div>
         </div>
       </aside>
     </section>
@@ -859,6 +1001,7 @@
       <button class="tab" data-panel="reading"><span class="tab-icon">◫</span>ტექსტის კითხვა</button>
       <button class="tab" data-panel="typing"><span class="tab-icon">⌨</span>სიტყვის ჩაწერა</button>
       <button class="tab" data-panel="choice"><span class="tab-icon">✓</span>არჩევითი პასუხი</button>
+      <button class="tab" data-panel="matching"><span class="tab-icon">⇄</span>შეწყვილება</button>
     </nav>
 
     <section class="panel active" id="panel-letters">
@@ -960,6 +1103,45 @@
       </div>
     </section>
 
+
+    <section class="panel" id="panel-matching">
+      <div class="section-head">
+        <div>
+          <h3>5. ასოების შეწყვილება</h3>
+          <p>აირჩიე ასო მარცხენა სვეტიდან და შემდეგ მისი თანამედროვე ქართული შესატყვისი მარჯვენა სვეტიდან.</p>
+        </div>
+        <span class="pill" id="matchingRoundPill">რაუნდი 1</span>
+      </div>
+
+      <div class="matching-shell">
+        <div class="matching-toolbar">
+          <div class="matching-status">
+            <span>6 წყვილი დარჩა</span>
+            <span aria-hidden="true">·</span>
+            <span>⏱ <strong id="matchingTimer">0:00</strong></span>
+          </div>
+          <button class="btn" id="restartMatching">↻ ახალი რაუნდი</button>
+        </div>
+
+        <div class="matching-board" aria-label="ასოების შესაწყვილებელი დაფა">
+          <div class="matching-column-label" id="oldColumnLabel">ასომთავრული</div>
+          <div class="matching-column-label">მხედრული</div>
+          <div class="matching-column" id="oldMatchColumn"></div>
+          <div class="matching-column" id="modernMatchColumn"></div>
+        </div>
+
+        <div class="matching-footer">
+          <div class="matching-counters">
+            <span class="good">✓ <b id="matchingCorrect">0</b></span>
+            <span class="bad">✕ <b id="matchingWrong">0</b></span>
+          </div>
+          <div class="score-line" id="matchingBest">საუკეთესო დრო: —</div>
+        </div>
+
+        <div class="matching-result" id="matchingResult" aria-live="polite"></div>
+      </div>
+    </section>
+
     <p class="footer-note">
       სავარჯიშო ფოკუსირებულია თანამედროვე ქართულში გამოყენებული 33 ასოს ასომთავრულ და ნუსხურ ფორმებზე.
       პროგრესი ინახება მხოლოდ ამ ბრაუზერში.
@@ -983,6 +1165,7 @@
         <li>ტექსტის წაკითხვა პასუხის ეტაპობრივი ჩვენებით;</li>
         <li>სიტყვის თავისუფლად ჩაწერა თანამედროვე ქართულით;</li>
         <li>Multiple Choice სავარჯიშო ავტომატურად არეული პასუხებით;</li>
+        <li>6-წყვილიანი ასოების შეწყვილების თამაში ტაიმერითა და საუკეთესო დროით;</li>
         <li>პროგრესის შენახვა Local Storage-ში.</li>
       </ul>
       <p>
@@ -1038,7 +1221,11 @@
     typingStreak: 0,
     choiceCorrect: 0,
     choiceAttempts: 0,
-    choiceStreak: 0
+    choiceStreak: 0,
+    matchingRounds: 0,
+    matchingCorrect: 0,
+    matchingWrong: 0,
+    matchingBestSeconds: null
   };
 
   let state = loadState();
@@ -1047,6 +1234,20 @@
   let typingAnswered = false;
   let choiceAnswered = false;
   let hasDrawn = false;
+
+  let matchingIndices = [];
+  let matchingOldOrder = [];
+  let matchingModernOrder = [];
+  let matchingSelectedOld = null;
+  let matchingSelectedModern = null;
+  let matchingMatched = new Set();
+  let matchingRoundCorrect = 0;
+  let matchingRoundWrong = 0;
+  let matchingElapsedSeconds = 0;
+  let matchingTimerStartedAt = null;
+  let matchingTimerId = null;
+  let matchingLocked = false;
+  let matchingFinished = false;
 
   const $ = (id) => document.getElementById(id);
   const els = {
@@ -1063,6 +1264,7 @@
     readingDone: $("readingDone"),
     typingScore: $("typingScore"),
     choiceScore: $("choiceScore"),
+    matchingRoundsStat: $("matchingRoundsStat"),
     letterPosition: $("letterPosition"),
     oldLetter: $("oldLetter"),
     modernLetter: $("modernLetter"),
@@ -1091,6 +1293,16 @@
     choiceScoreLine: $("choiceScoreLine"),
     choicePill: $("choicePill"),
     choiceBar: $("choiceBar"),
+    matchingRoundPill: $("matchingRoundPill"),
+    matchingTimer: $("matchingTimer"),
+    restartMatching: $("restartMatching"),
+    oldColumnLabel: $("oldColumnLabel"),
+    oldMatchColumn: $("oldMatchColumn"),
+    modernMatchColumn: $("modernMatchColumn"),
+    matchingCorrect: $("matchingCorrect"),
+    matchingWrong: $("matchingWrong"),
+    matchingBest: $("matchingBest"),
+    matchingResult: $("matchingResult"),
     toast: $("toast")
   };
 
@@ -1158,12 +1370,14 @@
     els.readingDone.textContent = `${state.completedReadings.length}/${readingItems.length}`;
     els.typingScore.textContent = state.typingCorrect;
     els.choiceScore.textContent = state.choiceCorrect;
+    els.matchingRoundsStat.textContent = state.matchingRounds;
 
     const letterPart = state.completedLetters.length / MODERN.length;
     const readingPart = state.completedReadings.length / readingItems.length;
-    const typingPart = state.typingAttempts ? state.typingCorrect / state.typingAttempts : 0;
-    const choicePart = state.choiceAttempts ? state.choiceCorrect / state.choiceAttempts : 0;
-    const percent = Math.round(((letterPart + readingPart + typingPart + choicePart) / 4) * 100);
+    const typingPart = state.typingAttempts ? Math.min(1, state.typingCorrect / 10) : 0;
+    const choicePart = state.choiceAttempts ? Math.min(1, state.choiceCorrect / 10) : 0;
+    const matchingPart = Math.min(1, state.matchingRounds / 5);
+    const percent = Math.round(((letterPart + readingPart + typingPart + choicePart + matchingPart) / 5) * 100);
 
     els.overallPercent.textContent = `${percent}%`;
     const circumference = 2 * Math.PI * 51;
@@ -1182,6 +1396,7 @@
     renderReading();
     renderTyping();
     renderChoice();
+    renderMatchingBoard();
     resizeCanvas();
   }
 
@@ -1205,6 +1420,7 @@
     document.querySelectorAll(".panel").forEach(panel => panel.classList.remove("active"));
     $(`panel-${name}`).classList.add("active");
     if (name === "letters") setTimeout(resizeCanvas, 40);
+    if (name !== "matching") pauseMatchingTimer();
   }
 
   function renderLetterGrid() {
@@ -1288,7 +1504,7 @@
     ctx.globalAlpha = .16;
     ctx.fillStyle = guide;
     const fontSize = Math.min(rect.width * .55, rect.height * .72);
-    ctx.font = `500 ${fontSize}px "Noto Sans Georgian", "Sylfaen", sans-serif`;
+    ctx.font = `500 ${fontSize}px "Sylfaen", "Noto Sans Georgian", sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(currentAlphabet()[state.currentLetter], rect.width / 2, rect.height / 2 + 8);
@@ -1522,6 +1738,181 @@
     els.choiceBar.style.width = `${Math.round(rate * 100)}%`;
   }
 
+
+  function formatTime(totalSeconds) {
+    const safe = Math.max(0, Math.floor(totalSeconds));
+    const minutes = Math.floor(safe / 60);
+    const seconds = safe % 60;
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  function currentMatchingSeconds() {
+    if (!matchingTimerStartedAt) return matchingElapsedSeconds;
+    return matchingElapsedSeconds + Math.floor((Date.now() - matchingTimerStartedAt) / 1000);
+  }
+
+  function updateMatchingTimer() {
+    els.matchingTimer.textContent = formatTime(currentMatchingSeconds());
+  }
+
+  function startMatchingTimer() {
+    if (matchingFinished || matchingTimerStartedAt) return;
+    matchingTimerStartedAt = Date.now();
+    updateMatchingTimer();
+    clearInterval(matchingTimerId);
+    matchingTimerId = setInterval(updateMatchingTimer, 250);
+  }
+
+  function pauseMatchingTimer() {
+    if (!matchingTimerStartedAt) return;
+    matchingElapsedSeconds = currentMatchingSeconds();
+    matchingTimerStartedAt = null;
+    clearInterval(matchingTimerId);
+    matchingTimerId = null;
+    updateMatchingTimer();
+  }
+
+  function stopMatchingTimer() {
+    pauseMatchingTimer();
+  }
+
+  function newMatchingRound(showNotice = false) {
+    stopMatchingTimer();
+    matchingIndices = shuffle([...Array(MODERN.length).keys()]).slice(0, 6);
+    matchingOldOrder = shuffle(matchingIndices);
+    matchingModernOrder = shuffle(matchingIndices);
+    matchingSelectedOld = null;
+    matchingSelectedModern = null;
+    matchingMatched = new Set();
+    matchingRoundCorrect = 0;
+    matchingRoundWrong = 0;
+    matchingElapsedSeconds = 0;
+    matchingLocked = false;
+    matchingFinished = false;
+    els.matchingResult.classList.remove("visible");
+    els.matchingResult.textContent = "";
+    renderMatchingBoard();
+    if (showNotice) toast("ახალი რაუნდი დაიწყო");
+  }
+
+  function renderMatchingBoard() {
+    if (!matchingIndices.length) {
+      newMatchingRound(false);
+      return;
+    }
+
+    els.oldColumnLabel.textContent = state.script === "nuskhuri" ? "ნუსხური" : "ასომთავრული";
+    els.matchingRoundPill.textContent = `რაუნდი ${state.matchingRounds + 1}`;
+    els.matchingCorrect.textContent = matchingRoundCorrect;
+    els.matchingWrong.textContent = matchingRoundWrong;
+    els.matchingBest.textContent = state.matchingBestSeconds == null
+      ? "საუკეთესო დრო: —"
+      : `საუკეთესო დრო: ${formatTime(state.matchingBestSeconds)}`;
+    updateMatchingTimer();
+
+    const remaining = 6 - matchingMatched.size;
+    const remainingLabel = els.matchingTimer.closest(".matching-status")?.querySelector("span:first-child");
+    if (remainingLabel) remainingLabel.textContent = `${remaining} წყვილი დარჩა`;
+
+    els.oldMatchColumn.innerHTML = "";
+    els.modernMatchColumn.innerHTML = "";
+
+    matchingOldOrder.forEach(index => {
+      const button = document.createElement("button");
+      button.className = "match-button";
+      button.type = "button";
+      button.dataset.index = String(index);
+      button.dataset.side = "old";
+      button.textContent = currentAlphabet()[index];
+      button.setAttribute("aria-label", `${currentAlphabet()[index]} — ძველი ასო`);
+      if (matchingSelectedOld === index) button.classList.add("selected");
+      if (matchingMatched.has(index)) {
+        button.classList.add("matched");
+        button.disabled = true;
+      }
+      button.addEventListener("click", () => selectMatchingLetter("old", index, button));
+      els.oldMatchColumn.appendChild(button);
+    });
+
+    matchingModernOrder.forEach(index => {
+      const button = document.createElement("button");
+      button.className = "match-button";
+      button.type = "button";
+      button.dataset.index = String(index);
+      button.dataset.side = "modern";
+      button.textContent = MODERN[index];
+      button.setAttribute("aria-label", `${MODERN[index]} — თანამედროვე ასო`);
+      if (matchingSelectedModern === index) button.classList.add("selected");
+      if (matchingMatched.has(index)) {
+        button.classList.add("matched");
+        button.disabled = true;
+      }
+      button.addEventListener("click", () => selectMatchingLetter("modern", index, button));
+      els.modernMatchColumn.appendChild(button);
+    });
+  }
+
+  function selectMatchingLetter(side, index, button) {
+    if (matchingLocked || matchingFinished || matchingMatched.has(index)) return;
+    startMatchingTimer();
+
+    if (side === "old") matchingSelectedOld = index;
+    else matchingSelectedModern = index;
+
+    renderMatchingBoard();
+
+    if (matchingSelectedOld == null || matchingSelectedModern == null) return;
+
+    matchingLocked = true;
+    const oldIndex = matchingSelectedOld;
+    const modernIndex = matchingSelectedModern;
+
+    if (oldIndex === modernIndex) {
+      matchingMatched.add(oldIndex);
+      matchingRoundCorrect += 1;
+      state.matchingCorrect += 1;
+      matchingSelectedOld = null;
+      matchingSelectedModern = null;
+      matchingLocked = false;
+      saveState();
+      renderMatchingBoard();
+      if (matchingMatched.size === 6) finishMatchingRound();
+      return;
+    }
+
+    matchingRoundWrong += 1;
+    state.matchingWrong += 1;
+    saveState();
+    const wrongButtons = [
+      els.oldMatchColumn.querySelector(`[data-index="${oldIndex}"]`),
+      els.modernMatchColumn.querySelector(`[data-index="${modernIndex}"]`)
+    ].filter(Boolean);
+    wrongButtons.forEach(item => item.classList.add("wrong"));
+
+    setTimeout(() => {
+      matchingSelectedOld = null;
+      matchingSelectedModern = null;
+      matchingLocked = false;
+      renderMatchingBoard();
+    }, 430);
+  }
+
+  function finishMatchingRound() {
+    matchingFinished = true;
+    stopMatchingTimer();
+    const seconds = Math.max(1, matchingElapsedSeconds);
+    state.matchingRounds += 1;
+    if (state.matchingBestSeconds == null || seconds < state.matchingBestSeconds) {
+      state.matchingBestSeconds = seconds;
+    }
+    saveState();
+    renderMatchingBoard();
+    els.matchingResult.innerHTML = `რაუნდი დასრულებულია! დრო: <strong>${formatTime(seconds)}</strong> · შეცდომა: <strong>${matchingRoundWrong}</strong><br><button class="btn primary" id="matchingNextRound" style="margin-top:12px">შემდეგი რაუნდი →</button>`;
+    els.matchingResult.classList.add("visible");
+    $("matchingNextRound").addEventListener("click", () => newMatchingRound(false));
+    toast("ყველა წყვილი სწორად დააკავშირე ✓");
+  }
+
   function resetAllProgress() {
     const confirmed = confirm("ნამდვილად გინდა მთელი პროგრესის წაშლა?");
     if (!confirmed) return;
@@ -1533,6 +1924,7 @@
     renderReading();
     renderTyping();
     renderChoice();
+    newMatchingRound(false);
     els.infoModal.classList.remove("open");
     clearCanvas();
     toast("პროგრესი წაიშალა");
@@ -1593,6 +1985,7 @@
   });
 
   els.nextChoice.addEventListener("click", nextChoice);
+  els.restartMatching.addEventListener("click", () => newMatchingRound(true));
   window.addEventListener("resize", resizeCanvas);
   document.fonts?.ready.then(resizeCanvas);
 
@@ -1602,6 +1995,7 @@
   renderReading();
   renderTyping();
   renderChoice();
+  newMatchingRound(false);
   updateDashboard();
   setTimeout(resizeCanvas, 80);
 })();
