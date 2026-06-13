@@ -2,7 +2,7 @@
 <html lang="ka">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#7b4f2c" />
   <meta name="description" content="ასომთავრული და ნუსხური დამწერლობის ინტერაქტიული სავარჯიშო აპი." />
   <title>ძველქართული ანბანის სავარჯიშო</title>
@@ -932,6 +932,265 @@
       .match-button { min-height: 72px; border-radius: 15px; }
       .matching-footer { align-items: stretch; }
       .matching-footer .btn { width: 100%; }
+    }
+
+
+    /* Foldable and narrow-cover-display fixes */
+    html, body {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: clip;
+    }
+
+    body { min-height: 100dvh; }
+
+    .app-shell,
+    .app-shell > *,
+    .hero,
+    .hero-card,
+    .progress-card,
+    .panel,
+    .practice-card,
+    .letter-sidebar,
+    .quiz-card,
+    .matching-shell,
+    .matching-board,
+    .matching-column {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    canvas, svg, img { max-width: 100%; }
+
+    @media (max-width: 480px) {
+      .app-shell {
+        width: 100%;
+        padding:
+          max(7px, env(safe-area-inset-top))
+          max(7px, env(safe-area-inset-right))
+          max(28px, env(safe-area-inset-bottom))
+          max(7px, env(safe-area-inset-left));
+      }
+
+      /* Do not keep two large bars pinned on the cover screen. */
+      .topbar {
+        position: relative;
+        top: auto;
+        padding: 9px 10px;
+        gap: 8px;
+        border-radius: 16px;
+      }
+
+      .brand { gap: 8px; }
+      .brand-mark {
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+        font-size: 20px;
+      }
+      .brand h1 {
+        font-size: clamp(12px, 3.9vw, 16px);
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+      }
+      .top-actions { gap: 5px; }
+      .icon-button {
+        width: 35px;
+        height: 35px;
+        border-radius: 10px;
+        font-size: 16px;
+      }
+
+      .hero {
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .hero-card { padding: 18px 14px; }
+      .hero h2 {
+        margin: 12px 0 8px;
+        font-size: clamp(23px, 7.5vw, 32px);
+      }
+      .hero p { font-size: 13px; line-height: 1.6; }
+      .script-picker {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+        margin-top: 16px;
+      }
+      .script-picker button {
+        min-width: 0;
+        padding: 9px 7px;
+        font-size: 12px;
+      }
+
+      .progress-card { padding: 15px; }
+      .ring-wrap {
+        width: 112px;
+        height: 112px;
+        margin-bottom: 12px;
+      }
+      .ring-label strong { font-size: 23px; }
+      .mini-stats { gap: 7px; }
+      .mini-stat { padding: 9px 5px; }
+      .mini-stat strong { font-size: 17px; }
+      .mini-stat span { font-size: 9px; line-height: 1.25; display: block; }
+
+      .tabs {
+        position: sticky;
+        top: max(4px, env(safe-area-inset-top));
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        overflow: visible;
+        margin: 10px 0;
+        padding: 4px;
+        gap: 4px;
+        border-radius: 14px;
+      }
+      .tab {
+        min-width: 0;
+        min-height: 47px;
+        padding: 5px 3px;
+        font-size: 9px;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+      }
+      .tab .tab-icon {
+        margin-bottom: 1px;
+        font-size: 15px;
+      }
+
+      .panel { padding: 13px 10px; }
+      .section-head { margin-bottom: 13px; }
+      .section-head h3 { font-size: 20px; }
+      .section-head p { font-size: 12px; line-height: 1.5; }
+      .section-head .pill { margin-top: 7px; padding: 6px 9px; font-size: 10px; }
+
+      .practice-card,
+      .letter-sidebar,
+      .quiz-card {
+        padding: 12px;
+        border-radius: 16px;
+      }
+      .letter-pair { gap: 7px; }
+      .letter-name { font-size: 10px; }
+      .letter-name strong { font-size: 14px; }
+      .canvas-shell { height: min(265px, 39dvh); }
+      .button-row { gap: 6px; margin-top: 9px; }
+      .button-row .btn {
+        min-width: 0;
+        min-height: 40px;
+        padding: 8px 7px;
+        font-size: 11px;
+      }
+      .letter-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+      .letter-chip { min-width: 0; font-size: 18px; }
+
+      .reading-card { padding: 13px; border-radius: 15px; }
+      .old-text { font-size: clamp(20px, 7vw, 28px); margin: 8px 0; }
+      .modern-reveal { padding: 10px; font-size: 13px; }
+
+      .question-word {
+        margin: 8px 0 15px;
+        font-size: clamp(38px, 13vw, 58px);
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .answer-input { min-height: 49px; font-size: 16px; }
+      .choice { min-height: 48px; padding: 9px 11px; font-size: 13px; }
+
+      .matching-shell {
+        width: 100%;
+        padding: 10px;
+        border-radius: 16px;
+      }
+      .matching-toolbar {
+        gap: 6px;
+        margin-bottom: 9px;
+      }
+      .matching-status {
+        width: 100%;
+        justify-content: space-between;
+        gap: 5px;
+        font-size: 10px;
+      }
+      .matching-status strong { font-size: 15px; }
+      .matching-board {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 6px;
+        width: 100%;
+      }
+      .matching-column-label {
+        min-width: 0;
+        font-size: 9px;
+        letter-spacing: 0;
+        overflow-wrap: anywhere;
+      }
+      .matching-column { gap: 6px; }
+      .match-button {
+        width: 100%;
+        min-width: 0;
+        min-height: clamp(52px, 8.2dvh, 62px);
+        padding: 0 2px;
+        border-width: 1px;
+        border-radius: 12px;
+        font-size: clamp(27px, 10vw, 38px);
+      }
+      .matching-footer {
+        margin-top: 9px;
+        gap: 7px;
+      }
+      .matching-counters { gap: 11px; font-size: 11px; }
+      .matching-footer .score-line { margin: 0; font-size: 10px; }
+      .matching-footer .btn {
+        min-height: 39px;
+        margin: 0;
+        font-size: 11px;
+      }
+      .matching-result { margin-top: 9px; padding: 10px; font-size: 12px; }
+
+      .modal { padding: 8px; }
+      .modal-card { padding: 16px; border-radius: 17px; }
+      .footer-note { margin: 13px 6px 0; font-size: 10px; }
+      .toast { max-width: calc(100vw - 20px); text-align: center; }
+    }
+
+    @media (max-width: 370px) {
+      .brand h1 { font-size: 12px; }
+      .top-actions .icon-button { width: 32px; height: 32px; }
+      .hero-card { padding-inline: 12px; }
+      .tab { font-size: 8px; }
+      .panel { padding-inline: 8px; }
+      .match-button {
+        min-height: 50px;
+        font-size: clamp(25px, 9.5vw, 34px);
+      }
+      .matching-board,
+      .matching-column { gap: 5px; }
+    }
+
+    @media (max-width: 480px) and (max-height: 760px) {
+      #panel-matching .section-head { margin-bottom: 7px; }
+      #panel-matching .section-head p { display: none; }
+      #panel-matching .section-head .pill { margin-top: 5px; }
+      #panel-matching .match-button { min-height: 47px; }
+      #panel-matching .matching-board,
+      #panel-matching .matching-column { gap: 4px; }
+      #panel-matching .matching-toolbar { margin-bottom: 6px; }
+      #panel-matching .matching-footer { margin-top: 6px; }
+    }
+
+    /* The inner screen of a foldable is often wide but not very tall. */
+    @media (min-width: 481px) and (max-height: 720px) {
+      .topbar { position: relative; top: auto; }
+      .tabs { top: 4px; margin-block: 12px; }
+      .hero { margin-top: 12px; }
+      .hero-card { padding-block: 22px; }
+      .progress-card { padding: 17px; }
+      .ring-wrap { width: 112px; height: 112px; margin-bottom: 10px; }
+      .panel { padding-block: 18px; }
+      .match-button { min-height: 55px; }
+      .matching-column { gap: 6px; }
+      .matching-board { gap: 7px 12px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
