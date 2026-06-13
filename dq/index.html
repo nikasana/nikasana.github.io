@@ -1527,7 +1527,7 @@
         </div>
         <div class="mini-stats">
           <div class="mini-stat"><strong id="lettersDone">0/33</strong><span>ნასწავლი ასო</span></div>
-          <div class="mini-stat"><strong id="readingDone">0/5</strong><span>წაკითხული ტექსტი</span></div>
+          <div class="mini-stat"><strong id="readingDone">0</strong><span>წაკითხული ტექსტი</span></div>
           <div class="mini-stat"><strong id="typingScore">0</strong><span>სწორი პასუხი</span></div>
           <div class="mini-stat"><strong id="choiceScore">0</strong><span>სწორი არჩევანი</span></div>
           <div class="mini-stat wide"><strong id="matchingRoundsStat">0</strong><span>დასრულებული შეწყვილების რაუნდი</span></div>
@@ -1548,7 +1548,7 @@
       <div class="section-head">
         <div>
           <h3>1. ასოების გამოწერა</h3>
-          <p>მოხაზე ნიმუში რამდენჯერმე და შემდეგ გაამყარე ცოდნა შეწყვილებითა და სიტყვების სავარჯიშოებით.</p>
+          <p>მოხაზე ასო რამდენჯერაც გინდა. ბოლო ასოს შემდეგ ციკლი თავიდან იწყება და შემთხვევითი რეჟიმიც ხელმისაწვდომია.</p>
         </div>
         <span class="pill" id="letterPosition">ასო 1 / 33</span>
       </div>
@@ -1576,6 +1576,7 @@
             <button class="btn" id="prevLetter">← წინა</button>
             <button class="btn" id="clearCanvas">გასუფთავება</button>
             <button class="btn success" id="completeLetter" disabled>ცდის ჩათვლა (+20%)</button>
+            <button class="btn" id="randomLetter">↻ შემთხვევითი</button>
             <button class="btn primary" id="nextLetter">შემდეგი →</button>
           </div>
         </div>
@@ -1604,7 +1605,7 @@
             <small class="mastery-note">ერთი დაჭერა ასოს აღარ ასრულებს: საჭიროა განმეორება და მინიმუმ ორი სხვადასხვა ტიპის სავარჯიშო.</small>
           </div>
           <div class="letter-grid" id="letterGrid"></div>
-          <button class="btn primary weak-practice-btn" id="practiceWeakLetters">სუსტი ასოების ვარჯიში →</button>
+          <button class="btn primary weak-practice-btn" id="practiceWeakLetters">სუსტი ასოების შეწყვილება →</button>
         </aside>
       </div>
     </section>
@@ -1613,9 +1614,9 @@
       <div class="section-head">
         <div>
           <h3>2. ტექსტის წაკითხვა</h3>
-          <p>ჯერ სცადე ძველი დამწერლობით წაკითხვა, შემდეგ კი გამოაჩინე თანამედროვე ვარიანტი.</p>
+          <p>ყოველ ჯერზე იქმნება 2–3 წინადადებისგან შემდგარი ახალი ტექსტი. კომბინაციები პრაქტიკულად არ მთავრდება.</p>
         </div>
-        <span class="pill" id="readingProgressPill">0 / 5 დასრულებული</span>
+        <span class="pill" id="readingProgressPill">წაკითხული: 0 · ∞</span>
       </div>
       <div class="reading-list" id="readingList"></div>
     </section>
@@ -1624,7 +1625,7 @@
       <div class="section-head">
         <div>
           <h3>3. სიტყვა თანამედროვე ქართულით</h3>
-          <p>წაიკითხე ძველი დამწერლობით მოცემული სიტყვა და ჩაწერე მისი მხედრული ფორმა.</p>
+          <p>დიდი სიტყვების კოლექცია რიგრიგობით ირევა; ყველა სიტყვის გავლის შემდეგ ახალი ციკლი იწყება.</p>
         </div>
         <span class="pill" id="typingPill">სერია: 0 სწორი</span>
       </div>
@@ -1648,7 +1649,7 @@
       <div class="section-head">
         <div>
           <h3>4. Multiple Choice</h3>
-          <p>აირჩიე ძველი დამწერლობით მოცემული სიტყვის სწორი თანამედროვე შესატყვისი.</p>
+          <p>კითხვები უწყვეტად ახლდება, ხოლო არასწორი ვარიანტები სიტყვის სიგრძის მიხედვით შეირჩევა.</p>
         </div>
         <span class="pill" id="choicePill">სერია: 0 სწორი</span>
       </div>
@@ -1671,7 +1672,7 @@
       <div class="section-head">
         <div>
           <h3>5. ასოების შეწყვილება</h3>
-          <p>აირჩიე ასო მარცხენა სვეტიდან და შემდეგ მისი თანამედროვე ქართული შესატყვისი მარჯვენა სვეტიდან.</p>
+          <p>დასრულების შემდეგ ახალი რაუნდი ავტომატურად იწყება და სუსტი ასოები უფრო ხშირად მეორდება.</p>
         </div>
         <span class="pill" id="matchingRoundPill">რაუნდი 1</span>
       </div>
@@ -1707,7 +1708,7 @@
 
     <p class="footer-note">
       სავარჯიშო ფოკუსირებულია თანამედროვე ქართულში გამოყენებული 33 ასოს ასომთავრულ და ნუსხურ ფორმებზე.
-      დამახსოვრება ეფუძნება განმეორებას, სხვადასხვა ტიპის დავალებებსა და დაახლოებით 60-წუთიან აქტიურ პრაქტიკას. დრო ავტომატურად ჩერდება 30-წამიანი უმოქმედობისას ან აპიდან გასვლისას; მისი ხელით შეჩერებაც შეგიძლია. პროგრესი ინახება მხოლოდ ამ ბრაუზერში.
+      ყველა სავარჯიშო უწყვეტია: ასოები ციკლურად მეორდება, ტექსტები კომბინაციებით გენერირდება, სიტყვების კოლექციები თავიდან ირევა და შეწყვილების რაუნდები ავტომატურად გრძელდება. დამახსოვრება ეფუძნება განმეორებას, სხვადასხვა ტიპის დავალებებსა და დაახლოებით 60-წუთიან აქტიურ პრაქტიკას. დრო ავტომატურად ჩერდება 30-წამიანი უმოქმედობისას ან აპიდან გასვლისას; მისი ხელით შეჩერებაც შეგიძლია. პროგრესი ინახება მხოლოდ ამ ბრაუზერში.
     </p>
   </main>
 
@@ -1732,9 +1733,9 @@
       </p>
       <ul>
         <li>თითოეულ ასოზე მრავალსაფეხურიანი პროგრესი — ერთი მონიშვნა აღარ ნიშნავს დამახსოვრებას;</li>
-        <li>ტექსტის წაკითხვა პასუხის ეტაპობრივი ჩვენებით;</li>
-        <li>სიტყვის თავისუფლად ჩაწერა თანამედროვე ქართულით;</li>
-        <li>Multiple Choice სავარჯიშო ავტომატურად არეული პასუხებით;</li>
+        <li>ათასობით შესაძლო კომბინაციის მქონე გენერირებული საკითხავი ტექსტები;</li>
+        <li>319-სიტყვიანი უწყვეტი ჩაწერისა და Multiple Choice კოლექცია;</li>
+        <li>სიტყვების კოლექციები სრულ ციკლამდე გამეორების გარეშე და ავტომატური ახალი შეწყვილების რაუნდები;</li>
         <li>6-წყვილიანი ასოების შეწყვილების თამაში ტაიმერითა და საუკეთესო დროით;</li>
         <li>ადაპტური ვარჯიში სუსტ ასოებზე და 60-წუთიანი აქტიური პრაქტიკის მიზანი — ხელით და ავტომატური პაუზით;</li>
         <li>პროგრესის შენახვა Local Storage-ში.</li>
@@ -1764,20 +1765,427 @@
     "ღანი","ყარი","შინი","ჩინი","ცანი","ძილი","წილი","ჭარი","ხანი","ჯანი","ჰაე"
   ];
 
-  const readingItems = [
-    "ენა ერის საუნჯეა.",
-    "სწავლა ცოდნის გზაა.",
-    "წიგნი ადამიანის მეგობარია.",
-    "საქართველო უძველესი კულტურის ქვეყანაა.",
-    "ვაზი და ღვინო ქართული კულტურის ნაწილია."
+  const readingSentences = [
+    "დილით მზე აღმოსავლეთიდან ამოდის.",
+    "ბავშვი წიგნს ყურადღებით კითხულობს.",
+    "მასწავლებელი ახალ ასოს დაფაზე წერს.",
+    "მოსწავლე პასუხს რვეულში იწერს.",
+    "ძველი ქართული ანბანი ჩვენი კულტურის ნაწილია.",
+    "ასომთავრული მკაფიო და დიდი ასოებით იწერება.",
+    "ნუსხური ძველ ხელნაწერებში ხშირად გვხვდება.",
+    "ყოველი გამეორება ცოდნას ამყარებს.",
+    "მოკლე ვარჯიში ყოველდღე დიდ შედეგს იძლევა.",
+    "შეცდომა სწავლის ბუნებრივი ნაწილია.",
+    "ნელა წაკითხვა სიზუსტეს აუმჯობესებს.",
+    "ყურადღებით მოსმენა დამახსოვრებას ეხმარება.",
+    "წიგნი მაგიდაზე დევს.",
+    "ფანჯრიდან მთები ჩანს.",
+    "ეზოში ბავშვები თამაშობენ.",
+    "ბაღში ყვავილები გაიშალა.",
+    "წვიმის შემდეგ ჰაერი სუფთაა.",
+    "მდინარის წყალი მშვიდად მიედინება.",
+    "ტყეში მაღალი ხეები იზრდება.",
+    "ზამთარში მთაზე თოვლი დევს.",
+    "გაზაფხულზე ბუნება იღვიძებს.",
+    "ზაფხულში დღე გრძელია.",
+    "შემოდგომაზე ფოთლები ფერს იცვლის.",
+    "ოჯახი საღამოს ერთად იკრიბება.",
+    "მეგობარი რთულ დროს გვეხმარება.",
+    "კეთილი სიტყვა ადამიანს ახარებს.",
+    "შრომა მიზანთან გვაახლოებს.",
+    "დასვენება ძალას გვიბრუნებს.",
+    "მუსიკა კარგ განწყობას ქმნის.",
+    "ქართული სიმღერა მდიდარი ტრადიციის ნაწილია.",
+    "ვაზი ქართულ მიწაზე საუკუნეებია ხარობს.",
+    "პური სუფრაზე განსაკუთრებულ ადგილს იკავებს.",
+    "თბილისი საქართველოს დედაქალაქია.",
+    "სოფლის გზა მდინარეს მიუყვება.",
+    "ქალაქის ქუჩები დილით ივსება.",
+    "მატარებელი სადგურზე დროულად მივიდა.",
+    "მოგზაური ახალ ადგილებს ეცნობა.",
+    "ბიბლიოთეკაში სიჩუმეა.",
+    "მუზეუმში ძველი ნივთები ინახება.",
+    "თეატრში ახალი წარმოდგენა იწყება.",
+    "კალამი და რვეული ჩანთაშია.",
+    "ტელეფონის ეკრანი ანათებს.",
+    "საათი დროს ზუსტად აჩვენებს.",
+    "კარი ნელა გაიღო.",
+    "ნათურა ოთახს ანათებს.",
+    "დღეს ახალი სიტყვები ვისწავლე.",
+    "ხვალ იმავე ასოებს კვლავ გავიმეორებ.",
+    "სწორი პასუხი სიხარულს გვანიჭებს.",
+    "რთული დავალება მოთმინებას გვასწავლის.",
+    "პატარა ნაბიჯები დიდ მიზანს ემსახურება.",
+    "ყოველი ასო საკუთარ ფორმას ინახავს.",
+    "სიტყვის ამოცნობა კითხვის სიჩქარეს ზრდის.",
+    "სხვადასხვა სავარჯიშო ცოდნას მრავალმხრივ ამყარებს.",
+    "დრო მხოლოდ აქტიური ვარჯიშისას ითვლება.",
+    "შესვენების შემდეგ სწავლა უფრო მარტივია.",
+    "დღიური პრაქტიკა კარგ ჩვევად იქცევა.",
+    "ძლიერი მეხსიერება განმეორებით ვითარდება.",
+    "სწავლისას ყურადღება ყველაზე მნიშვნელოვანია.",
+    "ქართული დამწერლობა უნიკალური ისტორიის მატარებელია.",
+    "ხელნაწერი წარსულის ამბავს გვინახავს.",
+    "ძველი ტექსტის კითხვა მოთმინებას მოითხოვს.",
+    "თანამედროვე ასოები პასუხის შემოწმებაში გვეხმარება.",
+    "ასოების შეწყვილება ფორმების გარჩევას აჩქარებს.",
+    "სიტყვის ჩაწერა აქტიურ გახსენებას ავარჯიშებს.",
+    "არჩევითი პასუხი სწრაფ ამოცნობას ამოწმებს.",
+    "სუსტი ასოების გამეორება პროგრესს აჩქარებს.",
+    "მშვიდ გარემოში სწავლა სასიამოვნოა.",
+    "საღამოს მოკლე გამეორება სასარგებლოა.",
+    "შედეგი ერთ დღეში არ ჩნდება.",
+    "მთავარია ვარჯიში თანმიმდევრულად გაგრძელდეს.",
+    "ცოდნა დროთა განმავლობაში მყარდება.",
+    "სწრაფად კი არა, ზუსტად წაიკითხე.",
+    "ჯერ თავად სცადე და შემდეგ პასუხი ნახე.",
+    "საკუთარი შეცდომების დანახვა წინსვლას ეხმარება.",
+    "ახალი რაუნდი განსხვავებულ ასოებს გვთავაზობს.",
+    "ერთსა და იმავე სიტყვას სხვადასხვა დამწერლობა აქვს.",
+    "ქართული ენა მდიდარი სიტყვებით გამოირჩევა.",
+    "ანბანის სწავლა კითხვის საფუძველია.",
+    "კარგი ჩვევა მცირე მოქმედებით იწყება.",
+    "ყურადღება და მოთმინება ერთად მუშაობს.",
+    "ვარჯიშის დრო საჭიროებისას შეგიძლია შეაჩერო.",
+    "აპი უმოქმედობისას დროს ავტომატურად აჩერებს.",
+    "შესწავლილი მასალა პერიოდულად უნდა გაიმეორო.",
+    "ძველი ასოს ფორმას ნელა დააკვირდი.",
+    "ხაზების მიმართულება ხელით რამდენჯერმე გაიმეორე.",
+    "შემდეგი სიტყვა წინაზე განსხვავებული იქნება.",
+    "კითხვები დასრულების შემდეგ თავიდან ირევა.",
+    "სიტყვის სწორად ამოცნობა ყურადღებას მოითხოვს.",
+    "ყოველი ახალი ცდა გამოცდილებას გვმატებს.",
+    "ძველი და ახალი ფორმა ერთმანეთს შეადარე.",
+    "მარტივი ტექსტიდან რთულ ტექსტზე თანდათან გადადი.",
+    "მიღებული ცოდნა სხვადასხვა დავალებაში გამოიყენე.",
+    "სწავლაში სიჩქარეზე მნიშვნელოვანი სიზუსტეა.",
+    "რამდენიმე წუთიანი ვარჯიშიც სასარგებლოა.",
+    "სწორი ფორმის გახსენება დროთა განმავლობაში მარტივდება.",
+    "სუსტი ასოები უფრო ხშირად გამოჩნდება.",
+    "შეწყვილების დაფა ყოველ რაუნდში თავიდან ირევა.",
+    "დიდი სიტყვების კოლექცია მრავალფეროვან პრაქტიკას ქმნის."
   ];
 
   const words = [
-    "ენა", "წიგნი", "სიტყვა", "სწავლა", "ცოდნა", "ისტორია", "საქართველო",
-    "მეგობარი", "სახლი", "დედა", "მამა", "ბავშვი", "მზე", "მთვარე",
-    "წყალი", "მიწა", "ჰაერი", "გული", "ვაზი", "ღვინო", "პური", "ქალაქი",
-    "სოფელი", "მთა", "ზღვა", "კარი", "ფანჯარა", "სიხარული", "მშვიდობა",
-    "კულტურა", "ანბანი", "ქართული"
+    "ენა",
+    "წიგნი",
+    "სიტყვა",
+    "სწავლა",
+    "ცოდნა",
+    "ისტორია",
+    "საქართველო",
+    "მეგობარი",
+    "სახლი",
+    "დედა",
+    "მამა",
+    "ბავშვი",
+    "მზე",
+    "მთვარე",
+    "წყალი",
+    "მიწა",
+    "ჰაერი",
+    "გული",
+    "ვაზი",
+    "ღვინო",
+    "პური",
+    "ქალაქი",
+    "სოფელი",
+    "მთა",
+    "ზღვა",
+    "კარი",
+    "ფანჯარა",
+    "სიხარული",
+    "მშვიდობა",
+    "კულტურა",
+    "ანბანი",
+    "ქართული",
+    "დილა",
+    "საღამო",
+    "ღამე",
+    "დღე",
+    "კვირა",
+    "თვე",
+    "წელი",
+    "დრო",
+    "საათი",
+    "წუთი",
+    "წამი",
+    "გზა",
+    "ქუჩა",
+    "ხიდი",
+    "მდინარე",
+    "ტბა",
+    "ტყე",
+    "ველი",
+    "ბაღი",
+    "ყვავილი",
+    "ხე",
+    "ფოთოლი",
+    "ბალახი",
+    "ქვა",
+    "ცა",
+    "ღრუბელი",
+    "წვიმა",
+    "თოვლი",
+    "ქარი",
+    "ცეცხლი",
+    "სინათლე",
+    "ჩრდილი",
+    "ფერი",
+    "ხმა",
+    "სიმღერა",
+    "მუსიკა",
+    "ცეკვა",
+    "სურათი",
+    "წერილი",
+    "ამბავი",
+    "ზღაპარი",
+    "ლექსი",
+    "სკოლა",
+    "კლასი",
+    "მასწავლებელი",
+    "მოსწავლე",
+    "უნივერსიტეტი",
+    "ბიბლიოთეკა",
+    "რვეული",
+    "კალამი",
+    "ფანქარი",
+    "დაფა",
+    "კითხვა",
+    "პასუხი",
+    "მაგალითი",
+    "სავარჯიშო",
+    "გამოცდა",
+    "გამარჯვება",
+    "შრომა",
+    "დასვენება",
+    "თამაში",
+    "ბურთი",
+    "გუნდი",
+    "სპორტი",
+    "სირბილი",
+    "სიარული",
+    "მოგზაურობა",
+    "მატარებელი",
+    "თვითმფრინავი",
+    "მანქანა",
+    "ავტობუსი",
+    "ველოსიპედი",
+    "სადგური",
+    "აეროპორტი",
+    "ბაზარი",
+    "მაღაზია",
+    "სამზარეულო",
+    "ოთახი",
+    "ეზო",
+    "აივანი",
+    "კედელი",
+    "ჭერი",
+    "იატაკი",
+    "მაგიდა",
+    "სკამი",
+    "საწოლი",
+    "ნათურა",
+    "ტელეფონი",
+    "კომპიუტერი",
+    "ეკრანი",
+    "ფოტო",
+    "კამერა",
+    "ოჯახი",
+    "ბებია",
+    "ბაბუა",
+    "და",
+    "ძმა",
+    "შვილი",
+    "მეზობელი",
+    "სტუმარი",
+    "ადამიანი",
+    "ქალი",
+    "კაცი",
+    "გოგო",
+    "ბიჭი",
+    "სახელი",
+    "გვარი",
+    "ქვეყანა",
+    "სამშობლო",
+    "ერი",
+    "ხალხი",
+    "ტრადიცია",
+    "ხელოვნება",
+    "თეატრი",
+    "მუზეუმი",
+    "ეკლესია",
+    "ციხე",
+    "კოშკი",
+    "ისტორიული",
+    "ძველი",
+    "ახალი",
+    "დიდი",
+    "პატარა",
+    "მაღალი",
+    "დაბალი",
+    "გრძელი",
+    "მოკლე",
+    "ლამაზი",
+    "კეთილი",
+    "ძლიერი",
+    "მშვიდი",
+    "სწრაფი",
+    "ნელი",
+    "თბილი",
+    "ცივი",
+    "ტკბილი",
+    "მწარე",
+    "სუფთა",
+    "ნათელი",
+    "ბედნიერი",
+    "თავისუფალი",
+    "საინტერესო",
+    "მნიშვნელოვანი",
+    "მარტივი",
+    "რთული",
+    "სწორი",
+    "მცდარი",
+    "პირველი",
+    "ბოლო",
+    "ახლოს",
+    "შორს",
+    "ერთად",
+    "მარტო",
+    "ხშირად",
+    "იშვიათად",
+    "ყოველთვის",
+    "არასდროს",
+    "დღეს",
+    "ხვალ",
+    "გუშინ",
+    "ახლა",
+    "შემდეგ",
+    "წინ",
+    "უკან",
+    "ზემოთ",
+    "ქვემოთ",
+    "მარცხნივ",
+    "მარჯვნივ",
+    "წაკითხვა",
+    "დაწერა",
+    "მოსმენა",
+    "საუბარი",
+    "ნახვა",
+    "ფიქრი",
+    "მუშაობა",
+    "სწავლება",
+    "დახმარება",
+    "დაცვა",
+    "არჩევა",
+    "დაწყება",
+    "დასრულება",
+    "გახსნა",
+    "დახურვა",
+    "პოვნა",
+    "დაბრუნება",
+    "შეხვედრა",
+    "სიყვარული",
+    "ნდობა",
+    "იმედი",
+    "სურვილი",
+    "მიზანი",
+    "აზრი",
+    "საქმე",
+    "ადგილი",
+    "მხარე",
+    "ნაწილი",
+    "ფორმა",
+    "ნიშანი",
+    "ასო",
+    "რიცხვი",
+    "ჯგუფი",
+    "წყვილი",
+    "შეცდომა",
+    "შედეგი",
+    "პროგრესი",
+    "მეხსიერება",
+    "ყურადღება",
+    "პრაქტიკა",
+    "ჩვევა",
+    "უნარი",
+    "გამოცდილება",
+    "სიჩუმე",
+    "მოთმინება",
+    "სიზუსტე",
+    "სიჩქარე",
+    "გახსენება",
+    "ამოცნობა",
+    "გამეორება",
+    "დამწერლობა",
+    "ხელნაწერი",
+    "საუნჯე",
+    "ბუნება",
+    "გაზაფხული",
+    "ზაფხული",
+    "შემოდგომა",
+    "ზამთარი",
+    "აღმოსავლეთი",
+    "დასავლეთი",
+    "ჩრდილოეთი",
+    "სამხრეთი",
+    "ნაპირი",
+    "კუნძული",
+    "მინდორი",
+    "ბილიკი",
+    "მწვერვალი",
+    "ხეობა",
+    "ჩანთა",
+    "ტანსაცმელი",
+    "ფეხსაცმელი",
+    "სათვალე",
+    "გასაღები",
+    "ფული",
+    "საჩუქარი",
+    "დღესასწაული",
+    "დაბადება",
+    "ცხოვრება",
+    "მომავალი",
+    "წარსული",
+    "დასაწყისი",
+    "დასასრული",
+    "საზოგადოება",
+    "განათლება",
+    "მეცნიერება",
+    "ბარათი",
+    "რუკა",
+    "მიმართულება",
+    "მანძილი",
+    "ზომა",
+    "წონა",
+    "რიგი",
+    "სვეტი",
+    "წრე",
+    "ხაზი",
+    "კუთხე",
+    "ცენტრი",
+    "კიდე",
+    "დავალება",
+    "მიღწევა",
+    "ვარჯიში",
+    "შესვენება",
+    "რაუნდი",
+    "ტაიმერი",
+    "არჩევანი",
+    "შესატყვისი",
+    "განმარტება",
+    "თარგმანი",
+    "სათაური",
+    "აბზაცი",
+    "წინადადება",
+    "ნაწყვეტი",
+    "ნიშნული",
+    "ხმოვანი",
+    "თანხმოვანი",
+    "დაკვირვება",
+    "შედარება",
+    "განვითარება",
+    "შემოწმება"
   ];
 
   const STORAGE_KEY = "oldGeorgianTrainerV1";
@@ -1791,7 +2199,9 @@
     completedLetters: [],
     letterMastery: Array(MODERN.length).fill(0),
     letterModes: Array.from({ length: MODERN.length }, () => []),
+    letterTraceCounts: Array(MODERN.length).fill(0),
     completedReadings: [],
+    readingPracticeCount: 0,
     rewardedReadings: [],
     practiceSeconds: 0,
     practiceManuallyPaused: false,
@@ -1810,6 +2220,12 @@
   let state = loadState();
   let typingIndex = randomIndex(words.length);
   let choiceIndex = randomIndex(words.length);
+  let typingDeck = [];
+  let choiceDeck = [];
+  let currentReadingPassage = "";
+  let previousReadingPassage = "";
+  let readingCompletedCurrent = false;
+  let matchingNextRoundTimeout = null;
   let typingAnswered = false;
   let choiceAnswered = false;
   let hasDrawn = false;
@@ -1864,6 +2280,7 @@
     letterGrid: $("letterGrid"),
     prevLetter: $("prevLetter"),
     nextLetter: $("nextLetter"),
+    randomLetter: $("randomLetter"),
     clearCanvas: $("clearCanvas"),
     completeLetter: $("completeLetter"),
     traceCanvas: $("traceCanvas"),
@@ -1919,7 +2336,12 @@
         completedLetters: [],
         letterMastery: mastery,
         letterModes: modes,
+        letterTraceCounts: Array.from({ length: MODERN.length }, (_, index) => {
+          const stored = Array.isArray(saved.letterTraceCounts) ? Number(saved.letterTraceCounts[index]) : 0;
+          return Math.max(0, Number.isFinite(stored) ? Math.floor(stored) : 0);
+        }),
         completedReadings: Array.isArray(saved.completedReadings) ? saved.completedReadings : [],
+        readingPracticeCount: Math.max(0, Number(saved.readingPracticeCount) || (Array.isArray(saved.completedReadings) ? saved.completedReadings.length : 0)),
         rewardedReadings: Array.isArray(saved.rewardedReadings) ? saved.rewardedReadings : [],
         practiceSeconds: Math.max(0, Number(saved.practiceSeconds) || 0),
         practiceManuallyPaused: saved.practiceManuallyPaused === true
@@ -2130,6 +2552,42 @@
     return copy;
   }
 
+  function nextWordFromDeck(kind, currentIndex) {
+    let deck = kind === "typing" ? typingDeck : choiceDeck;
+    if (!deck.length) {
+      const freshCycle = [...Array(words.length).keys()].filter(index => index !== currentIndex);
+      deck = shuffle(freshCycle);
+      if (kind === "typing") typingDeck = deck;
+      else choiceDeck = deck;
+    }
+
+    return deck.pop();
+  }
+
+  function pickAdaptiveLetter(except = -1) {
+    const ranked = [...Array(MODERN.length).keys()].sort((a, b) => {
+      const masteryDifference = getLetterDisplayPercent(a) - getLetterDisplayPercent(b);
+      if (masteryDifference) return masteryDifference;
+      const aCount = Number(state.letterTraceCounts[a]) || 0;
+      const bCount = Number(state.letterTraceCounts[b]) || 0;
+      return aCount - bCount || Math.random() - .5;
+    });
+    const pool = ranked.slice(0, Math.min(12, ranked.length));
+    return shuffle(pool).find(index => index !== except) ?? ((except + 1) % MODERN.length);
+  }
+
+  function generateReadingPassage() {
+    const sentenceCount = Math.random() < 0.72 ? 2 : 3;
+    let passage = "";
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      passage = shuffle(readingSentences).slice(0, sentenceCount).join(" ");
+      if (passage !== previousReadingPassage) break;
+    }
+    previousReadingPassage = passage;
+    currentReadingPassage = passage;
+    readingCompletedCurrent = false;
+  }
+
   function toast(message) {
     els.toast.textContent = message;
     els.toast.classList.add("show");
@@ -2140,7 +2598,7 @@
   function updateDashboard() {
     syncCompletedLetters();
     els.lettersDone.textContent = `${state.completedLetters.length}/33`;
-    els.readingDone.textContent = `${state.completedReadings.length}/${readingItems.length}`;
+    els.readingDone.textContent = state.readingPracticeCount;
     els.typingScore.textContent = state.typingCorrect;
     els.choiceScore.textContent = state.choiceCorrect;
     els.matchingRoundsStat.textContent = state.matchingRounds;
@@ -2148,7 +2606,7 @@
     updatePracticeDisplays();
 
     const letterPart = MODERN.reduce((sum, _, index) => sum + getLetterDisplayPercent(index), 0) / (MODERN.length * 100);
-    const readingPart = state.completedReadings.length / readingItems.length;
+    const readingPart = Math.min(1, state.readingPracticeCount / 20);
     const typingPart = state.typingAttempts ? Math.min(1, state.typingCorrect / 20) : 0;
     const choicePart = state.choiceAttempts ? Math.min(1, state.choiceCorrect / 20) : 0;
     const matchingPart = Math.min(1, state.matchingRounds / 10);
@@ -2196,7 +2654,11 @@
     document.querySelectorAll(".panel").forEach(panel => panel.classList.remove("active"));
     $(`panel-${name}`).classList.add("active");
     if (name === "letters") setTimeout(resizeCanvas, 40);
-    if (name !== "matching") pauseMatchingTimer();
+    if (name !== "matching") {
+      pauseMatchingTimer();
+      clearTimeout(matchingNextRoundTimeout);
+      matchingNextRoundTimeout = null;
+    }
   }
 
   function renderLetterGrid() {
@@ -2240,24 +2702,27 @@
     els.oldLetter.textContent = currentAlphabet()[i];
     els.modernLetter.textContent = MODERN[i];
     els.letterName.textContent = LETTER_NAMES[i];
-    els.letterPosition.textContent = `ასო ${i + 1} / ${MODERN.length} · ${percent}%`;
+    const traceCount = Number(state.letterTraceCounts[i]) || 0;
+    els.letterPosition.textContent = `ასო ${i + 1} / ${MODERN.length} · ${percent}% · ცდა ${traceCount}`;
     els.letterMasteryLabel.textContent = mastered
       ? "100% · დამახსოვრებულია"
       : getLetterScore(i) >= LETTER_MASTERY_TARGET && modeCount < 2
         ? "90% · საჭიროა სხვა ტიპის სავარჯიშო"
         : `${percent}% · ${modeCount} ტიპის პრაქტიკა`;
-    els.prevLetter.disabled = i === 0;
-    els.nextLetter.disabled = i === MODERN.length - 1;
-    els.completeLetter.textContent = mastered ? "✓ დამახსოვრებულია" : "ცდის ჩათვლა (+20%)";
-    els.completeLetter.disabled = !hasDrawn || mastered;
+    els.prevLetter.disabled = false;
+    els.nextLetter.disabled = false;
+    els.completeLetter.textContent = mastered ? "გამეორების ჩათვლა" : "ცდის ჩათვლა (+20%)";
+    els.completeLetter.disabled = !hasDrawn;
     renderLetterGrid();
     drawGuide();
   }
 
   function completeCurrentLetter() {
     const index = state.currentLetter;
-    if (!hasDrawn || isLetterMastered(index)) return;
-    const newlyMastered = awardLetter(index, 10, "trace");
+    if (!hasDrawn) return;
+    const wasMastered = isLetterMastered(index);
+    state.letterTraceCounts[index] = (Number(state.letterTraceCounts[index]) || 0) + 1;
+    const newlyMastered = awardLetter(index, wasMastered ? 0 : 10, "trace");
     saveState();
     hasDrawn = false;
     drawGuide();
@@ -2265,6 +2730,8 @@
 
     if (newlyMastered) {
       toast("ასო ნამდვილად დამახსოვრებულია ✓");
+    } else if (wasMastered) {
+      toast(`გამეორება ჩაითვალა · სულ ${state.letterTraceCounts[index]} ცდა`);
     } else if (getLetterScore(index) >= LETTER_MASTERY_TARGET && getLetterModes(index).length < 2) {
       toast("90% — ახლა შეწყვილება ან სიტყვის სავარჯიშო გააკეთე");
     } else {
@@ -2351,7 +2818,7 @@
     ctx.restore();
     lastPoint = point;
     hasDrawn = true;
-    els.completeLetter.disabled = isLetterMastered(state.currentLetter);
+    els.completeLetter.disabled = false;
   }
 
   function endDraw(event) {
@@ -2361,68 +2828,68 @@
   }
 
   function renderReading() {
+    if (!currentReadingPassage) generateReadingPassage();
+
     els.readingList.innerHTML = "";
-    readingItems.forEach((text, index) => {
-      const card = document.createElement("article");
-      card.className = "reading-card";
+    const card = document.createElement("article");
+    card.className = "reading-card";
 
-      const number = document.createElement("div");
-      number.className = "reading-number";
-      number.textContent = `ტექსტი ${index + 1}`;
+    const number = document.createElement("div");
+    number.className = "reading-number";
+    number.textContent = `უწყვეტი ტექსტი ${state.readingPracticeCount + 1}`;
 
-      const old = document.createElement("div");
-      old.className = "old-text";
-      old.textContent = convert(text);
+    const old = document.createElement("div");
+    old.className = "old-text";
+    old.textContent = convert(currentReadingPassage);
 
-      const reveal = document.createElement("div");
-      reveal.className = "modern-reveal";
-      reveal.textContent = text;
+    const reveal = document.createElement("div");
+    reveal.className = "modern-reveal";
+    reveal.textContent = currentReadingPassage;
 
-      const buttons = document.createElement("div");
-      buttons.className = "button-row";
+    const buttons = document.createElement("div");
+    buttons.className = "button-row";
 
-      const show = document.createElement("button");
-      show.className = "btn";
-      show.textContent = "თანამედროვე ასოების ჩვენება";
-      show.addEventListener("click", () => {
-        const visible = reveal.classList.toggle("visible");
-        show.textContent = visible ? "პასუხის დამალვა" : "თანამედროვე ასოების ჩვენება";
-      });
-
-      const done = document.createElement("button");
-      done.className = "btn success";
-      const refreshDone = () => {
-        done.textContent = state.completedReadings.includes(index) ? "✓ წაკითხულია" : "წაკითხულად მონიშვნა";
-      };
-      refreshDone();
-      done.addEventListener("click", () => {
-        if (state.completedReadings.includes(index)) {
-          state.completedReadings = state.completedReadings.filter(i => i !== index);
-        } else {
-          state.completedReadings.push(index);
-          state.completedReadings.sort((a, b) => a - b);
-          reveal.classList.add("visible");
-          show.textContent = "პასუხის დამალვა";
-          if (!state.rewardedReadings.includes(index)) {
-            state.rewardedReadings.push(index);
-            awardWordLetters(text, 2, "reading");
-          }
-          toast("ტექსტი პროგრესში დაემატა ✓");
-        }
-        refreshDone();
-        saveState();
-        updateReadingPill();
-      });
-
-      buttons.append(show, done);
-      card.append(number, old, buttons, reveal);
-      els.readingList.appendChild(card);
+    const show = document.createElement("button");
+    show.className = "btn";
+    show.textContent = "თანამედროვე ასოების ჩვენება";
+    show.addEventListener("click", () => {
+      const visible = reveal.classList.toggle("visible");
+      show.textContent = visible ? "პასუხის დამალვა" : "თანამედროვე ასოების ჩვენება";
     });
+
+    const done = document.createElement("button");
+    done.className = "btn success";
+    done.textContent = readingCompletedCurrent ? "✓ წაკითხულია" : "წაკითხულად მონიშვნა";
+    done.disabled = readingCompletedCurrent;
+    done.addEventListener("click", () => {
+      if (readingCompletedCurrent) return;
+      readingCompletedCurrent = true;
+      state.readingPracticeCount += 1;
+      reveal.classList.add("visible");
+      show.textContent = "პასუხის დამალვა";
+      done.textContent = "✓ წაკითხულია";
+      done.disabled = true;
+      awardWordLetters(currentReadingPassage, 1, "reading");
+      updateReadingPill();
+      toast("ტექსტი ჩაითვალა — შეგიძლია გააგრძელო უსასრულოდ ✓");
+    });
+
+    const next = document.createElement("button");
+    next.className = "btn primary";
+    next.textContent = "შემდეგი ტექსტი →";
+    next.addEventListener("click", () => {
+      generateReadingPassage();
+      renderReading();
+    });
+
+    buttons.append(show, done, next);
+    card.append(number, old, buttons, reveal);
+    els.readingList.appendChild(card);
     updateReadingPill();
   }
 
   function updateReadingPill() {
-    els.readingProgressPill.textContent = `${state.completedReadings.length} / ${readingItems.length} დასრულებული`;
+    els.readingProgressPill.textContent = `წაკითხული: ${state.readingPracticeCount} · ∞`;
   }
 
   function renderTyping() {
@@ -2470,14 +2937,14 @@
   }
 
   function nextTyping() {
-    typingIndex = randomIndex(words.length, typingIndex);
+    typingIndex = nextWordFromDeck("typing", typingIndex);
     renderTyping();
     els.typingInput.focus();
   }
 
   function updateTypingStats() {
     els.typingScoreLine.textContent = `სწორი: ${state.typingCorrect} · მცდელობა: ${state.typingAttempts}`;
-    els.typingPill.textContent = `სერია: ${state.typingStreak} სწორი`;
+    els.typingPill.textContent = `კითხვა ${state.typingAttempts + 1} · სერია ${state.typingStreak} · ∞`;
     const rate = state.typingAttempts ? state.typingCorrect / state.typingAttempts : 0;
     els.typingBar.style.width = `${Math.round(rate * 100)}%`;
   }
@@ -2490,7 +2957,11 @@
     els.nextChoice.disabled = true;
     choiceAnswered = false;
 
-    const distractors = shuffle(words.filter((_, i) => i !== choiceIndex)).slice(0, 3);
+    const closeLength = words.filter((word, index) =>
+      index !== choiceIndex && Math.abs([...word].length - [...answer].length) <= 1
+    );
+    const fallback = words.filter((_, index) => index !== choiceIndex && !closeLength.includes(words[index]));
+    const distractors = shuffle([...shuffle(closeLength), ...shuffle(fallback)]).slice(0, 3);
     const options = shuffle([answer, ...distractors]);
     els.choiceList.innerHTML = "";
 
@@ -2535,13 +3006,13 @@
   }
 
   function nextChoice() {
-    choiceIndex = randomIndex(words.length, choiceIndex);
+    choiceIndex = nextWordFromDeck("choice", choiceIndex);
     renderChoice();
   }
 
   function updateChoiceStats() {
     els.choiceScoreLine.textContent = `სწორი: ${state.choiceCorrect} · მცდელობა: ${state.choiceAttempts}`;
-    els.choicePill.textContent = `სერია: ${state.choiceStreak} სწორი`;
+    els.choicePill.textContent = `კითხვა ${state.choiceAttempts + 1} · სერია ${state.choiceStreak} · ∞`;
     const rate = state.choiceAttempts ? state.choiceCorrect / state.choiceAttempts : 0;
     els.choiceBar.style.width = `${Math.round(rate * 100)}%`;
   }
@@ -2596,6 +3067,8 @@
   }
 
   function newMatchingRound(showNotice = false) {
+    clearTimeout(matchingNextRoundTimeout);
+    matchingNextRoundTimeout = null;
     stopMatchingTimer();
     matchingIndices = weakestMatchingIndices();
     matchingOldOrder = shuffle(matchingIndices);
@@ -2759,9 +3232,13 @@
     saveState();
     updateMatchingStatus();
     syncMatchingButtonStates();
-    els.matchingResult.innerHTML = `რაუნდი დასრულებულია! დრო: <strong>${formatTime(seconds)}</strong> · შეცდომა: <strong>${matchingRoundWrong}</strong><br><button class="btn primary" id="matchingNextRound" style="margin-top:12px">შემდეგი რაუნდი →</button>`;
+    els.matchingResult.innerHTML = `რაუნდი დასრულებულია! დრო: <strong>${formatTime(seconds)}</strong> · შეცდომა: <strong>${matchingRoundWrong}</strong><br><span id="matchingAutoMessage">ახალი რაუნდი 3 წამში დაიწყება…</span><br><button class="btn primary" id="matchingNextRound" style="margin-top:12px">ახლავე გაგრძელება →</button>`;
     els.matchingResult.classList.add("visible");
     $("matchingNextRound").addEventListener("click", () => newMatchingRound(false));
+    matchingNextRoundTimeout = setTimeout(() => {
+      const matchingPanelActive = $("panel-matching").classList.contains("active");
+      if (matchingPanelActive && !document.hidden) newMatchingRound(false);
+    }, 3000);
     toast("ყველა წყვილი სწორად დააკავშირე ✓");
   }
 
@@ -2771,6 +3248,11 @@
     const currentScript = state.script;
     const currentTheme = state.theme;
     state = { ...JSON.parse(JSON.stringify(defaultState)), script: currentScript, theme: currentTheme };
+    typingDeck = [];
+    choiceDeck = [];
+    currentReadingPassage = "";
+    previousReadingPassage = "";
+    readingCompletedCurrent = false;
     saveState();
     renderLetter();
     renderReading();
@@ -2808,21 +3290,25 @@
   els.resetProgress.addEventListener("click", resetAllProgress);
 
   els.prevLetter.addEventListener("click", () => {
-    if (state.currentLetter > 0) {
-      state.currentLetter -= 1;
-      saveState();
-      clearCanvas();
-      renderLetter();
-    }
+    state.currentLetter = (state.currentLetter - 1 + MODERN.length) % MODERN.length;
+    saveState();
+    clearCanvas();
+    renderLetter();
   });
 
   els.nextLetter.addEventListener("click", () => {
-    if (state.currentLetter < MODERN.length - 1) {
-      state.currentLetter += 1;
-      saveState();
-      clearCanvas();
-      renderLetter();
-    }
+    state.currentLetter = (state.currentLetter + 1) % MODERN.length;
+    saveState();
+    clearCanvas();
+    renderLetter();
+  });
+
+  els.randomLetter.addEventListener("click", () => {
+    state.currentLetter = pickAdaptiveLetter(state.currentLetter);
+    saveState();
+    clearCanvas();
+    renderLetter();
+    toast("შერჩეულია სუსტი ან ნაკლებად ნავარჯიშები ასო");
   });
 
   els.clearCanvas.addEventListener("click", clearCanvas);
