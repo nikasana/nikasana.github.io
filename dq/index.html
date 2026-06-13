@@ -501,23 +501,106 @@
       font-size: 15px;
     }
 
+    .mastery-summary {
+      margin-bottom: 13px;
+      padding: 12px;
+      border-radius: 15px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+    }
+
+    .mastery-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 9px;
+    }
+
+    .mastery-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.35;
+    }
+
+    .mastery-stat strong {
+      display: block;
+      margin-top: 2px;
+      color: var(--primary);
+      font-size: 14px;
+      line-height: 1.25;
+    }
+
+    .study-time-track {
+      height: 7px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(123, 79, 44, .12);
+    }
+
+    .study-time-track > span {
+      display: block;
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      transition: width .25s ease;
+    }
+
+    .mastery-note {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.45;
+    }
+
     .letter-grid {
       display: grid;
       grid-template-columns: repeat(6, 1fr);
       gap: 7px;
       max-height: 430px;
       overflow: auto;
-      padding-right: 3px;
+      padding: 4px 3px 4px 0;
     }
 
     .letter-chip {
-      aspect-ratio: 1;
+      min-width: 0;
+      aspect-ratio: .88;
       border-radius: 10px;
       background: var(--surface-2);
       display: grid;
-      place-items: center;
+      grid-template-rows: 1fr auto;
+      align-items: center;
+      justify-items: stretch;
+      gap: 4px;
+      padding: 6px 5px 5px;
       font-size: 20px;
       position: relative;
+      overflow: visible;
+    }
+
+    .letter-chip .chip-letter {
+      align-self: center;
+      justify-self: center;
+      line-height: 1;
+    }
+
+    .letter-chip .chip-progress {
+      display: block;
+      height: 4px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(123, 79, 44, .15);
+    }
+
+    .letter-chip .chip-progress > i {
+      display: block;
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+      transition: width .25s ease;
     }
 
     .letter-chip.active {
@@ -525,20 +608,50 @@
       color: #fff;
     }
 
-    .letter-chip.done::after {
+    .letter-chip.active .chip-progress {
+      background: rgba(255, 255, 255, .23);
+    }
+
+    .letter-chip.active .chip-progress > i {
+      background: #fff;
+    }
+
+    .letter-chip.mastered {
+      box-shadow: inset 0 0 0 2px rgba(57, 116, 90, .25);
+    }
+
+    .letter-chip.mastered::after {
       content: "✓";
       position: absolute;
-      right: -2px;
-      top: -5px;
-      width: 15px;
-      height: 15px;
+      right: -3px;
+      top: -6px;
+      width: 17px;
+      height: 17px;
       border-radius: 50%;
       background: var(--green);
       color: white;
       display: grid;
       place-items: center;
-      font-size: 9px;
+      font-size: 10px;
       border: 2px solid var(--surface-solid);
+      z-index: 2;
+    }
+
+    .weak-practice-btn {
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    #letterMasteryLabel {
+      display: block;
+      margin-top: 4px;
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    #practiceTimeStat {
+      font-size: 16px;
     }
 
     .reading-list {
@@ -1083,7 +1196,11 @@
         font-size: 11px;
       }
       .letter-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
-      .letter-chip { min-width: 0; font-size: 18px; }
+      .letter-chip { min-width: 0; font-size: 17px; padding: 5px 4px 4px; }
+      .letter-chip .chip-progress { height: 3px; }
+      .mastery-summary { padding: 10px; }
+      .mastery-stat strong { font-size: 12px; }
+      .mastery-note { font-size: 8px; }
 
       .reading-card { padding: 13px; border-radius: 15px; }
       .old-text { font-size: clamp(20px, 7vw, 28px); margin: 8px 0; }
@@ -1302,6 +1419,7 @@
           <div class="mini-stat"><strong id="typingScore">0</strong><span>სწორი პასუხი</span></div>
           <div class="mini-stat"><strong id="choiceScore">0</strong><span>სწორი არჩევანი</span></div>
           <div class="mini-stat wide"><strong id="matchingRoundsStat">0</strong><span>დასრულებული შეწყვილების რაუნდი</span></div>
+          <div class="mini-stat wide"><strong id="practiceTimeStat">0:00 / 60:00</strong><span>აქტიური ვარჯიშის დრო</span></div>
         </div>
       </aside>
     </section>
@@ -1318,7 +1436,7 @@
       <div class="section-head">
         <div>
           <h3>1. ასოების გამოწერა</h3>
-          <p>მოხაზე ნიმუში ეკრანზე. დასრულებული ასოები პროგრესში ავტომატურად შეინახება.</p>
+          <p>მოხაზე ნიმუში რამდენჯერმე და შემდეგ გაამყარე ცოდნა შეწყვილებითა და სიტყვების სავარჯიშოებით.</p>
         </div>
         <span class="pill" id="letterPosition">ასო 1 / 33</span>
       </div>
@@ -1333,6 +1451,7 @@
             <div class="letter-name">
               ძველი → თანამედროვე
               <strong id="letterName">ანი</strong>
+              <span id="letterMasteryLabel">0% · ახალი ასო</span>
             </div>
           </div>
 
@@ -1344,14 +1463,29 @@
           <div class="button-row">
             <button class="btn" id="prevLetter">← წინა</button>
             <button class="btn" id="clearCanvas">გასუფთავება</button>
-            <button class="btn success" id="completeLetter" disabled>დასრულებულად მონიშვნა</button>
+            <button class="btn success" id="completeLetter" disabled>ცდის ჩათვლა (+20%)</button>
             <button class="btn primary" id="nextLetter">შემდეგი →</button>
           </div>
         </div>
 
         <aside class="letter-sidebar">
           <h4>ანბანი და პროგრესი</h4>
+          <div class="mastery-summary">
+            <div class="mastery-stats">
+              <div class="mastery-stat">
+                <span>დამახსოვრებული</span>
+                <strong id="masteredLettersCount">0 / 33</strong>
+              </div>
+              <div class="mastery-stat">
+                <span>სასწავლო დრო</span>
+                <strong id="practiceTimeText">0:00 / 60:00</strong>
+              </div>
+            </div>
+            <div class="study-time-track" aria-hidden="true"><span id="practiceTimeBar"></span></div>
+            <small class="mastery-note">ერთი დაჭერა ასოს აღარ ასრულებს: საჭიროა განმეორება და მინიმუმ ორი სხვადასხვა ტიპის სავარჯიშო.</small>
+          </div>
           <div class="letter-grid" id="letterGrid"></div>
+          <button class="btn primary weak-practice-btn" id="practiceWeakLetters">სუსტი ასოების ვარჯიში →</button>
         </aside>
       </div>
     </section>
@@ -1454,7 +1588,7 @@
 
     <p class="footer-note">
       სავარჯიშო ფოკუსირებულია თანამედროვე ქართულში გამოყენებული 33 ასოს ასომთავრულ და ნუსხურ ფორმებზე.
-      პროგრესი ინახება მხოლოდ ამ ბრაუზერში.
+      დამახსოვრება ეფუძნება განმეორებას, სხვადასხვა ტიპის დავალებებსა და დაახლოებით 60-წუთიან აქტიურ პრაქტიკას. პროგრესი ინახება მხოლოდ ამ ბრაუზერში.
     </p>
   </main>
 
@@ -1471,11 +1605,12 @@
         ყველა სავარჯიშო ასომთავრულ ან ნუსხურ ფორმაში გაიარო.
       </p>
       <ul>
-        <li>ასოების საწერი დაფა და 33-ასოიანი პროგრესი;</li>
+        <li>თითოეულ ასოზე მრავალსაფეხურიანი პროგრესი — ერთი მონიშვნა აღარ ნიშნავს დამახსოვრებას;</li>
         <li>ტექსტის წაკითხვა პასუხის ეტაპობრივი ჩვენებით;</li>
         <li>სიტყვის თავისუფლად ჩაწერა თანამედროვე ქართულით;</li>
         <li>Multiple Choice სავარჯიშო ავტომატურად არეული პასუხებით;</li>
         <li>6-წყვილიანი ასოების შეწყვილების თამაში ტაიმერითა და საუკეთესო დროით;</li>
+        <li>ადაპტური ვარჯიში სუსტ ასოებზე და 60-წუთიანი აქტიური პრაქტიკის მიზანი;</li>
         <li>პროგრესის შენახვა Local Storage-ში.</li>
       </ul>
       <p>
@@ -1520,12 +1655,18 @@
   ];
 
   const STORAGE_KEY = "oldGeorgianTrainerV1";
+  const LETTER_MASTERY_TARGET = 50;
+  const PRACTICE_TARGET_SECONDS = 60 * 60;
   const defaultState = {
     script: "asomtavruli",
     theme: "light",
     currentLetter: 0,
     completedLetters: [],
+    letterMastery: Array(MODERN.length).fill(0),
+    letterModes: Array.from({ length: MODERN.length }, () => []),
     completedReadings: [],
+    rewardedReadings: [],
+    practiceSeconds: 0,
     typingCorrect: 0,
     typingAttempts: 0,
     typingStreak: 0,
@@ -1544,6 +1685,8 @@
   let typingAnswered = false;
   let choiceAnswered = false;
   let hasDrawn = false;
+  let lastPracticeActivityAt = 0;
+  let practiceTimerId = null;
 
   let matchingIndices = [];
   let matchingOldOrder = [];
@@ -1575,10 +1718,16 @@
     typingScore: $("typingScore"),
     choiceScore: $("choiceScore"),
     matchingRoundsStat: $("matchingRoundsStat"),
+    practiceTimeStat: $("practiceTimeStat"),
+    masteredLettersCount: $("masteredLettersCount"),
+    practiceTimeText: $("practiceTimeText"),
+    practiceTimeBar: $("practiceTimeBar"),
+    practiceWeakLetters: $("practiceWeakLetters"),
     letterPosition: $("letterPosition"),
     oldLetter: $("oldLetter"),
     modernLetter: $("modernLetter"),
     letterName: $("letterName"),
+    letterMasteryLabel: $("letterMasteryLabel"),
     letterGrid: $("letterGrid"),
     prevLetter: $("prevLetter"),
     nextLetter: $("nextLetter"),
@@ -1620,20 +1769,105 @@
   function loadState() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      const oldCompleted = Array.isArray(saved.completedLetters) ? saved.completedLetters : [];
+      const mastery = Array.from({ length: MODERN.length }, (_, index) => {
+        const stored = Array.isArray(saved.letterMastery) ? Number(saved.letterMastery[index]) : NaN;
+        if (Number.isFinite(stored)) return Math.max(0, Math.min(LETTER_MASTERY_TARGET, stored));
+        return oldCompleted.includes(index) ? 10 : 0;
+      });
+      const modes = Array.from({ length: MODERN.length }, (_, index) => {
+        const stored = Array.isArray(saved.letterModes) ? saved.letterModes[index] : null;
+        if (Array.isArray(stored)) return [...new Set(stored.filter(item => typeof item === "string"))];
+        return oldCompleted.includes(index) ? ["trace"] : [];
+      });
       return {
         ...defaultState,
         ...saved,
-        completedLetters: Array.isArray(saved.completedLetters) ? saved.completedLetters : [],
-        completedReadings: Array.isArray(saved.completedReadings) ? saved.completedReadings : []
+        completedLetters: [],
+        letterMastery: mastery,
+        letterModes: modes,
+        completedReadings: Array.isArray(saved.completedReadings) ? saved.completedReadings : [],
+        rewardedReadings: Array.isArray(saved.rewardedReadings) ? saved.rewardedReadings : [],
+        practiceSeconds: Math.max(0, Number(saved.practiceSeconds) || 0)
       };
     } catch {
-      return { ...defaultState };
+      return JSON.parse(JSON.stringify(defaultState));
     }
   }
 
   function saveState() {
+    syncCompletedLetters();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     updateDashboard();
+  }
+
+  function getLetterScore(index) {
+    return Math.max(0, Math.min(LETTER_MASTERY_TARGET, Number(state.letterMastery[index]) || 0));
+  }
+
+  function getLetterModes(index) {
+    return Array.isArray(state.letterModes[index]) ? state.letterModes[index] : [];
+  }
+
+  function isLetterMastered(index) {
+    return getLetterScore(index) >= LETTER_MASTERY_TARGET && getLetterModes(index).length >= 2;
+  }
+
+  function getLetterDisplayPercent(index) {
+    const raw = Math.round((getLetterScore(index) / LETTER_MASTERY_TARGET) * 100);
+    if (raw >= 100 && !isLetterMastered(index)) return 90;
+    return Math.max(0, Math.min(100, raw));
+  }
+
+  function syncCompletedLetters() {
+    state.completedLetters = [...Array(MODERN.length).keys()].filter(isLetterMastered);
+  }
+
+  function awardLetter(index, amount, mode) {
+    if (!Number.isInteger(index) || index < 0 || index >= MODERN.length) return false;
+    const wasMastered = isLetterMastered(index);
+    state.letterMastery[index] = Math.min(LETTER_MASTERY_TARGET, getLetterScore(index) + amount);
+    const modes = new Set(getLetterModes(index));
+    modes.add(mode);
+    state.letterModes[index] = [...modes];
+    return !wasMastered && isLetterMastered(index);
+  }
+
+  function awardWordLetters(word, amount, mode) {
+    const indices = [...new Set([...word].map(char => MODERN.indexOf(char)).filter(index => index >= 0))];
+    const newlyMastered = [];
+    indices.forEach(index => {
+      if (awardLetter(index, amount, mode)) newlyMastered.push(index);
+    });
+    saveState();
+    renderLetterGrid();
+    renderLetter();
+    if (newlyMastered.length) {
+      toast(`${newlyMastered.length} ასო დამახსოვრებულია ✓`);
+    }
+  }
+
+  function updatePracticeDisplays() {
+    const value = `${formatTime(state.practiceSeconds)} / 60:00`;
+    const percent = Math.min(100, Math.round((state.practiceSeconds / PRACTICE_TARGET_SECONDS) * 100));
+    if (els.practiceTimeStat) els.practiceTimeStat.textContent = value;
+    if (els.practiceTimeText) els.practiceTimeText.textContent = value;
+    if (els.practiceTimeBar) els.practiceTimeBar.style.width = `${percent}%`;
+  }
+
+  function notePracticeActivity() {
+    lastPracticeActivityAt = Date.now();
+  }
+
+  function startPracticeClock() {
+    clearInterval(practiceTimerId);
+    practiceTimerId = setInterval(() => {
+      const active = !document.hidden && lastPracticeActivityAt && Date.now() - lastPracticeActivityAt < 45000;
+      if (!active) return;
+      state.practiceSeconds += 1;
+      updatePracticeDisplays();
+      if (state.practiceSeconds % 10 === 0) saveState();
+    }, 1000);
   }
 
   function currentAlphabet() {
@@ -1677,18 +1911,22 @@
   }
 
   function updateDashboard() {
+    syncCompletedLetters();
     els.lettersDone.textContent = `${state.completedLetters.length}/33`;
     els.readingDone.textContent = `${state.completedReadings.length}/${readingItems.length}`;
     els.typingScore.textContent = state.typingCorrect;
     els.choiceScore.textContent = state.choiceCorrect;
     els.matchingRoundsStat.textContent = state.matchingRounds;
+    if (els.masteredLettersCount) els.masteredLettersCount.textContent = `${state.completedLetters.length} / 33`;
+    updatePracticeDisplays();
 
-    const letterPart = state.completedLetters.length / MODERN.length;
+    const letterPart = MODERN.reduce((sum, _, index) => sum + getLetterDisplayPercent(index), 0) / (MODERN.length * 100);
     const readingPart = state.completedReadings.length / readingItems.length;
-    const typingPart = state.typingAttempts ? Math.min(1, state.typingCorrect / 10) : 0;
-    const choicePart = state.choiceAttempts ? Math.min(1, state.choiceCorrect / 10) : 0;
-    const matchingPart = Math.min(1, state.matchingRounds / 5);
-    const percent = Math.round(((letterPart + readingPart + typingPart + choicePart + matchingPart) / 5) * 100);
+    const typingPart = state.typingAttempts ? Math.min(1, state.typingCorrect / 20) : 0;
+    const choicePart = state.choiceAttempts ? Math.min(1, state.choiceCorrect / 20) : 0;
+    const matchingPart = Math.min(1, state.matchingRounds / 10);
+    const timePart = Math.min(1, state.practiceSeconds / PRACTICE_TARGET_SECONDS);
+    const percent = Math.round(((letterPart + readingPart + typingPart + choicePart + matchingPart + timePart) / 6) * 100);
 
     els.overallPercent.textContent = `${percent}%`;
     const circumference = 2 * Math.PI * 51;
@@ -1739,15 +1977,29 @@
     currentAlphabet().forEach((char, index) => {
       const button = document.createElement("button");
       button.className = "letter-chip";
+      const percent = getLetterDisplayPercent(index);
+      const mastered = isLetterMastered(index);
       if (index === state.currentLetter) button.classList.add("active");
-      if (state.completedLetters.includes(index)) button.classList.add("done");
-      button.textContent = char;
-      button.title = `${char} — ${MODERN[index]}`;
+      if (mastered) button.classList.add("mastered");
+
+      const glyph = document.createElement("span");
+      glyph.className = "chip-letter";
+      glyph.textContent = char;
+
+      const track = document.createElement("span");
+      track.className = "chip-progress";
+      const fill = document.createElement("i");
+      fill.style.width = `${percent}%`;
+      track.appendChild(fill);
+
+      button.append(glyph, track);
+      button.title = `${char} — ${MODERN[index]} · ${percent}%${mastered ? " · დამახსოვრებულია" : ""}`;
+      button.setAttribute("aria-label", button.title);
       button.addEventListener("click", () => {
         state.currentLetter = index;
         saveState();
-        renderLetter();
         clearCanvas();
+        renderLetter();
       });
       els.letterGrid.appendChild(button);
     });
@@ -1755,31 +2007,42 @@
 
   function renderLetter() {
     const i = state.currentLetter;
+    const percent = getLetterDisplayPercent(i);
+    const mastered = isLetterMastered(i);
+    const modeCount = getLetterModes(i).length;
     els.oldLetter.textContent = currentAlphabet()[i];
     els.modernLetter.textContent = MODERN[i];
     els.letterName.textContent = LETTER_NAMES[i];
-    els.letterPosition.textContent = `ასო ${i + 1} / ${MODERN.length}`;
+    els.letterPosition.textContent = `ასო ${i + 1} / ${MODERN.length} · ${percent}%`;
+    els.letterMasteryLabel.textContent = mastered
+      ? "100% · დამახსოვრებულია"
+      : getLetterScore(i) >= LETTER_MASTERY_TARGET && modeCount < 2
+        ? "90% · საჭიროა სხვა ტიპის სავარჯიშო"
+        : `${percent}% · ${modeCount} ტიპის პრაქტიკა`;
     els.prevLetter.disabled = i === 0;
     els.nextLetter.disabled = i === MODERN.length - 1;
-    const done = state.completedLetters.includes(i);
-    els.completeLetter.textContent = done ? "✓ დასრულებულია" : "დასრულებულად მონიშვნა";
-    els.completeLetter.disabled = !hasDrawn && !done;
+    els.completeLetter.textContent = mastered ? "✓ დამახსოვრებულია" : "ცდის ჩათვლა (+20%)";
+    els.completeLetter.disabled = !hasDrawn || mastered;
     renderLetterGrid();
     drawGuide();
   }
 
   function completeCurrentLetter() {
     const index = state.currentLetter;
-    if (!state.completedLetters.includes(index)) {
-      state.completedLetters.push(index);
-      state.completedLetters.sort((a, b) => a - b);
-      toast("ასო პროგრესში დაემატა ✓");
-    } else {
-      state.completedLetters = state.completedLetters.filter(i => i !== index);
-      toast("დასრულების მონიშვნა გაუქმდა");
-    }
+    if (!hasDrawn || isLetterMastered(index)) return;
+    const newlyMastered = awardLetter(index, 10, "trace");
     saveState();
+    hasDrawn = false;
+    drawGuide();
     renderLetter();
+
+    if (newlyMastered) {
+      toast("ასო ნამდვილად დამახსოვრებულია ✓");
+    } else if (getLetterScore(index) >= LETTER_MASTERY_TARGET && getLetterModes(index).length < 2) {
+      toast("90% — ახლა შეწყვილება ან სიტყვის სავარჯიშო გააკეთე");
+    } else {
+      toast(`ასოს პროგრესი: ${getLetterDisplayPercent(index)}%`);
+    }
   }
 
   const ctx = els.traceCanvas.getContext("2d");
@@ -1824,7 +2087,7 @@
 
   function clearCanvas() {
     hasDrawn = false;
-    els.completeLetter.disabled = !state.completedLetters.includes(state.currentLetter);
+    els.completeLetter.disabled = true;
     drawGuide();
   }
 
@@ -1860,7 +2123,7 @@
     ctx.restore();
     lastPoint = point;
     hasDrawn = true;
-    els.completeLetter.disabled = false;
+    els.completeLetter.disabled = isLetterMastered(state.currentLetter);
   }
 
   function endDraw(event) {
@@ -1912,6 +2175,10 @@
           state.completedReadings.sort((a, b) => a - b);
           reveal.classList.add("visible");
           show.textContent = "პასუხის დამალვა";
+          if (!state.rewardedReadings.includes(index)) {
+            state.rewardedReadings.push(index);
+            awardWordLetters(text, 2, "reading");
+          }
           toast("ტექსტი პროგრესში დაემატა ✓");
         }
         refreshDone();
@@ -1959,6 +2226,7 @@
     if (correct) {
       state.typingCorrect += 1;
       state.typingStreak += 1;
+      awardWordLetters(answer, 3, "typing");
       els.typingFeedback.textContent = "სწორია! შესანიშნავი პასუხია ✓";
       els.typingFeedback.className = "feedback correct";
     } else {
@@ -2017,6 +2285,7 @@
     if (correct) {
       state.choiceCorrect += 1;
       state.choiceStreak += 1;
+      awardWordLetters(answer, 2, "choice");
       button.classList.add("correct");
       els.choiceFeedback.textContent = "სწორია! ✓";
       els.choiceFeedback.className = "feedback correct";
@@ -2087,9 +2356,20 @@
     pauseMatchingTimer();
   }
 
+  function weakestMatchingIndices() {
+    const ranked = [...Array(MODERN.length).keys()].sort((a, b) => {
+      const difference = getLetterDisplayPercent(a) - getLetterDisplayPercent(b);
+      return difference || Math.random() - .5;
+    });
+    const unmastered = ranked.filter(index => !isLetterMastered(index));
+    const base = unmastered.length >= 6 ? unmastered : ranked;
+    const pool = base.slice(0, Math.min(14, base.length));
+    return shuffle(pool).slice(0, 6);
+  }
+
   function newMatchingRound(showNotice = false) {
     stopMatchingTimer();
-    matchingIndices = shuffle([...Array(MODERN.length).keys()]).slice(0, 6);
+    matchingIndices = weakestMatchingIndices();
     matchingOldOrder = shuffle(matchingIndices);
     matchingModernOrder = shuffle(matchingIndices);
     matchingSelectedOld = null;
@@ -2207,12 +2487,16 @@
       matchingMatched.add(oldIndex);
       matchingRoundCorrect += 1;
       state.matchingCorrect += 1;
+      const newlyMastered = awardLetter(oldIndex, 10, "matching");
       matchingSelectedOld = null;
       matchingSelectedModern = null;
       matchingLocked = false;
       saveState();
+      renderLetterGrid();
+      renderLetter();
       updateMatchingStatus();
       syncMatchingButtonStates();
+      if (newlyMastered) toast(`${MODERN[oldIndex]} დამახსოვრებულია ✓`);
       if (matchingMatched.size === 6) finishMatchingRound();
       return;
     }
@@ -2258,7 +2542,7 @@
     if (!confirmed) return;
     const currentScript = state.script;
     const currentTheme = state.theme;
-    state = { ...defaultState, script: currentScript, theme: currentTheme };
+    state = { ...JSON.parse(JSON.stringify(defaultState)), script: currentScript, theme: currentTheme };
     saveState();
     renderLetter();
     renderReading();
@@ -2306,6 +2590,11 @@
 
   els.clearCanvas.addEventListener("click", clearCanvas);
   els.completeLetter.addEventListener("click", completeCurrentLetter);
+  els.practiceWeakLetters.addEventListener("click", () => {
+    switchPanel("matching");
+    newMatchingRound(true);
+    toast("დაიწყო ყველაზე სუსტი ასოების ვარჯიში");
+  });
 
   els.traceCanvas.addEventListener("pointerdown", startDraw);
   els.traceCanvas.addEventListener("pointermove", moveDraw);
@@ -2326,6 +2615,12 @@
 
   els.nextChoice.addEventListener("click", nextChoice);
   els.restartMatching.addEventListener("click", () => newMatchingRound(true));
+  document.addEventListener("pointerdown", notePracticeActivity, { passive: true, capture: true });
+  document.addEventListener("keydown", notePracticeActivity, { capture: true });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) saveState();
+  });
+  window.addEventListener("beforeunload", saveState);
   window.addEventListener("resize", resizeCanvas);
   document.fonts?.ready.then(resizeCanvas);
 
@@ -2337,6 +2632,7 @@
   renderChoice();
   newMatchingRound(false);
   updateDashboard();
+  startPracticeClock();
   setTimeout(resizeCanvas, 80);
 })();
 </script>
