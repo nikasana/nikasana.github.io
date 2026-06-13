@@ -1193,6 +1193,57 @@
       .matching-board { gap: 7px 12px; }
     }
 
+
+    /* Fold touch-target correction: fixed row geometry and no touch-hover movement. */
+    .matching-board {
+      --match-row-height: 86px;
+      touch-action: manipulation;
+      isolation: isolate;
+    }
+
+    .matching-column {
+      grid-template-rows: repeat(6, var(--match-row-height));
+      align-content: start;
+    }
+
+    .match-button {
+      height: var(--match-row-height) !important;
+      min-height: 0 !important;
+      max-height: var(--match-row-height);
+      position: relative;
+      z-index: 1;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .match-button.selected,
+    .match-button.wrong {
+      z-index: 3;
+    }
+
+    @media (hover: none), (pointer: coarse) {
+      .match-button:hover:not(:disabled) {
+        transform: none;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .matching-board { --match-row-height: 72px; }
+    }
+
+    @media (max-width: 480px) {
+      .matching-board { --match-row-height: clamp(52px, 8.2dvh, 62px); }
+    }
+
+    @media (max-width: 480px) and (max-height: 760px) {
+      .matching-board { --match-row-height: 47px; }
+    }
+
+    @media (min-width: 481px) and (max-height: 720px) {
+      .matching-board { --match-row-height: 55px; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         scroll-behavior: auto !important;
@@ -1382,7 +1433,7 @@
           <button class="btn" id="restartMatching">↻ ახალი რაუნდი</button>
         </div>
 
-        <div class="matching-board" aria-label="ასოების შესაწყვილებელი დაფა">
+        <div class="matching-board" id="matchingBoard" aria-label="ასოების შესაწყვილებელი დაფა">
           <div class="matching-column-label" id="oldColumnLabel">ასომთავრული</div>
           <div class="matching-column-label">მხედრული</div>
           <div class="matching-column" id="oldMatchColumn"></div>
@@ -1556,6 +1607,7 @@
     matchingTimer: $("matchingTimer"),
     restartMatching: $("restartMatching"),
     oldColumnLabel: $("oldColumnLabel"),
+    matchingBoard: $("matchingBoard"),
     oldMatchColumn: $("oldMatchColumn"),
     modernMatchColumn: $("modernMatchColumn"),
     matchingCorrect: $("matchingCorrect"),
@@ -2054,12 +2106,7 @@
     if (showNotice) toast("ახალი რაუნდი დაიწყო");
   }
 
-  function renderMatchingBoard() {
-    if (!matchingIndices.length) {
-      newMatchingRound(false);
-      return;
-    }
-
+  function updateMatchingStatus() {
     els.oldColumnLabel.textContent = state.script === "nuskhuri" ? "ნუსხური" : "ასომთავრული";
     els.matchingRoundPill.textContent = `რაუნდი ${state.matchingRounds + 1}`;
     els.matchingCorrect.textContent = matchingRoundCorrect;
@@ -2072,7 +2119,43 @@
     const remaining = 6 - matchingMatched.size;
     const remainingLabel = els.matchingTimer.closest(".matching-status")?.querySelector("span:first-child");
     if (remainingLabel) remainingLabel.textContent = `${remaining} წყვილი დარჩა`;
+  }
 
+  function syncMatchingButtonStates() {
+    document.querySelectorAll(".match-button").forEach(button => {
+      const index = Number(button.dataset.index);
+      const side = button.dataset.side;
+      const selected = side === "old"
+        ? matchingSelectedOld === index
+        : matchingSelectedModern === index;
+      const matched = matchingMatched.has(index);
+
+      button.classList.toggle("selected", selected && !matched);
+      button.classList.toggle("matched", matched);
+      button.classList.remove("wrong");
+      button.disabled = matched || matchingFinished;
+      button.setAttribute("aria-pressed", selected ? "true" : "false");
+    });
+  }
+
+  function activateMatchingButton(event, side, index, button) {
+    if (event.type === "pointerdown") {
+      if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
+      event.preventDefault();
+    } else if (event.type === "keydown") {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+    }
+    selectMatchingLetter(side, index, button);
+  }
+
+  function renderMatchingBoard() {
+    if (!matchingIndices.length) {
+      newMatchingRound(false);
+      return;
+    }
+
+    updateMatchingStatus();
     els.oldMatchColumn.innerHTML = "";
     els.modernMatchColumn.innerHTML = "";
 
@@ -2084,12 +2167,8 @@
       button.dataset.side = "old";
       button.textContent = currentAlphabet()[index];
       button.setAttribute("aria-label", `${currentAlphabet()[index]} — ძველი ასო`);
-      if (matchingSelectedOld === index) button.classList.add("selected");
-      if (matchingMatched.has(index)) {
-        button.classList.add("matched");
-        button.disabled = true;
-      }
-      button.addEventListener("click", () => selectMatchingLetter("old", index, button));
+      button.addEventListener("pointerdown", event => activateMatchingButton(event, "old", index, button));
+      button.addEventListener("keydown", event => activateMatchingButton(event, "old", index, button));
       els.oldMatchColumn.appendChild(button);
     });
 
@@ -2101,14 +2180,12 @@
       button.dataset.side = "modern";
       button.textContent = MODERN[index];
       button.setAttribute("aria-label", `${MODERN[index]} — თანამედროვე ასო`);
-      if (matchingSelectedModern === index) button.classList.add("selected");
-      if (matchingMatched.has(index)) {
-        button.classList.add("matched");
-        button.disabled = true;
-      }
-      button.addEventListener("click", () => selectMatchingLetter("modern", index, button));
+      button.addEventListener("pointerdown", event => activateMatchingButton(event, "modern", index, button));
+      button.addEventListener("keydown", event => activateMatchingButton(event, "modern", index, button));
       els.modernMatchColumn.appendChild(button);
     });
+
+    syncMatchingButtonStates();
   }
 
   function selectMatchingLetter(side, index, button) {
@@ -2118,7 +2195,7 @@
     if (side === "old") matchingSelectedOld = index;
     else matchingSelectedModern = index;
 
-    renderMatchingBoard();
+    syncMatchingButtonStates();
 
     if (matchingSelectedOld == null || matchingSelectedModern == null) return;
 
@@ -2134,7 +2211,8 @@
       matchingSelectedModern = null;
       matchingLocked = false;
       saveState();
-      renderMatchingBoard();
+      updateMatchingStatus();
+      syncMatchingButtonStates();
       if (matchingMatched.size === 6) finishMatchingRound();
       return;
     }
@@ -2142,6 +2220,8 @@
     matchingRoundWrong += 1;
     state.matchingWrong += 1;
     saveState();
+    updateMatchingStatus();
+
     const wrongButtons = [
       els.oldMatchColumn.querySelector(`[data-index="${oldIndex}"]`),
       els.modernMatchColumn.querySelector(`[data-index="${modernIndex}"]`)
@@ -2152,7 +2232,7 @@
       matchingSelectedOld = null;
       matchingSelectedModern = null;
       matchingLocked = false;
-      renderMatchingBoard();
+      syncMatchingButtonStates();
     }, 430);
   }
 
@@ -2165,7 +2245,8 @@
       state.matchingBestSeconds = seconds;
     }
     saveState();
-    renderMatchingBoard();
+    updateMatchingStatus();
+    syncMatchingButtonStates();
     els.matchingResult.innerHTML = `რაუნდი დასრულებულია! დრო: <strong>${formatTime(seconds)}</strong> · შეცდომა: <strong>${matchingRoundWrong}</strong><br><button class="btn primary" id="matchingNextRound" style="margin-top:12px">შემდეგი რაუნდი →</button>`;
     els.matchingResult.classList.add("visible");
     $("matchingNextRound").addEventListener("click", () => newMatchingRound(false));
