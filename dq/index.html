@@ -654,6 +654,118 @@
       font-size: 16px;
     }
 
+    .practice-status-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.4;
+    }
+
+    .practice-status-main {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      font-weight: 700;
+    }
+
+    .practice-status-dot {
+      width: 7px;
+      height: 7px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--muted);
+      box-shadow: 0 0 0 3px rgba(119, 105, 93, .10);
+    }
+
+    .practice-status-dot.running {
+      background: var(--green);
+      box-shadow: 0 0 0 3px rgba(57, 116, 90, .13);
+    }
+
+    .practice-status-dot.paused {
+      background: var(--accent);
+      box-shadow: 0 0 0 3px rgba(201, 149, 69, .14);
+    }
+
+    .practice-auto-note {
+      text-align: right;
+      max-width: 110px;
+    }
+
+    .practice-timer-toggle {
+      position: fixed;
+      right: max(13px, env(safe-area-inset-right));
+      bottom: max(13px, env(safe-area-inset-bottom));
+      z-index: 70;
+      min-width: 54px;
+      height: 50px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 15px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface-solid);
+      color: var(--primary);
+      box-shadow: 0 12px 30px rgba(50, 31, 18, .22);
+      font-weight: 800;
+      font-size: 12px;
+      backdrop-filter: blur(14px);
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .practice-timer-toggle.running {
+      background: var(--green);
+      color: white;
+      border-color: transparent;
+    }
+
+    .practice-timer-toggle.manual-paused {
+      background: var(--accent);
+      color: #281c11;
+      border-color: transparent;
+    }
+
+    .practice-timer-toggle .timer-icon {
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    @media (max-width: 480px) {
+      .practice-timer-toggle {
+        right: max(9px, env(safe-area-inset-right));
+        bottom: max(9px, env(safe-area-inset-bottom));
+        width: 48px;
+        min-width: 48px;
+        height: 48px;
+        padding: 0;
+      }
+
+      .practice-timer-toggle .timer-button-text {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      .practice-timer-toggle .timer-icon {
+        font-size: 18px;
+      }
+
+      .practice-auto-note {
+        max-width: 92px;
+      }
+    }
+
     .reading-list {
       display: grid;
       gap: 14px;
@@ -1482,6 +1594,13 @@
               </div>
             </div>
             <div class="study-time-track" aria-hidden="true"><span id="practiceTimeBar"></span></div>
+            <div class="practice-status-row">
+              <span class="practice-status-main">
+                <i class="practice-status-dot paused" id="practiceStatusDot" aria-hidden="true"></i>
+                <span id="practiceTimerStatus">დაიწყება პირველი სავარჯიშო მოქმედებით</span>
+              </span>
+              <span class="practice-auto-note">30 წმ. უმოქმედობაზე ავტომატურად ჩერდება</span>
+            </div>
             <small class="mastery-note">ერთი დაჭერა ასოს აღარ ასრულებს: საჭიროა განმეორება და მინიმუმ ორი სხვადასხვა ტიპის სავარჯიშო.</small>
           </div>
           <div class="letter-grid" id="letterGrid"></div>
@@ -1588,9 +1707,16 @@
 
     <p class="footer-note">
       სავარჯიშო ფოკუსირებულია თანამედროვე ქართულში გამოყენებული 33 ასოს ასომთავრულ და ნუსხურ ფორმებზე.
-      დამახსოვრება ეფუძნება განმეორებას, სხვადასხვა ტიპის დავალებებსა და დაახლოებით 60-წუთიან აქტიურ პრაქტიკას. პროგრესი ინახება მხოლოდ ამ ბრაუზერში.
+      დამახსოვრება ეფუძნება განმეორებას, სხვადასხვა ტიპის დავალებებსა და დაახლოებით 60-წუთიან აქტიურ პრაქტიკას. დრო ავტომატურად ჩერდება 30-წამიანი უმოქმედობისას ან აპიდან გასვლისას; მისი ხელით შეჩერებაც შეგიძლია. პროგრესი ინახება მხოლოდ ამ ბრაუზერში.
     </p>
   </main>
+
+  <button class="practice-timer-toggle" id="practiceTimerToggle"
+          type="button" aria-pressed="false"
+          aria-label="ვარჯიშის დროის დაწყება" title="ვარჯიშის დროის დაწყება">
+    <span class="timer-icon" id="practiceTimerIcon" aria-hidden="true">▶</span>
+    <span class="timer-button-text" id="practiceTimerButtonText">დაწყება</span>
+  </button>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -1610,7 +1736,7 @@
         <li>სიტყვის თავისუფლად ჩაწერა თანამედროვე ქართულით;</li>
         <li>Multiple Choice სავარჯიშო ავტომატურად არეული პასუხებით;</li>
         <li>6-წყვილიანი ასოების შეწყვილების თამაში ტაიმერითა და საუკეთესო დროით;</li>
-        <li>ადაპტური ვარჯიში სუსტ ასოებზე და 60-წუთიანი აქტიური პრაქტიკის მიზანი;</li>
+        <li>ადაპტური ვარჯიში სუსტ ასოებზე და 60-წუთიანი აქტიური პრაქტიკის მიზანი — ხელით და ავტომატური პაუზით;</li>
         <li>პროგრესის შენახვა Local Storage-ში.</li>
       </ul>
       <p>
@@ -1657,6 +1783,7 @@
   const STORAGE_KEY = "oldGeorgianTrainerV1";
   const LETTER_MASTERY_TARGET = 50;
   const PRACTICE_TARGET_SECONDS = 60 * 60;
+  const PRACTICE_IDLE_MS = 30 * 1000;
   const defaultState = {
     script: "asomtavruli",
     theme: "light",
@@ -1667,6 +1794,7 @@
     completedReadings: [],
     rewardedReadings: [],
     practiceSeconds: 0,
+    practiceManuallyPaused: false,
     typingCorrect: 0,
     typingAttempts: 0,
     typingStreak: 0,
@@ -1722,6 +1850,11 @@
     masteredLettersCount: $("masteredLettersCount"),
     practiceTimeText: $("practiceTimeText"),
     practiceTimeBar: $("practiceTimeBar"),
+    practiceTimerStatus: $("practiceTimerStatus"),
+    practiceStatusDot: $("practiceStatusDot"),
+    practiceTimerToggle: $("practiceTimerToggle"),
+    practiceTimerIcon: $("practiceTimerIcon"),
+    practiceTimerButtonText: $("practiceTimerButtonText"),
     practiceWeakLetters: $("practiceWeakLetters"),
     letterPosition: $("letterPosition"),
     oldLetter: $("oldLetter"),
@@ -1788,7 +1921,8 @@
         letterModes: modes,
         completedReadings: Array.isArray(saved.completedReadings) ? saved.completedReadings : [],
         rewardedReadings: Array.isArray(saved.rewardedReadings) ? saved.rewardedReadings : [],
-        practiceSeconds: Math.max(0, Number(saved.practiceSeconds) || 0)
+        practiceSeconds: Math.max(0, Number(saved.practiceSeconds) || 0),
+        practiceManuallyPaused: saved.practiceManuallyPaused === true
       };
     } catch {
       return JSON.parse(JSON.stringify(defaultState));
@@ -1847,26 +1981,119 @@
     }
   }
 
+  function getPracticeClockMode() {
+    if (state.practiceManuallyPaused) return "manual";
+    if (document.hidden || !document.hasFocus()) return "background";
+    if (els.infoModal && els.infoModal.classList.contains("open")) return "modal";
+    if (!lastPracticeActivityAt) return "ready";
+    if (Date.now() - lastPracticeActivityAt >= PRACTICE_IDLE_MS) return "idle";
+    return "running";
+  }
+
+  function updatePracticeClockUi() {
+    const mode = getPracticeClockMode();
+    const running = mode === "running";
+    let status = "დაიწყება პირველი სავარჯიშო მოქმედებით";
+    let buttonText = "დაწყება";
+    let icon = "▶";
+    let label = "ვარჯიშის დროის დაწყება";
+
+    if (running) {
+      status = "დრო ითვლება";
+      buttonText = "პაუზა";
+      icon = "⏸";
+      label = "ვარჯიშის დროის შეჩერება";
+    } else if (mode === "manual") {
+      status = "ხელით შეჩერებულია";
+      buttonText = "გაგრძელება";
+      icon = "▶";
+      label = "ვარჯიშის დროის გაგრძელება";
+    } else if (mode === "idle") {
+      status = "უმოქმედობის გამო ავტომატურად შეჩერდა";
+      buttonText = "გაგრძელება";
+      icon = "▶";
+      label = "ვარჯიშის დროის გაგრძელება";
+    } else if (mode === "background") {
+      status = "აპი აქტიური არ არის — დრო გაჩერებულია";
+      buttonText = "გაგრძელება";
+      icon = "▶";
+      label = "ვარჯიშის დროის გაგრძელება";
+    } else if (mode === "modal") {
+      status = "ინფორმაციის ფანჯრის გახსნისას დრო გაჩერებულია";
+      buttonText = "გაგრძელება";
+      icon = "▶";
+      label = "ვარჯიშის დროის გაგრძელება";
+    }
+
+    if (els.practiceTimerStatus) els.practiceTimerStatus.textContent = status;
+    if (els.practiceStatusDot) {
+      els.practiceStatusDot.classList.toggle("running", running);
+      els.practiceStatusDot.classList.toggle("paused", !running);
+    }
+    if (els.practiceTimerToggle) {
+      els.practiceTimerToggle.classList.toggle("running", running);
+      els.practiceTimerToggle.classList.toggle("manual-paused", mode === "manual");
+      els.practiceTimerToggle.setAttribute("aria-pressed", String(mode === "manual"));
+      els.practiceTimerToggle.setAttribute("aria-label", label);
+      els.practiceTimerToggle.title = label;
+    }
+    if (els.practiceTimerIcon) els.practiceTimerIcon.textContent = icon;
+    if (els.practiceTimerButtonText) els.practiceTimerButtonText.textContent = buttonText;
+  }
+
   function updatePracticeDisplays() {
     const value = `${formatTime(state.practiceSeconds)} / 60:00`;
     const percent = Math.min(100, Math.round((state.practiceSeconds / PRACTICE_TARGET_SECONDS) * 100));
     if (els.practiceTimeStat) els.practiceTimeStat.textContent = value;
     if (els.practiceTimeText) els.practiceTimeText.textContent = value;
     if (els.practiceTimeBar) els.practiceTimeBar.style.width = `${percent}%`;
+    updatePracticeClockUi();
   }
 
   function notePracticeActivity() {
+    if (state.practiceManuallyPaused || document.hidden) return;
     lastPracticeActivityAt = Date.now();
+    updatePracticeClockUi();
+  }
+
+  function stopPracticeForBackground() {
+    lastPracticeActivityAt = 0;
+    updatePracticeClockUi();
+  }
+
+  function togglePracticeClock() {
+    const mode = getPracticeClockMode();
+
+    if (mode === "running") {
+      state.practiceManuallyPaused = true;
+      lastPracticeActivityAt = 0;
+      toast("ვარჯიშის დრო ხელით შეჩერდა");
+    } else {
+      state.practiceManuallyPaused = false;
+      lastPracticeActivityAt = Date.now();
+      toast("ვარჯიშის დრო გაგრძელდა");
+    }
+
+    saveState();
+    updatePracticeClockUi();
+  }
+
+  function isMeaningfulPracticeTarget(target) {
+    if (!(target instanceof Element)) return false;
+    if (target.closest("#practiceTimerToggle, #infoModal, .topbar, .tabs")) return false;
+    return Boolean(target.closest(".panel.active"));
   }
 
   function startPracticeClock() {
     clearInterval(practiceTimerId);
     practiceTimerId = setInterval(() => {
-      const active = !document.hidden && lastPracticeActivityAt && Date.now() - lastPracticeActivityAt < 45000;
-      if (!active) return;
-      state.practiceSeconds += 1;
-      updatePracticeDisplays();
-      if (state.practiceSeconds % 10 === 0) saveState();
+      if (getPracticeClockMode() === "running") {
+        state.practiceSeconds += 1;
+        updatePracticeDisplays();
+        if (state.practiceSeconds % 10 === 0) saveState();
+      } else {
+        updatePracticeClockUi();
+      }
     }, 1000);
   }
 
@@ -2109,6 +2336,7 @@
   function moveDraw(event) {
     if (!drawing) return;
     event.preventDefault();
+    notePracticeActivity();
     const point = pointFromEvent(event);
     const { ink } = canvasColors();
     ctx.save();
@@ -2563,10 +2791,19 @@
   });
 
   els.themeButton.addEventListener("click", toggleTheme);
-  els.infoButton.addEventListener("click", () => els.infoModal.classList.add("open"));
-  els.closeModal.addEventListener("click", () => els.infoModal.classList.remove("open"));
+  els.infoButton.addEventListener("click", () => {
+    els.infoModal.classList.add("open");
+    updatePracticeClockUi();
+  });
+  els.closeModal.addEventListener("click", () => {
+    els.infoModal.classList.remove("open");
+    updatePracticeClockUi();
+  });
   els.infoModal.addEventListener("click", event => {
-    if (event.target === els.infoModal) els.infoModal.classList.remove("open");
+    if (event.target === els.infoModal) {
+      els.infoModal.classList.remove("open");
+      updatePracticeClockUi();
+    }
   });
   els.resetProgress.addEventListener("click", resetAllProgress);
 
@@ -2615,11 +2852,32 @@
 
   els.nextChoice.addEventListener("click", nextChoice);
   els.restartMatching.addEventListener("click", () => newMatchingRound(true));
-  document.addEventListener("pointerdown", notePracticeActivity, { passive: true, capture: true });
-  document.addEventListener("keydown", notePracticeActivity, { capture: true });
+  els.practiceTimerToggle.addEventListener("click", togglePracticeClock);
+
+  document.addEventListener("pointerdown", event => {
+    if (isMeaningfulPracticeTarget(event.target)) notePracticeActivity();
+  }, { passive: true, capture: true });
+
+  document.addEventListener("keydown", event => {
+    if (isMeaningfulPracticeTarget(event.target)) notePracticeActivity();
+  }, { capture: true });
+
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) saveState();
+    if (document.hidden) {
+      stopPracticeForBackground();
+      saveState();
+    } else {
+      updatePracticeClockUi();
+    }
   });
+
+  window.addEventListener("blur", () => {
+    stopPracticeForBackground();
+    saveState();
+  });
+
+  window.addEventListener("focus", updatePracticeClockUi);
+  window.addEventListener("pagehide", saveState);
   window.addEventListener("beforeunload", saveState);
   window.addEventListener("resize", resizeCanvas);
   document.fonts?.ready.then(resizeCanvas);
