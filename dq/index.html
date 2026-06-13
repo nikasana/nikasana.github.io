@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#7b4f2c" />
+  <meta name="description" content="ასომთავრული და ნუსხური დამწერლობის ინტერაქტიული სავარჯიშო აპი." />
+  <title>ძველქართული ანბანის სავარჯიშო</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #f5efe5;
+      --surface: rgba(255, 252, 246, 0.92);
+      --surface-solid: #fffaf2;
+      --surface-2: #efe3d2;
+      --text: #2e241c;
+      --muted: #77695d;
+      --primary: #7b4f2c;
+      --primary-2: #9a6841;
+      --accent: #c99545;
+      --green: #39745a;
+      --red: #a84c44;
+      --border: rgba(91, 62, 38, 0.16);
+      --shadow: 0 18px 55px rgba(83, 55, 31, 0.12);
+      --radius-lg: 26px;
+      --radius-md: 18px;
+      --radius-sm: 12px;
+    }
+
+    body.dark {
+      --bg: #181411;
+      --surface: rgba(39, 31, 26, 0.94);
+      --surface-solid: #271f1a;
+      --surface-2: #382c24;
+      --text: #f7eee3;
+      --muted: #c4b4a5;
+      --primary: #d39a63;
+      --primary-2: #e0ae79;
+      --accent: #e3b45f;
+      --green: #72b998;
+      --red: #ef887d;
+      --border: rgba(255, 237, 217, 0.13);
+      --shadow: 0 18px 55px rgba(0, 0, 0, 0.24);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Noto Sans Georgian", "Sylfaen", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(201, 149, 69, .16), transparent 28%),
+        radial-gradient(circle at 88% 14%, rgba(123, 79, 44, .12), transparent 25%),
+        var(--bg);
+      transition: background .2s ease, color .2s ease;
+    }
+
+    button, input, select { font: inherit; }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 3px solid rgba(201, 149, 69, .45);
+      outline-offset: 2px;
+    }
+
+    .app-shell {
+      width: min(1180px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 22px 0 54px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 18px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 10px;
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 15px;
+      background: linear-gradient(145deg, var(--primary), var(--primary-2));
+      color: #fff;
+      font-size: 27px;
+      font-weight: 800;
+      box-shadow: 0 10px 25px rgba(123, 79, 44, .22);
+      flex: 0 0 auto;
+    }
+
+    .brand h1 {
+      font-size: clamp(16px, 2vw, 22px);
+      margin: 0;
+      line-height: 1.25;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 9px;
+      align-items: center;
+    }
+
+    .icon-button {
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
+      background: var(--surface-2);
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      transition: transform .15s ease, background .15s ease;
+    }
+
+    .icon-button:hover { transform: translateY(-2px); }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap: 20px;
+      margin-top: 22px;
+    }
+
+    .hero-card, .progress-card, .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero-card {
+      border-radius: var(--radius-lg);
+      padding: clamp(23px, 4vw, 38px);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero-card::after {
+      content: "Ⴀ";
+      position: absolute;
+      right: 20px;
+      bottom: -52px;
+      font-size: 210px;
+      line-height: 1;
+      color: var(--primary);
+      opacity: .06;
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .hero h2 {
+      font-size: clamp(27px, 5vw, 48px);
+      line-height: 1.15;
+      margin: 18px 0 12px;
+      max-width: 760px;
+    }
+
+    .hero p {
+      color: var(--muted);
+      line-height: 1.75;
+      margin: 0;
+      max-width: 720px;
+    }
+
+    .script-picker {
+      margin-top: 24px;
+      display: inline-flex;
+      background: var(--surface-2);
+      border-radius: 14px;
+      padding: 4px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .script-picker button {
+      padding: 10px 15px;
+      border-radius: 11px;
+      background: transparent;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .script-picker button.active {
+      background: var(--surface-solid);
+      color: var(--primary);
+      box-shadow: 0 4px 14px rgba(55, 34, 18, .1);
+    }
+
+    .progress-card {
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .ring-wrap {
+      width: 150px;
+      height: 150px;
+      margin: 0 auto 18px;
+      position: relative;
+    }
+
+    .progress-ring {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .ring-bg, .ring-value {
+      fill: none;
+      stroke-width: 10;
+    }
+
+    .ring-bg { stroke: var(--surface-2); }
+    .ring-value {
+      stroke: var(--accent);
+      stroke-linecap: round;
+      transition: stroke-dashoffset .45s ease;
+    }
+
+    .ring-label {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    .ring-label strong { font-size: 29px; }
+    .ring-label small { color: var(--muted); }
+
+    .mini-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .mini-stat {
+      border-radius: 14px;
+      background: var(--surface-2);
+      padding: 12px;
+      text-align: center;
+    }
+
+    .mini-stat strong {
+      display: block;
+      font-size: 20px;
+      color: var(--primary);
+    }
+
+    .mini-stat span {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 9px;
+      padding: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      margin: 22px 0;
+      position: sticky;
+      top: 98px;
+      z-index: 15;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(83, 55, 31, .08);
+    }
+
+    .tab {
+      min-height: 58px;
+      padding: 10px;
+      border-radius: 14px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      transition: .15s ease;
+    }
+
+    .tab .tab-icon {
+      display: block;
+      font-size: 19px;
+      margin-bottom: 3px;
+    }
+
+    .tab.active {
+      background: linear-gradient(145deg, var(--primary), var(--primary-2));
+      color: white;
+      box-shadow: 0 8px 22px rgba(123, 79, 44, .23);
+    }
+
+    .panel {
+      display: none;
+      border-radius: var(--radius-lg);
+      padding: clamp(18px, 3vw, 30px);
+      animation: rise .2s ease;
+    }
+
+    .panel.active { display: block; }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .section-head h3 {
+      margin: 0 0 7px;
+      font-size: clamp(21px, 3vw, 29px);
+    }
+
+    .section-head p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .pill {
+      flex: 0 0 auto;
+      padding: 8px 11px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      font-size: 12px;
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .letter-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 18px;
+    }
+
+    .practice-card {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 18px;
+    }
+
+    .letter-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .letter-pair {
+      display: flex;
+      align-items: baseline;
+      gap: 13px;
+    }
+
+    .old-big {
+      font-size: clamp(52px, 10vw, 92px);
+      line-height: 1;
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    .modern-big {
+      font-size: clamp(29px, 6vw, 48px);
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .letter-name {
+      text-align: right;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .letter-name strong {
+      color: var(--text);
+      display: block;
+      font-size: 17px;
+    }
+
+    .canvas-shell {
+      position: relative;
+      overflow: hidden;
+      border: 1px dashed rgba(123, 79, 44, .35);
+      border-radius: 18px;
+      background:
+        linear-gradient(to right, transparent 49.8%, rgba(123,79,44,.08) 50%, transparent 50.2%),
+        linear-gradient(to bottom, transparent 49.8%, rgba(123,79,44,.08) 50%, transparent 50.2%),
+        var(--surface-2);
+      height: 340px;
+      touch-action: none;
+    }
+
+    #traceCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+    }
+
+    .canvas-hint {
+      position: absolute;
+      left: 14px;
+      bottom: 11px;
+      color: var(--muted);
+      font-size: 11px;
+      pointer-events: none;
+      background: var(--surface);
+      padding: 5px 8px;
+      border-radius: 8px;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 14px;
+    }
+
+    .btn {
+      min-height: 44px;
+      border-radius: 13px;
+      padding: 10px 15px;
+      background: var(--surface-2);
+      font-weight: 700;
+      transition: transform .15s ease, opacity .15s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn.primary { background: var(--primary); color: #fff; }
+    .btn.success { background: var(--green); color: #fff; }
+    .btn.danger { background: rgba(168, 76, 68, .13); color: var(--red); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+    .letter-sidebar {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 16px;
+    }
+
+    .letter-sidebar h4 {
+      margin: 0 0 12px;
+      font-size: 15px;
+    }
+
+    .letter-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 7px;
+      max-height: 430px;
+      overflow: auto;
+      padding-right: 3px;
+    }
+
+    .letter-chip {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      background: var(--surface-2);
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+      position: relative;
+    }
+
+    .letter-chip.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .letter-chip.done::after {
+      content: "✓";
+      position: absolute;
+      right: -2px;
+      top: -5px;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: var(--green);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-size: 9px;
+      border: 2px solid var(--surface-solid);
+    }
+
+    .reading-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .reading-card {
+      border: 1px solid var(--border);
+      border-radius: 19px;
+      background: var(--surface-solid);
+      padding: 19px;
+    }
+
+    .reading-number {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .old-text {
+      font-size: clamp(23px, 4vw, 34px);
+      line-height: 1.75;
+      margin: 12px 0;
+      overflow-wrap: anywhere;
+    }
+
+    .modern-reveal {
+      background: var(--surface-2);
+      border-radius: 13px;
+      padding: 13px 15px;
+      margin-top: 12px;
+      display: none;
+      line-height: 1.6;
+    }
+
+    .modern-reveal.visible { display: block; }
+
+    .quiz-card {
+      max-width: 720px;
+      margin: 0 auto;
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: 23px;
+      padding: clamp(20px, 4vw, 32px);
+      text-align: center;
+    }
+
+    .quiz-progress {
+      height: 9px;
+      background: var(--surface-2);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 25px;
+    }
+
+    .quiz-progress > span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: inherit;
+      transition: width .3s ease;
+    }
+
+    .question-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .question-word {
+      font-size: clamp(46px, 10vw, 76px);
+      line-height: 1.35;
+      color: var(--primary);
+      margin: 13px 0 23px;
+      overflow-wrap: anywhere;
+    }
+
+    .answer-input {
+      width: 100%;
+      min-height: 55px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      padding: 12px 15px;
+      font-size: 18px;
+      text-align: center;
+    }
+
+    .feedback {
+      min-height: 29px;
+      margin: 14px 0 3px;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    .feedback.correct { color: var(--green); }
+    .feedback.wrong { color: var(--red); }
+
+    .choice-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .choice {
+      min-height: 54px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      font-weight: 700;
+      text-align: left;
+      padding: 12px 16px;
+      transition: transform .15s ease, border-color .15s ease;
+    }
+
+    .choice:hover { transform: translateX(3px); }
+    .choice.correct { background: rgba(57, 116, 90, .15); border-color: var(--green); color: var(--green); }
+    .choice.wrong { background: rgba(168, 76, 68, .13); border-color: var(--red); color: var(--red); }
+    .choice:disabled { cursor: default; transform: none; }
+
+    .quiz-footer {
+      margin-top: 22px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .score-line {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 15px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translate(-50%, 20px);
+      background: var(--text);
+      color: var(--surface-solid);
+      padding: 12px 17px;
+      border-radius: 13px;
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: .22s ease;
+      z-index: 100;
+      box-shadow: var(--shadow);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      background: rgba(19, 13, 9, .58);
+      display: none;
+      place-items: center;
+      padding: 18px;
+    }
+
+    .modal.open { display: grid; }
+
+    .modal-card {
+      width: min(560px, 100%);
+      max-height: 85vh;
+      overflow: auto;
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 25px;
+      box-shadow: var(--shadow);
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      align-items: center;
+      margin-bottom: 13px;
+    }
+
+    .modal-head h3 { margin: 0; }
+
+    .modal-card p, .modal-card li {
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .modal-card a { color: var(--primary); }
+
+    .footer-note {
+      text-align: center;
+      color: var(--muted);
+      margin-top: 20px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 860px) {
+      .hero { grid-template-columns: 1fr; }
+      .letter-layout { grid-template-columns: 1fr; }
+      .letter-grid { grid-template-columns: repeat(11, 1fr); max-height: none; }
+    }
+
+    @media (max-width: 620px) {
+      .app-shell { width: min(100% - 16px, 1180px); padding-top: 8px; }
+      .topbar {
+        top: 5px;
+        border-radius: 19px;
+        padding: 12px;
+      }
+      .brand-mark { width: 42px; height: 42px; font-size: 23px; }
+      .brand p { display: none; }
+      .tabs {
+        top: 76px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        padding: 5px;
+        gap: 4px;
+        border-radius: 16px;
+      }
+      .tab {
+        min-height: 53px;
+        padding: 6px 2px;
+        font-size: 10px;
+        line-height: 1.2;
+      }
+      .tab .tab-icon { font-size: 17px; }
+      .hero-card, .progress-card, .panel { border-radius: 20px; }
+      .hero-card { padding: 23px 19px; }
+      .progress-card { padding: 20px; }
+      .section-head { display: block; }
+      .section-head .pill { display: inline-block; margin-top: 10px; }
+      .canvas-shell { height: 300px; }
+      .letter-grid { grid-template-columns: repeat(7, 1fr); }
+      .letter-sidebar { padding: 13px; }
+      .button-row .btn { flex: 1 1 calc(50% - 9px); }
+      .old-text { line-height: 1.65; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" id="brandMark" aria-hidden="true">Ⴀ</div>
+        <div>
+          <h1>ძველქართული ანბანის სავარჯიშო</h1>
+          <p>ასომთავრული და ნუსხური — ნაბიჯ-ნაბიჯ</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-button" id="themeButton" title="თემის შეცვლა" aria-label="თემის შეცვლა">☾</button>
+        <button class="icon-button" id="infoButton" title="აპის შესახებ" aria-label="აპის შესახებ">ⓘ</button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="hero-card">
+        <span class="eyebrow">✦ ინტერაქტიული სწავლა</span>
+        <h2>ისწავლე ძველი ქართული დამწერლობა პრაქტიკით</h2>
+        <p>
+          მოხაზე თითოეული ასო, წაიკითხე ტექსტები, გაშიფრე სიტყვები და შეამოწმე ცოდნა
+          Multiple Choice სავარჯიშოებით.
+        </p>
+        <div class="script-picker" aria-label="დამწერლობის არჩევა">
+          <button class="active" data-script="asomtavruli">ასომთავრული</button>
+          <button data-script="nuskhuri">ნუსხური</button>
+        </div>
+      </div>
+
+      <aside class="progress-card" aria-label="საერთო პროგრესი">
+        <div class="ring-wrap">
+          <svg class="progress-ring" viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-bg" cx="60" cy="60" r="51"></circle>
+            <circle class="ring-value" id="ringValue" cx="60" cy="60" r="51"></circle>
+          </svg>
+          <div class="ring-label">
+            <div>
+              <strong id="overallPercent">0%</strong><br>
+              <small>საერთო პროგრესი</small>
+            </div>
+          </div>
+        </div>
+        <div class="mini-stats">
+          <div class="mini-stat"><strong id="lettersDone">0/33</strong><span>ნასწავლი ასო</span></div>
+          <div class="mini-stat"><strong id="readingDone">0/5</strong><span>წაკითხული ტექსტი</span></div>
+          <div class="mini-stat"><strong id="typingScore">0</strong><span>სწორი პასუხი</span></div>
+          <div class="mini-stat"><strong id="choiceScore">0</strong><span>სწორი არჩევანი</span></div>
+        </div>
+      </aside>
+    </section>
+
+    <nav class="tabs" aria-label="სავარჯიშოების არჩევა">
+      <button class="tab active" data-panel="letters"><span class="tab-icon">✍</span>ასოების წერა</button>
+      <button class="tab" data-panel="reading"><span class="tab-icon">◫</span>ტექსტის კითხვა</button>
+      <button class="tab" data-panel="typing"><span class="tab-icon">⌨</span>სიტყვის ჩაწერა</button>
+      <button class="tab" data-panel="choice"><span class="tab-icon">✓</span>არჩევითი პასუხი</button>
+    </nav>
+
+    <section class="panel active" id="panel-letters">
+      <div class="section-head">
+        <div>
+          <h3>1. ასოების გამოწერა</h3>
+          <p>მოხაზე ნიმუში ეკრანზე. დასრულებული ასოები პროგრესში ავტომატურად შეინახება.</p>
+        </div>
+        <span class="pill" id="letterPosition">ასო 1 / 33</span>
+      </div>
+
+      <div class="letter-layout">
+        <div class="practice-card">
+          <div class="letter-meta">
+            <div class="letter-pair">
+              <span class="old-big" id="oldLetter">Ⴀ</span>
+              <span class="modern-big" id="modernLetter">ა</span>
+            </div>
+            <div class="letter-name">
+              ძველი → თანამედროვე
+              <strong id="letterName">ანი</strong>
+            </div>
+          </div>
+
+          <div class="canvas-shell" id="canvasShell">
+            <canvas id="traceCanvas" aria-label="ასოს საწერი დაფა"></canvas>
+            <div class="canvas-hint">თითით ან მაუსით მოხაზე ასო</div>
+          </div>
+
+          <div class="button-row">
+            <button class="btn" id="prevLetter">← წინა</button>
+            <button class="btn" id="clearCanvas">გასუფთავება</button>
+            <button class="btn success" id="completeLetter" disabled>დასრულებულად მონიშვნა</button>
+            <button class="btn primary" id="nextLetter">შემდეგი →</button>
+          </div>
+        </div>
+
+        <aside class="letter-sidebar">
+          <h4>ანბანი და პროგრესი</h4>
+          <div class="letter-grid" id="letterGrid"></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-reading">
+      <div class="section-head">
+        <div>
+          <h3>2. ტექსტის წაკითხვა</h3>
+          <p>ჯერ სცადე ძველი დამწერლობით წაკითხვა, შემდეგ კი გამოაჩინე თანამედროვე ვარიანტი.</p>
+        </div>
+        <span class="pill" id="readingProgressPill">0 / 5 დასრულებული</span>
+      </div>
+      <div class="reading-list" id="readingList"></div>
+    </section>
+
+    <section class="panel" id="panel-typing">
+      <div class="section-head">
+        <div>
+          <h3>3. სიტყვა თანამედროვე ქართულით</h3>
+          <p>წაიკითხე ძველი დამწერლობით მოცემული სიტყვა და ჩაწერე მისი მხედრული ფორმა.</p>
+        </div>
+        <span class="pill" id="typingPill">სერია: 0 სწორი</span>
+      </div>
+
+      <div class="quiz-card">
+        <div class="quiz-progress"><span id="typingBar"></span></div>
+        <div class="question-label">ჩაწერე თანამედროვე ქართულით</div>
+        <div class="question-word" id="typingQuestion">ႤႬႠ</div>
+        <input class="answer-input" id="typingInput" type="text" lang="ka" autocomplete="off"
+               placeholder="პასუხი..." aria-label="თანამედროვე ქართული პასუხი">
+        <div class="feedback" id="typingFeedback" aria-live="polite"></div>
+        <div class="quiz-footer">
+          <button class="btn primary" id="checkTyping">შემოწმება</button>
+          <button class="btn" id="nextTyping" disabled>შემდეგი სიტყვა</button>
+        </div>
+        <div class="score-line" id="typingScoreLine">სწორი: 0 · მცდელობა: 0</div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-choice">
+      <div class="section-head">
+        <div>
+          <h3>4. Multiple Choice</h3>
+          <p>აირჩიე ძველი დამწერლობით მოცემული სიტყვის სწორი თანამედროვე შესატყვისი.</p>
+        </div>
+        <span class="pill" id="choicePill">სერია: 0 სწორი</span>
+      </div>
+
+      <div class="quiz-card">
+        <div class="quiz-progress"><span id="choiceBar"></span></div>
+        <div class="question-label">რომელი სიტყვაა?</div>
+        <div class="question-word" id="choiceQuestion">ႼႨႢႬႨ</div>
+        <div class="choice-list" id="choiceList"></div>
+        <div class="feedback" id="choiceFeedback" aria-live="polite"></div>
+        <div class="quiz-footer">
+          <button class="btn primary" id="nextChoice" disabled>შემდეგი კითხვა</button>
+        </div>
+        <div class="score-line" id="choiceScoreLine">სწორი: 0 · მცდელობა: 0</div>
+      </div>
+    </section>
+
+    <p class="footer-note">
+      სავარჯიშო ფოკუსირებულია თანამედროვე ქართულში გამოყენებული 33 ასოს ასომთავრულ და ნუსხურ ფორმებზე.
+      პროგრესი ინახება მხოლოდ ამ ბრაუზერში.
+    </p>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="modal" id="infoModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="modalTitle">აპის შესახებ</h3>
+        <button class="icon-button" id="closeModal" aria-label="დახურვა">×</button>
+      </div>
+      <p>
+        ეს არის ძველი ქართული დამწერლობის სასწავლო ვებაპი. გლობალური გადამრთველით შეგიძლია
+        ყველა სავარჯიშო ასომთავრულ ან ნუსხურ ფორმაში გაიარო.
+      </p>
+      <ul>
+        <li>ასოების საწერი დაფა და 33-ასოიანი პროგრესი;</li>
+        <li>ტექსტის წაკითხვა პასუხის ეტაპობრივი ჩვენებით;</li>
+        <li>სიტყვის თავისუფლად ჩაწერა თანამედროვე ქართულით;</li>
+        <li>Multiple Choice სავარჯიშო ავტომატურად არეული პასუხებით;</li>
+        <li>პროგრესის შენახვა Local Storage-ში.</li>
+      </ul>
+      <p>
+        ტექნიკური შესაბამისობის წყაროები:
+        <a href="https://www.unicode.org/charts/nameslist/n_10A0.html" target="_blank" rel="noreferrer">Unicode — Georgian / Asomtavruli</a>
+        და
+        <a href="https://www.unicode.org/charts/nameslist/n_2D00.html" target="_blank" rel="noreferrer">Unicode — Georgian Supplement / Nuskhuri</a>.
+      </p>
+      <div class="button-row">
+        <button class="btn danger" id="resetProgress">მთელი პროგრესის წაშლა</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  const MODERN = [..."აბგდევზთიკლმნოპჟრსტუფქღყშჩცძწჭხჯჰ"];
+  const ASOMTAVRULI = [..."ႠႡႢႣႤႥႦႧႨႩႪႫႬႭႮႯႰႱႲႳႴႵႶႷႸႹႺႻႼႽႾႿჀ"];
+  const NUSKHURI = [..."ⴀⴁⴂⴃⴄⴅⴆⴇⴈⴉⴊⴋⴌⴍⴎⴏⴐⴑⴒⴓⴔⴕⴖⴗⴘⴙⴚⴛⴜⴝⴞⴟⴠ"];
+  const LETTER_NAMES = [
+    "ანი","ბანი","განი","დონი","ენი","ვინი","ზენი","თანი","ინი","კანი","ლასი",
+    "მანი","ნარი","ონი","პარი","ჟანი","რაე","სანი","ტარი","უნი","ფარი","ქანი",
+    "ღანი","ყარი","შინი","ჩინი","ცანი","ძილი","წილი","ჭარი","ხანი","ჯანი","ჰაე"
+  ];
+
+  const readingItems = [
+    "ენა ერის საუნჯეა.",
+    "სწავლა ცოდნის გზაა.",
+    "წიგნი ადამიანის მეგობარია.",
+    "საქართველო უძველესი კულტურის ქვეყანაა.",
+    "ვაზი და ღვინო ქართული კულტურის ნაწილია."
+  ];
+
+  const words = [
+    "ენა", "წიგნი", "სიტყვა", "სწავლა", "ცოდნა", "ისტორია", "საქართველო",
+    "მეგობარი", "სახლი", "დედა", "მამა", "ბავშვი", "მზე", "მთვარე",
+    "წყალი", "მიწა", "ჰაერი", "გული", "ვაზი", "ღვინო", "პური", "ქალაქი",
+    "სოფელი", "მთა", "ზღვა", "კარი", "ფანჯარა", "სიხარული", "მშვიდობა",
+    "კულტურა", "ანბანი", "ქართული"
+  ];
+
+  const STORAGE_KEY = "oldGeorgianTrainerV1";
+  const defaultState = {
+    script: "asomtavruli",
+    theme: "light",
+    currentLetter: 0,
+    completedLetters: [],
+    completedReadings: [],
+    typingCorrect: 0,
+    typingAttempts: 0,
+    typingStreak: 0,
+    choiceCorrect: 0,
+    choiceAttempts: 0,
+    choiceStreak: 0
+  };
+
+  let state = loadState();
+  let typingIndex = randomIndex(words.length);
+  let choiceIndex = randomIndex(words.length);
+  let typingAnswered = false;
+  let choiceAnswered = false;
+  let hasDrawn = false;
+
+  const $ = (id) => document.getElementById(id);
+  const els = {
+    body: document.body,
+    brandMark: $("brandMark"),
+    themeButton: $("themeButton"),
+    infoButton: $("infoButton"),
+    infoModal: $("infoModal"),
+    closeModal: $("closeModal"),
+    resetProgress: $("resetProgress"),
+    ringValue: $("ringValue"),
+    overallPercent: $("overallPercent"),
+    lettersDone: $("lettersDone"),
+    readingDone: $("readingDone"),
+    typingScore: $("typingScore"),
+    choiceScore: $("choiceScore"),
+    letterPosition: $("letterPosition"),
+    oldLetter: $("oldLetter"),
+    modernLetter: $("modernLetter"),
+    letterName: $("letterName"),
+    letterGrid: $("letterGrid"),
+    prevLetter: $("prevLetter"),
+    nextLetter: $("nextLetter"),
+    clearCanvas: $("clearCanvas"),
+    completeLetter: $("completeLetter"),
+    traceCanvas: $("traceCanvas"),
+    canvasShell: $("canvasShell"),
+    readingList: $("readingList"),
+    readingProgressPill: $("readingProgressPill"),
+    typingQuestion: $("typingQuestion"),
+    typingInput: $("typingInput"),
+    typingFeedback: $("typingFeedback"),
+    checkTyping: $("checkTyping"),
+    nextTyping: $("nextTyping"),
+    typingScoreLine: $("typingScoreLine"),
+    typingPill: $("typingPill"),
+    typingBar: $("typingBar"),
+    choiceQuestion: $("choiceQuestion"),
+    choiceList: $("choiceList"),
+    choiceFeedback: $("choiceFeedback"),
+    nextChoice: $("nextChoice"),
+    choiceScoreLine: $("choiceScoreLine"),
+    choicePill: $("choicePill"),
+    choiceBar: $("choiceBar"),
+    toast: $("toast")
+  };
+
+  function loadState() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      return {
+        ...defaultState,
+        ...saved,
+        completedLetters: Array.isArray(saved.completedLetters) ? saved.completedLetters : [],
+        completedReadings: Array.isArray(saved.completedReadings) ? saved.completedReadings : []
+      };
+    } catch {
+      return { ...defaultState };
+    }
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    updateDashboard();
+  }
+
+  function currentAlphabet() {
+    return state.script === "nuskhuri" ? NUSKHURI : ASOMTAVRULI;
+  }
+
+  function convert(text) {
+    const alphabet = currentAlphabet();
+    return [...text].map(char => {
+      const index = MODERN.indexOf(char);
+      return index >= 0 ? alphabet[index] : char;
+    }).join("");
+  }
+
+  function normalize(text) {
+    return text.trim().replace(/\s+/g, " ").normalize("NFC");
+  }
+
+  function randomIndex(length, except = -1) {
+    if (length < 2) return 0;
+    let index;
+    do index = Math.floor(Math.random() * length);
+    while (index === except);
+    return index;
+  }
+
+  function shuffle(items) {
+    const copy = [...items];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  }
+
+  function toast(message) {
+    els.toast.textContent = message;
+    els.toast.classList.add("show");
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => els.toast.classList.remove("show"), 1900);
+  }
+
+  function updateDashboard() {
+    els.lettersDone.textContent = `${state.completedLetters.length}/33`;
+    els.readingDone.textContent = `${state.completedReadings.length}/${readingItems.length}`;
+    els.typingScore.textContent = state.typingCorrect;
+    els.choiceScore.textContent = state.choiceCorrect;
+
+    const letterPart = state.completedLetters.length / MODERN.length;
+    const readingPart = state.completedReadings.length / readingItems.length;
+    const typingPart = state.typingAttempts ? state.typingCorrect / state.typingAttempts : 0;
+    const choicePart = state.choiceAttempts ? state.choiceCorrect / state.choiceAttempts : 0;
+    const percent = Math.round(((letterPart + readingPart + typingPart + choicePart) / 4) * 100);
+
+    els.overallPercent.textContent = `${percent}%`;
+    const circumference = 2 * Math.PI * 51;
+    els.ringValue.style.strokeDasharray = circumference;
+    els.ringValue.style.strokeDashoffset = circumference * (1 - percent / 100);
+  }
+
+  function setScript(script) {
+    state.script = script;
+    document.querySelectorAll("[data-script]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.script === script);
+    });
+    els.brandMark.textContent = script === "nuskhuri" ? "ⴀ" : "Ⴀ";
+    saveState();
+    renderLetter();
+    renderReading();
+    renderTyping();
+    renderChoice();
+    resizeCanvas();
+  }
+
+  function applyTheme() {
+    const dark = state.theme === "dark";
+    els.body.classList.toggle("dark", dark);
+    els.themeButton.textContent = dark ? "☀" : "☾";
+  }
+
+  function toggleTheme() {
+    state.theme = state.theme === "dark" ? "light" : "dark";
+    applyTheme();
+    saveState();
+    resizeCanvas();
+  }
+
+  function switchPanel(name) {
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.classList.toggle("active", tab.dataset.panel === name);
+    });
+    document.querySelectorAll(".panel").forEach(panel => panel.classList.remove("active"));
+    $(`panel-${name}`).classList.add("active");
+    if (name === "letters") setTimeout(resizeCanvas, 40);
+  }
+
+  function renderLetterGrid() {
+    els.letterGrid.innerHTML = "";
+    currentAlphabet().forEach((char, index) => {
+      const button = document.createElement("button");
+      button.className = "letter-chip";
+      if (index === state.currentLetter) button.classList.add("active");
+      if (state.completedLetters.includes(index)) button.classList.add("done");
+      button.textContent = char;
+      button.title = `${char} — ${MODERN[index]}`;
+      button.addEventListener("click", () => {
+        state.currentLetter = index;
+        saveState();
+        renderLetter();
+        clearCanvas();
+      });
+      els.letterGrid.appendChild(button);
+    });
+  }
+
+  function renderLetter() {
+    const i = state.currentLetter;
+    els.oldLetter.textContent = currentAlphabet()[i];
+    els.modernLetter.textContent = MODERN[i];
+    els.letterName.textContent = LETTER_NAMES[i];
+    els.letterPosition.textContent = `ასო ${i + 1} / ${MODERN.length}`;
+    els.prevLetter.disabled = i === 0;
+    els.nextLetter.disabled = i === MODERN.length - 1;
+    const done = state.completedLetters.includes(i);
+    els.completeLetter.textContent = done ? "✓ დასრულებულია" : "დასრულებულად მონიშვნა";
+    els.completeLetter.disabled = !hasDrawn && !done;
+    renderLetterGrid();
+    drawGuide();
+  }
+
+  function completeCurrentLetter() {
+    const index = state.currentLetter;
+    if (!state.completedLetters.includes(index)) {
+      state.completedLetters.push(index);
+      state.completedLetters.sort((a, b) => a - b);
+      toast("ასო პროგრესში დაემატა ✓");
+    } else {
+      state.completedLetters = state.completedLetters.filter(i => i !== index);
+      toast("დასრულების მონიშვნა გაუქმდა");
+    }
+    saveState();
+    renderLetter();
+  }
+
+  const ctx = els.traceCanvas.getContext("2d");
+  let drawing = false;
+  let lastPoint = null;
+
+  function resizeCanvas() {
+    const rect = els.canvasShell.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const ratio = Math.max(1, window.devicePixelRatio || 1);
+    els.traceCanvas.width = Math.floor(rect.width * ratio);
+    els.traceCanvas.height = Math.floor(rect.height * ratio);
+    els.traceCanvas.style.width = `${rect.width}px`;
+    els.traceCanvas.style.height = `${rect.height}px`;
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    drawGuide();
+  }
+
+  function canvasColors() {
+    const styles = getComputedStyle(document.body);
+    return {
+      guide: styles.getPropertyValue("--primary").trim(),
+      ink: styles.getPropertyValue("--text").trim()
+    };
+  }
+
+  function drawGuide() {
+    const rect = els.traceCanvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    ctx.clearRect(0, 0, rect.width, rect.height);
+    const { guide } = canvasColors();
+    ctx.save();
+    ctx.globalAlpha = .16;
+    ctx.fillStyle = guide;
+    const fontSize = Math.min(rect.width * .55, rect.height * .72);
+    ctx.font = `500 ${fontSize}px "Noto Sans Georgian", "Sylfaen", sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(currentAlphabet()[state.currentLetter], rect.width / 2, rect.height / 2 + 8);
+    ctx.restore();
+  }
+
+  function clearCanvas() {
+    hasDrawn = false;
+    els.completeLetter.disabled = !state.completedLetters.includes(state.currentLetter);
+    drawGuide();
+  }
+
+  function pointFromEvent(event) {
+    const rect = els.traceCanvas.getBoundingClientRect();
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top
+    };
+  }
+
+  function startDraw(event) {
+    event.preventDefault();
+    drawing = true;
+    lastPoint = pointFromEvent(event);
+    els.traceCanvas.setPointerCapture?.(event.pointerId);
+  }
+
+  function moveDraw(event) {
+    if (!drawing) return;
+    event.preventDefault();
+    const point = pointFromEvent(event);
+    const { ink } = canvasColors();
+    ctx.save();
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = 9;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(lastPoint.x, lastPoint.y);
+    ctx.lineTo(point.x, point.y);
+    ctx.stroke();
+    ctx.restore();
+    lastPoint = point;
+    hasDrawn = true;
+    els.completeLetter.disabled = false;
+  }
+
+  function endDraw(event) {
+    drawing = false;
+    lastPoint = null;
+    try { els.traceCanvas.releasePointerCapture?.(event.pointerId); } catch {}
+  }
+
+  function renderReading() {
+    els.readingList.innerHTML = "";
+    readingItems.forEach((text, index) => {
+      const card = document.createElement("article");
+      card.className = "reading-card";
+
+      const number = document.createElement("div");
+      number.className = "reading-number";
+      number.textContent = `ტექსტი ${index + 1}`;
+
+      const old = document.createElement("div");
+      old.className = "old-text";
+      old.textContent = convert(text);
+
+      const reveal = document.createElement("div");
+      reveal.className = "modern-reveal";
+      reveal.textContent = text;
+
+      const buttons = document.createElement("div");
+      buttons.className = "button-row";
+
+      const show = document.createElement("button");
+      show.className = "btn";
+      show.textContent = "თანამედროვე ასოების ჩვენება";
+      show.addEventListener("click", () => {
+        const visible = reveal.classList.toggle("visible");
+        show.textContent = visible ? "პასუხის დამალვა" : "თანამედროვე ასოების ჩვენება";
+      });
+
+      const done = document.createElement("button");
+      done.className = "btn success";
+      const refreshDone = () => {
+        done.textContent = state.completedReadings.includes(index) ? "✓ წაკითხულია" : "წაკითხულად მონიშვნა";
+      };
+      refreshDone();
+      done.addEventListener("click", () => {
+        if (state.completedReadings.includes(index)) {
+          state.completedReadings = state.completedReadings.filter(i => i !== index);
+        } else {
+          state.completedReadings.push(index);
+          state.completedReadings.sort((a, b) => a - b);
+          reveal.classList.add("visible");
+          show.textContent = "პასუხის დამალვა";
+          toast("ტექსტი პროგრესში დაემატა ✓");
+        }
+        refreshDone();
+        saveState();
+        updateReadingPill();
+      });
+
+      buttons.append(show, done);
+      card.append(number, old, buttons, reveal);
+      els.readingList.appendChild(card);
+    });
+    updateReadingPill();
+  }
+
+  function updateReadingPill() {
+    els.readingProgressPill.textContent = `${state.completedReadings.length} / ${readingItems.length} დასრულებული`;
+  }
+
+  function renderTyping() {
+    const answer = words[typingIndex];
+    els.typingQuestion.textContent = convert(answer);
+    els.typingInput.value = "";
+    els.typingInput.disabled = false;
+    els.typingFeedback.textContent = "";
+    els.typingFeedback.className = "feedback";
+    els.checkTyping.disabled = false;
+    els.nextTyping.disabled = true;
+    typingAnswered = false;
+    updateTypingStats();
+  }
+
+  function checkTyping() {
+    if (typingAnswered) return;
+    const answer = words[typingIndex];
+    const userAnswer = normalize(els.typingInput.value);
+    if (!userAnswer) {
+      els.typingFeedback.textContent = "ჯერ ჩაწერე პასუხი.";
+      els.typingFeedback.className = "feedback wrong";
+      return;
+    }
+
+    typingAnswered = true;
+    state.typingAttempts += 1;
+    const correct = userAnswer === normalize(answer);
+    if (correct) {
+      state.typingCorrect += 1;
+      state.typingStreak += 1;
+      els.typingFeedback.textContent = "სწორია! შესანიშნავი პასუხია ✓";
+      els.typingFeedback.className = "feedback correct";
+    } else {
+      state.typingStreak = 0;
+      els.typingFeedback.textContent = `სწორი პასუხია: ${answer}`;
+      els.typingFeedback.className = "feedback wrong";
+    }
+    els.typingInput.disabled = true;
+    els.checkTyping.disabled = true;
+    els.nextTyping.disabled = false;
+    saveState();
+    updateTypingStats();
+  }
+
+  function nextTyping() {
+    typingIndex = randomIndex(words.length, typingIndex);
+    renderTyping();
+    els.typingInput.focus();
+  }
+
+  function updateTypingStats() {
+    els.typingScoreLine.textContent = `სწორი: ${state.typingCorrect} · მცდელობა: ${state.typingAttempts}`;
+    els.typingPill.textContent = `სერია: ${state.typingStreak} სწორი`;
+    const rate = state.typingAttempts ? state.typingCorrect / state.typingAttempts : 0;
+    els.typingBar.style.width = `${Math.round(rate * 100)}%`;
+  }
+
+  function renderChoice() {
+    const answer = words[choiceIndex];
+    els.choiceQuestion.textContent = convert(answer);
+    els.choiceFeedback.textContent = "";
+    els.choiceFeedback.className = "feedback";
+    els.nextChoice.disabled = true;
+    choiceAnswered = false;
+
+    const distractors = shuffle(words.filter((_, i) => i !== choiceIndex)).slice(0, 3);
+    const options = shuffle([answer, ...distractors]);
+    els.choiceList.innerHTML = "";
+
+    options.forEach(option => {
+      const button = document.createElement("button");
+      button.className = "choice";
+      button.textContent = option;
+      button.addEventListener("click", () => chooseAnswer(button, option, answer));
+      els.choiceList.appendChild(button);
+    });
+    updateChoiceStats();
+  }
+
+  function chooseAnswer(button, option, answer) {
+    if (choiceAnswered) return;
+    choiceAnswered = true;
+    state.choiceAttempts += 1;
+
+    const correct = option === answer;
+    if (correct) {
+      state.choiceCorrect += 1;
+      state.choiceStreak += 1;
+      button.classList.add("correct");
+      els.choiceFeedback.textContent = "სწორია! ✓";
+      els.choiceFeedback.className = "feedback correct";
+    } else {
+      state.choiceStreak = 0;
+      button.classList.add("wrong");
+      els.choiceFeedback.textContent = `სწორი პასუხია: ${answer}`;
+      els.choiceFeedback.className = "feedback wrong";
+    }
+
+    [...els.choiceList.children].forEach(choice => {
+      choice.disabled = true;
+      if (choice.textContent === answer) choice.classList.add("correct");
+    });
+
+    els.nextChoice.disabled = false;
+    saveState();
+    updateChoiceStats();
+  }
+
+  function nextChoice() {
+    choiceIndex = randomIndex(words.length, choiceIndex);
+    renderChoice();
+  }
+
+  function updateChoiceStats() {
+    els.choiceScoreLine.textContent = `სწორი: ${state.choiceCorrect} · მცდელობა: ${state.choiceAttempts}`;
+    els.choicePill.textContent = `სერია: ${state.choiceStreak} სწორი`;
+    const rate = state.choiceAttempts ? state.choiceCorrect / state.choiceAttempts : 0;
+    els.choiceBar.style.width = `${Math.round(rate * 100)}%`;
+  }
+
+  function resetAllProgress() {
+    const confirmed = confirm("ნამდვილად გინდა მთელი პროგრესის წაშლა?");
+    if (!confirmed) return;
+    const currentScript = state.script;
+    const currentTheme = state.theme;
+    state = { ...defaultState, script: currentScript, theme: currentTheme };
+    saveState();
+    renderLetter();
+    renderReading();
+    renderTyping();
+    renderChoice();
+    els.infoModal.classList.remove("open");
+    clearCanvas();
+    toast("პროგრესი წაიშალა");
+  }
+
+  document.querySelectorAll("[data-script]").forEach(button => {
+    button.addEventListener("click", () => setScript(button.dataset.script));
+  });
+
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", () => switchPanel(tab.dataset.panel));
+  });
+
+  els.themeButton.addEventListener("click", toggleTheme);
+  els.infoButton.addEventListener("click", () => els.infoModal.classList.add("open"));
+  els.closeModal.addEventListener("click", () => els.infoModal.classList.remove("open"));
+  els.infoModal.addEventListener("click", event => {
+    if (event.target === els.infoModal) els.infoModal.classList.remove("open");
+  });
+  els.resetProgress.addEventListener("click", resetAllProgress);
+
+  els.prevLetter.addEventListener("click", () => {
+    if (state.currentLetter > 0) {
+      state.currentLetter -= 1;
+      saveState();
+      clearCanvas();
+      renderLetter();
+    }
+  });
+
+  els.nextLetter.addEventListener("click", () => {
+    if (state.currentLetter < MODERN.length - 1) {
+      state.currentLetter += 1;
+      saveState();
+      clearCanvas();
+      renderLetter();
+    }
+  });
+
+  els.clearCanvas.addEventListener("click", clearCanvas);
+  els.completeLetter.addEventListener("click", completeCurrentLetter);
+
+  els.traceCanvas.addEventListener("pointerdown", startDraw);
+  els.traceCanvas.addEventListener("pointermove", moveDraw);
+  els.traceCanvas.addEventListener("pointerup", endDraw);
+  els.traceCanvas.addEventListener("pointercancel", endDraw);
+  els.traceCanvas.addEventListener("pointerleave", event => {
+    if (event.buttons === 0) endDraw(event);
+  });
+
+  els.checkTyping.addEventListener("click", checkTyping);
+  els.nextTyping.addEventListener("click", nextTyping);
+  els.typingInput.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      if (typingAnswered) nextTyping();
+      else checkTyping();
+    }
+  });
+
+  els.nextChoice.addEventListener("click", nextChoice);
+  window.addEventListener("resize", resizeCanvas);
+  document.fonts?.ready.then(resizeCanvas);
+
+  applyTheme();
+  setScript(state.script);
+  renderLetter();
+  renderReading();
+  renderTyping();
+  renderChoice();
+  updateDashboard();
+  setTimeout(resizeCanvas, 80);
+})();
+</script>
+</body>
+</html>
