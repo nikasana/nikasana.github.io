@@ -65,7 +65,7 @@ addEventListener('DOMContentLoaded', () => {
   endRun = function (kind, src) {
     const was = G && G.ended, r = _er(kind, src);
     if (!was && G && !G.title && !G.tutorial && G.t > 10) { // every run end counts: death, win, quit, co-op
-      const S = Save.data; S.runLog = (S.runLog || []).concat([{ d: G.diff, p: G.pace || 'normal', t: Math.floor(G.t), dead: kind !== 'win', q: kind === 'quit' }]).slice(-80); Save.save();
+      const S = Save.data; S.runLog = (S.runLog || []).concat([{ d: G.diff, p: G.pace || 'normal', t: Math.floor(G.t), dead: kind !== 'win', q: kind === 'quit', ...(G.stat && G.stat.n > 5 ? { hp: +(G.stat.hp / G.stat.n).toFixed(3), min: +G.stat.min.toFixed(3), dz: +(G.stat.danger / G.stat.n).toFixed(3), dpm: +(G.stat.dmg / Math.max(1, G.t / 60)).toFixed(3) } : {}) }]).slice(-80); Save.save();
     }
     return r;
   };
@@ -100,10 +100,21 @@ W2.update = function (dt) { // trims every kind of healing since the last frame 
   const df = G && !G.title ? diffDef() : null;
   if (df && df.healMul !== undefined && _paHpLast > 0 && P.hp > _paHpLast && !(P.ghost > 0)) P.hp = _paHpLast + (P.hp - _paHpLast) * df.healMul;
   _paW2(dt);
+  RunStat.tick(dt);
   _paHpLast = P.hp;
 };
 const _paNew2 = newGame;
-newGame = function (...a) { _paHpLast = 0; return _paNew2(...a); };
+newGame = function (...a) { _paHpLast = 0; const r = _paNew2(...a); if (G) G.stat = { n: 0, hp: 0, min: 1, danger: 0, dmg: 0, acc: 0 }; return r; };
+// health over time: sampled once a second while playing
+const RunStat = {
+  tick(dt) {
+    const st = G && G.stat; if (!st || G.title || G.state !== 'play' || !(P.maxhp > 0)) return;
+    st.acc += dt; if (st.acc < 1) return; st.acc = 0;
+    const f = Math.max(0, Math.min(1, P.hp / P.maxhp)); st.n++; st.hp += f; st.min = Math.min(st.min, f); if (f < 0.3) st.danger++;
+  },
+};
+const _paHurt2 = hurtPlayer;
+hurtPlayer = function (d, ...a) { const b = P ? P.hp : 0; const r = _paHurt2(d, ...a); if (G && G.stat && P && P.maxhp > 0 && P.hp < b) G.stat.dmg += (b - P.hp) / P.maxhp; return r; };
 
 // ----- main menu: "Difficulty – Pace", both selectable right there -----
 addEventListener('DOMContentLoaded', () => {
@@ -127,19 +138,33 @@ addEventListener('DOMContentLoaded', () => {
 // ----- one-tap suggestion from your last 3 runs: difficulty + pace together -----
 const Suggest = {
   level(d, p) { return Math.max(0, DIFFICULTIES.findIndex((x) => x.id === d)) + Math.max(0, PACES.findIndex((x) => x.id === p)); },
+  TARGET: 0.55, // tense but survivable
+  // how hard a run felt, 0 (trivial) … 1 (crushed)
+  stress(r) {
+    const byTime = r.t < 360 ? 0.9 : r.t < 600 ? 0.72 : r.t < 900 ? 0.6 : 0.4;
+    if (r.hp === undefined) return !r.dead ? 0.3 : r.q ? Math.min(byTime, 0.55) : byTime; // older runs: only time is known
+    let s = 0.4 * (1 - r.hp) + 0.3 * Math.min(1, r.dz * 2.5) + 0.2 * Math.min(1, r.dpm / 0.6) + 0.1 * (1 - r.min);
+    if (r.dead && !r.q) s = Math.max(s, byTime); // a death is a strong signal
+    if (!r.dead) s = Math.min(s, 0.5); // a win is never 'too hard'
+    return Math.max(0, Math.min(1, s));
+  },
   get() {
-    let log = (Save.data.runLog || []).slice(-3);
+    let log = (Save.data.runLog || []).filter((r) => !(r.q && r.t < 120)).slice(-3);
     if (!log.length) { // no runs logged yet: fall back to your best time on record
       const b = Math.max(0, ...Object.values(Save.data.best || {}).map(Number).filter((x) => x > 0));
       if (!b) return null;
       log = [{ d: Save.data.diff || 'rookie', p: Save.data.pace || 'normal', t: b, dead: true }];
     }
-    // won / 15:00+ → much harder, 10–15 min → harder, 6–10 min → keep, under 6 min → easier
-    const step = (r) => (!r.dead || r.t >= 900 ? 2 : r.t >= 600 ? 1 : r.t >= 360 || r.q ? 0 : -1); // quitting early is not a sign it was too hard
-    const last = log[log.length - 1], avg = log.reduce((a, r) => a + step(r), 0) / log.length;
-    const L = Math.max(0, Math.min(DIFFICULTIES.length + PACES.length - 2, this.level(last.d, last.p) + Math.round(avg)));
+    const w = [0.2, 0.3, 0.5].slice(-log.length), ws = w.reduce((a, b) => a + b, 0);
+    const avg = log.reduce((a, r, i) => a + this.stress(r) * w[i], 0) / ws;
+    let delta = (this.TARGET - avg) * 7; if (log.length === 1) delta *= 0.6; // one run: move cautiously
+    delta = Math.max(-3, Math.min(3, Math.round(delta)));
+    const last = log[log.length - 1];
+    const L = Math.max(0, Math.min(DIFFICULTIES.length + PACES.length - 2, this.level(last.d, last.p) + delta));
     const di = Math.min(DIFFICULTIES.length - 1, Math.ceil(L / 2)), pi = Math.max(0, Math.min(PACES.length - 1, L - di));
-    return { d: DIFFICULTIES[di], p: PACES[pi], n: log.length };
+    const hp = log.filter((r) => r.hp !== undefined), pct = (x) => Math.round(x * 100) + '%';
+    const why = (hp.length ? `Avg health ${pct(hp.reduce((a, r) => a + r.hp, 0) / hp.length)}, in danger ${pct(hp.reduce((a, r) => a + r.dz, 0) / hp.length)} of the time. ` : '') + `Challenge ${pct(avg)} (aim ${pct(this.TARGET)}) → ` + (delta > 0 ? 'harder' : delta < 0 ? 'easier' : 'keep');
+    return { d: DIFFICULTIES[di], p: PACES[pi], n: log.length, why };
   },
   label() { const s = this.get(); return s ? `✨ Suggested: ${s.d.icon} ${s.d.name} – ${s.p.icon} ${s.p.name}` : '✨ Suggested: play a run first'; },
   apply() {
@@ -149,7 +174,7 @@ const Suggest = {
     if ($('setup') && $('setup').classList.contains('show')) buildSetup();
     this.refresh();
   },
-  refresh() { for (const b of document.querySelectorAll('.suggestBtn')) { b.textContent = this.label(); b.disabled = !this.get(); b.title = 'Based on your last 3 runs'; } },
+  refresh() { const g = this.get(); for (const b of document.querySelectorAll('.suggestBtn')) { b.innerHTML = ''; b.append(this.label()); if (g) { const sm = document.createElement('small'); sm.textContent = g.why; b.append(sm); } b.disabled = !g; } },
   button() { const b = document.createElement('button'); b.className = 'big ghost small suggestBtn'; b.onclick = () => this.apply(); b.textContent = this.label(); return b; },
 };
 addEventListener('DOMContentLoaded', () => {
