@@ -52,6 +52,7 @@ const CrewHQ = {
       const log = (c.log || []).map((r) => { const st = STAGES.find((s) => s.id === r.stage) || STAGES[0]; return `<div class="runRow"><div class="pi">${r.kind === 'win' ? '🏆' : '💀'}</div><div class="runInfo"><b>${st.icon} ${st.name} · ${fmtTime(r.time)}</b><small>${r.kills} kills · ${zbDate(r.t)}</small></div></div>`; }).join('');
       h += `<div class="hqStats"><div><b>${c.runs || 0}</b>runs</div><div><b>${c.wins || 0}</b>wins</div><div><b>${c.kills || 0}</b>kills</div><div><b>${(c.stages || []).length}/${STAGES.length}</b>maps</div></div>
         <div class="sect">MEMBERS</div><p>${(c.members || []).map((m) => { const ch = CHARACTERS.find((x) => x.id === m.char); return (ch ? ch.icon + ' ' : '') + m.name; }).join(' · ') || '—'}</p>
+        ${typeof chartSVG === 'function' ? '<div class="charts">' + chartSVG((c.log || []).slice().reverse().map((r, i) => [i + 1, r.time]), { title: '⏱️ Crew runs: time survived', min: 0, color: '#c8e060', fmtY: (v) => fmtTime(v) }) + chartSVG((c.log || []).slice().reverse().map((r, i) => [i + 1, r.kills]), { title: '💀 Crew runs: kills', min: 0, color: '#ff6a5a' }) + '</div>' : ''}
         <div class="sect">RECENT RUNS</div><div class="runList">${log || '<p class="dim">No crew runs yet.</p>'}</div>`;
     }
     $('hqBody').innerHTML = h;

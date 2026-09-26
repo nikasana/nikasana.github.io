@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#15130f" />
 <title>ZONEBONK — Heart of the Zone</title>
-<link rel="icon" type="image/svg+xml" href="icon.svg?v=67" />
-<link rel="apple-touch-icon" href="icon.svg?v=67" />
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=69" />
+<link rel="apple-touch-icon" href="icon.svg?v=69" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -324,6 +324,27 @@
   .dpPick { display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap; margin: 6px 0; font: 600 14px Oswald, sans-serif; color: #e8dca8; }
   .dpPick select { margin-left: 6px; padding: 5px 8px; font: 600 13px Oswald, sans-serif; background: rgba(0,0,0,0.6); color: #f0ead0; border: 1px solid #6a6450; border-radius: 6px; }
   .dpPick .dash { opacity: 0.7; } .dpNote { display: block; text-align: center; margin-bottom: 6px; }
+  /* cyberpunk upgrade maps (Bunker: Upgrades, Research, Skills, Mastery) */
+  #bunker.cyber { background: radial-gradient(ellipse at 50% 0%, rgba(120,0,160,0.35), transparent 60%), linear-gradient(rgba(0,255,240,0.05) 1px, transparent 1px) 0 0 / 32px 32px, linear-gradient(90deg, rgba(0,255,240,0.05) 1px, transparent 1px) 0 0 / 32px 32px, #05060d; }
+  #bunker.cyber::after { content: ''; position: fixed; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 3px); z-index: 0; }
+  #bunker.cyber h2 { color: #7ffcff; text-shadow: 0 0 12px #00e5ff, 2px 0 #ff2bd6; letter-spacing: 0.25em; }
+  #bunker.cyber .sect { color: #ff5ce6; text-shadow: 0 0 8px rgba(255,43,214,0.7); font-family: monospace; }
+  #bunker.cyber .tab { background: rgba(0,10,20,0.8); border-color: #00e5ff55; color: #7ffcff; font-family: monospace; }
+  #bunker.cyber .tab.sel { background: #ff2bd6; color: #05060d; border-color: #ff2bd6; box-shadow: 0 0 12px #ff2bd6; }
+  .cyberMap { position: relative; grid-template-columns: repeat(3, 1fr) !important; column-gap: 34px !important; row-gap: 34px !important; padding-top: 16px; }
+  @media (max-width: 700px) { .cyberMap { grid-template-columns: repeat(2, 1fr) !important; column-gap: 18px !important; } }
+  .cyberMap:not([style*="none"]) { display: grid !important; }
+  .cyberMap > :not(.meta):not(.pick):not(.tnode):not(svg) { display: none !important; }
+  .cyberMap > svg.cyberLinks { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; z-index: 0; }
+  .cyberMap .trace { fill: none; stroke: rgba(0,229,255,0.22); stroke-width: 2; stroke-dasharray: 6 4; }
+  .cyberMap .trace.on { stroke: #00fff0; stroke-dasharray: none; filter: drop-shadow(0 0 4px #00fff0); }
+  .cyberMap .joint { fill: #05060d; stroke: rgba(0,229,255,0.4); stroke-width: 2; } .cyberMap .joint.on { fill: #ff2bd6; stroke: #ff2bd6; filter: drop-shadow(0 0 5px #ff2bd6); }
+  .cyberMap > .meta, .cyberMap > .pick, .cyberMap > .tnode { position: relative; z-index: 1; background: linear-gradient(135deg, rgba(0,20,35,0.95), rgba(20,0,35,0.95)) !important; border: 1px solid rgba(0,229,255,0.45) !important; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); box-shadow: inset 0 0 18px rgba(0,229,255,0.12); color: #d8fbff; }
+  .cyberMap > .meta b, .cyberMap > .pick b, .cyberMap > .tnode b { color: #7ffcff; font-family: monospace; letter-spacing: 0.04em; }
+  .cyberMap > .meta small, .cyberMap > .pick small, .cyberMap > .tnode small { color: #9fb8d0; }
+  .cyberMap > .sel, .cyberMap > .done, .cyberMap > .open { border-color: #ff2bd6 !important; box-shadow: inset 0 0 22px rgba(255,43,214,0.25), 0 0 14px rgba(255,43,214,0.35); }
+  .cyberMap .pips i { background: rgba(0,229,255,0.2) !important; } .cyberMap .pips i.on { background: #00fff0 !important; box-shadow: 0 0 6px #00fff0; }
+  .cyberMap .pi, .cyberMap .tic { filter: drop-shadow(0 0 6px rgba(0,229,255,0.7)); }
   .coRoleDesc { font-size: 12px; color: #b8c0a0; margin: -4px 0 10px; min-height: 16px; }
   .pick.lgd { border-color: rgba(255,207,106,0.55); box-shadow: inset 0 0 18px rgba(255,207,106,0.12); }
   #tip { position: fixed; z-index: 70; max-width: 300px; background: rgba(12,12,8,0.96); color: #f0ead0; border: 1px solid #c8a040; border-radius: 8px; padding: 7px 10px; font-size: 13px; line-height: 1.35; pointer-events: none; opacity: 0; transition: opacity 0.12s; }
@@ -497,44 +518,45 @@
       '<button onclick="location.reload()" style="' + btn + 'background:#ffcf3a;color:#111;border:2px solid #ffcf3a">🔄 RELOAD</button>';
   });
 </script>
-<script src="js/util.js?v=67"></script>
-<script src="js/audio.js?v=67"></script>
-<script src="js/radio.js?v=67"></script>
-<script src="js/ambience.js?v=67"></script>
-<script src="js/data.js?v=67"></script>
-<script src="js/artifacts.js?v=67"></script>
-<script src="js/world.js?v=67"></script>
-<script src="js/render.js?v=67"></script>
-<script src="js/render2.js?v=67"></script>
-<script src="js/lighting.js?v=67"></script>
-<script src="js/game.js?v=67"></script>
-<script src="js/systems.js?v=67"></script>
-<script src="js/weapons2.js?v=67"></script>
-<script src="js/mutants3.js?v=67"></script>
-<script src="js/events.js?v=67"></script>
-<script src="js/hazards.js?v=67"></script>
-<script src="js/world2.js?v=67"></script>
-<script src="js/vehicles.js?v=67"></script>
-<script src="js/stages3.js?v=67"></script>
-<script src="js/story.js?v=67"></script>
-<script src="js/meta.js?v=67"></script>
-<script src="js/coop.js?v=67"></script>
-<script src="js/crews.js?v=67"></script>
-<script src="js/crewhq.js?v=67"></script>
-<script src="js/content.js?v=67"></script>
-<script src="js/replay.js?v=67"></script>
-<script src="js/variety.js?v=67"></script>
-<script src="js/pace.js?v=67"></script>
-<script src="js/progress2.js?v=67"></script>
-<script src="js/ux.js?v=67"></script>
-<script src="js/saves.js?v=67"></script>
-<script src="js/polish.js?v=67"></script>
-<script src="js/voice.js?v=67"></script>
-<script src="js/i18n_a.js?v=67"></script>
-<script src="js/i18n_b.js?v=67"></script>
-<script src="js/i18n_c.js?v=67"></script>
-<script src="js/i18n.js?v=67"></script>
-<script src="js/guard.js?v=67"></script>
-<script src="js/ui.js?v=67"></script>
+<script src="js/util.js?v=69"></script>
+<script src="js/audio.js?v=69"></script>
+<script src="js/radio.js?v=69"></script>
+<script src="js/ambience.js?v=69"></script>
+<script src="js/data.js?v=69"></script>
+<script src="js/artifacts.js?v=69"></script>
+<script src="js/world.js?v=69"></script>
+<script src="js/render.js?v=69"></script>
+<script src="js/render2.js?v=69"></script>
+<script src="js/lighting.js?v=69"></script>
+<script src="js/game.js?v=69"></script>
+<script src="js/systems.js?v=69"></script>
+<script src="js/weapons2.js?v=69"></script>
+<script src="js/mutants3.js?v=69"></script>
+<script src="js/events.js?v=69"></script>
+<script src="js/hazards.js?v=69"></script>
+<script src="js/world2.js?v=69"></script>
+<script src="js/vehicles.js?v=69"></script>
+<script src="js/stages3.js?v=69"></script>
+<script src="js/story.js?v=69"></script>
+<script src="js/meta.js?v=69"></script>
+<script src="js/coop.js?v=69"></script>
+<script src="js/crews.js?v=69"></script>
+<script src="js/crewhq.js?v=69"></script>
+<script src="js/content.js?v=69"></script>
+<script src="js/replay.js?v=69"></script>
+<script src="js/variety.js?v=69"></script>
+<script src="js/pace.js?v=69"></script>
+<script src="js/progress2.js?v=69"></script>
+<script src="js/cyber.js?v=69"></script>
+<script src="js/ux.js?v=69"></script>
+<script src="js/saves.js?v=69"></script>
+<script src="js/polish.js?v=69"></script>
+<script src="js/voice.js?v=69"></script>
+<script src="js/i18n_a.js?v=69"></script>
+<script src="js/i18n_b.js?v=69"></script>
+<script src="js/i18n_c.js?v=69"></script>
+<script src="js/i18n.js?v=69"></script>
+<script src="js/guard.js?v=69"></script>
+<script src="js/ui.js?v=69"></script>
 </body>
 </html>
