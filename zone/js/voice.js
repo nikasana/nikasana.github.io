@@ -105,7 +105,7 @@ const _vBanner = banner;
 banner = function (title, sub, dur, cls, prio) {
   _vBanner(title, sub, dur, cls, prio);
   if (Voice.lang() === 'off' || !G || G.title) return;
-  const t = String(title || '');
+  const t = String((typeof BANNER_EN !== 'undefined' && BANNER_EN) || title || '');
   for (const [re, ev] of V_BANNERS) if (re.test(t)) { Voice.say(ev, { cd: 30, prio: ['train', 'avalanche', 'downed'].includes(ev) ? 2 : 1 }); return; }
 };
 // bosses and events are announced by name
