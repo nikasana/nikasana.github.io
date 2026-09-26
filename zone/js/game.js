@@ -454,7 +454,7 @@ function director(dt) {
   if (G.endless && G.t >= G.tierT) {
     G.tier++; G.tierT += 900;
     const nx = unlockNextStage();
-    if (nx) G.timers.push({ t: 4.5, fn: () => banner('🔓 NEW STAGE UNLOCKED', nx.icon + ' ' + nx.name + ' is now open on the PLAY screen.', 4, 'good', 2) });
+    if (nx) G.timers.push({ t: 2, fn: () => unlockCard(nx) });
     banner('☢ ZONE TIER ' + G.tier + ' ☢', 'The Zone grows stronger. So do its rewards.', 4, 'bad', 2);
     G.rubles += 150;
   }

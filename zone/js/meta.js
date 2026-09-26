@@ -413,7 +413,7 @@ const BunkerUI = {
       const w = $('wheel'), deg = 360 * 5 + (360 - (i + 0.5) * (360 / SEG.length));
       w.style.transition = 'none'; w.style.transform = 'rotate(0deg)'; void w.offsetWidth; w.style.transition = 'transform 2.6s cubic-bezier(.15,.8,.2,1)'; w.style.transform = `rotate(${deg}deg)`;
       for (let k = 0; k < 12; k++) setTimeout(() => Sfx.play('hint'), k * k * 18);
-      setTimeout(() => { const win = Math.floor(bet * SEG[i][0]); S.rubles += win; Save.save(); menuRubles(); BunkerUI.spinning = false; $('rouRes').textContent = win > bet ? `🎉 ×${SEG[i][0]}! You won ${win} ₽` : win ? `×${SEG[i][0]} · you get ${win} ₽ back` : '💀 ×0 · the Zone takes it all'; Sfx.play(win > bet ? 'quest' : 'hurt'); }, 2700);
+      setTimeout(() => { const win = Math.floor(bet * SEG[i][0]); S.rubles += win; Save.save(); menuRubles(); BunkerUI.spinning = false; if (!$('rouRes')) return; $('rouRes').textContent = win > bet ? `🎉 ×${SEG[i][0]}! You won ${win} ₽` : win ? `×${SEG[i][0]} · you get ${win} ₽ back` : '💀 ×0 · the Zone takes it all'; Sfx.play(win > bet ? 'quest' : 'hurt'); }, 2700);
     };
   },
   codex(el) {
@@ -441,3 +441,12 @@ const BunkerUI = {
     el.innerHTML = '<div class="sect">DAILY CHALLENGES · new ones every day</div><div class="grid">' + C.list.map((c) => row(c, C.p)).join('') + '</div><div class="sect">WEEKLY CHALLENGE</div><div class="grid">' + C.wlist.map((c) => row(c, C.wp)).join('') + '</div>';
   },
 };
+
+// ----- big centered card when surviving unlocks a new stage -----
+function unlockCard(nx) {
+  let el = $('unlockCard'); if (!el) { el = document.createElement('div'); el.id = 'unlockCard'; document.body.appendChild(el); }
+  el.innerHTML = `<small>15:00 SURVIVED</small><b>🔓 NEW STAGE UNLOCKED</b><span>${nx.icon} ${nx.name}</span><em>Pick it on the PLAY screen after this run.</em>`;
+  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+  Sfx.play('quest'); setTimeout(() => Sfx.play('artifact'), 250); flash(0.25, '255,220,120');
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 6000);
+}

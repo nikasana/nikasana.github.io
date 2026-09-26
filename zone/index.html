@@ -263,6 +263,12 @@
   .coLinkRow input, .coBox input { flex: 1; min-width: 140px; background: rgba(0,0,0,0.5); color: #e8e0c0; border: 1px solid #4a4636; border-radius: 6px; padding: 10px; font-size: 15px; }
   #coJoinCode { text-transform: uppercase; letter-spacing: 0.2em; max-width: 150px; }
   #coStart:disabled, #coJoin:disabled { opacity: 0.5; }
+  #glitch { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 60; background: rgba(40,30,10,0.9); color: #ffe070; border: 1px solid #806020; border-radius: 8px; padding: 6px 12px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+  #glitch.show { opacity: 1; }
+  #unlockCard { position: fixed; left: 50%; top: 34%; transform: translate(-50%, -50%) scale(0.8); z-index: 35; pointer-events: none; text-align: center; padding: 18px 34px; background: radial-gradient(ellipse at center, rgba(60,44,8,0.95), rgba(20,14,4,0.92)); border: 3px solid #ffcf3a; border-radius: 14px; box-shadow: 0 0 40px rgba(255,200,60,0.5); opacity: 0; transition: opacity 0.4s, transform 0.4s cubic-bezier(.2,.9,.3,1.3); max-width: 90vw; }
+  #unlockCard.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  #unlockCard small { display: block; color: #ffe8a0; letter-spacing: 0.35em; font-size: 12px; } #unlockCard b { display: block; font: 700 clamp(22px, 4.5vw, 38px) Oswald, Impact, sans-serif; color: #ffcf3a; text-shadow: 0 3px 0 #000; }
+  #unlockCard span { display: block; font-size: clamp(20px, 4vw, 30px); color: #fff; margin: 4px 0; } #unlockCard em { color: #d8c8a0; font-size: 14px; font-style: normal; }
   #mapInfo { margin-top: 8px; color: #c8c0a0; font-size: 13px; text-align: center; max-width: 92vw; }
   #mapInfo .travel { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 6px; }
   #mapInfo .travel button { font-size: 13px; padding: 6px 10px; }
@@ -416,27 +422,28 @@
     el.innerHTML = 'Something failed to load: ' + (e.message || 'script error') + ' <button onclick="location.reload(true)" style="margin-left:8px;padding:4px 10px">Reload</button>';
   });
 </script>
-<script src="js/util.js?v=25"></script>
-<script src="js/audio.js?v=25"></script>
-<script src="js/radio.js?v=25"></script>
-<script src="js/ambience.js?v=25"></script>
-<script src="js/data.js?v=25"></script>
-<script src="js/artifacts.js?v=25"></script>
-<script src="js/world.js?v=25"></script>
-<script src="js/render.js?v=25"></script>
-<script src="js/render2.js?v=25"></script>
-<script src="js/lighting.js?v=25"></script>
-<script src="js/game.js?v=25"></script>
-<script src="js/systems.js?v=25"></script>
-<script src="js/weapons2.js?v=25"></script>
-<script src="js/mutants3.js?v=25"></script>
-<script src="js/events.js?v=25"></script>
-<script src="js/hazards.js?v=25"></script>
-<script src="js/world2.js?v=25"></script>
-<script src="js/vehicles.js?v=25"></script>
-<script src="js/story.js?v=25"></script>
-<script src="js/meta.js?v=25"></script>
-<script src="js/coop.js?v=25"></script>
-<script src="js/ui.js?v=25"></script>
+<script src="js/util.js?v=28"></script>
+<script src="js/audio.js?v=28"></script>
+<script src="js/radio.js?v=28"></script>
+<script src="js/ambience.js?v=28"></script>
+<script src="js/data.js?v=28"></script>
+<script src="js/artifacts.js?v=28"></script>
+<script src="js/world.js?v=28"></script>
+<script src="js/render.js?v=28"></script>
+<script src="js/render2.js?v=28"></script>
+<script src="js/lighting.js?v=28"></script>
+<script src="js/game.js?v=28"></script>
+<script src="js/systems.js?v=28"></script>
+<script src="js/weapons2.js?v=28"></script>
+<script src="js/mutants3.js?v=28"></script>
+<script src="js/events.js?v=28"></script>
+<script src="js/hazards.js?v=28"></script>
+<script src="js/world2.js?v=28"></script>
+<script src="js/vehicles.js?v=28"></script>
+<script src="js/story.js?v=28"></script>
+<script src="js/meta.js?v=28"></script>
+<script src="js/coop.js?v=28"></script>
+<script src="js/guard.js?v=28"></script>
+<script src="js/ui.js?v=28"></script>
 </body>
 </html>

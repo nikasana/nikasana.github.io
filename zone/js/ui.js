@@ -531,7 +531,7 @@ function hud(dt) {
   const nbT = nextBossTime(), nb = G.endless ? null : BOSS_SCHEDULE[G.bossIdx];
   const wv = `Wave ${G.wave + 1}${G.waveMut ? ' ' + MUTATIONS[G.waveMut].name : ''}${G.endless ? ' · Tier ' + G.tier : ''}`;
   $('nextEvt').style.display = G.bosses.length || G.tutorial ? 'none' : '';
-  setText('nextEvt', nbT === null ? wv : `${wv} · ☠ ${nb ? (nb.id === 'final' ? stageDef().final.name : ENEMIES[nb.id].name) : 'Boss'} in ${fmtTime(Math.max(0, nbT - G.t))}`);
+  setText('nextEvt', nbT === null || nbT - G.t > 3600 ? wv : `${wv} · ☠ ${nb ? (nb.id === 'final' ? stageDef().final.name : ENEMIES[nb.id].name) : 'Boss'} in ${fmtTime(Math.max(0, nbT - G.t))}`);
   bannerTick(dt);
   if (Save.set.fps) { fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { fpsShow = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; } setText('fps', fpsShow + ' FPS'); } else setText('fps', '');
   drawDetector(); drawMinimap();
@@ -848,9 +848,9 @@ let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   NOW += dt;
-  if (G && !G.title) { update(dt); render(); hud(dt); }
-  else renderTitle(dt);
   requestAnimationFrame(frame);
+  try { if (G && !G.title) { update(dt); render(); hud(dt); } else renderTitle(dt); }
+  catch (e) { if (typeof guardReport === 'function') guardReport('frame', e); else console.error(e); }
 }
 const titleCam = { x: 3200, y: 4200 };
 const TITLE_G = { title: true, t: 30, decals: [], particles: [], texts: [], fx: [], bullets: [], ebullets: [], throws: [], gems: [], enemies: [], crates: [], pickups: [], bosses: [], shake: 0, flash: 0, psi: 0, fade: 0, em: null, rad: 0 };
