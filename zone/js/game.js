@@ -21,6 +21,9 @@ const EG = {
   init() { for (let i = 0; i < this.n * this.n; i++) this.cells.push([]); },
   clear() { for (const i of this.used) this.cells[i].length = 0; this.used.length = 0; },
   add(e) {
+    if (!Number.isFinite(e.x) || !Number.isFinite(e.y)) { // never let one bad coordinate break the frame: put the mutant back near the player
+      if (Number.isFinite(P.x) && Number.isFinite(P.y)) { e.x = P.x + 420; e.y = P.y; e.kvx = e.kvy = 0; } else { e.dead = true; return; }
+    }
     const i = clamp(Math.floor(e.y / 64), 0, this.n - 1) * this.n + clamp(Math.floor(e.x / 64), 0, this.n - 1);
     const c = this.cells[i]; if (!c.length) this.used.push(i); c.push(e);
   },
@@ -1459,6 +1462,7 @@ function updatePlayer(dt) {
   if (Math.cos(P.aim) * P.face < 0 && P.muzzle <= -0.3) P.aim = P.face > 0 ? 0 : Math.PI;
   P.muzzle -= dt;
   World.collide(P);
+  if (!Number.isFinite(P.x) || !Number.isFinite(P.y)) { P.x = P.goodX ?? World.start.x; P.y = P.goodY ?? World.start.y; P.kvx = P.kvy = P.ivx = P.ivy = 0; P.dashT = 0; } else { P.goodX = P.x; P.goodY = P.y; }
   P.dashCd -= dt; P.inv -= dt; P.shieldT -= dt;
   for (const k in P.actCd) P.actCd[k] -= dt;
   const regen = (P.regen + (P.syn.bio ? 1.5 : 0)) * (P.hp < P.maxhp * 0.3 ? P.lowRegen : 1);
@@ -1512,7 +1516,7 @@ function updateFx(dt) {
       if (d < f.r && P.dashT <= 0) { const s = (1 - d / f.r) * 230 + 40; P.x += (dx / d) * s * dt; P.y += (dy / d) * s * dt; if (d < 34) hurtPlayer(18, 'a gravity well'); }
     } else if (f.k === 'shock') {
       f.r += f.spd * dt;
-      const d = dist(P.x, P.y, f.x, f.y);
+      const d = dist(P.x, P.y, f.x, f.y) || 1;
       if (!f.hit && Math.abs(d - f.r) < 24 && P.dashT <= 0) { f.hit = true; hurtPlayer(f.dmg, f.psi ? 'a psi wave' : 'a shockwave'); P.kvx = ((P.x - f.x) / d) * 400; P.kvy = ((P.y - f.y) / d) * 400; }
       if (f.r > f.max) f.life = 0;
     } else if (f.k === 'sound') { f.r = f.max * (1 - Math.max(0, f.life) / f.maxl);

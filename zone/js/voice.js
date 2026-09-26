@@ -53,7 +53,7 @@ const TUT_RU = ['Двигайся клавишами WASD или проведи 
 
 const Voice = {
   voices: [], q: [], cool: {}, busyT: 0, last: 0,
-  lang() { const v = Save.set.voiceLang; return v === undefined ? (['ru', 'uk'].includes(Save.data && Save.data.lang) ? 'ru' : 'en') : v; },
+  lang() { if (Save.set.voiceOn === false) return 'off'; const v = Save.set.voiceLang; return v === undefined ? (['ru', 'uk'].includes(Save.data && Save.data.lang) ? 'ru' : 'en') : v; },
   ok() { return 'speechSynthesis' in window && this.lang() !== 'off'; },
   load() { if (!('speechSynthesis' in window)) return; const f = () => { this.voices = speechSynthesis.getVoices(); }; f(); speechSynthesis.onvoiceschanged = f; },
   pickVoice(lang) {
@@ -147,8 +147,9 @@ addEventListener('DOMContentLoaded', () => {
   buildSettings = function () {
     _bs();
     const s = Save.set, cur = Voice.lang(), has = (l) => Voice.voices.some((v) => v.lang && v.lang.toLowerCase().startsWith(l));
-    $('settingsBody').insertAdjacentHTML('afterbegin', `<label class="set"><span>Voice acting</span><select data-voice>${[['off', 'Off'], ['en', 'English'], ['ru', 'Русский']].map(([v, n]) => `<option value="${v}" ${cur === v ? 'selected' : ''}>${n}${v !== 'off' && Voice.voices.length && !has(v) ? ' (no voice installed)' : ''}</option>`).join('')}</select></label><button class="big ghost small" id="voiceTest">🔊 Test voice</button>`);
-    document.querySelector('[data-voice]').onchange = (e) => { s.voiceLang = e.target.value; Save.save(); };
+    $('settingsBody').insertAdjacentHTML('afterbegin', `<label class="set"><span>🗣️ Voices</span><input type="checkbox" id="voiceOn" ${s.voiceOn !== false ? 'checked' : ''}></label><label class="set" id="voiceLangRow" style="${s.voiceOn === false ? 'opacity:0.45' : ''}"><span>Voice acting</span><select data-voice>${[['off', 'Off'], ['en', 'English'], ['ru', 'Русский']].map(([v, n]) => `<option value="${v}" ${cur === v ? 'selected' : ''}>${n}${v !== 'off' && Voice.voices.length && !has(v) ? ' (no voice installed)' : ''}</option>`).join('')}</select></label><button class="big ghost small" id="voiceTest">🔊 Test voice</button>`);
+    document.querySelector('[data-voice]').onchange = (e) => { s.voiceLang = e.target.value; if (e.target.value !== 'off') s.voiceOn = true; else Voice.stop(); Save.save(); buildSettings(); };
+    $('voiceOn').onchange = (e) => { s.voiceOn = e.target.checked; if (!s.voiceOn) Voice.stop(); else if (s.voiceLang === 'off') s.voiceLang = undefined; Save.save(); buildSettings(); };
     $('voiceTest').onclick = () => { Sfx.init(); const l = Voice.lang(); if (l === 'off') return; const L = VOICE_LINES.start[0]; Voice.speak(l === 'ru' ? L[2] : L[1], 'Sidorovich', 2); };
     applyLang && applyLang();
   };

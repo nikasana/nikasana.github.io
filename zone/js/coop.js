@@ -29,20 +29,27 @@ function coClock() { return performance.now() / 1000; } // real time: keeps tick
 function coStatus(s) { const el = $('coStatus'); if (el) el.innerHTML = s; }
 
 const Net = {
-  async host() {
-    Net.leave(); CO.code = coCode(); CO.role = 'host'; CO.me = 'h'; CO.nextPid = 1;
+  // fixed: a crew's own room code (the same on every teammate's device); rejects with type 'taken' when a teammate already hosts it
+  async host(fixed, tries = 0) {
+    Net.leave(); CO.code = fixed || coCode(); CO.role = 'host'; CO.me = 'h'; CO.nextPid = 1;
     CO.players = new Map([['h', { pid: 'h', name: coNick(), char: Save.data.char, ready: true, ping: 0 }]]);
     CO.settings = coDefaultSettings();
     if (CO_DEBUG) {
       const lobby = new BroadcastChannel('zb-lobby-' + CO.code); CO.lobbyCh = lobby;
-      lobby.onmessage = (m) => { const c = bcConn(CO.code + '-' + m.data, 'host'); Net.accept(c); lobby.postMessage(m.data); };
+      if (fixed && await Net.probe(fixed)) { lobby.close(); Net.leave(); const e = new Error('taken'); e.type = 'taken'; throw e; }
+      lobby.onmessage = (m) => { if (String(m.data).startsWith('probe')) { lobby.postMessage('here' + m.data); return; } if (String(m.data).startsWith('here')) return; const c = bcConn(CO.code + '-' + m.data, 'host'); Net.accept(c); lobby.postMessage(m.data); };
       return;
     }
     await loadPeer();
     await new Promise((res, rej) => {
-      CO.peer = new Peer(CO_PREFIX + CO.code);
-      CO.peer.on('open', res);
-      CO.peer.on('error', (e) => { if (e.type === 'unavailable-id') { CO.peer.destroy(); Net.host().then(res, rej); } else { coStatus('⚠️ ' + (e.message || e.type)); rej(e); } });
+      const peer = new Peer(CO_PREFIX + CO.code); CO.peer = peer;
+      peer.on('open', res);
+      peer.on('error', (e) => {
+        if (CO.peer !== peer) return;
+        if (e.type === 'unavailable-id') { peer.destroy(); if (fixed) { Net.leave(); const t = new Error('taken'); t.type = 'taken'; rej(t); } else Net.host(null, tries).then(res, rej); }
+        else if (/server-error|network|socket-error|socket-closed/.test(e.type) && tries < 4) { peer.destroy(); coStatus('⏳ Connecting to the server… (try ' + (tries + 2) + '/5)'); setTimeout(() => Net.host(fixed, tries + 1).then(res, rej), 1000 + tries * 1200); }
+        else { coStatus('⚠️ ' + (e.message || e.type)); rej(e); }
+      });
       CO.peer.on('connection', (c) => c.on('open', () => Net.accept(c)));
       CO.peer.on('disconnected', () => { if (CO.peer && !CO.peer.destroyed) try { CO.peer.reconnect(); } catch (e) { /* retry later */ } });
     });
@@ -82,15 +89,33 @@ const Net = {
     const hello = { t: 'hello', pw: CO.pw, name: coNick(), char: Save.data.char, rejoin: rj };
     if (CO_DEBUG) {
       const lobby = new BroadcastChannel('zb-lobby-' + CO.code), sid = Math.random().toString(36).slice(2);
-      lobby.onmessage = (m) => { if (m.data !== sid) return; CO.joining = false; const c = bcConn(CO.code + '-' + sid, 'guest'); Net.bindGuest(c); c.send(hello); coUI(); };
+      const nf = setTimeout(() => { if (CO.joining && !CO.conn && CO.code === code) { CO.joining = false; coUI(); coStatus('⚠️ Room ' + code + ' not found. Is the host still waiting?'); if (CO.onJoinFail) { const f = CO.onJoinFail; CO.onJoinFail = null; f(true); } } }, 1500);
+      lobby.onmessage = (m) => { if (m.data !== sid) return; clearTimeout(nf); CO.joining = false; CO.onJoinFail = null; const c = bcConn(CO.code + '-' + sid, 'guest'); Net.bindGuest(c); c.send(hello); coUI(); };
       lobby.postMessage(sid);
       return;
     }
     await loadPeer();
-    CO.peer = new Peer();
-    CO.peer.on('error', (e) => { CO.joining = false; coUI(); coStatus('⚠️ ' + (e.type === 'peer-unavailable' ? 'Room ' + CO.code + ' not found. Is the host still waiting?' : e.message || e.type)); });
-    CO.peer.on('open', () => { const c = CO.peer.connect(CO_PREFIX + CO.code, { reliable: true }); c.on('open', () => { CO.joining = false; Net.bindGuest(c); c.send(hello); coUI(); }); });
-    setTimeout(() => { if (CO.joining && !CO.conn) { CO.joining = false; coStatus('⚠️ Could not reach room ' + CO.code + '. Check the code and that the host is still waiting, then press JOIN again.'); coUI(); } }, 15000);
+    Net.tryJoin(hello, 1);
+  },
+  // the public broker sometimes fails the first time ("server-error"): quietly try again a few times
+  tryJoin(hello, n) {
+    if (!CO.joining || CO.role !== 'guest') return;
+    try { CO.peer && CO.peer.destroy(); } catch (e) { /* already gone */ }
+    const code = CO.code, peer = new Peer(); CO.peer = peer;
+    let done = false;
+    const retry = (why, missing) => {
+      if (done || CO.peer !== peer || !CO.joining) return;
+      done = true; try { peer.destroy(); } catch (e) { /* already gone */ }
+      if (n < (missing ? 3 : 5)) { coStatus('⏳ Connecting to room ' + code + '… (try ' + (n + 1) + ')'); setTimeout(() => Net.tryJoin(hello, n + 1), 900 + n * 700); return; }
+      CO.joining = false; coUI(); coStatus('⚠️ ' + why); if (CO.onJoinFail) { const f = CO.onJoinFail; CO.onJoinFail = null; f(missing); }
+    };
+    peer.on('error', (e) => retry(e.type === 'peer-unavailable' ? 'Room ' + code + ' not found. Is the host still waiting?' : e.message || e.type, e.type === 'peer-unavailable'));
+    peer.on('open', () => { const c = peer.connect(CO_PREFIX + code, { reliable: true }); c.on('open', () => { if (CO.peer !== peer || done) return; done = true; CO.joining = false; CO.onJoinFail = null; Net.bindGuest(c); c.send(hello); coUI(); }); c.on('error', (e) => retry(e.message || e.type)); });
+    setTimeout(() => retry('Could not reach room ' + code + '. Check the code and that the host is still waiting, then press JOIN again.'), 8000);
+  },
+  // debug transport: is somebody already hosting this code?
+  probe(code) {
+    return new Promise((res) => { const ch = new BroadcastChannel('zb-lobby-' + code), id = 'probe' + Math.random().toString(36).slice(2); ch.onmessage = (m) => { if (m.data === 'here' + id) { ch.close(); res(true); } }; ch.postMessage(id); setTimeout(() => { try { ch.close(); } catch (e) { /* closed */ } res(false); }, 450); });
   },
   bindGuest(c) {
     CO.conn = c; CO.lastHostMsg = coClock();
