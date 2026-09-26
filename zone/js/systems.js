@@ -71,7 +71,7 @@ const Hints = {
 // ---------- side quests (contracts) ----------
 const Quests = {
   list: [], nextT: 4, hash: '',
-  reset() { this.list = []; this.nextT = 5; this.hash = ''; },
+  reset() { this.list = []; this.nextT = 5; this.hash = null; },
   make() {
     const m = G.t / 60, opts = [];
     const tab = spawnTable(m + 1, false);
@@ -172,7 +172,7 @@ const RunSave = {
   PKEYS: ['hp', 'maxhp', 'dmgMul', 'rateMul', 'areaMul', 'spdMul', 'pickup', 'xpMul', 'dr', 'regen', 'pierce', 'crit', 'thorns', 'dashMul', 'shards', 'lightning', 'aura', 'soul',
     'luck', 'rerolls', 'revives', 'anomRes', 'psiImmune', 'detect', 'dodge', 'lvlHeal', 'execute', 'bossDmg', 'critMul', 'dropMul', 'rubMul', 'dashDmg', 'medMul', 'adren', 'berserk',
     'standFirm', 'zapChance', 'lifesteal', 'exChance', 'frostChance', 'hunter', 'actCdMul', 'actPow', 'burnMul', 'lowRegen', 'momentum', 'sprint', 'bioHp', 'actSel', 'face', 'maxWeapons', 'lastStand', 'echo', 'basePsi'],
-  GKEYS: ['t', 'diff', 'daily', 'stage', 'char', 'endless', 'kills', 'level', 'xp', 'xpNeed', 'pendingLv', 'rubles', 'questsDone', 'elites', 'bossIdx', 'emIdx', 'rushT', 'tier', 'tierT', 'wave', 'waveT',
+  GKEYS: ['t', 'diff', 'daily', 'mode2', 'rubBonus', 'stage', 'char', 'endless', 'kills', 'level', 'xp', 'xpNeed', 'pendingLv', 'rubles', 'questsDone', 'elites', 'bossIdx', 'emIdx', 'rushT', 'tier', 'tierT', 'wave', 'waveT',
     'waveMut', 'nextBossT', 'bossN', 'arts', 'dmg', 'labsVisited', 'paidR', 'paidMin', 'streak', 'bossKills', 'seed', 'spawnIdx', 'won'],
   has() { try { return !!localStorage.getItem(this.KEY); } catch (e) { return false; } },
   peek() { try { return JSON.parse(localStorage.getItem(this.KEY)); } catch (e) { return null; } },

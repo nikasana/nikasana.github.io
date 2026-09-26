@@ -19,7 +19,7 @@ const Env = {
     if (G && !G.title && Events.mods().dark) return Events.mods().dark;
     const p = this.phase();
     let d = clamp(Math.cos((p - 0.75) * TAU) * 1.4 - 0.4, 0, 1) * 0.8;
-    const sn = (STAGE_WORLD[World.stage] || {}).night; if (sn) d = Math.max(d, sn);
+    const sn = (STAGE_WORLD[World.stage] || {}).night; if (sn) d = Math.max(d, sn); if (G && G.mode2 === 'night') d = Math.max(d, 0.68);
     if (this.weather === 'storm') d = Math.max(d, 0.35);
     else if (this.weather === 'rain') d = Math.max(d, 0.18);
     else if (this.weather === 'psi') d = Math.max(d, 0.22);

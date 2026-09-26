@@ -113,7 +113,7 @@ function render(title = false) {
     else if (it.t === 6) drawPoiChest(o);
   }
   for (const a of World.anomalies) if (a.x > x0 - a.r && a.x < x1 + a.r && a.y > y0 - 150 && a.y < y1 + a.r) drawAnomalyTop(a);
-  if (!title) { drawHazardsTop(x0, y0, x1, y1); drawW2Top(x0, y0, x1, y1); drawVehPrompt(); drawPlayerFx(); }
+  if (!title) { drawHazardsTop(x0, y0, x1, y1); drawW2Top(x0, y0, x1, y1); drawStory(x0, y0, x1, y1); drawVehPrompt(); drawPlayerFx(); }
   // bullets
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
   for (const b of G.bullets) {
@@ -530,7 +530,7 @@ function hud(dt) {
   } else $('emission').style.display = 'none';
   const nbT = nextBossTime(), nb = G.endless ? null : BOSS_SCHEDULE[G.bossIdx];
   const wv = `Wave ${G.wave + 1}${G.waveMut ? ' ' + MUTATIONS[G.waveMut].name : ''}${G.endless ? ' · Tier ' + G.tier : ''}`;
-  $('nextEvt').style.display = G.bosses.length ? 'none' : '';
+  $('nextEvt').style.display = G.bosses.length || G.tutorial ? 'none' : '';
   setText('nextEvt', nbT === null ? wv : `${wv} · ☠ ${nb ? (nb.id === 'final' ? stageDef().final.name : ENEMIES[nb.id].name) : 'Boss'} in ${fmtTime(Math.max(0, nbT - G.t))}`);
   bannerTick(dt);
   if (Save.set.fps) { fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { fpsShow = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; } setText('fps', fpsShow + ' FPS'); } else setText('fps', '');

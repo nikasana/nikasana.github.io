@@ -382,6 +382,7 @@ Object.assign(W2, {
     }
     return this.fog;
   },
+  exploreAt(x, y, r) { const px = P.x, py = P.y; P.x = x; P.y = y; this.explore(r); P.x = px; P.y = py; },
   expPct() { return Math.floor((this.expCount / 4096) * 100); },
   update(dt) {
     const W = World;

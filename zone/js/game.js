@@ -410,7 +410,7 @@ function director(dt) {
   const m = G.t / 60, reg = World.region(P.x, P.y), lab = World.kind === 'lab', night = Env.isNight();
   const bossUp = G.bosses.length > 0;
   const cap = Math.min(170 + (G.tier - 1) * 10, 18 + m * 13) * (lab ? 0.6 : 1) * (bossUp ? 0.6 : 1);
-  const rate = diffDef().spawn * Events.mods().spawn * Math.min(7, 0.5 + m * 0.42) * (0.75 + reg.danger * 0.13) * (night ? 1.25 : 1) * (G.em && G.em.phase === 'blast' ? 0 : 1) * (lab ? 0.7 : 1) * (bossUp ? 0.4 : 1);
+  const rate = (G.tutorial ? 0 : 1) * diffDef().spawn * Events.mods().spawn * Math.min(7, 0.5 + m * 0.42) * (0.75 + reg.danger * 0.13) * (night ? 1.25 : 1) * (G.em && G.em.phase === 'blast' ? 0 : 1) * (lab ? 0.7 : 1) * (bossUp ? 0.4 : 1);
   G.spawnAcc += rate * dt;
   while (G.spawnAcc >= 1) {
     G.spawnAcc--;
@@ -1569,6 +1569,7 @@ function update(dt) {
   updateOwned(dt);
   Hz.update(dt);
   W2.update(dt);
+  Story.update(dt);
   for (const b of G.bullets) if (b.k === 'bolt') revealAt(b.x, b.y + 20, 20);
   updateFx(dt);
   Quests.update(dt); Radio.update(dt); Hints.update(dt); Amb.update(dt); RunSave.tick(dt);
