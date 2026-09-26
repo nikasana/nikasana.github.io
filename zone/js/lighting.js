@@ -16,6 +16,7 @@ const Env = {
   phase() { return (((G ? G.t : 0) + 60) / 300) % 1; },
   darkness() {
     if (World.kind === 'lab') return World.dark;
+    if (G && !G.title && Events.mods().dark) return Events.mods().dark;
     const p = this.phase();
     let d = clamp(Math.cos((p - 0.75) * TAU) * 1.4 - 0.4, 0, 1) * 0.8;
     if (this.weather === 'storm') d = Math.max(d, 0.35);

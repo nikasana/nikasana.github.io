@@ -47,7 +47,7 @@ function newGame(stageId, charId, mode, spawnIdx = 0, seed) {
     zone: '', arts: 0, dmg: 0, crates: [], lightT: 0, auraT: 0, thunderT: 4, detT: 0, won: false, regionT: 0, fade: 1,
     rubles: 0, questsDone: 0, elites: 0, levelCrates: {}, levelPickups: {}, labsVisited: 0, returnPos: null, healT: 0, healRate: 0,
     lowHpT: 0, streak: 100, bossKills: 0, flowT: 0, rerollsUsed: 0,
-    endless: mode === 'endless', seed, spawnIdx, owned: [], pendingTal: 0, tier: 1, tierT: 900, shotBudget: 5, wave: 0, waveT: 150, waveMut: null, nextBossT: 150, bossN: -1, paidR: 0, paidMin: 0,
+    endless: mode === 'endless' || mode === 'bossrush', bossrush: mode === 'bossrush', seed, spawnIdx, owned: [], pendingTal: 0, tier: 1, tierT: 900, shotBudget: 5, wave: 0, waveT: 150, waveMut: null, nextBossT: 150, bossN: -1, paidR: 0, paidMin: 0,
   };
   const M = (id) => Save.meta(id), mod = ch.mod;
   P = {
@@ -73,7 +73,8 @@ function newGame(stageId, charId, mode, spawnIdx = 0, seed) {
   for (const f of World.fields) spawnArtifact(f);
   G.crates = World.crateSpots.map((s) => ({ x: s.x, y: s.y, open: 0 }));
   CAM.x = P.x; CAM.y = P.y;
-  Env.reset(); Radio.reset(); Hints.reset(); Quests.reset();
+  Env.reset(); Radio.reset(); Hints.reset(); Quests.reset(); Events.reset();
+  if (G.bossrush) G.nextBossT = 30;
   recomputeTags(); hudBuild();
   const sd = stageDef();
   banner(sd.name.toUpperCase() + (G.endless ? ' · ENDLESS' : ''), G.endless ? 'Bosses never stop coming. How long can you last?' : 'Survive 15:00. Hunt artifacts. Destroy ' + sd.final.name + '.', 5, '', 2);
@@ -151,7 +152,8 @@ function hurtEnemy(e, dmg, kx = 0, ky = 0, raw = false, proc = true) {
       if (n) { G.fx.push({ k: 'lightning', pts: [[e.x, e.y - e.z - 14], [n.x, n.y - n.z - 14]], life: 0.15, max: 0.15 }); hurtEnemy(n, dmg * 0.5, 0, 0, true); }
     }
   }
-  if (e.hp <= 0) killEnemy(e);
+  if (e.twin && !e.twin.dead) { e.twin.hp = e.hp; e.twin.flash = 0.09; }
+  if (e.hp <= 0) { killEnemy(e); if (e.twin && !e.twin.dead) killEnemy(e.twin); }
   else if (e.boss && !e.enraged && e.hp < e.maxhp * 0.5) enrage(e);
 }
 function enrage(e) {
@@ -177,7 +179,7 @@ function killEnemy(e) {
     if (e.final) winGame();
     else { banner(e.name + ' SLAIN', 'It dropped a stash. Grab it!', 4, 'good'); Radio.say('bossdead', true); }
   } else {
-    let xp = e.d.xp * 1.35;
+    let xp = e.d.xp * 1.35 * Events.mods().xp;
     if (e.affix || e.mini) {
       xp *= e.mini ? 14 : 6; G.rubles += e.mini ? 40 : 10; G.elites++;
       Quests.prog('elite');
@@ -198,6 +200,7 @@ function killEnemy(e) {
     }
     G.rubles += 0.5;
     if (e.mut) mutDeath(e);
+    onKill3(e);
     const bc = e.id === 'poltergeist' ? '255,170,70' : e.id === 'controller' || e.id === 'psydog' ? '170,120,200' : '140,20,20';
     burst(e.x, e.y - e.z, 10, bc, 180, { add: e.id === 'poltergeist' });
     if (e.id !== 'poltergeist') decal(e.x, e.y, e.r * rand(0.8, 1.3), '80,12,10');
@@ -255,6 +258,9 @@ function updateMutation(e, dt, d, ux, uy) {
       if (B && e.mutT <= 0) { e.mutT = 8; const x = P.x, y = P.y; G.fx.push({ k: 'target', x, y, r: 200, life: 1, max: 1 }); G.timers.push({ t: 1, fn: () => G.fx.push({ k: 'ehole', x, y, r: 220, life: 3.5, max: 3.5 }) }); }
       break;
     }
+    case 'frozen':
+      if (B && e.mutT <= 0) { e.mutT = 6; for (let i = 0; i < 4; i++) patch(P.x + rand(-140, 140), P.y + rand(-100, 100), 'web', 60, 5); }
+      break;
     case 'irradiated': {
       const R = B ? 190 : 80;
       if (d < R) { P.mradAcc = (P.mradAcc || 0) + (B ? 9 : 5) * dt; if (P.mradAcc > 4) { hurtPlayer(P.mradAcc, e.name, true, 'rad'); P.mradAcc = 0; } if (Math.random() < 0.5) Sfx.play('geiger'); }
@@ -309,9 +315,10 @@ function explode(x, y, r, dmg, fromPlayer = true) {
 function damageOb(ob, dmg) {
   if (!ob.hp || ob.dead) return;
   ob.hp -= dmg;
-  if (ob.hp > 0) { if (ob.kind === 'fence') burst(ob.x + ob.w / 2, ob.y, 3, '120,90,60', 80); if (ob.kind === 'lair') { ob.lair.hitT = 0.1; text(ob.x, ob.y - 60, Math.round(dmg), '#ffcf6a'); } return; }
+  if (ob.hp > 0) { if (ob.kind === 'fence') burst(ob.x + ob.w / 2, ob.y, 3, '120,90,60', 80); if (ob.kind === 'lair') { ob.lair.hitT = 0.1; text(ob.x, ob.y - 60, Math.round(dmg), '#ffcf6a'); } if (ob.kind === 'portal') text(ob.x, ob.y - 90, Math.round(dmg), '#d8a0ff'); return; }
   ob.dead = true;
   World.destroy(ob);
+  if (ob.kind === 'portal') { burst(ob.x, ob.y - 40, 40, '190,120,255', 260, { add: true }); shake(10); Sfx.play('vortex'); return; }
   if (ob.kind === 'lair') {
     const L = ob.lair; L.dead = true;
     explode(L.x, L.y, 140, 60, true); shake(14);
@@ -398,7 +405,7 @@ function director(dt) {
   const m = G.t / 60, reg = World.region(P.x, P.y), lab = World.kind === 'lab', night = Env.isNight();
   const bossUp = G.bosses.length > 0;
   const cap = Math.min(170 + (G.tier - 1) * 10, 18 + m * 13) * (lab ? 0.6 : 1) * (bossUp ? 0.6 : 1);
-  const rate = Math.min(7, 0.5 + m * 0.42) * (0.75 + reg.danger * 0.13) * (night ? 1.25 : 1) * (G.em && G.em.phase === 'blast' ? 0 : 1) * (lab ? 0.7 : 1) * (bossUp ? 0.4 : 1);
+  const rate = Events.mods().spawn * Math.min(7, 0.5 + m * 0.42) * (0.75 + reg.danger * 0.13) * (night ? 1.25 : 1) * (G.em && G.em.phase === 'blast' ? 0 : 1) * (lab ? 0.7 : 1) * (bossUp ? 0.4 : 1);
   G.spawnAcc += rate * dt;
   while (G.spawnAcc >= 1) {
     G.spawnAcc--;
@@ -406,11 +413,12 @@ function director(dt) {
     const tab = spawnTable(m, lab);
     if (night && !lab) { tab.bloodsucker = (tab.bloodsucker || 0) + 10; tab.snork = (tab.snork || 0) + 8; }
     if (Env.weather === 'psi' && !lab) { tab.controller = (tab.controller || 0) + 6; tab.psydog = (tab.psydog || 0) + 6; }
+    spawnTable3(tab, m, lab, reg);
     let tot = 0; for (const k in tab) tot += tab[k];
     let r = rand(tot), id = 'dog'; for (const k in tab) { r -= tab[k]; if (r <= 0) { id = k; break; } }
     const p = ringPos(); if (!p) continue;
-    const n = id === 'dog' ? randi(m < 1 ? 1 : 2, m < 3 ? 2 : 3) : id === 'rat' ? randi(3, 5) : id === 'pseudodog' ? 2 : 1;
-    for (let i = 0; i < n; i++) spawnEnemy(id, p[0] + rand(-30, 30), p[1] + rand(-30, 30), i ? { noElite: true } : {});
+    const n = PACKS[id] ? randi(PACKS[id][0], PACKS[id][1]) : id === 'dog' ? randi(m < 1 ? 1 : 2, m < 3 ? 2 : 3) : id === 'rat' ? randi(3, 5) : id === 'pseudodog' ? 2 : 1;
+    for (let i = 0; i < n; i++) spawnEnemy(id, p[0] + rand(-30, 30), p[1] + rand(-30, 30), i ? { noElite: true } : Events.mods().elite ? { affix: pick(Object.keys(ELITE_AFFIX)) } : {});
   }
   G.rushT -= dt;
   if (G.rushT <= 0 && !lab && !bossUp && !(G.em && G.em.phase !== 'after')) {
@@ -479,7 +487,7 @@ function spawnNextBoss() {
     else spawnBoss(b.id);
     return;
   }
-  G.nextBossT += 150; G.bossN++;
+  G.nextBossT += G.bossrush ? 60 : 150; G.bossN++;
   if ((G.bossN + 1) % 7 === 0) { const f = stageDef().final; spawnBoss(f.id, { name: f.name + ' · TIER ' + G.tier, hpMul: (f.hp || 1) * 0.8 }); return; }
   const id = BOSS_POOL[G.bossN % BOSS_POOL.length];
   spawnBoss(id);
@@ -515,6 +523,7 @@ function updateEmission(dt) {
       const over = World.cur === 'over' ? World : null;
       for (const f of (over ? World.fields : World.levels.over.fields)) spawnArtifact(f);
       banner('THE EMISSION IS OVER', 'New artifacts have been born inside the anomalies.', 5, 'good');
+      if (G.t > 300 && World.kind === 'over' && Math.random() < 0.5) G.timers.push({ t: 8, fn: () => { const id = pick(BOSS_POOL); const b = spawnBoss(id, { name: 'ANCIENT ' + ENEMIES[id].name, hpMul: 1.2 }); b.eventBoss = true; } });
       Radio.say('emissionEnd', true);
     }
   } else if (em.t <= 0) G.em = null;
@@ -532,8 +541,14 @@ function updateEnemies(dt) {
   const lab = World.kind === 'lab';
   if (lab) { G.flowT -= dt; if (G.flowT <= 0) { G.flowT = 0.4; World.computeFlow(P.x, P.y); } }
   const farR = lab ? 1500 : Math.hypot(VW, VH) / 2 / ZOOM + 500;
+  G.markT = (G.markT || 0) - dt;
+  const flood = Events.mods().flood;
   for (const e of G.enemies) {
     if (e.dead) continue;
+    if (!e.boss && !e.mini && !e.evolved && e.t > 50 && e.id !== 'phantom' && e.id !== 'holoclone' && e.id !== 'bat') {
+      e.evolved = true; e.sc *= 1.2; e.r *= 1.2; e.hp *= 1.8; e.maxhp *= 1.8; e.spd *= 1.1; e.name = 'Evolved ' + e.name;
+      burst(e.x, e.y - 20, 14, '255,80,80', 140, { add: true });
+    }
     e.t += dt; e.flash -= dt; e.cd -= dt; e.cd2 -= dt; e.cd3 -= dt; e.cast -= dt; e.shield -= dt; e.reveal -= dt; e.slowT -= dt; e.stun -= dt;
     if (e.burnT > 0) {
       e.burnT -= dt; e.burnTick -= dt;
@@ -542,10 +557,11 @@ function updateEnemies(dt) {
     } else e.burnDps = 0;
     if (e.affix === 'regen') e.hp = Math.min(e.maxhp, e.hp + e.maxhp * 0.03 * dt);
     if (e.id === 'phantom') { e.life = (e.life ?? 6) - dt; if (e.life <= 0) { killEnemy(e); continue; } }
-    const dx = P.x - e.x, dy = P.y - e.y, d = Math.hypot(dx, dy) || 1;
+    const TG = e.tgt && e.tgt.hp > 0 ? e.tgt : P;
+    const dx = TG.x - e.x, dy = TG.y - e.y, d = Math.hypot(dx, dy) || 1;
     let ux = dx / d, uy = dy / d;
     if (lab && d > 90) { const f = World.flowDir(e.x, e.y); if (f) { ux = f[0]; uy = f[1]; } }
-    let sp = e.spd * (e.slowT > 0 ? 0.55 : 1), vx = ux * sp, vy = uy * sp;
+    let sp = e.spd * (e.slowT > 0 ? 0.55 : 1) * (G.markT > 0 && !e.boss ? 1.25 : 1) * (flood && !e.d.fly ? 0.75 : 1), vx = ux * sp, vy = uy * sp;
     if (!e.boss && !e.mini && d > farR) { const p = ringPos(); if (p) { e.x = p[0]; e.y = p[1]; } continue; }
     if (e.stun > 0) { vx = vy = 0; }
     else switch (e.id) {
@@ -764,6 +780,7 @@ function updateEnemies(dt) {
           }
         }
         break;
+      default: { const r = aiExtra(e, dt, d, ux, uy, sp, dx, dy); if (r) { vx = r[0]; vy = r[1]; } break; }
       case 'monolith': {
         e.z = 30 + Math.sin(e.t * 1.5) * 10;
         if (d < 260) { vx = -ux * sp; vy = -uy * sp; } else if (d < 380) { vx = vy = 0; }
@@ -802,12 +819,14 @@ function updateEnemies(dt) {
     if (!e.d.fly && !(e.state === 2 && (e.id === 'chimera' || e.id === 'snork' || e.id === 'packalpha'))) World.collide(e);
     if (Math.abs(vx) > 4) e.face = vx > 0 ? 1 : -1;
     e.anim += dt * (4 + Math.hypot(vx, vy) / 18);
-    if (d < e.r + P.r + 2 && e.z < 20 && e.stun <= 0) {
+    const pd = TG === P ? d : dist(P.x, P.y, e.x, e.y);
+    if (pd < e.r + P.r + 2 && e.z < 20 && e.stun <= 0 && e.d.dmg > 0 && !e.hidden) {
       const had = P.inv <= 0 && P.dashT <= 0;
       hurtPlayer(e.dmg, e.name);
       if (had) {
         if (P.thorns) hurtEnemy(e, P.thorns, -ux * 200, -uy * 200, true);
         if (e.affix === 'vampiric') e.hp = Math.min(e.maxhp, e.hp + e.dmg * 3);
+        onContact3(e);
       }
     }
   }
@@ -953,7 +972,7 @@ function nearest(x, y, range, skip) {
   let best = null, bd = range * range;
   for (const e of G.enemies) {
     if (e.dead || (skip && skip.includes(e))) continue;
-    if ((e.id === 'bloodsucker' || e.id === 'cat') && e.alpha < 0.3) continue;
+    if (e.hidden || ((e.id === 'bloodsucker' || e.id === 'cat' || e.id === 'snake' || e.id === 'wraith') && e.alpha < 0.3)) continue;
     const d = dist2(x, y, e.x, e.y); if (d < bd) { bd = d; best = e; }
   }
   return best;
@@ -1110,7 +1129,7 @@ function updateBullets(dt) {
     EG.query(b.x, b.y + 16, 50, TMP);
     for (const e of TMP) {
       if (e.dead || b.hits.includes(e)) continue;
-      if ((e.id === 'bloodsucker' || e.id === 'cat') && e.alpha < 0.3 && b.k !== 'bolt') continue;
+      if (e.hidden || ((e.id === 'bloodsucker' || e.id === 'cat' || e.id === 'snake' || e.id === 'wraith') && e.alpha < 0.3 && b.k !== 'bolt')) continue;
       const ex = e.x, ey = e.y - e.z - e.r;
       if (dist2(b.x, b.y, ex, ey) < (e.r + b.r + 6) ** 2) {
         if (b.rocket) { b.dead = true; rocketBoom(b); break; }
@@ -1134,8 +1153,10 @@ function updateBullets(dt) {
   for (const b of G.ebullets) {
     b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
     if (b.life <= 0 || World.solidAt(b.x, b.y + 20)) { b.dead = true; continue; }
+    if (b.k === 'fake') { if (dist2(b.x, b.y, P.x, P.y - 20) < (b.r + P.r) ** 2) b.dead = true; continue; }
     if (dist2(b.x, b.y, P.x, P.y - 20) < (b.r + P.r) ** 2) {
       b.dead = true;
+      if (b.k === 'web' && !(P.dashT > 0)) P.chillT = 2;
       if (P.dashT > 0 || P.inv > 0) continue;
       hurtPlayer(b.dmg, b.k === 'psi' ? 'a Controller' : b.k === 'mono' ? 'the Monolith' : b.k === 'fire' ? 'a Poltergeist' : b.k === 'debris' ? 'the Burer' : 'a Zombie');
       if (b.k === 'psi' && !P.psiImmune) { P.psiSlowT = 1; G.psi = 1; }
@@ -1183,6 +1204,7 @@ function updatePickups(dt) {
     if (c.open) { c.open += dt; continue; }
     if (dist2(c.x, c.y, P.x, P.y) < 34 * 34) {
       c.open = 0.001; Sfx.play('stash'); burst(c.x, c.y, 14, '140,100,60', 160, { s: 4 });
+      if (G.t > 180 && World.kind === 'over' && Math.random() < 0.1) { spawnEnemy('mimic', c.x, c.y, { noElite: true }); banner('MIMIC!', 'That crate was hungry.', 1.8, 'bad'); continue; }
       const r = Math.random();
       if (r < 0.32) G.pickups.push({ type: 'med', x: c.x + 10, y: c.y + 10, t: 0 });
       else if (r < 0.55) G.pickups.push({ type: 'item', id: pick(Object.keys(ITEMS)), x: c.x + 10, y: c.y + 10, t: 0 });
@@ -1396,7 +1418,8 @@ function updatePlayer(dt) {
   const ml = Math.hypot(mx, my); if (ml > 1) { mx /= ml; my /= ml; }
   P.moving = ml > 0.1;
   P.psiSlowT -= dt;
-  P.slow = Math.max(P.slowNext, P.psiSlowT > 0 && !P.psiImmune ? 0.35 : 0); P.slowNext = 0;
+  P.chillT = (P.chillT || 0) - dt;
+  P.slow = Math.max(P.slowNext, P.psiSlowT > 0 && !P.psiImmune ? 0.35 : 0, P.chillT > 0 ? 0.4 : 0, Events.mods().flood ? 0.2 : 0); P.slowNext = 0;
   P.adrenT -= dt; P.lsAcc = Math.max(0, P.lsAcc - 5 * dt);
   P.buffT -= dt; P.vodkaT -= dt; P.antiradT -= dt; P.psiImmune = P.basePsi || P.vodkaT > 0;
   let spdB = (P.adrenT > 0 ? P.adren : 0) + (P.buffT > 0 ? 0.4 : 0);
@@ -1460,7 +1483,8 @@ function updateFx(dt) {
     if (f.delay > 0) { f.delay -= dt; continue; }
     f.life -= dt;
     if (f.k === 'patch') {
-      if (dist2(P.x, P.y, f.x, f.y) < f.r * f.r && P.dashT <= 0) {
+      if (f.type === 'web') { if (dist2(P.x, P.y, f.x, f.y) < f.r * f.r && P.dashT <= 0) P.slowNext = Math.max(P.slowNext, 0.5); }
+      else if (dist2(P.x, P.y, f.x, f.y) < f.r * f.r && P.dashT <= 0) {
         P.patchAcc = (P.patchAcc || 0) + (f.type === 'fire' ? 14 : 8) * dt;
         if (f.type === 'toxic') P.slowNext = Math.max(P.slowNext, 0.35);
         if (P.patchAcc > 5) { hurtPlayer(P.patchAcc, f.type === 'fire' ? 'fire' : 'acid', true, 'anomaly'); P.patchAcc = 0; }
@@ -1518,6 +1542,7 @@ function update(dt) {
   updatePlayer(dt);
   director(dt);
   updateEmission(dt);
+  Events.update(dt);
   Env.update(dt);
   updateEnemies(dt);
   updateAnomalies(dt);

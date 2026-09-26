@@ -48,7 +48,7 @@ function render(title = false) {
     ctx.beginPath(); ctx.ellipse(p.x, p.y, 230, 150, 0, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
   }
   for (const a of World.anomalies) if (a.x > x0 - a.r && a.x < x1 + a.r && a.y > y0 - a.r && a.y < y1 + a.r) drawAnomalyGround(a);
-  if (!title && G.owned) drawOwned();
+  if (!title && G.owned) { drawOwned(); drawEventWorld(); }
   for (const g of G.gems) {
     if (g.x < x0 || g.x > x1 || g.y < y0 || g.y > y1) continue;
     const big = g.v >= 20, mid = g.v >= 5, s = big ? 7 : mid ? 5.5 : 4, c = big ? '#ff6ad5' : mid ? '#6ad0ff' : '#7dff8a';
@@ -123,7 +123,8 @@ function render(title = false) {
     ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - b.vx * 0.022, b.y - b.vy * 0.022); ctx.stroke();
   }
   for (const b of G.ebullets) {
-    const c = b.k === 'psi' ? '200,100,255' : b.k === 'fire' ? '255,140,40' : b.k === 'mono' ? '140,220,255' : b.k === 'debris' ? '200,170,120' : '255,90,60';
+    if (b.k === 'fake') { ctx.fillStyle = `rgba(140,220,255,${0.3 + Math.sin(NOW * 30 + b.x) * 0.2})`; ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 1.6, 0, TAU); ctx.fill(); continue; }
+    const c = b.k === 'web' ? '240,240,240' : b.k === 'psi' ? '200,100,255' : b.k === 'fire' ? '255,140,40' : b.k === 'mono' ? '140,220,255' : b.k === 'debris' ? '200,170,120' : '255,90,60';
     if (low) { ctx.fillStyle = `rgb(${c})`; ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 1.2, 0, TAU); ctx.fill(); continue; }
     const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r * 2.2);
     g.addColorStop(0, 'rgba(255,255,255,0.95)'); g.addColorStop(0.4, `rgba(${c},0.9)`); g.addColorStop(1, `rgba(${c},0)`);
@@ -137,7 +138,7 @@ function render(title = false) {
   for (const t of G.throws) {
     const k = t.t / t.T, x = lerp(t.x0, t.x1, k), y = lerp(t.y0, t.y1, k), z = Math.sin(k * Math.PI) * 120;
     shadow(x, y + 20 * (1 - k), 5, 2, 0.3);
-    ctx.fillStyle = '#3a4a2a'; ctx.beginPath(); ctx.arc(x, y - z, 5, 0, TAU); ctx.fill();
+    ctx.fillStyle = t.k === 'erock' ? '#6a5a4a' : t.k === 'acid' ? '#8cff5a' : t.k === 'flare' ? '#ff8a3a' : '#3a4a2a'; ctx.beginPath(); ctx.arc(x, y - z, t.k === 'erock' ? 9 : 5, 0, TAU); ctx.fill();
     ctx.fillStyle = '#aaa'; ctx.fillRect(x - 1, y - z - 8, 3, 4);
   }
   drawFx();
@@ -231,6 +232,11 @@ function render(title = false) {
   };
   for (const b of G.bosses) edge(b.x, b.y, '#ff3a2a', '💀');
   for (const q of Quests.list) if (q.loc && World.kind === 'over') edge(q.loc.x, q.loc.y, '#ffcf3a', q.icon);
+  if (Events.cur && Events.cur.loc) edge(Events.cur.loc.x, Events.cur.loc.y, '#ff8a3a', EVENTS[Events.cur.id].icon);
+  if (G.markT > 0) { ctx.strokeStyle = 'rgba(255,50,50,0.7)'; ctx.lineWidth = 2; const X = (P.x - cx) * ZOOM + VW / 2, Y = (P.y - 20 - cy) * ZOOM + VH / 2; ctx.beginPath(); ctx.arc(X, Y, 30 * ZOOM, 0, TAU); ctx.moveTo(X - 40 * ZOOM, Y); ctx.lineTo(X + 40 * ZOOM, Y); ctx.moveTo(X, Y - 40 * ZOOM); ctx.lineTo(X, Y + 40 * ZOOM); ctx.stroke(); }
+  const EM = Events.mods();
+  if (EM.red) { ctx.fillStyle = `rgba(160,0,0,${0.16 + Math.sin(NOW * 2) * 0.04})`; ctx.fillRect(0, 0, VW, VH); }
+  if (EM.flood) { ctx.fillStyle = 'rgba(30,70,110,0.18)'; ctx.fillRect(0, 0, VW, VH); }
 }
 function drawShield() {
   if (!(P.shieldT > 0)) return;
@@ -322,6 +328,12 @@ function drawFx() {
         ctx.globalCompositeOperation = 'source-over';
         break;
       case 'patch': {
+        if (f.type === 'web') {
+          ctx.strokeStyle = `rgba(235,235,235,${Math.min(0.7, f.life / 0.8)})`; ctx.lineWidth = 1;
+          for (let i = 0; i < 8; i++) { const a = (i / 8) * TAU + f.seed; ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.x + Math.cos(a) * f.r, f.y + Math.sin(a) * f.r * 0.6); ctx.stroke(); }
+          for (const m of [0.35, 0.65, 0.95]) { ctx.beginPath(); ctx.ellipse(f.x, f.y, f.r * m, f.r * m * 0.6, 0, 0, TAU); ctx.stroke(); }
+          break;
+        }
         const fire = f.type === 'fire', a = Math.min(1, f.life / 0.6) * (fire ? 0.5 + Math.sin(NOW * 14 + f.seed) * 0.15 : 0.55);
         const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
         g.addColorStop(0, fire ? `rgba(255,190,80,${a})` : `rgba(170,255,90,${a})`); g.addColorStop(1, fire ? 'rgba(255,80,20,0)' : 'rgba(90,200,50,0)');
@@ -536,6 +548,7 @@ function drawMinimap() {
   mmx.fillStyle = '#f44';
   for (const e of G.enemies) { const x = tx(e.x), y = ty(e.y); if (x < 0 || x > S || y < 0 || y > S) continue; if (e.boss) mmx.fillText('💀', x, y + 5); else if (e.mini || e.affix) { mmx.fillStyle = '#fb3'; mmx.fillRect(x - 2, y - 2, 4, 4); mmx.fillStyle = '#f44'; } else mmx.fillRect(x - 1, y - 1, 2, 2); }
   for (const q of Quests.list) if (q.loc && World.kind === 'over') { const x = clamp(tx(q.loc.x), 8, S - 8), y = clamp(ty(q.loc.y), 8, S - 8); mmx.fillStyle = '#ffcf3a'; mmx.font = 'bold 18px Oswald, sans-serif'; mmx.fillText('!', x, y + 6); }
+  if (Events.cur && Events.cur.loc) { const x = clamp(tx(Events.cur.loc.x), 8, S - 8), y = clamp(ty(Events.cur.loc.y), 8, S - 8); mmx.font = '16px sans-serif'; mmx.fillText(EVENTS[Events.cur.id].icon, x, y + 5); }
   mmx.fillStyle = '#fff'; mmx.beginPath(); mmx.arc(S / 2, S / 2, 4, 0, TAU); mmx.fill();
   mmx.strokeStyle = '#000'; mmx.lineWidth = 1.5; mmx.stroke();
 }
@@ -559,6 +572,7 @@ function show(id) { $(id).classList.add('show'); }
 function hide(id) { $(id).classList.remove('show'); }
 function endRun(kind, src) {
   if (G.ended) return; G.ended = true; RunSave.clear();
+  if (kind === 'dead' && World.kind === 'over') Save.data.ghost = { stage: G.stage, x: P.x, y: P.y, name: (CHARACTERS.find((c) => c.id === G.char) || CHARACTERS[0]).name };
   G.state = 'over';
   const S = Save.data, mins = Math.floor(G.t / 60);
   const loot = Math.floor((G.rubles - G.paidR) * P.rubMul);
@@ -566,7 +580,7 @@ function endRun(kind, src) {
   const tb = (mins - G.paidMin) * 15;
   G.paidR = G.rubles; G.paidMin = mins;
   S.rubles += earned;
-  const bk = G.stage + (G.endless ? '_endless' : ''), best = S.best[bk] || 0; if (G.t > best) S.best[bk] = G.t;
+  const bk = G.stage + (G.bossrush ? '_bossrush' : G.endless ? '_endless' : ''), best = S.best[bk] || 0; if (G.t > best) S.best[bk] = G.t;
   let unlock = '';
   if (kind === 'win') {
     S.wins++;
@@ -653,8 +667,8 @@ function buildSetup() {
   setupStage = setupStage || (S.stages.includes(S.stage) ? S.stage : 'zone');
   setupChar = setupChar || (S.chars.includes(S.char) ? S.char : 'rookie');
   const mode = S.mode || 'standard';
-  $('modeList').innerHTML = [['standard', '⏱️', 'Standard', '15 minutes, 6 bosses, then the final boss. Win to unlock the next stage.'], ['endless', '♾️', 'Endless', 'Bosses forever. Every 15 minutes the Zone grows a tier stronger. Play for hours.']]
-    .map(([id, ic, n, d]) => `<button class="pick ${mode === id ? 'sel' : ''}" data-mode="${id}"><div class="pi">${ic}</div><div><b>${n}</b><small>${d}</small>${S.best[(setupStage || 'zone') + (id === 'endless' ? '_endless' : '')] ? `<em>best ${fmtTime(S.best[(setupStage || 'zone') + (id === 'endless' ? '_endless' : '')])}</em>` : ''}</div></button>`).join('');
+  $('modeList').innerHTML = [['standard', '⏱️', 'Standard', '15 minutes, 6 bosses, then the final boss. Win to unlock the next stage.'], ['endless', '♾️', 'Endless', 'Bosses forever. Every 15 minutes the Zone grows a tier stronger. Play for hours.'], ['bossrush', '👑', 'Boss Rush', 'A new boss every minute. How many can you beat?']]
+    .map(([id, ic, n, d]) => `<button class="pick ${mode === id ? 'sel' : ''}" data-mode="${id}"><div class="pi">${ic}</div><div><b>${n}</b><small>${d}</small>${S.best[(setupStage || 'zone') + (id === 'standard' ? '' : '_' + id)] ? `<em>best ${fmtTime(S.best[(setupStage || 'zone') + (id === 'standard' ? '' : '_' + id)])}</em>` : ''}</div></button>`).join('');
   for (const b of document.querySelectorAll('[data-mode]')) b.onclick = () => { S.mode = b.dataset.mode; Save.save(); buildSetup(); };
   $('stageList').innerHTML = STAGES.map((st) => {
     const open = S.stages.includes(st.id), best = S.best[st.id];
