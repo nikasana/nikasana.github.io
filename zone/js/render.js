@@ -32,7 +32,7 @@ function drawTree(p) {
   const tx = p.x + parX(p.x, h) + sway, ty = p.y + parY(p.y, h);
   shadow(p.x + 22 * s, p.y + 5, 38 * s, 13 * s, 0.26);
   const hide = occludes(p.x - 60 * s, ty - 40 * s, p.x + 60 * s, p.y - 4);
-  if (hide) ctx.globalAlpha = 0.45;
+  if (hide) ctx.globalAlpha = 0.2;
   ctx.strokeStyle = '#3e3024'; ctx.lineWidth = 7 * s; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(lerp(p.x, tx, 0.75), lerp(p.y, ty, 0.75)); ctx.stroke();
   const C = p.red ? TREE_COLS.red : p.pine ? TREE_COLS.pine : TREE_COLS.n;
@@ -125,7 +125,7 @@ function drawBuilding(b) {
   ctx.fillStyle = 'rgba(0,0,0,0.28)';
   poly([b.x + b.w, b.y + 6, b.x + b.w + k * 0.45, b.y + 20, b.x + b.w + k * 0.45, b.y + b.h + 16, b.x + 6, b.y + b.h + 16, b.x, b.y + b.h], 'rgba(0,0,0,0.26)');
   const hide = occludes(b.x + Math.min(0, dx) - 20, b.y + dy - 30, b.x + b.w + Math.max(0, dx) + 20, b.y + b.h - 4);
-  if (hide) ctx.globalAlpha = 0.4;
+  if (hide) ctx.globalAlpha = 0.2;
   // side wall
   if (dx > 1) poly([b.x, b.y, b.x, b.y + b.h, b.x + dx, b.y + b.h + dy, b.x + dx, b.y + dy], rgb(wall.map((v) => v * 0.62)));
   else if (dx < -1) poly([b.x + b.w, b.y, b.x + b.w, b.y + b.h, b.x + b.w + dx, b.y + b.h + dy, b.x + b.w + dx, b.y + dy], rgb(wall.map((v) => v * 0.62)));

@@ -295,6 +295,15 @@
   .keyBtn { min-width: 110px; padding: 6px 12px; background: rgba(0,0,0,0.5); color: #ffe070; border: 1px solid #806020; border-radius: 6px; font: bold 14px monospace; cursor: pointer; } .keyBtn.wait { color: #fff; border-color: #fff; }
   body.compact #keysHint { display: none; } body.compact #quests { width: 40vw; } body.compact #quests .q small, body.compact #quests .q:nth-child(n+4) { display: none; }
   body.compact #radio { font-size: 11px; width: 58vw; } body.compact #detWrap { transform: scale(0.78); transform-origin: bottom left; } body.compact #mmWrap { transform: scale(0.82); transform-origin: top right; } body.compact #hint { font-size: 12px; }
+  #radBar { position: relative; height: 7px; margin-top: 3px; width: 100%; background: rgba(0,0,0,0.55); border-radius: 4px; overflow: hidden; opacity: 0.35; transition: opacity 0.4s; pointer-events: auto; }
+  #radBar.on { opacity: 1; } #radFill { height: 100%; width: 0; background: #d8e040; transition: width 0.3s, background 0.3s; } #radBar span { position: absolute; right: 3px; top: -4px; font-size: 10px; }
+  .tree { display: flex; flex-direction: column; align-items: center; gap: 0; } .tree.branch { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+  .tnode { display: flex; gap: 10px; align-items: center; width: min(560px, 100%); text-align: left; background: rgba(0,0,0,0.5); border: 2px solid #4a4636; border-radius: 12px; padding: 8px 12px; color: #e8e0c0; cursor: pointer; font: inherit; }
+  .tnode.done { border-color: #c8e060; box-shadow: 0 0 10px rgba(200,224,96,0.25); } .tnode.open { border-color: #c8a040; } .tnode.locked { opacity: 0.45; }
+  .tnode b { display: block; } .tnode small { display: block; color: #9a947c; font-size: 12px; } .tnode em { font-style: normal; font-size: 12px; } .tnode .tic img { width: 30px; height: 30px; } .tnode .tic { font-size: 26px; white-space: nowrap; }
+  .tlink { width: 4px; height: 18px; background: #4a4636; } .tlink.on { background: #c8e060; }
+  .tutSkip { display: block; margin: 6px auto 0; background: none; border: 1px solid #6a7040; color: #b8c070; border-radius: 6px; padding: 3px 10px; font-size: 12px; cursor: pointer; pointer-events: auto; }
+  #bugBox { z-index: 45; background: rgba(4,4,2,0.92); } #bugBox textarea { width: min(560px, 90vw); height: 190px; background: #111; color: #cfc; font: 12px monospace; border: 1px solid #4a4636; border-radius: 6px; padding: 8px; }
   #mapInfo { margin-top: 8px; color: #c8c0a0; font-size: 13px; text-align: center; max-width: 92vw; }
   #mapInfo .travel { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 6px; }
   #mapInfo .travel button { font-size: 13px; padding: 6px 10px; }
@@ -451,31 +460,32 @@
       '<button onclick="location.reload()" style="' + btn + 'background:#ffcf3a;color:#111;border:2px solid #ffcf3a">🔄 RELOAD</button>';
   });
 </script>
-<script src="js/util.js?v=35"></script>
-<script src="js/audio.js?v=35"></script>
-<script src="js/radio.js?v=35"></script>
-<script src="js/ambience.js?v=35"></script>
-<script src="js/data.js?v=35"></script>
-<script src="js/artifacts.js?v=35"></script>
-<script src="js/world.js?v=35"></script>
-<script src="js/render.js?v=35"></script>
-<script src="js/render2.js?v=35"></script>
-<script src="js/lighting.js?v=35"></script>
-<script src="js/game.js?v=35"></script>
-<script src="js/systems.js?v=35"></script>
-<script src="js/weapons2.js?v=35"></script>
-<script src="js/mutants3.js?v=35"></script>
-<script src="js/events.js?v=35"></script>
-<script src="js/hazards.js?v=35"></script>
-<script src="js/world2.js?v=35"></script>
-<script src="js/vehicles.js?v=35"></script>
-<script src="js/story.js?v=35"></script>
-<script src="js/meta.js?v=35"></script>
-<script src="js/coop.js?v=35"></script>
-<script src="js/crews.js?v=35"></script>
-<script src="js/ux.js?v=35"></script>
-<script src="js/saves.js?v=35"></script>
-<script src="js/guard.js?v=35"></script>
-<script src="js/ui.js?v=35"></script>
+<script src="js/util.js?v=37"></script>
+<script src="js/audio.js?v=37"></script>
+<script src="js/radio.js?v=37"></script>
+<script src="js/ambience.js?v=37"></script>
+<script src="js/data.js?v=37"></script>
+<script src="js/artifacts.js?v=37"></script>
+<script src="js/world.js?v=37"></script>
+<script src="js/render.js?v=37"></script>
+<script src="js/render2.js?v=37"></script>
+<script src="js/lighting.js?v=37"></script>
+<script src="js/game.js?v=37"></script>
+<script src="js/systems.js?v=37"></script>
+<script src="js/weapons2.js?v=37"></script>
+<script src="js/mutants3.js?v=37"></script>
+<script src="js/events.js?v=37"></script>
+<script src="js/hazards.js?v=37"></script>
+<script src="js/world2.js?v=37"></script>
+<script src="js/vehicles.js?v=37"></script>
+<script src="js/story.js?v=37"></script>
+<script src="js/meta.js?v=37"></script>
+<script src="js/coop.js?v=37"></script>
+<script src="js/crews.js?v=37"></script>
+<script src="js/ux.js?v=37"></script>
+<script src="js/saves.js?v=37"></script>
+<script src="js/polish.js?v=37"></script>
+<script src="js/guard.js?v=37"></script>
+<script src="js/ui.js?v=37"></script>
 </body>
 </html>
