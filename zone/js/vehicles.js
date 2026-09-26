@@ -38,3 +38,6 @@ function drawVehPrompt() {
     ctx.fillStyle = '#ffe070'; ctx.fillText(s, x, y + 1);
   }
 }
+// step off the vehicle before climbing down or up a hatch; it stays parked at the hatch
+const _v7Hatch = useHatch;
+useHatch = function (h) { if (P.veh) { const v = P.veh; P.veh = null; v.x = h.x + 70; v.y = h.y + 30; P.vehSkip = v; } _v7Hatch(h); };

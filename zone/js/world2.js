@@ -355,8 +355,9 @@ World.genWorld2 = function (R) {
 };
 const _w2GenLab = World.genLab;
 World.genLab = function (idx) {
-  _w2GenLab.call(this, idx);
+  const lvl = _w2GenLab.call(this, idx);
   if (this.stage === 'pripyat' && idx === this.hospIdx && this.lab) { this.lab.name = 'HOSPITAL'; this.lab.hospital = true; this.regions[0].name = 'Hospital Basement'; }
+  return lvl;
 };
 
 // ----- runtime -----
