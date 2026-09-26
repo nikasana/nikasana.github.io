@@ -232,7 +232,35 @@ openLevelUp = function () {
 addEventListener('DOMContentLoaded', () => {
   const b = document.createElement('button'); b.id = 'autoBtn'; b.textContent = '🤖';
   const upd = () => { b.style.opacity = Save.set.autoPick ? 1 : 0.45; b.title = 'Auto-pick upgrades: ' + (Save.set.autoPick ? 'ON' : 'OFF'); };
-  b.onclick = () => { Save.set.autoPick = !Save.set.autoPick; Save.save(); upd(); if (G && !G.title) text(P.x, P.y - 80, '🤖 Auto-pick ' + (Save.set.autoPick ? 'ON' : 'OFF'), '#ffe070', false, true); };
+  b.onclick = () => { setAuto(!Save.set.autoPick); upd(); if (G && !G.title) text(P.x, P.y - 80, '🤖 Auto-pick ' + (Save.set.autoPick ? 'ON' : 'OFF'), '#ffe070', false, true); };
   const bt = $('btns'); if (bt) bt.prepend(b); upd();
   const _bs = buildSettings; buildSettings = function (...a) { const r = _bs(...a); upd(); return r; };
+});
+// the level-up screen itself offers auto-pick, so it is easy to find
+addEventListener('DOMContentLoaded', () => {
+  const lv = $('levelup'); if (!lv) return;
+  const b = document.createElement('button'); b.id = 'autoLvBtn'; b.className = 'big ghost small'; b.textContent = '🤖 Auto-pick from now on (no pause)';
+  b.onclick = () => { Save.set.autoPick = true; Save.save(); const ab = $('autoBtn'); if (ab) ab.style.opacity = 1; if (G && G.state === 'levelup' && choiceMode === 'level') { G.pendingLv++; hide('levelup'); G.state = 'play'; openLevelUp(); } };
+  lv.appendChild(b);
+});
+// auto-pick in 3 places: top of Settings (main menu), the pause menu, and in game (🤖 button + level-up screen)
+function autoLabel() { return '🤖 Auto-pick upgrades: ' + (Save.set.autoPick ? 'ON' : 'OFF'); }
+function setAuto(v) { Save.set.autoPick = v; Save.save(); const ab = $('autoBtn'); if (ab) ab.style.opacity = v ? 1 : 0.45; const pb = $('autoPauseBtn'); if (pb) pb.textContent = autoLabel(); }
+addEventListener('DOMContentLoaded', () => {
+  const _bs2 = buildSettings;
+  buildSettings = function (...a) {
+    const r = _bs2(...a);
+    const body = $('settingsBody');
+    if (body && !$('autoSetRow')) {
+      body.insertAdjacentHTML('afterbegin', `<label class="set" id="autoSetRow"><span>🤖 Auto-pick upgrades on level up (no pause)</span><input type="checkbox" id="autoSet" ${Save.set.autoPick ? 'checked' : ''}></label>`);
+      $('autoSet').onchange = (e) => setAuto(e.target.checked);
+    }
+    return r;
+  };
+  const pz = $('pause');
+  if (pz) {
+    const b = document.createElement('button'); b.id = 'autoPauseBtn'; b.className = 'big ghost'; b.textContent = autoLabel();
+    b.onclick = () => { setAuto(!Save.set.autoPick); };
+    const first = pz.querySelector('button'); if (first && first.parentNode) first.parentNode.insertBefore(b, first.nextSibling); else pz.appendChild(b);
+  }
 });
