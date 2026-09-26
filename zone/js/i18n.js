@@ -235,6 +235,7 @@ Object.assign(UI_TR, {
   'Saved on every teammate\'s device. Next time: one of you presses 🏠 HOST on the crew, the others press 🔗 JOIN.': U('შენახულია ყველა თანაგუნდელის მოწყობილობაზე. შემდეგ ჯერზე: ერთი დააჭერს 🏠 ჰოსტს, დანარჩენები — 🔗 შესვლას.', 'Сохранено у каждого участника. В следующий раз: один жмёт 🏠 СОЗДАТЬ у отряда, остальные — 🔗 ВОЙТИ.', 'Збережено в кожного учасника. Наступного разу: один тисне 🏠 СТВОРИТИ, решта — 🔗 УВІЙТИ.'),
 });
 const UI_PATTERNS = [
+  [/^(.+) · ☠ (.+) in (\d+:\d\d)$/, U('$1 · ☠ $2 $3-ში', '$1 · ☠ $2 через $3', '$1 · ☠ $2 через $3')],
   [/^⏳ Connecting to room (\w+)… \(try (\d+)\)$/, U('⏳ ოთახთან დაკავშირება $1… (ცდა $2)', '⏳ Подключение к комнате $1… (попытка $2)', '⏳ Підключення до кімнати $1… (спроба $2)')],
   [/^⏳ Connecting to the server… \(try (\d+)\/5\)$/, U('⏳ სერვერთან დაკავშირება… (ცდა $1/5)', '⏳ Подключение к серверу… (попытка $1/5)', '⏳ Підключення до сервера… (спроба $1/5)')],
   [/^⏳ Opening the room of crew (.+)…$/, U('⏳ იხსნება რაზმის ოთახი: $1…', '⏳ Открываю комнату отряда $1…', '⏳ Відкриваю кімнату загону $1…')],
@@ -309,3 +310,8 @@ setInterval(() => {
   if (L !== I18n.cur) { I18n.apply(L); if (typeof hudBuild === 'function' && G && !G.title && P) hudBuild(); }
   else if (L !== 'en') I18n.dom(document.body);
 }, 700);
+// HUD lines rewritten every second are translated as they are written (no English flicker)
+addEventListener('DOMContentLoaded', () => {
+  const _st = setText;
+  setText = function (id, v) { if (I18n.cur !== 'en' && typeof v === 'string' && /\p{L}/u.test(v)) { try { v = I18n.t(v); } catch (e) { /* keep english */ } } return _st(id, v); };
+});

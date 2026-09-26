@@ -31,7 +31,7 @@ const Omen = {
     this.tag();
   },
   tag() {
-    let el = $('omenTag'); if (!el) { el = document.createElement('div'); el.id = 'omenTag'; document.body.appendChild(el); }
+    let el = $('omenTag'); if (!el) { el = document.createElement('div'); el.id = 'omenTag'; const tm = $('topMid'); if (tm) tm.after(el); else document.body.appendChild(el); }
     const o = this.cur; el.style.display = o && G && !G.title ? '' : 'none';
     if (o) { el.textContent = o.icon + ' ' + o.name; el.dataset.tip = o.desc; el.title = o.desc; }
   },
