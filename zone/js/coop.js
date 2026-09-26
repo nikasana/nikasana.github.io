@@ -226,7 +226,7 @@ const Coop = {
   applySnap(m) {
     const now = NOW;
     if (m.lv && m.lv !== World.cur) { // the host changed level: follow them
-      const h = m.lv === 'over' ? World.hatches.find((x) => x.exit) : World.kind === 'over' ? World.hatches.find((x) => 'lab' + x.idx === m.lv) : null;
+      const h = m.lv === 'over' ? World.hatches.find((x) => x.exit || x.up) : World.hatches.find((x) => 'lab' + x.idx === m.lv);
       if (h) { CO.mirror.clear(); CO.dead.clear(); _c7Hatch(h); }
       return;
     }
@@ -376,11 +376,11 @@ useHatch = function (h) {
   if (CO.role !== 'host') { if (NOW - (CO.hatchMsgT || 0) > 3) { CO.hatchMsgT = NOW; banner('🕳️ GATHER AT THE HATCH', 'The team goes down together when everyone is here.', 2, ''); } return; }
   const team = coOthers().filter((q) => !q.gone && !q.ghost && q.x !== undefined), here = team.filter((q) => dist2(q.x, q.y, h.x, h.y) < 170 * 170);
   if (here.length < team.length) { if (NOW - (CO.hatchMsgT || 0) > 2.5) { CO.hatchMsgT = NOW; banner('🕳️ WAITING FOR THE TEAM', (here.length + 1) + '/' + (team.length + 1) + ' at the hatch. Everyone must stand on it.', 2, ''); } return; }
-  Net.bcast({ t: 'level', exit: !!h.exit, idx: h.idx });
+  Net.bcast({ t: 'level', exit: !!h.exit, idx: h.idx, st: h.st || 0 });
   _c7Hatch(h);
 };
 function coGoLevel(m) {
-  const h = m.exit ? World.hatches.find((x) => x.exit) : World.hatches.find((x) => x.idx === m.idx);
+  const h = m.exit ? World.hatches.find((x) => x.exit) : World.hatches.find((x) => x.idx === m.idx && (x.st || 0) === (m.st || 0));
   if (!h) return;
   CO.mirror.clear(); CO.dead.clear();
   _c7Hatch(h);

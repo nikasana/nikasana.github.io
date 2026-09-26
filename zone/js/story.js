@@ -167,7 +167,7 @@ function questFail(q, why) {
 }
 
 // ----- main quest chain per stage (161) -----
-const MAIN_TITLES = { zone: 'Strelok\'s Trail', pripyat: 'The Dead City', npp: 'The Wish', zaton: 'Operation Fairway', wasteland: 'Scorched Earth', metro: 'Into the Dark', blackout: 'Lights Out', winter: 'Frostbite', mountain: 'The Last Climb' };
+const MAIN_TITLES = { zone: 'Strelok\'s Trail', pripyat: 'The Dead City', npp: 'The Wish', zaton: 'Operation Fairway', wasteland: 'Scorched Earth', metro: 'Into the Dark', blackout: 'Lights Out', winter: 'Frostbite', mountain: 'The Last Climb', flooded: 'Rising Water', volcanic: 'Trial by Fire', duga: 'The Woodpecker', noosphere: 'Beyond the Dream' };
 function s6Over() { return World.cur === 'over' ? World : World.levels.over; }
 const MAIN_STEPS = [
   ['Find your first artifact', () => G.arts >= 1],

@@ -39,7 +39,7 @@ const Env = {
       if (this.weather !== 'clear') this.setWeather('clear');
       else {
         const opts = [['rain', 3], ['fog', 2], ['storm', G.t > 90 ? 2 : 0], ['psi', G.t > 240 ? 1.5 : 0], ['heat', G.t > 120 ? 1.2 : 0], ['snow', 1.3], ['radstorm', G.t > 300 ? 0.9 : 0]];
-        const wb = (STAGE_WORLD[World.stage] || {}).wbias || {}; for (const o of opts) o[1] *= wb[o[0]] ?? 1;
+        const wb = (STAGE_WORLD[World.stage] || {}).wbias || {}; const sw = World.seasonW || {}; for (const o of opts) o[1] *= (wb[o[0]] ?? 1) * (sw[o[0]] ?? 1);
         let tot = 0; for (const o of opts) tot += o[1];
         if (tot <= 0) this.wT = 60;
         else { let r = rand(tot); for (const o of opts) { if (!o[1]) continue; r -= o[1]; if (r <= 0) { this.setWeather(o[0]); break; } } }

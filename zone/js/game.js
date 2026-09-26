@@ -566,7 +566,7 @@ function updateEnemies(dt) {
     const dx = TG.x - e.x, dy = TG.y - e.y, d = Math.hypot(dx, dy) || 1;
     let ux = dx / d, uy = dy / d;
     if (lab && d > 90) { const f = World.flowDir(e.x, e.y); if (f) { ux = f[0]; uy = f[1]; } }
-    let sp = e.spd * (!e.d.fly && World.kind === 'over' && Math.abs(e.x - P.x) < 1400 && World.isWater(e.x, e.y) ? 0.55 : 1) * (e.slowT > 0 ? 0.55 : 1) * (G.markT > 0 && !e.boss ? 1.25 : 1) * (flood && !e.d.fly ? 0.75 : 1), vx = ux * sp, vy = uy * sp;
+    let sp = e.spd * (!e.d.fly && !World.swimAll && World.kind === 'over' && Math.abs(e.x - P.x) < 1400 && World.isWater(e.x, e.y) ? 0.55 : 1) * (e.slowT > 0 ? 0.55 : 1) * (G.markT > 0 && !e.boss ? 1.25 : 1) * (flood && !e.d.fly ? 0.75 : 1), vx = ux * sp, vy = uy * sp;
     if (!e.boss && !e.mini && d > farR) { const p = ringPos(); if (p) { e.x = p[0]; e.y = p[1]; } continue; }
     if (e.stun > 0) { vx = vy = 0; }
     else switch (e.id) {
@@ -1444,7 +1444,8 @@ function updatePlayer(dt) {
     const vm = vehicleUpdate(dt), tx = mx * spd * vm, ty = my * spd * vm;
     let ice = World.iceAt(P.x, P.y);
     if (World.kind === 'over') for (const a of World.anomalies) if (a.type === 'cryo' && Math.abs(a.x - P.x) < 150 && dist2(a.x, a.y, P.x, P.y) < (a.r * 1.8) ** 2) { ice = true; break; }
-    if (ice && !P.veh) { P.ivx = lerp(P.ivx || 0, tx, dt * 1.6); P.ivy = lerp(P.ivy || 0, ty, dt * 1.6); } else { P.ivx = tx; P.ivy = ty; }
+    const gl = ice ? 1.6 : World.glide ? World.glide() : 0;
+    if (gl && !P.veh) { P.ivx = lerp(P.ivx || 0, tx, Math.min(1, dt * gl)); P.ivy = lerp(P.ivy || 0, ty, Math.min(1, dt * gl)); } else { P.ivx = tx; P.ivy = ty; }
     P.x += P.ivx * dt; P.y += P.ivy * dt;
   }
   P.x += P.kvx * dt; P.y += P.kvy * dt;
