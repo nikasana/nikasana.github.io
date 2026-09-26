@@ -1,7 +1,9 @@
 'use strict';
-// ---------- online co-op (2 players): the host runs the Zone, the friend joins with one link ----------
-// Transport: PeerJS (WebRTC, loaded on demand). A local BroadcastChannel transport (?coopdebug=1) lets two tabs test it offline.
-const CO = { active: false, role: null, conn: null, peer: null, code: '', pw: '', partner: null, hits: [], kills: [], dmgQ: [], mirror: new Map(), dead: new Map(), sendT: 0, uid: 0, start: null, gInv: 0, reviveT: 0, hbl: [] };
+// ---------- online co-op for up to 4 players: lobby, ready-up, the host runs the Zone ----------
+// Transport: PeerJS (WebRTC, loaded on demand). ?coopdebug=1 swaps in a BroadcastChannel transport so tabs can test offline.
+const CO_MAX = 4;
+const CO = { active: false, role: null, me: 'h', conn: null, conns: new Map(), peer: null, code: '', pw: '', players: new Map(), settings: null, ready: false,
+  hits: [], kills: [], mirror: new Map(), dead: new Map(), sendT: 0, pingT: 0, uid: 0, start: null, startMsg: null, reviveT: 0, hbl: [], nextPid: 1, stats: {} };
 const CO_PREFIX = 'zonebonk-v1-';
 const CO_DEBUG = /[?&]coopdebug=1/.test(location.search);
 
@@ -15,122 +17,175 @@ function loadPeer() {
     document.head.appendChild(s);
   });
 }
-// local test transport: behaves like a PeerJS connection
 function bcConn(code, me) {
   const ch = new BroadcastChannel('zb-' + code), h = {};
-  const c = { open: true, send: (d) => ch.postMessage({ from: me, d }), on: (ev, fn) => { h[ev] = fn; }, close: () => { ch.postMessage({ from: me, bye: 1 }); ch.close(); } };
-  ch.onmessage = (m) => { if (m.data.from === me) return; if (m.data.bye) { h.close && h.close(); return; } h.data && h.data(m.data.d); };
+  const c = { open: true, send: (d) => ch.postMessage({ from: me, d }), on: (ev, fn) => { h[ev] = fn; }, close: () => { ch.postMessage({ from: me, bye: 1 }); ch.close(); c.open = false; } };
+  ch.onmessage = (m) => { if (m.data.from === me) return; if (m.data.bye) { c.open = false; h.close && h.close(); return; } h.data && h.data(m.data.d); };
   return c;
 }
+function coNick() { return (Save.data.nick || '').trim() || (CHARACTERS.find((x) => x.id === Save.data.char) || CHARACTERS[0]).name; }
+function coPal(char) { const c = CHARACTERS.find((x) => x.id === char) || CHARACTERS[0]; return { ...PAL_PLAYER, ...c.pal }; }
+function coStatus(s) { const el = $('coStatus'); if (el) el.innerHTML = s; }
+
 const Net = {
   async host() {
-    CO.code = coCode(); CO.role = 'host';
+    Net.leave(); CO.code = coCode(); CO.role = 'host'; CO.me = 'h'; CO.nextPid = 1;
+    CO.players = new Map([['h', { pid: 'h', name: coNick(), char: Save.data.char, ready: true, ping: 0 }]]);
+    CO.settings = coDefaultSettings();
     if (CO_DEBUG) {
-      const lobby = new BroadcastChannel('zb-lobby-' + CO.code);
-      lobby.onmessage = (m) => { if (CO.conn) return; const c = bcConn(CO.code + '-' + m.data, 'host'); Net.bind(c); lobby.postMessage(m.data); };
+      const lobby = new BroadcastChannel('zb-lobby-' + CO.code); CO.lobbyCh = lobby;
+      lobby.onmessage = (m) => { const c = bcConn(CO.code + '-' + m.data, 'host'); Net.accept(c); lobby.postMessage(m.data); };
       return;
     }
     await loadPeer();
     await new Promise((res, rej) => {
       CO.peer = new Peer(CO_PREFIX + CO.code);
       CO.peer.on('open', res);
-      CO.peer.on('error', (e) => { if (e.type === 'unavailable-id') { CO.peer.destroy(); CO.code = coCode(); Net.host().then(res, rej); } else { coStatus('⚠️ ' + (e.message || e.type)); rej(e); } });
-      CO.peer.on('connection', (c) => {
-        if (CO.conn && CO.active) { c.on('open', () => { c.send({ t: 'deny', why: 'The game already started with another player.' }); setTimeout(() => c.close(), 300); }); return; }
-        c.on('open', () => { const old = CO.conn; if (old && old !== c) { old._replaced = true; try { old.close(); } catch (e) { /* already closed */ } } Net.bind(c); });
-      });
+      CO.peer.on('error', (e) => { if (e.type === 'unavailable-id') { CO.peer.destroy(); Net.host().then(res, rej); } else { coStatus('⚠️ ' + (e.message || e.type)); rej(e); } });
+      CO.peer.on('connection', (c) => c.on('open', () => Net.accept(c)));
       CO.peer.on('disconnected', () => { if (CO.peer && !CO.peer.destroyed) try { CO.peer.reconnect(); } catch (e) { /* retry later */ } });
     });
   },
+  // host: a new connection waits for its hello before it becomes a player
+  accept(c) {
+    c.on('data', (m) => { if (m && m.t === 'hello') Coop.hello(c, m); else if (c.pid) Coop.onMsg(m, c.pid); });
+    c.on('close', () => { if (c.pid && CO.conns.get(c.pid) === c) Coop.dropped(c.pid); });
+  },
   async join(code, pw) {
     code = code.toUpperCase().trim();
-    if (CO.role === 'guest' && CO.code === code && (CO.joining || CO.conn)) { coStatus(CO.conn ? '✅ Already connected. Waiting for the host to start…' : '⏳ Still connecting to room ' + code + '…'); return; }
+    if (CO.role === 'guest' && CO.code === code && (CO.joining || CO.conn)) { coStatus(CO.conn ? '✅ Already in the room.' : '⏳ Still connecting to room ' + code + '…'); return; }
     Net.leave(); CO.closeWhy = null;
-    CO.code = code; CO.pw = pw || ''; CO.role = 'guest'; CO.joining = true; coJoinBtn();
+    CO.code = code; CO.pw = pw || ''; CO.role = 'guest'; CO.joining = true; coUI();
+    let rj = CO.rejoinId || null; try { rj = rj || sessionStorage.getItem('zb_rejoin_' + code); } catch (e) { /* storage blocked */ }
+    const hello = { t: 'hello', pw: CO.pw, name: coNick(), char: Save.data.char, rejoin: rj };
     if (CO_DEBUG) {
-      const lobby = new BroadcastChannel('zb-lobby-' + CO.code);
-      const sid = Math.random().toString(36).slice(2);
-      lobby.onmessage = (m) => { if (m.data !== sid) return; CO.joining = false; const c = bcConn(CO.code + '-' + sid, 'guest'); Net.bind(c); coJoinBtn(); c.send({ t: 'hello', pw: CO.pw, name: coName() }); };
+      const lobby = new BroadcastChannel('zb-lobby-' + CO.code), sid = Math.random().toString(36).slice(2);
+      lobby.onmessage = (m) => { if (m.data !== sid) return; CO.joining = false; const c = bcConn(CO.code + '-' + sid, 'guest'); Net.bindGuest(c); c.send(hello); coUI(); };
       lobby.postMessage(sid);
       return;
     }
     await loadPeer();
     CO.peer = new Peer();
-    CO.peer.on('error', (e) => { CO.joining = false; coJoinBtn(); coStatus('⚠️ ' + (e.type === 'peer-unavailable' ? 'Room ' + CO.code + ' not found. Is the host still waiting?' : e.message || e.type)); });
-    CO.peer.on('open', () => { const c = CO.peer.connect(CO_PREFIX + CO.code, { reliable: true }); c.on('open', () => { CO.joining = false; Net.bind(c); c.send({ t: 'hello', pw: CO.pw, name: coName() }); coJoinBtn(); }); });
-    setTimeout(() => { if (CO.joining && !CO.conn) { CO.joining = false; coStatus('⚠️ Could not reach room ' + CO.code + '. Check the code and that the host is still waiting, then press JOIN again.'); coJoinBtn(); } }, 15000);
+    CO.peer.on('error', (e) => { CO.joining = false; coUI(); coStatus('⚠️ ' + (e.type === 'peer-unavailable' ? 'Room ' + CO.code + ' not found. Is the host still waiting?' : e.message || e.type)); });
+    CO.peer.on('open', () => { const c = CO.peer.connect(CO_PREFIX + CO.code, { reliable: true }); c.on('open', () => { CO.joining = false; Net.bindGuest(c); c.send(hello); coUI(); }); });
+    setTimeout(() => { if (CO.joining && !CO.conn) { CO.joining = false; coStatus('⚠️ Could not reach room ' + CO.code + '. Check the code and that the host is still waiting, then press JOIN again.'); coUI(); } }, 15000);
   },
-  bind(c) {
+  bindGuest(c) {
     CO.conn = c;
-    c.on('data', (m) => Coop.onMsg(m));
-    c.on('close', () => { if (!c._replaced && CO.conn === c) Coop.onClose(); });
+    c.on('data', (m) => Coop.onMsg(m, 'h'));
+    c.on('close', () => { if (CO.conn === c) Coop.onClose(); });
   },
-  send(m) { if (CO.conn && CO.conn.open !== false) try { CO.conn.send(m); } catch (e) { /* dropped packet */ } },
-  leave() { CO.joining = false; try { CO.conn && CO.conn.close(); } catch (e) { /* already closed */ } try { CO.peer && CO.peer.destroy(); } catch (e) { /* already gone */ } CO.conn = null; CO.peer = null; CO.active = false; CO.partner = null; },
+  send(m) { const c = CO.conn; if (c && c.open !== false) try { c.send(m); } catch (e) { /* dropped packet */ } },
+  sendTo(pid, m) { const c = CO.conns.get(pid); if (c && c.open !== false) try { c.send(m); } catch (e) { /* dropped packet */ } },
+  bcast(m, except) { for (const pid of CO.conns.keys()) if (pid !== except) this.sendTo(pid, m); },
+  leave() {
+    CO.joining = false;
+    for (const c of [CO.conn, ...CO.conns.values()]) try { c && c.close(); } catch (e) { /* already closed */ }
+    try { CO.peer && CO.peer.destroy(); } catch (e) { /* already gone */ }
+    try { CO.lobbyCh && CO.lobbyCh.close(); } catch (e) { /* already closed */ }
+    CO.conn = null; CO.conns = new Map(); CO.peer = null; CO.lobbyCh = null; CO.active = false; CO.players = new Map(); CO.ready = false; CO.role = null; CO.startMsg = null;
+  },
 };
-function coName() { const c = CHARACTERS.find((x) => x.id === Save.data.char) || CHARACTERS[0]; return c.name; }
-function coStartBtn(name) { const b = $('coStart'); if (!b) return; b.disabled = !name; b.textContent = name ? '▶ START WITH ' + name.toUpperCase() : '⏳ WAITING FOR YOUR FRIEND…'; b.classList.toggle('pulse', !!name); }
-function coJoinBtn() { const b = $('coJoin'); if (!b) return; const busy = CO.role === 'guest' && (CO.joining || CO.conn); b.disabled = !!busy; b.textContent = CO.conn && CO.role === 'guest' ? '✅ CONNECTED' : CO.joining ? '⏳ JOINING…' : '🔗 JOIN'; }
-function coStatus(s) { const el = $('coStatus'); if (el) el.innerHTML = s; }
+function coDefaultSettings() { const S = Save.data, st = S.stages.includes(S.stage) ? S.stage : 'zone'; return { stage: st, spawn: (S.spawn || {})[st] || 0, diff: S.diff || 'rookie' }; }
+function coOthers() { return [...CO.players.values()].filter((p) => p.pid !== CO.me); }
+function coLobbyMsg() { return { t: 'lobby', players: [...CO.players.values()].map(({ pid, name, char, ready, ping }) => ({ pid, name, char, ready, ping })), settings: CO.settings }; }
 
 const Coop = {
-  onMsg(m) {
+  // ----- lobby (host) -----
+  hello(c, m) {
+    if (CO.pw && m.pw !== CO.pw) { c.send({ t: 'deny', why: 'Wrong password.' }); setTimeout(() => c.close(), 300); return; }
+    let pid = m.rejoin && CO.players.has(m.rejoin) && m.rejoin !== 'h' ? m.rejoin : null;
+    if (pid && CO.conns.has(pid) && CO.conns.get(pid) !== c) { const old = CO.conns.get(pid); old.pid = null; try { old.close(); } catch (e) { /* already closed */ } } // same player back after a refresh: drop the stale connection
+    if (!pid) {
+      if (CO.players.size >= CO_MAX) { c.send({ t: 'deny', why: 'The room is full (' + CO_MAX + '/' + CO_MAX + ').' }); setTimeout(() => c.close(), 300); return; }
+      pid = 'g' + CO.nextPid++;
+      CO.players.set(pid, { pid, name: String(m.name || 'Stalker').slice(0, 16), char: CHARACTERS.some((x) => x.id === m.char) ? m.char : 'rookie', ready: false, ping: 0 });
+    }
+    const p = CO.players.get(pid); p.gone = false; p.last = NOW;
+    c.pid = pid; CO.conns.set(pid, c);
+    c.send({ t: 'welcome', pid, host: coNick() });
+    if (CO.active && CO.startMsg) { p.ready = true; c.send(CO.startMsg); banner('👋 ' + p.name.toUpperCase() + ' JOINED', 'They drop into the Zone next to you.', 2.5, 'good'); }
+    Net.bcast(coLobbyMsg()); coLobbyUI(); Sfx.init(); Sfx.play('quest');
+  },
+  dropped(pid) {
+    const p = CO.players.get(pid); CO.conns.delete(pid);
+    if (!p) return;
+    if (CO.active && G && !G.ended) { p.gone = true; banner('📡 ' + p.name.toUpperCase() + ' DISCONNECTED', 'They can rejoin with the same link.', 2.5, 'bad'); }
+    else CO.players.delete(pid);
+    Net.bcast(coLobbyMsg()); coLobbyUI();
+  },
+  onMsg(m, from) {
     if (!m || !m.t) return;
-    if (m.t === 'hello' && CO.role === 'host') {
-      if (CO.pw && m.pw !== CO.pw) { Net.send({ t: 'deny', why: 'Wrong password.' }); setTimeout(() => { CO.conn && CO.conn.close(); CO.conn = null; }, 300); coStatus('⚠️ Someone tried to join with a wrong password.'); return; }
-      CO.partnerName = m.name; Net.send({ t: 'welcome', name: coName() });
-      coStatus('✅ <b>' + m.name + '</b> joined! Press START when ready.'); coStartBtn(m.name); Sfx.init(); Sfx.play('quest');
-    } else if (m.t === 'welcome') { CO.partnerName = m.name; coStatus('✅ Connected to <b>' + m.name + '</b>. Waiting for the host to start…'); }
-    else if (m.t === 'deny') { CO.closeWhy = '⛔ ' + m.why; coStatus(CO.closeWhy); Net.leave(); coJoinBtn(); }
-    else if (m.t === 'start' && CO.role === 'guest') { CO.start = m; NEXT_RUN = { mode: 'standard', mutators: [], ngplus: false }; hide('coop'); startGame(); }
-    else if (m.t === 'snap' && CO.role === 'guest' && G && CO.active) this.applySnap(m);
-    else if (m.t === 'me' && CO.role === 'host' && G && CO.active) this.applyMe(m);
-    else if (m.t === 'dmg' && CO.role === 'guest' && G && G.state === 'play') { P.inv = 0; hurtPlayer(m.d, m.src); }
-    else if (m.t === 'end' && G && CO.active) { CO.active = false; endRun(m.kind === 'win' ? 'win' : 'quit'); $('overSub').textContent = m.kind === 'win' ? 'Your team conquered the Zone!' : 'The co-op run is over.'; }
-    else if (m.t === 'leave' && G && CO.active) { banner('👋 PARTNER LEFT', 'You continue alone.', 2.5, 'bad'); this.solo(); }
+    const host = CO.role === 'host';
+    if (host) {
+      const p = CO.players.get(from); if (!p) return;
+      if (m.t === 'lobbyMe') { if (m.name) p.name = String(m.name).slice(0, 16); if (m.char && CHARACTERS.some((x) => x.id === m.char)) p.char = m.char; p.ready = !!m.ready; Net.bcast(coLobbyMsg()); coLobbyUI(); }
+      else if (m.t === 'pong') { p.ping = Math.round((performance.now() - m.ts)); }
+      else if (m.t === 'me' && G && CO.active) this.applyMe(p, m);
+      else if (m.t === 'rev') { const r = CO.stats[m.by]; if (r) r.revives++; }
+      else if (m.t === 'leave') { CO.conns.delete(from); if (CO.active) { p.gone = true; banner('👋 ' + p.name.toUpperCase() + ' LEFT', '', 2, 'bad'); } else CO.players.delete(from); Net.bcast(coLobbyMsg()); coLobbyUI(); }
+      return;
+    }
+    // guest
+    if (m.t === 'welcome') { CO.me = m.pid; CO.rejoinId = m.pid; try { sessionStorage.setItem('zb_rejoin_' + CO.code, m.pid); } catch (e) { /* storage blocked */ } coStatus('✅ Joined <b>' + m.host + '</b>\'s room.'); coUI(); }
+    else if (m.t === 'deny') { CO.closeWhy = '⛔ ' + m.why; coStatus(CO.closeWhy); Net.leave(); coUI(); }
+    else if (m.t === 'lobby') { CO.players = new Map(m.players.map((p) => [p.pid, { ...p, ...(CO.players.get(p.pid) || {}), name: p.name, char: p.char, ready: p.ready, ping: p.ping }])); CO.settings = m.settings; coLobbyUI(); }
+    else if (m.t === 'ping') Net.send({ t: 'pong', ts: m.ts });
+    else if (m.t === 'count') coCountdown(m.n);
+    else if (m.t === 'start') { CO.start = m; NEXT_RUN = { mode: 'standard', mutators: [], ngplus: false }; hide('coop'); coCountdown(0); startGame(); }
+    else if (m.t === 'snap' && G && CO.active) this.applySnap(m);
+    else if (m.t === 'dmg' && G && G.state === 'play') { P.inv = 0; hurtPlayer(m.d, m.src); }
+    else if (m.t === 'end' && G && CO.active) { CO.active = false; CO.results = m.stats; endRun(m.kind === 'win' ? 'win' : 'quit'); $('overSub').textContent = m.kind === 'win' ? 'Your team conquered the Zone!' : m.kind === 'dead' ? 'The whole team went down.' : 'The host ended the run.'; coResults(m.stats); }
   },
   onClose() {
-    if (G && CO.active && !G.ended) { banner('📡 CONNECTION LOST', 'Your partner disconnected. You continue alone.', 3, 'bad'); this.solo(); }
+    if (G && CO.active && !G.ended) { banner('📡 HOST DISCONNECTED', 'You continue alone. Open the link again to rejoin.', 3.5, 'bad'); this.solo(); }
     CO.conn = null;
-    if (!CO.closeWhy) coStatus(CO.role === 'host' ? '⏳ Your friend disconnected. Waiting for them to open the link again…' : '⚠️ Lost the connection to the host. Press JOIN to try again.');
-    if (CO.role === 'host') coStartBtn(null);
-    coJoinBtn();
+    if (!CO.closeWhy) coStatus('⚠️ Lost the connection to the host. Press JOIN to try again.');
+    coUI();
   },
   solo() {
-    CO.active = false; CO.partner = null;
+    CO.active = false;
     if (G && G.coGuest) { G.coGuest = false; G.nextBossT = G.t + 60; for (const e of G.enemies) e.cd = rand(1, 3); }
   },
   onNewGame() {
-    CO.mirror.clear(); CO.dead.clear(); CO.hits = []; CO.kills = []; CO.partner = null; CO.hbl = []; CO.uid = 0;
-    if (CO.role === 'guest') { G.coGuest = true; G.nextBossT = 1e9; G.emIdx = G.emIdx || 0; }
-    G.coop = true;
+    CO.mirror.clear(); CO.dead.clear(); CO.hits = []; CO.kills = []; CO.hbl = []; CO.uid = 0; CO.stats = {};
+    for (const p of CO.players.values()) { p.x = p.tx = World.start.x; p.y = p.ty = World.start.y; p.ghost = 0; p.gInv = 0; CO.stats[p.pid] = { name: p.name, char: p.char, kills: 0, dmg: 0, revives: 0 }; }
+    if (CO.role === 'guest') { G.coGuest = true; G.nextBossT = 1e9; }
+    const n = [...CO.players.values()].filter((p) => !p.gone).length;
+    G.coop = true; G.coopMul = 1 + 0.45 * (n - 1); G.coopHp = 1 + 0.35 * (n - 1);
   },
-  // ----- host -----
-  applyMe(m) {
-    const q = CO.partner || (CO.partner = { tx: m.x, ty: m.y, x: m.x, y: m.y });
-    Object.assign(q, { tx: m.x, ty: m.y, face: m.face, hp: m.hp, maxhp: m.maxhp, ghost: m.ghost, veh: m.veh, dash: m.dash, inv: m.inv, moving: m.moving, pal: m.pal, name: m.name, last: NOW });
-    for (const [u, d, kx, ky] of m.hits || []) { const e = CO.byUid && CO.byUid.get(u); if (e && !e.dead) { e.lastW = null; hurtEnemy(e, d, kx, ky, true); } }
+  // ----- in game (host) -----
+  applyMe(p, m) {
+    Object.assign(p, { tx: m.x, ty: m.y, face: m.face, hp: m.hp, maxhp: m.maxhp, ghost: m.ghost, veh: m.veh, dash: m.dash, inv: m.inv, moving: m.moving, last: NOW });
+    if (p.x === undefined) { p.x = m.x; p.y = m.y; }
+    for (const [u, d, kx, ky] of m.hits || []) { const e = CO.byUid && CO.byUid.get(u); if (e && !e.dead) { e.lastW = null; e.lastHit = p.pid; if (CO.stats[p.pid]) CO.stats[p.pid].dmg += d; hurtEnemy(e, d, kx, ky, true); } }
   },
-  hostSnap() {
-    const Q = CO.partner; if (!Q) return;
+  hostSnap(p) {
     const E = [], EB = [], HB = [], R2 = 1700 * 1700;
-    CO.byUid = new Map();
     for (const e of G.enemies) {
-      if (e.dead) continue; CO.byUid.set(e.uid, e);
-      if (dist2(e.x, e.y, Q.x, Q.y) > R2 && !e.boss) continue;
+      if (e.dead) continue;
+      if (dist2(e.x, e.y, p.x, p.y) > R2 && !e.boss) continue;
       E.push([e.uid, e.id, e.x | 0, e.y | 0, Math.round((e.hp / e.maxhp) * 100), (e.boss ? 1 : 0) | (e.affix ? 2 : 0) | (e.mini ? 4 : 0), e.face || 1, e.boss || e.mini ? e.name : 0, e.affix || 0]);
     }
-    for (const b of G.ebullets) { if (!b.uid) b.uid = ++CO.uid; if (Math.abs(b.x - Q.x) < 1100 && Math.abs(b.y - Q.y) < 900) EB.push([b.uid, b.x | 0, b.y | 0, b.vx | 0, b.vy | 0, b.r, b.k || 0, b.dmg | 0]); }
-    for (const b of G.bullets) { if (HB.length > 50) break; if (Math.abs(b.x - Q.x) < 900 && Math.abs(b.y - Q.y) < 700) HB.push([b.x | 0, b.y | 0, b.vx | 0, b.vy | 0]); }
-    Net.send({ t: 'snap', gt: G.t, w: Env.weather, p: [P.x | 0, P.y | 0, P.face, P.hp | 0, P.maxhp | 0, P.ghost > 0 ? 1 : 0, P.veh ? P.veh.kind : 0, P.moving ? 1 : 0], pal: P.pal, name: coName(), e: E, eb: EB, hb: HB, k: CO.kills.splice(0), lvl: G.level });
+    for (const b of G.ebullets) { if (!b.uid) b.uid = ++CO.uid; if (Math.abs(b.x - p.x) < 1100 && Math.abs(b.y - p.y) < 900) EB.push([b.uid, b.x | 0, b.y | 0, b.vx | 0, b.vy | 0, b.r, b.k || 0, b.dmg | 0]); }
+    for (const b of G.bullets) { if (HB.length > 50) break; if (Math.abs(b.x - p.x) < 900 && Math.abs(b.y - p.y) < 700) HB.push([b.x | 0, b.y | 0, b.vx | 0, b.vy | 0]); }
+    const pl = [['h', coNick(), Save.data.char, P.x | 0, P.y | 0, P.face, P.hp | 0, P.maxhp | 0, P.ghost > 0 ? 1 : 0, P.veh ? P.veh.kind : 0, P.moving ? 1 : 0, 0]];
+    for (const q of CO.players.values()) if (q.pid !== 'h' && q.pid !== p.pid && !q.gone && q.x !== undefined) pl.push([q.pid, q.name, q.char, q.x | 0, q.y | 0, q.face, q.hp | 0, q.maxhp | 0, q.ghost ? 1 : 0, q.veh || 0, q.moving ? 1 : 0, q.ping || 0]);
+    Net.sendTo(p.pid, { t: 'snap', gt: G.t, w: Env.weather, pl, e: E, eb: EB, hb: HB, k: CO.kills, ping: p.ping || 0 });
   },
-  // ----- guest -----
+  // ----- in game (guest) -----
   applySnap(m) {
     const now = NOW;
-    G.t = lerp(G.t, m.gt, 0.5);
+    G.t = lerp(G.t, m.gt, 0.5); CO.myPing = m.ping;
     if (m.w && m.w !== Env.weather && WEATHER[m.w]) Env.weather = m.w;
-    const q = CO.partner || (CO.partner = { x: m.p[0], y: m.p[1] });
-    Object.assign(q, { tx: m.p[0], ty: m.p[1], face: m.p[2], hp: m.p[3], maxhp: m.p[4], ghost: m.p[5], veh: m.p[6], moving: m.p[7], pal: m.pal, name: m.name, last: now });
+    const seenP = new Set();
+    for (const [pid, name, char, x, y, face, hp, maxhp, ghost, veh, moving, ping] of m.pl) {
+      seenP.add(pid);
+      const q = CO.players.get(pid) || { pid, x, y }; CO.players.set(pid, q);
+      if (q.x === undefined) { q.x = x; q.y = y; }
+      Object.assign(q, { name, char, tx: x, ty: y, face, hp, maxhp, ghost, veh, moving, ping, gone: false, last: now });
+    }
+    for (const q of CO.players.values()) if (q.pid !== CO.me && !seenP.has(q.pid)) q.gone = true;
     const seen = new Set();
     for (const [u, id, x, y, hp, fl, face, name, affix] of m.e) {
       seen.add(u);
@@ -144,11 +199,11 @@ const Coop = {
       e.tx = x; e.ty = y; e.face = face; e.hp = (hp / 100) * e.maxhp; e.seen = now;
     }
     for (const [u, e] of CO.mirror) if (!seen.has(u)) { e.dead = true; CO.mirror.delete(u); }
-    // enemy bullets become local bullets that can hit you
     const hitSet = CO.bHit || (CO.bHit = new Set());
     G.ebullets = m.eb.filter((b) => !hitSet.has(b[0])).map(([uid, x, y, vx, vy, r, k, dmg]) => ({ uid, x, y, vx, vy, r, k: k || undefined, dmg, life: 1 }));
     CO.hbl = m.hb.map(([x, y, vx, vy]) => ({ x, y, vx, vy, life: 0.1 }));
-    for (const [id, xp, x, y, boss] of m.k || []) {
+    for (const [kid, id, xp, x, y, boss] of m.k || []) {
+      if (CO.seenK && CO.seenK.has(kid)) continue; (CO.seenK || (CO.seenK = new Set())).add(kid);
       G.kills++; addXp(xp * 0.8); Quests.prog('kill', (q2) => q2.id === id);
       Story.onKill({ id, boss: !!boss, lastW: null });
       if (Math.random() < 0.3) burst(x, y, 6, '140,40,30', 80);
@@ -163,31 +218,36 @@ const Coop = {
       e.anim += dt * (e.moving ? 8 : 2); e.t += dt; if (e.flash > 0) e.flash -= dt;
       EG.add(e);
     }
-    G.enemies = G.enemies.filter((e) => !e.dead && e.uid !== undefined); // anything spawned locally belongs to the host's world
+    G.enemies = G.enemies.filter((e) => !e.dead && e.uid !== undefined);
     G.bosses = G.bosses.filter((e) => !e.dead && e.uid !== undefined);
   },
   update(dt) {
+    const host = CO.role === 'host';
+    // lobby pings
+    if (host && CO.conns.size) { CO.pingT -= dt; if (CO.pingT <= 0) { CO.pingT = 2; Net.bcast({ t: 'ping', ts: performance.now() }); if (!CO.active) Net.bcast(coLobbyMsg()); } }
     if (!CO.active || !G) return;
-    const q = CO.partner;
-    if (q) { const k = 1 - Math.exp(-dt * 12); q.x += (q.tx - q.x) * k; q.y += (q.ty - q.y) * k; q.anim = (q.anim || 0) + dt * (q.moving ? 9 : 0); }
-    CO.gInv = Math.max(0, CO.gInv - dt);
-    // downed players come back as a ghost after 15s, or sooner when the partner walks over
+    const k = 1 - Math.exp(-dt * 12);
+    for (const q of coOthers()) { if (q.tx === undefined) continue; q.x += (q.tx - q.x) * k; q.y += (q.ty - q.y) * k; q.anim = (q.anim || 0) + dt * (q.moving ? 9 : 0); q.gInv = Math.max(0, (q.gInv || 0) - dt); }
+    // downed players come back after 15s, or sooner when any teammate stands next to them
     if (P.ghost > 0) {
       P.ghost -= dt; P.hp = 1;
-      if (q && !q.ghost && dist2(q.x, q.y, P.x, P.y) < 80 * 80) { CO.reviveT += dt; if (CO.reviveT > 1.5) P.ghost = 0; } else CO.reviveT = 0;
+      const rescuer = coOthers().find((q) => !q.gone && !q.ghost && q.x !== undefined && dist2(q.x, q.y, P.x, P.y) < 80 * 80);
+      if (rescuer) { CO.reviveT += dt; if (CO.reviveT > 1.5) { P.ghost = 0; if (host) { if (CO.stats[rescuer.pid]) CO.stats[rescuer.pid].revives++; } else Net.send({ t: 'rev', by: rescuer.pid }); } } else CO.reviveT = 0;
       if (P.ghost <= 0) { P.ghost = 0; P.weapons = P.wBak || P.weapons; P.hp = P.maxhp * 0.5; P.inv = 2.5; banner('💚 REVIVED', 'Back in the fight!', 2, 'good'); Sfx.play('heal'); hudBuild(); }
     }
-    if (CO.role === 'host' && P.ghost > 0 && q && q.ghost) { Net.send({ t: 'end', kind: 'dead' }); CO.active = false; endRun('dead', 'the Zone'); return; }
+    if (host) {
+      const alive = coOthers().filter((q) => !q.gone && !q.ghost);
+      if (P.ghost > 0 && !alive.length) { Net.bcast({ t: 'end', kind: 'dead', stats: CO.stats }); CO.active = false; endRun('dead', 'the Zone'); coResults(CO.stats); return; }
+    }
     CO.sendT -= dt;
     if (CO.sendT <= 0) {
       CO.sendT = 1 / 15;
-      if (CO.role === 'host') this.hostSnap();
-      else Net.send({ t: 'me', x: P.x | 0, y: P.y | 0, face: P.face, hp: P.hp | 0, maxhp: P.maxhp | 0, ghost: P.ghost > 0 ? 1 : 0, veh: P.veh ? P.veh.kind : 0, dash: P.dashT > 0 ? 1 : 0, inv: P.inv > 0 ? 1 : 0, moving: P.moving ? 1 : 0, pal: P.pal, name: coName(), hits: CO.hits.splice(0) });
+      if (host) { CO.byUid = new Map(); for (const e of G.enemies) if (!e.dead) CO.byUid.set(e.uid, e); for (const q of coOthers()) if (!q.gone && CO.conns.has(q.pid)) this.hostSnap(q); CO.kills = CO.kills.filter((x) => NOW - x[6] < 1); }
+      else Net.send({ t: 'me', x: P.x | 0, y: P.y | 0, face: P.face, hp: P.hp | 0, maxhp: P.maxhp | 0, ghost: P.ghost > 0 ? 1 : 0, veh: P.veh ? P.veh.kind : 0, dash: P.dashT > 0 ? 1 : 0, inv: P.inv > 0 ? 1 : 0, moving: P.moving ? 1 : 0, hits: CO.hits.splice(0) });
     }
     for (const b of CO.hbl) { b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt; }
   },
 };
-// a mirrored enemy: a normal enemy object the guest only draws and shoots at
 function coMirror(id, x, y) {
   const n = G.enemies.length, e = _c7Spawn(id, x, y, { noElite: true });
   if (G.enemies.length > n) G.enemies.pop();
@@ -196,44 +256,60 @@ function coMirror(id, x, y) {
 }
 function coDown() {
   P.ghost = 15; P.hp = 1; P.wBak = P.weapons; P.weapons = []; CO.reviveT = 0;
-  banner('💀 DOWNED', 'Walk to your partner to be revived, or wait 15s.', 3, 'bad', 2); hudBuild();
+  banner('💀 DOWNED', 'Walk to a teammate to be revived, or wait 15s.', 3, 'bad', 2); hudBuild();
 }
 
 // ----- hooks -----
 const _c7Spawn = spawnEnemy;
-spawnEnemy = function (id, x, y, o) { const e = _c7Spawn(id, x, y, o); if (e && G && G.coop && CO.role === 'host') e.uid = ++CO.uid; return e; };
+spawnEnemy = function (id, x, y, o) {
+  const e = _c7Spawn(id, x, y, o);
+  if (e && G && G.coop && CO.role === 'host') { e.uid = ++CO.uid; if (G.coopHp > 1) { e.hp *= G.coopHp; e.maxhp *= G.coopHp; } }
+  return e;
+};
+let CO_KID = 0;
 const _c7Kill = killEnemy;
 killEnemy = function (e) {
   if (G && G.coGuest && CO.active) { if (!e.dead) { e.dead = true; CO.dead.set(e.uid, NOW); CO.mirror.delete(e.uid); burst(e.x, e.y - 10, 12, '140,40,30', 150); } return; }
   const was = e.dead; _c7Kill(e);
-  if (!was && G && G.coop && CO.role === 'host' && CO.active && e.id !== 'phantom') CO.kills.push([e.id, e.d.xp || 1, e.x | 0, e.y | 0, e.boss ? 1 : 0]);
+  if (!was && G && G.coop && CO.role === 'host' && CO.active && e.id !== 'phantom') {
+    CO.kills.push([++CO_KID, e.id, e.d.xp || 1, e.x | 0, e.y | 0, e.boss ? 1 : 0, NOW]);
+    const s = CO.stats[e.lastHit || 'h']; if (s) s.kills++;
+  }
 };
 const _c7Hurt = hurtEnemy;
 hurtEnemy = function (e, dmg, kx, ky, raw, proc) {
   if (G && G.coGuest && CO.active && e.uid) { const h = e.hp; const r = _c7Hurt(e, dmg, kx, ky, raw, proc); const d = h - Math.max(0, e.hp); if (d > 0) CO.hits.push([e.uid, Math.round(d * 10) / 10, kx | 0, ky | 0]); return r; }
+  if (G && G.coop && CO.role === 'host' && !raw) { e.lastHit = 'h'; const h = e.hp; const r = _c7Hurt(e, dmg, kx, ky, raw, proc); if (CO.stats.h) CO.stats.h.dmg += Math.max(0, h - Math.max(0, e.hp)); return r; }
   return _c7Hurt(e, dmg, kx, ky, raw, proc);
 };
 const _c7HurtP = hurtPlayer;
 hurtPlayer = function (d, src, ig, kind) {
-  if (CO.swap) { const q = CO.partner; if (q && !q.ghost && !q.inv && !q.dash && CO.gInv <= 0) { CO.gInv = 0.6; Net.send({ t: 'dmg', d: Math.round(d), src }); } return; }
+  if (CO.swap) { const q = CO.players.get(CO.swap); if (q && !q.ghost && !q.inv && !q.dash && !(q.gInv > 0)) { q.gInv = 0.6; Net.sendTo(q.pid, { t: 'dmg', d: Math.round(d), src }); } return; }
   if (P.ghost > 0) return;
   _c7HurtP(d, src, ig, kind);
 };
-// mutants chase whichever player is closer (host side)
+// mutants chase whichever living player is closest (host side)
 const _c7UpEn = updateEnemies;
 updateEnemies = function (dt) {
   if (G.coGuest && CO.active) return Coop.guestUpdateEnemies(dt);
-  const q = CO.partner;
-  if (!(G.coop && CO.active && CO.role === 'host' && q && World.kind === 'over' && NOW - (q.last || 0) < 3) || q.ghost) return _c7UpEn(dt);
-  const A = [], B = [];
-  for (const e of G.enemies) (!e.dead && !e.boss && dist2(e.x, e.y, q.x, q.y) < dist2(e.x, e.y, P.x, P.y) ? B : A).push(e);
-  if (P.ghost > 0) { B.push(...A); A.length = 0; }
-  G.enemies = A; _c7UpEn(dt); const A2 = G.enemies;
-  const sv = { x: P.x, y: P.y, inv: P.inv, dashT: P.dashT, moving: P.moving };
-  P.x = q.x; P.y = q.y; P.inv = 0; P.dashT = 0; CO.swap = true;
-  G.enemies = B;
-  try { _c7UpEn(dt); } finally { CO.swap = false; Object.assign(P, sv); }
-  G.enemies = A2.concat(G.enemies);
+  const others = G.coop && CO.active && CO.role === 'host' && World.kind === 'over' ? coOthers().filter((q) => !q.gone && !q.ghost && q.x !== undefined && NOW - (q.last || 0) < 3) : [];
+  if (!others.length) return _c7UpEn(dt);
+  const T = (P.ghost > 0 ? [] : [{ pid: 'h', x: P.x, y: P.y }]).concat(others), groups = new Map(T.map((t) => [t.pid, []]));
+  for (const e of G.enemies) {
+    if (e.dead) continue;
+    let best = T[0], bd = 1e18;
+    if (!e.boss || T.length) for (const t of T) { const d = dist2(e.x, e.y, t.x, t.y); if (d < bd) { bd = d; best = t; } }
+    groups.get(best.pid).push(e);
+  }
+  const sv = { x: P.x, y: P.y, inv: P.inv, dashT: P.dashT }, out = [];
+  for (const t of T) {
+    G.enemies = groups.get(t.pid);
+    if (t.pid === 'h') { _c7UpEn(dt); out.push(...G.enemies); continue; }
+    P.x = t.x; P.y = t.y; P.inv = 0; P.dashT = 0; CO.swap = t.pid;
+    try { _c7UpEn(dt); } finally { CO.swap = null; Object.assign(P, sv); }
+    out.push(...G.enemies);
+  }
+  G.enemies = out;
   EG.clear(); for (const e of G.enemies) if (!e.dead) EG.add(e);
 };
 const _c7Hatch = useHatch;
@@ -241,7 +317,7 @@ useHatch = function (h) { if (G.coop && CO.active) { banner('🕳️ LAB SEALED'
 const _c7New = newGame;
 newGame = function (st, ch, mode, sp, seed, diff) {
   if (CO.start) { const s = CO.start; CO.start = null; st = s.stage; sp = s.spawn; seed = s.seed; diff = s.diff; mode = 'standard'; CO.active = true; }
-  else if (!CO.conn) CO.active = false;
+  else CO.active = false;
   _c7New(st, ch, mode, sp, seed, diff);
   if (CO.active) Coop.onNewGame();
 };
@@ -249,81 +325,166 @@ const _c7RS = RunSave.save.bind(RunSave);
 RunSave.save = function () { if (G && G.coop) return; _c7RS(); };
 const _c7EvUp = Events.update.bind(Events);
 Events.update = function (dt) { if (G.coGuest && CO.active) return; _c7EvUp(dt); };
-
-// contracts that spawn their own mutants only make sense on the host
 for (const k of ['measure', 'track', 'village', 'photo']) { const d = QT2[k], w = d.w; d.w = () => (G && G.coGuest ? 0 : w()); }
 
-// partner drawing (world space)
+// ----- drawing teammates -----
+const CO_COLORS = ['#7dd8ff', '#ffb070', '#c89bff', '#8aff9a'];
+function coColor(pid) { const i = [...CO.players.keys()].indexOf(pid); return CO_COLORS[(i < 0 ? 0 : i) % CO_COLORS.length]; }
 function drawPartner() {
-  const q = CO.partner; if (!CO.active || !q || !G || G.title) return;
-  const pal = q.pal || PAL_PLAYER;
-  ctx.globalAlpha = q.ghost ? 0.4 : 1;
-  shadow(q.x, q.y, 14, 5, 0.35);
-  if (q.veh && VEH[q.veh]) { drawVehicle({ kind: q.veh, a: q.face > 0 ? 0 : Math.PI }, q.x, q.y); ctx.save(); ctx.translate(0, q.veh === 'jeep' ? -26 : -12); drawStalker({ x: q.x, y: q.y, z: 0, anim: q.anim || 0, face: q.face || 1, aim: q.face > 0 ? 0 : Math.PI, moving: q.moving }, pal, true); ctx.restore(); }
-  else drawStalker({ x: q.x, y: q.y, z: 0, anim: q.anim || 0, face: q.face || 1, aim: q.face > 0 ? 0 : Math.PI, moving: !!q.moving }, pal, true);
-  ctx.globalAlpha = 1;
-  ctx.font = 'bold 12px Oswald, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = q.ghost ? '#aaa' : '#7dd8ff';
-  ctx.fillText((q.ghost ? '💀 ' : '') + (q.name || 'Partner'), q.x, q.y - 64);
-  if (q.maxhp) { ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(q.x - 21, q.y - 58, 42, 5); ctx.fillStyle = '#7dd8ff'; ctx.fillRect(q.x - 20, q.y - 57, 40 * clamp(q.hp / q.maxhp, 0, 1), 3); }
-  if (P.ghost > 0 && !q.ghost) { ctx.strokeStyle = 'rgba(125,216,255,0.5)'; ctx.setLineDash([8, 8]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(P.x, P.y - 20); ctx.lineTo(q.x, q.y - 20); ctx.stroke(); ctx.setLineDash([]); }
-  // host bullets seen by the guest
+  if (!CO.active || !G || G.title) return;
+  for (const q of coOthers()) {
+    if (q.gone || q.x === undefined) continue;
+    const pal = coPal(q.char), col = coColor(q.pid);
+    ctx.globalAlpha = q.ghost ? 0.4 : 1;
+    shadow(q.x, q.y, 14, 5, 0.35);
+    const body = { x: q.x, y: q.y, z: 0, anim: q.anim || 0, face: q.face || 1, aim: q.face > 0 ? 0 : Math.PI, moving: !!q.moving };
+    if (q.veh && VEH[q.veh]) { drawVehicle({ kind: q.veh, a: q.face > 0 ? 0 : Math.PI }, q.x, q.y); ctx.save(); ctx.translate(0, q.veh === 'jeep' ? -26 : -12); drawStalker(body, pal, true); ctx.restore(); }
+    else drawStalker(body, pal, true);
+    ctx.globalAlpha = 1;
+    ctx.font = 'bold 12px Oswald, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = q.ghost ? '#aaa' : col;
+    ctx.fillText((q.ghost ? '💀 ' : '') + (q.name || 'Teammate'), q.x, q.y - 64);
+    if (q.maxhp) { ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(q.x - 21, q.y - 58, 42, 5); ctx.fillStyle = col; ctx.fillRect(q.x - 20, q.y - 57, 40 * clamp(q.hp / q.maxhp, 0, 1), 3); }
+    if (P.ghost > 0 && !q.ghost) { ctx.strokeStyle = col; ctx.globalAlpha = 0.5; ctx.setLineDash([8, 8]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(P.x, P.y - 20); ctx.lineTo(q.x, q.y - 20); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1; }
+  }
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(255,220,140,0.85)'; ctx.lineWidth = 2.5; ctx.beginPath();
   for (const b of CO.hbl) { ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - b.vx * 0.022, b.y - b.vy * 0.022); }
   ctx.stroke(); ctx.restore();
 }
+// team results on the run-over screen
+function coResults(stats) {
+  if (!stats) return;
+  const rows = Object.entries(stats).map(([pid, s]) => ({ pid, ...s })), mvp = rows.slice().sort((a, b) => b.kills + b.dmg / 200 + b.revives * 15 - (a.kills + a.dmg / 200 + a.revives * 15))[0];
+  const h = '<div class="coRes"><b>TEAM RESULTS</b>' + rows.map((r) => `<div class="${r.pid === CO.me ? 'me' : ''}"><span>${r.pid === mvp.pid ? '🏅 ' : ''}${(CHARACTERS.find((c) => c.id === r.char) || CHARACTERS[0]).icon} ${r.name}</span><span>${r.kills} kills</span><span>${Math.round(r.dmg)} dmg</span><span>${r.revives} revives</span></div>`).join('') + '</div>';
+  const el = $('earned'); if (el && !el.querySelector('.coRes')) el.insertAdjacentHTML('beforeend', h);
+}
+function coCountdown(n) {
+  let el = $('coCount'); if (!el) { el = document.createElement('div'); el.id = 'coCount'; document.body.appendChild(el); }
+  if (!n) { el.classList.remove('show'); return; }
+  el.textContent = n; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); Sfx.play('hint');
+}
 
-// ----- UI -----
+// ----- UI: entry view + lobby view -----
+function coUI() {
+  const inRoom = CO.role === 'host' || (CO.role === 'guest' && CO.conn && CO.me !== 'h');
+  const e = $('coEntry'), l = $('coLobby'); if (!e) return;
+  e.style.display = inRoom ? 'none' : ''; l.style.display = inRoom ? '' : 'none';
+  const jb = $('coJoin'); if (jb) { jb.disabled = !!CO.joining; jb.textContent = CO.joining ? '⏳ JOINING…' : '🔗 JOIN'; }
+  if (inRoom) coLobbyUI();
+}
+function coLobbyUI() {
+  if (!$('coLobby') || CO.active) return;
+  const host = CO.role === 'host', S = CO.settings || coDefaultSettings(), me = CO.players.get(CO.me);
+  $('coCodeTxt').textContent = 'ROOM ' + CO.code; $('coLinkRow').style.display = host ? '' : 'none'; if (host) $('coLink').value = coLink();
+  const slots = [...CO.players.values()];
+  let h = '';
+  for (let i = 0; i < CO_MAX; i++) {
+    const p = slots[i];
+    if (!p) { h += '<div class="coSlot empty"><div class="pi">➕</div><div><b>Open slot</b><small>send the link to a friend</small></div></div>'; continue; }
+    const c = CHARACTERS.find((x) => x.id === p.char) || CHARACTERS[0];
+    h += `<div class="coSlot ${p.pid === CO.me ? 'me' : ''}" style="border-color:${coColor(p.pid)}"><div class="pi">${c.icon}</div><div><b>${p.pid === 'h' ? '👑 ' : ''}${p.name}${p.pid === CO.me ? ' (you)' : ''}</b><small>${c.name}${p.pid !== 'h' ? ' · ' + (p.ping ? p.ping + ' ms' : '…') : ''}</small></div><div class="rdy ${p.ready ? 'on' : ''}">${p.ready ? '✅ READY' : '⏳ not ready'}</div></div>`;
+  }
+  $('coSlots').innerHTML = h;
+  // my stalker
+  const own = CHARACTERS.filter((c) => Save.data.chars.includes(c.id));
+  $('coChar').innerHTML = own.map((c) => `<option value="${c.id}" ${me && me.char === c.id ? 'selected' : ''}>${c.icon} ${c.name}</option>`).join('');
+  // settings: host edits, guests read
+  const st = STAGES.find((x) => x.id === S.stage) || STAGES[0], sp = (STAGE_WORLD[S.stage].spawns[S.spawn] || STAGE_WORLD[S.stage].spawns[0]);
+  $('coSetRead').style.display = host ? 'none' : ''; $('coSetEdit').style.display = host ? '' : 'none';
+  $('coSetRead').innerHTML = `🗺️ <b>${st.icon} ${st.name}</b> · 📍 ${sp.icon} ${sp.name} · ${diffDef(S.diff).icon} ${diffDef(S.diff).name}`;
+  if (host) {
+    $('coStage').innerHTML = STAGES.filter((x) => Save.data.stages.includes(x.id)).map((x) => `<option value="${x.id}" ${x.id === S.stage ? 'selected' : ''}>${x.icon} ${x.name}</option>`).join('');
+    $('coSpawn').innerHTML = STAGE_WORLD[S.stage].spawns.map((x, i) => `<option value="${i}" ${i === S.spawn ? 'selected' : ''}>${x.icon} ${x.name}</option>`).join('');
+    $('coDiff').innerHTML = DIFFICULTIES.map((d) => `<option value="${d.id}" ${d.id === S.diff ? 'selected' : ''}>${d.icon} ${d.name}</option>`).join('');
+  }
+  const guests = slots.filter((p) => p.pid !== 'h'), allReady = guests.length && guests.every((p) => p.ready);
+  const rb = $('coReady'), sb = $('coStart');
+  rb.style.display = host ? 'none' : ''; sb.style.display = host ? '' : 'none';
+  if (!host) { rb.textContent = CO.ready ? '✅ READY (tap to cancel)' : '👍 I\'M READY'; rb.classList.toggle('pulse', !CO.ready); }
+  else { sb.disabled = !allReady; sb.textContent = !guests.length ? '⏳ WAITING FOR PLAYERS…' : allReady ? '▶ START (' + slots.length + ' players)' : '⏳ WAITING FOR EVERYONE TO BE READY'; sb.classList.toggle('pulse', !!allReady); }
+  coStatus(host ? (guests.length ? slots.length + '/' + CO_MAX + ' in the room. Everyone presses READY, then you START.' : 'Send the link to your friends. Up to ' + CO_MAX + ' players.') : (CO.ready ? 'Waiting for the host to start…' : 'Pick your stalker, then press READY.'));
+}
 addEventListener('DOMContentLoaded', () => {
   const t = document.createElement('div'); t.id = 'coop'; t.className = 'screen scroll';
   t.innerHTML = `<div class="hdr"><button class="back" id="coBack">← BACK</button><h2>CO-OP</h2><span></span></div>
   <div class="coBox">
-    <div class="sect">HOST A GAME</div>
-    <p class="dim">Pick your stage, stalker and difficulty on the PLAY screen first. Your friend plays with their own stalker.</p>
-    <label class="set"><span>Password (optional)</span><input id="coPw" type="text" maxlength="24" placeholder="leave empty for none"></label>
-    <button class="big" id="coHost">🏠 CREATE ROOM</button>
-    <div id="coRoom" style="display:none"><div class="coCode" id="coCodeTxt"></div><div class="coLinkRow"><input id="coLink" readonly><button class="big ghost" id="coCopy">📋 COPY LINK</button></div>
-    <button class="big" id="coStart" disabled>⏳ WAITING FOR YOUR FRIEND…</button></div>
-    <div class="sect">JOIN A FRIEND</div>
-    <div class="coLinkRow"><input id="coJoinCode" maxlength="5" placeholder="ROOM CODE"><input id="coJoinPw" placeholder="password (if any)"><button class="big ghost" id="coJoin">🔗 JOIN</button></div>
-    <div id="coStatus" class="dim">Share the link: your friend opens it and is in.</div>
-    <p class="dim small">Co-op uses a free public connection service (PeerJS) to introduce the two browsers, then plays directly between them. Some strict networks can block it.</p>
+    <label class="set"><span>Your name</span><input id="coNick" type="text" maxlength="16" placeholder="Stalker name"></label>
+    <div id="coEntry">
+      <div class="sect">HOST A ROOM</div>
+      <label class="set"><span>Password (optional)</span><input id="coPw" type="text" maxlength="24" placeholder="leave empty for none"></label>
+      <button class="big" id="coHost">🏠 CREATE ROOM</button>
+      <div class="sect">JOIN A FRIEND</div>
+      <div class="coLinkRow"><input id="coJoinCode" maxlength="5" placeholder="ROOM CODE"><input id="coJoinPw" placeholder="password (if any)"><button class="big ghost" id="coJoin">🔗 JOIN</button></div>
+    </div>
+    <div id="coLobby" style="display:none">
+      <div class="coCode" id="coCodeTxt"></div>
+      <div class="coLinkRow" id="coLinkRow"><input id="coLink" readonly><button class="big ghost" id="coCopy">📋 COPY LINK</button></div>
+      <div id="coSlots"></div>
+      <label class="set"><span>Your stalker</span><select id="coChar"></select></label>
+      <div id="coSetRead" class="coSet"></div>
+      <div id="coSetEdit"><label class="set"><span>Stage</span><select id="coStage"></select></label><label class="set"><span>Start point</span><select id="coSpawn"></select></label><label class="set"><span>Difficulty</span><select id="coDiff"></select></label></div>
+      <button class="big" id="coReady">👍 I'M READY</button>
+      <button class="big" id="coStart" disabled>⏳ WAITING FOR PLAYERS…</button>
+      <button class="big ghost" id="coLeave">🚪 LEAVE ROOM</button>
+    </div>
+    <div id="coStatus" class="dim"></div>
+    <p class="dim small">Co-op uses a free public connection service (PeerJS) to introduce the browsers, then plays directly between them. Some strict networks can block it.</p>
   </div>`;
   document.body.appendChild(t);
   const btn = document.createElement('button'); btn.className = 'big ghost'; btn.id = 'coopBtn'; btn.textContent = '👥 CO-OP';
   $('bunkerBtn').parentNode.insertBefore(btn, $('bunkerBtn'));
-  btn.onclick = () => { Sfx.init(); openScreen('coop'); };
+  btn.onclick = () => { Sfx.init(); openScreen('coop'); $('coNick').value = Save.data.nick || ''; coUI(); };
   const _os = openScreen;
   openScreen = function (id) { hide('coop'); _os(id); };
-  $('coBack').onclick = () => { if (!G || G.title) { if (!CO.active && CO.role === 'host' && !CO.conn) Net.leave(); } hide('coop'); openScreen('title'); };
-  const upd = () => { CO.pw = $('coPw').value.trim(); if (CO.code) $('coLink').value = coLink(); };
-  $('coPw').oninput = upd;
+  $('coBack').onclick = () => { hide('coop'); openScreen('title'); };
+  $('coNick').oninput = () => { Save.data.nick = $('coNick').value.trim().slice(0, 16); Save.save(); const me = CO.players.get(CO.me); if (me) { me.name = coNick(); if (CO.role === 'host') Net.bcast(coLobbyMsg()); else Net.send({ t: 'lobbyMe', name: me.name, char: me.char, ready: CO.ready }); coLobbyUI(); } };
+  $('coPw').oninput = () => { CO.pw = $('coPw').value.trim(); if (CO.role === 'host') $('coLink').value = coLink(); };
   $('coHost').onclick = async () => {
     $('coHost').disabled = true; coStatus('⏳ Creating room…');
-    try { CO.pw = $('coPw').value.trim(); await Net.host(); $('coRoom').style.display = ''; $('coCodeTxt').textContent = 'ROOM ' + CO.code; upd(); coStatus('⏳ Waiting for your friend to open the link…'); }
-    catch (e) { coStatus('⚠️ ' + e.message); $('coHost').disabled = false; }
+    try { CO.pw = $('coPw').value.trim(); await Net.host(); coUI(); }
+    catch (e) { coStatus('⚠️ ' + e.message); }
+    $('coHost').disabled = false;
   };
-  $('coCopy').onclick = () => { const v = $('coLink').value; (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(() => coStatus('📋 Link copied! Send it to your friend.'), () => { $('coLink').select(); document.execCommand('copy'); coStatus('📋 Link copied!'); }); };
+  $('coCopy').onclick = () => { const v = $('coLink').value; (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(() => coStatus('📋 Link copied! Send it to your friends.'), () => { $('coLink').select(); document.execCommand('copy'); coStatus('📋 Link copied!'); }); };
+  $('coChar').onchange = () => { const c = $('coChar').value; Save.data.char = c; Save.save(); const me = CO.players.get(CO.me); if (me) me.char = c; if (CO.role === 'host') Net.bcast(coLobbyMsg()); else Net.send({ t: 'lobbyMe', name: coNick(), char: c, ready: CO.ready }); coLobbyUI(); };
+  const setChange = () => { CO.settings = { stage: $('coStage').value, spawn: +$('coSpawn').value || 0, diff: $('coDiff').value }; if (!STAGE_WORLD[CO.settings.stage].spawns[CO.settings.spawn]) CO.settings.spawn = 0; Net.bcast(coLobbyMsg()); coLobbyUI(); };
+  $('coStage').onchange = () => { $('coSpawn').value = 0; setChange(); }; $('coSpawn').onchange = setChange; $('coDiff').onchange = setChange;
+  $('coReady').onclick = () => { CO.ready = !CO.ready; const me = CO.players.get(CO.me); if (me) me.ready = CO.ready; Net.send({ t: 'lobbyMe', name: coNick(), char: Save.data.char, ready: CO.ready }); coLobbyUI(); };
+  $('coLeave').onclick = () => { if (CO.role === 'guest') Net.send({ t: 'leave' }); try { sessionStorage.removeItem('zb_rejoin_' + CO.code); } catch (e) { /* storage blocked */ } Net.leave(); CO.rejoinId = null; coStatus('You left the room.'); coUI(); };
   $('coStart').onclick = () => {
-    const S = Save.data, st = S.stages.includes(S.stage) ? S.stage : 'zone';
-    const s = { t: 'start', stage: st, spawn: (S.spawn || {})[st] || 0, seed: (Math.random() * 1e9) | 0, diff: S.diff || 'rookie' };
-    Net.send(s); CO.start = s; NEXT_RUN = { mode: 'standard', mutators: [], ngplus: false }; hide('coop'); startGame();
+    if ($('coStart').disabled) return;
+    const S = CO.settings, s = { t: 'start', stage: S.stage, spawn: S.spawn, seed: (Math.random() * 1e9) | 0, diff: S.diff };
+    $('coStart').disabled = true;
+    let n = 3; const tick = () => {
+      if (n > 0) { Net.bcast({ t: 'count', n }); coCountdown(n); n--; setTimeout(tick, 900); return; }
+      CO.startMsg = s; Net.bcast(s); CO.start = s; coCountdown(0); NEXT_RUN = { mode: 'standard', mutators: [], ngplus: false }; hide('coop'); startGame();
+    };
+    tick();
   };
   $('coJoin').onclick = async () => { const c = $('coJoinCode').value.trim(); if (c.length < 5) { coStatus('Enter the 5-letter room code.'); return; } coStatus('⏳ Connecting to room ' + c.toUpperCase() + '…'); try { await Net.join(c, $('coJoinPw').value.trim()); } catch (e) { coStatus('⚠️ ' + e.message); } };
   // opened from a shared link: fill in and connect straight away
   const qs = new URLSearchParams(location.search), jc = qs.get('join');
-  if (jc) { $('coJoinCode').value = jc; $('coJoinPw').value = qs.get('pw') || ''; openScreen('coop'); $('coJoin').onclick(); }
-  // run end: tell the partner
+  if (jc) { $('coJoinCode').value = jc; $('coJoinPw').value = qs.get('pw') || ''; openScreen('coop'); $('coNick').value = Save.data.nick || ''; $('coJoin').onclick(); }
+  // lobby keeps pinging even on the menu screens
+  setInterval(() => { if (!G || G.title || G.state !== 'play') Coop.update(0.25); }, 250);
+  // run end: tell the team
   const _er = endRun;
   endRun = function (kind, src) {
     if (G && G.coop && CO.active && !G.ended) {
-      if (kind === 'dead') { if (CO.partner && !CO.partner.ghost) { coDown(); return; } }
-      if (CO.role === 'host') Net.send({ t: 'end', kind }); else Net.send({ t: 'leave' });
+      if (kind === 'dead' && coOthers().some((q) => !q.gone && !q.ghost)) { coDown(); return; }
+      if (CO.role === 'host') Net.bcast({ t: 'end', kind, stats: CO.stats }); else Net.send({ t: 'leave' });
       CO.active = false;
+      _er(kind, src);
+      if (CO.role === 'host') coResults(CO.stats);
+      return;
     }
     _er(kind, src);
   };
   const _dp = drawPlayer;
   drawPlayer = function () { if (P.ghost > 0) { ctx.globalAlpha = 0.4; _dp(); ctx.globalAlpha = 1; ctx.font = 'bold 12px Oswald, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ddd'; ctx.fillText('DOWNED ' + Math.ceil(P.ghost) + 's', P.x, P.y - 66); } else _dp(); };
   const _mm = drawMinimap;
-  drawMinimap = function () { _mm(); const q = CO.partner; if (!CO.active || !q || World.kind !== 'over') return; const S = mm.width, span = 2000, f = S / span, x = clamp((q.x - P.x + span / 2) * f, 8, S - 8), y = clamp((q.y - P.y + span / 2) * f, 8, S - 8); mmx.fillStyle = '#7dd8ff'; mmx.beginPath(); mmx.arc(x, y, 6, 0, TAU); mmx.fill(); mmx.strokeStyle = '#000'; mmx.lineWidth = 2; mmx.stroke(); };
+  drawMinimap = function () {
+    _mm(); if (!CO.active || World.kind !== 'over') return;
+    const S = mm.width, span = 2000, f = S / span;
+    for (const q of coOthers()) { if (q.gone || q.x === undefined) continue; const x = clamp((q.x - P.x + span / 2) * f, 8, S - 8), y = clamp((q.y - P.y + span / 2) * f, 8, S - 8); mmx.fillStyle = coColor(q.pid); mmx.beginPath(); mmx.arc(x, y, 6, 0, TAU); mmx.fill(); mmx.strokeStyle = '#000'; mmx.lineWidth = 2; mmx.stroke(); }
+  };
 });

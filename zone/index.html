@@ -212,7 +212,7 @@
   @media (max-width: 600px) { .card { min-height: 0; flex-direction: row; text-align: left; padding: 10px 12px; gap: 10px; } .cicon { font-size: 32px; } .ckey { display: none; } .card .cname { font-size: 18px; } .crar { position: absolute; top: 3px; right: 8px; font-size: 9px; } }
 
   /* ---- pause / over / map ---- */
-  #pause, #over, #mapScreen, #setup, #bunker, #settings { background: rgba(8, 8, 5, 0.86); backdrop-filter: blur(3px); }
+  #pause, #over, #mapScreen, #setup, #bunker, #settings, #coop, #runs, #profiles { background: rgba(8, 8, 5, 0.86); backdrop-filter: blur(3px); }
   .panel { background: var(--panel); border: 1px solid var(--line); padding: 18px 22px; max-width: 580px; width: 100%; max-height: 86vh; overflow: auto; text-align: left; touch-action: pan-y; }
   .panel h2 { font-size: 40px; letter-spacing: 0.1em; text-align: center; }
   .panel h3 { color: var(--acc); letter-spacing: 0.15em; margin: 12px 0 4px; font-size: 15px; }
@@ -276,6 +276,15 @@
   #title .menu .big { padding-top: 9px; padding-bottom: 9px; font-size: clamp(16px, 2.4vw, 22px); }
   #title .menu { gap: 7px; }
   .profBtn { position: absolute; left: 12px; top: 12px; font-size: 13px; padding: 6px 12px; background: rgba(0,0,0,0.5); color: #e8e0c0; border: 1px solid #4a4636; border-radius: 8px; }
+  #coSlots { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; margin: 8px 0; }
+  .coSlot { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.45); border: 2px solid #4a4636; border-radius: 10px; padding: 8px 10px; }
+  .coSlot.empty { opacity: 0.45; border-style: dashed; } .coSlot.me { box-shadow: 0 0 12px rgba(200,224,96,0.25); } .coSlot .pi { font-size: 26px; } .coSlot b { display: block; color: #f0ead0; } .coSlot small { color: #9a947c; font-size: 12px; }
+  .coSlot .rdy { margin-left: auto; font-size: 12px; color: #9a947c; white-space: nowrap; } .coSlot .rdy.on { color: #8aff9a; font-weight: bold; }
+  .coSet { background: rgba(0,0,0,0.4); border: 1px solid #4a4636; border-radius: 8px; padding: 10px; color: #e8e0c0; text-align: center; }
+  #coCount { position: fixed; left: 50%; top: 45%; transform: translate(-50%, -50%) scale(0.5); z-index: 50; font: 700 140px Oswald, Impact, sans-serif; color: #c8e060; text-shadow: 0 6px 0 #000; opacity: 0; pointer-events: none; }
+  #coCount.show { animation: coc 0.9s ease-out; } @keyframes coc { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1.4); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); } }
+  .coRes { margin-top: 10px; background: rgba(0,0,0,0.45); border: 1px solid #4a4636; border-radius: 8px; padding: 8px; font-size: 14px; } .coRes b { display: block; color: #c8e060; letter-spacing: 0.2em; margin-bottom: 4px; }
+  .coRes div { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 6px; color: #e8e0c0; padding: 2px 0; } .coRes div.me { color: #c8e060; }
   #mapInfo { margin-top: 8px; color: #c8c0a0; font-size: 13px; text-align: center; max-width: 92vw; }
   #mapInfo .travel { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 6px; }
   #mapInfo .travel button { font-size: 13px; padding: 6px 10px; }
@@ -425,33 +434,36 @@
   window.addEventListener('error', function (e) {
     var el = document.getElementById('bootErr');
     if (!el) { el = document.createElement('div'); el.id = 'bootErr'; document.body.appendChild(el); }
-    el.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:99;background:#400;color:#fff;padding:10px;font:14px monospace;border:1px solid #f66';
-    el.innerHTML = 'Something failed to load: ' + (e.message || 'script error') + ' <button onclick="location.reload(true)" style="margin-left:8px;padding:4px 10px">Reload</button>';
+    el.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:99;background:#3a0a08;color:#fff;padding:10px 12px;font:14px monospace;border:2px solid #f66;border-radius:8px;display:flex;flex-wrap:wrap;align-items:center;gap:8px';
+    var btn = 'padding:7px 14px;font:bold 14px sans-serif;border-radius:6px;cursor:pointer;';
+    el.innerHTML = '<span style="flex:1;min-width:200px">⚠️ Something went wrong: ' + String(e.message || 'script error').replace(/</g, '&lt;') + '</span>' +
+      '<button onclick="this.parentNode.remove()" style="' + btn + 'background:#fff;color:#222;border:2px solid #fff">✖ DISMISS</button>' +
+      '<button onclick="location.reload()" style="' + btn + 'background:#ffcf3a;color:#111;border:2px solid #ffcf3a">🔄 RELOAD</button>';
   });
 </script>
-<script src="js/util.js?v=30"></script>
-<script src="js/audio.js?v=30"></script>
-<script src="js/radio.js?v=30"></script>
-<script src="js/ambience.js?v=30"></script>
-<script src="js/data.js?v=30"></script>
-<script src="js/artifacts.js?v=30"></script>
-<script src="js/world.js?v=30"></script>
-<script src="js/render.js?v=30"></script>
-<script src="js/render2.js?v=30"></script>
-<script src="js/lighting.js?v=30"></script>
-<script src="js/game.js?v=30"></script>
-<script src="js/systems.js?v=30"></script>
-<script src="js/weapons2.js?v=30"></script>
-<script src="js/mutants3.js?v=30"></script>
-<script src="js/events.js?v=30"></script>
-<script src="js/hazards.js?v=30"></script>
-<script src="js/world2.js?v=30"></script>
-<script src="js/vehicles.js?v=30"></script>
-<script src="js/story.js?v=30"></script>
-<script src="js/meta.js?v=30"></script>
-<script src="js/coop.js?v=30"></script>
-<script src="js/saves.js?v=30"></script>
-<script src="js/guard.js?v=30"></script>
-<script src="js/ui.js?v=30"></script>
+<script src="js/util.js?v=32"></script>
+<script src="js/audio.js?v=32"></script>
+<script src="js/radio.js?v=32"></script>
+<script src="js/ambience.js?v=32"></script>
+<script src="js/data.js?v=32"></script>
+<script src="js/artifacts.js?v=32"></script>
+<script src="js/world.js?v=32"></script>
+<script src="js/render.js?v=32"></script>
+<script src="js/render2.js?v=32"></script>
+<script src="js/lighting.js?v=32"></script>
+<script src="js/game.js?v=32"></script>
+<script src="js/systems.js?v=32"></script>
+<script src="js/weapons2.js?v=32"></script>
+<script src="js/mutants3.js?v=32"></script>
+<script src="js/events.js?v=32"></script>
+<script src="js/hazards.js?v=32"></script>
+<script src="js/world2.js?v=32"></script>
+<script src="js/vehicles.js?v=32"></script>
+<script src="js/story.js?v=32"></script>
+<script src="js/meta.js?v=32"></script>
+<script src="js/coop.js?v=32"></script>
+<script src="js/saves.js?v=32"></script>
+<script src="js/guard.js?v=32"></script>
+<script src="js/ui.js?v=32"></script>
 </body>
 </html>
