@@ -314,15 +314,24 @@
   <div class="actions"><button class="big" id="continueBtn" style="display:none">♾ KEEP GOING (ENDLESS)</button><button class="big" id="againBtn">TRY AGAIN</button><button class="big ghost" id="menuBtn">BUNKER / MENU</button></div>
 </div>
 
-<script src="js/util.js"></script>
-<script src="js/audio.js"></script>
-<script src="js/data.js"></script>
-<script src="js/world.js"></script>
-<script src="js/render.js"></script>
-<script src="js/render2.js"></script>
-<script src="js/lighting.js"></script>
-<script src="js/game.js"></script>
-<script src="js/systems.js"></script>
-<script src="js/ui.js"></script>
+<script>
+  // show load/runtime errors instead of leaving a dead page (e.g. stale cached files)
+  window.addEventListener('error', function (e) {
+    var el = document.getElementById('bootErr');
+    if (!el) { el = document.createElement('div'); el.id = 'bootErr'; document.body.appendChild(el); }
+    el.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:99;background:#400;color:#fff;padding:10px;font:14px monospace;border:1px solid #f66';
+    el.innerHTML = 'Something failed to load: ' + (e.message || 'script error') + ' <button onclick="location.reload(true)" style="margin-left:8px;padding:4px 10px">Reload</button>';
+  });
+</script>
+<script src="js/util.js?v=3"></script>
+<script src="js/audio.js?v=3"></script>
+<script src="js/data.js?v=3"></script>
+<script src="js/world.js?v=3"></script>
+<script src="js/render.js?v=3"></script>
+<script src="js/render2.js?v=3"></script>
+<script src="js/lighting.js?v=3"></script>
+<script src="js/game.js?v=3"></script>
+<script src="js/systems.js?v=3"></script>
+<script src="js/ui.js?v=3"></script>
 </body>
 </html>
