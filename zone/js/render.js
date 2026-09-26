@@ -113,6 +113,9 @@ const BSTYLE = {
   factory: { wall: [122, 120, 112], wall2: [104, 108, 104], roof: [78, 80, 78], roof2: [88, 84, 76] },
   hut: { wall: [104, 84, 58], wall2: [92, 74, 52], roof: [74, 64, 48], roof2: [80, 72, 50] },
   ruin: { wall: [118, 112, 102], wall2: [104, 96, 88], roof: [86, 82, 76], roof2: [96, 90, 80] },
+  apartment: { wall: [150, 150, 144], wall2: [132, 128, 118], roof: [70, 72, 72], roof2: [80, 78, 74] },
+  reactor: { wall: [118, 110, 96], wall2: [118, 110, 96], roof: [96, 72, 56], roof2: [96, 72, 56] },
+  lab: { wall: [62, 66, 70], wall2: [58, 62, 66], roof: [26, 28, 30], roof2: [30, 31, 33] },
 };
 function drawBuilding(b) {
   const S = BSTYLE[b.style], alt = b.seed % 2 === 0, wall = alt ? S.wall : S.wall2, roof = alt ? S.roof : S.roof2;
@@ -136,17 +139,22 @@ function drawBuilding(b) {
   for (let i = 0; i < 4; i++) ctx.fillRect(R() * b.w, 0, 8 + R() * 30, 0.2 + R() * 0.6);
   // base strip
   ctx.fillStyle = 'rgba(30,28,24,0.35)'; ctx.fillRect(0, 0, b.w, 0.1);
-  const floors = b.style === 'factory' ? 2 : 1;
-  const nwin = Math.max(1, Math.floor(b.w / (b.style === 'factory' ? 46 : 42)));
+  const floors = b.style === 'lab' ? 0 : b.style === 'apartment' ? Math.max(3, Math.floor(b.hgt / 34)) : b.style === 'factory' || b.style === 'reactor' ? 2 : 1;
+  const nwin = Math.max(1, Math.floor(b.w / (b.style === 'factory' ? 46 : 42))), vh = floors === 1 ? 0.25 : Math.min(0.25, 0.5 / floors);
+  if (b.style === 'lab') {
+    ctx.fillStyle = 'rgba(20,22,24,0.8)'; ctx.fillRect(0, 0.62, b.w, 0.07);
+    ctx.fillStyle = 'rgba(160,150,60,0.25)'; ctx.fillRect(0, 0.02, b.w, 0.08);
+    for (let u = 40; u < b.w - 20; u += 160) { const on = Math.sin(NOW * 3 + u + b.seed) > -0.6; ctx.fillStyle = on ? 'rgba(120,255,160,0.9)' : '#233'; ctx.fillRect(u, 0.8, 10, 0.08); }
+  }
   for (let f = 0; f < floors; f++) for (let i = 0; i < nwin; i++) {
-    const u = (b.w / nwin) * (i + 0.5) - 9, v0 = floors === 1 ? 0.35 : 0.2 + f * 0.4;
+    const u = (b.w / nwin) * (i + 0.5) - 9, v0 = floors === 1 ? 0.35 : 0.12 + f * (0.84 / floors);
     if (b.style !== 'factory' && i === Math.floor(nwin / 2) && f === 0) { // door
       ctx.fillStyle = '#2a241e'; ctx.fillRect(u - 2, 0.02, 20, 0.55); continue;
     }
     const broken = R() < 0.4;
     ctx.fillStyle = broken ? '#15171a' : 'rgba(40,58,64,0.95)';
-    ctx.fillRect(u, v0, 18, 0.25);
-    if (!broken) { ctx.fillStyle = 'rgba(160,190,200,0.25)'; ctx.fillRect(u + 2, v0 + 0.13, 6, 0.1); }
+    ctx.fillRect(u, v0, 18, vh);
+    if (!broken) { ctx.fillStyle = 'rgba(160,190,200,0.25)'; ctx.fillRect(u + 2, v0 + vh * 0.5, 6, vh * 0.4); }
     ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(u - 2, v0 - 0.03, 22, 0.03);
   }
   ctx.restore();
@@ -167,7 +175,14 @@ function drawBuilding(b) {
       for (let i = 0; i < 3; i++) { ctx.fillStyle = 'rgba(40,40,40,0.8)'; ctx.fillRect(rx + 30 + i * (b.w - 80) / 2, ry + 20, 22, 16); ctx.fillStyle = 'rgba(120,150,160,0.35)'; ctx.fillRect(rx + b.w * 0.2, ry + b.h * 0.55 + i * 0, b.w * 0.6, 10); }
     }
   }
-  if (b.holes) {
+  if (b.style === 'lab') {
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+    ctx.strokeRect(rx + 4, ry + 4, b.w - 8, b.h - 8);
+  } else if (b.style === 'reactor') {
+    ctx.fillStyle = 'rgba(60,40,30,0.6)'; for (let i = 0; i < 5; i++) ctx.fillRect(rx + 40 + i * (b.w - 120) / 4, ry + 30, 40, b.h - 60);
+    ctx.fillStyle = 'rgba(160,120,60,0.25)'; ctx.fillRect(rx, ry + b.h * 0.45, b.w, 12);
+  }
+  if (b.holes && b.style !== 'lab') {
     ctx.fillStyle = 'rgba(18,16,14,0.85)';
     ctx.beginPath(); ctx.ellipse(rx + b.w * 0.3, ry + b.h * 0.6, b.w * 0.09, b.h * 0.12, 0.3, 0, TAU); ctx.fill();
     if (b.style === 'ruin') { ctx.beginPath(); ctx.ellipse(rx + b.w * 0.7, ry + b.h * 0.35, b.w * 0.14, b.h * 0.18, -0.2, 0, TAU); ctx.fill(); }
@@ -258,10 +273,11 @@ function drawHeap(p) {
 }
 function drawBarrel(p) {
   shadow(p.x + 5, p.y + 2, 12, 5, 0.3);
-  const c = p.rad ? '#b89a2a' : '#5a6a4a';
+  const c = p.ex ? '#b8342a' : p.rad ? '#b89a2a' : '#5a6a4a';
   ctx.fillStyle = col(c); ctx.fillRect(p.x - 10, p.y - 26, 20, 26);
   ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(p.x + 3, p.y - 26, 7, 26);
-  ctx.fillStyle = col(p.rad ? '#d8b83a' : '#6e7e5a'); ctx.beginPath(); ctx.ellipse(p.x, p.y - 26, 10, 4, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = col(p.ex ? '#d8483a' : p.rad ? '#d8b83a' : '#6e7e5a'); ctx.beginPath(); ctx.ellipse(p.x, p.y - 26, 10, 4, 0, 0, TAU); ctx.fill();
+  if (p.ex) { ctx.fillStyle = '#ffd040'; ctx.beginPath(); ctx.moveTo(p.x - 1, p.y - 20); ctx.lineTo(p.x + 4, p.y - 13); ctx.lineTo(p.x - 4, p.y - 13); ctx.fill(); }
   ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(p.x - 10, p.y - 18, 20, 2); ctx.fillRect(p.x - 10, p.y - 8, 20, 2);
   if (p.rad) { ctx.fillStyle = '#222'; ctx.beginPath(); ctx.arc(p.x - 1, p.y - 13, 4, 0, TAU); ctx.fill(); }
 }

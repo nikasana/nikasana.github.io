@@ -8,29 +8,57 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
-  :root { --acc: #c8ff5a; --warn: #ff4a3a; --ink: #e8e2cc; --panel: rgba(18, 17, 13, 0.82); --line: rgba(232, 226, 204, 0.18); }
+  :root { --acc: #c8ff5a; --warn: #ff4a3a; --ink: #e8e2cc; --panel: rgba(18, 17, 13, 0.85); --line: rgba(232, 226, 204, 0.18); --gold: #ffcf6a; }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #15130f; color: var(--ink); font-family: Oswald, Impact, 'Arial Narrow', sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
   canvas#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
-  button { font-family: inherit; cursor: pointer; }
+  button { font-family: inherit; cursor: pointer; color: inherit; }
   .screen { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 20; padding: 16px; text-align: center; }
   .screen.show { display: flex; }
+  .scroll { overflow-y: auto; justify-content: flex-start; padding-top: max(16px, 4vh); touch-action: pan-y; }
+  .rubles { color: var(--gold); font-size: 20px; letter-spacing: 0.08em; }
 
-  /* ---- title ---- */
-  #title { background: radial-gradient(ellipse at center, rgba(20, 18, 12, 0.35), rgba(10, 9, 6, 0.9)); }
+  /* ---- title & menus ---- */
+  #title { background: radial-gradient(ellipse at center, rgba(20, 18, 12, 0.3), rgba(10, 9, 6, 0.88)); }
   #title h1 { font-size: clamp(54px, 13vw, 132px); font-weight: 700; letter-spacing: 0.04em; line-height: 0.9; color: #f0e6c0;
     text-shadow: 0 0 30px rgba(200, 255, 90, 0.35), 0 6px 0 #5a4a20, 0 10px 30px #000; animation: flick 5s infinite; }
   #title h1 span { color: var(--acc); }
-  #title h2 { font-weight: 400; letter-spacing: 0.5em; font-size: clamp(12px, 2.5vw, 18px); color: #b7ae8e; margin: 14px 0 26px; }
+  #title h2 { font-weight: 400; letter-spacing: 0.5em; font-size: clamp(12px, 2.5vw, 18px); color: #b7ae8e; margin: 14px 0 22px; }
   @keyframes flick { 0%, 92%, 100% { opacity: 1 } 93% { opacity: 0.6 } 94% { opacity: 1 } 96% { opacity: 0.4 } 97% { opacity: 1 } }
-  .big { font-size: 26px; font-weight: 700; letter-spacing: 0.12em; padding: 14px 46px; border: 2px solid var(--acc); color: #15130f; background: var(--acc);
-    clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); transition: transform 0.12s, filter 0.12s; }
-  .big:hover { transform: scale(1.06); filter: brightness(1.15); }
-  .ghost { background: transparent; color: var(--ink); border-color: var(--line); }
-  .howto { margin-top: 26px; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; max-width: 820px; width: 100%; }
-  .howto div { background: var(--panel); border: 1px solid var(--line); padding: 10px 12px; text-align: left; font-size: 14px; color: #cfc7a8; line-height: 1.35; }
-  .howto b { display: block; color: var(--acc); font-size: 15px; letter-spacing: 0.06em; margin-bottom: 2px; }
-  kbd { background: #2a2820; border: 1px solid #555; border-bottom-width: 3px; padding: 0 5px; border-radius: 3px; font-size: 12px; font-family: monospace; color: #fff; }
+  .menu { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  .big { font-size: 24px; font-weight: 700; letter-spacing: 0.12em; padding: 12px 42px; border: 2px solid var(--acc); color: #15130f; background: var(--acc);
+    clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); transition: transform 0.12s, filter 0.12s; min-width: 260px; }
+  .big:hover { transform: scale(1.05); filter: brightness(1.15); }
+  .big.ghost { background: rgba(0, 0, 0, 0.45); color: var(--ink); border-color: var(--line); }
+  .big.small { font-size: 15px; padding: 8px 20px; min-width: 0; }
+  #titleStats { margin-top: 14px; color: #8a846c; font-size: 13px; letter-spacing: 0.1em; }
+  .hdr { display: flex; justify-content: space-between; align-items: center; width: min(900px, 100%); margin-bottom: 10px; gap: 10px; }
+  .hdr h2 { font-size: clamp(26px, 5vw, 40px); letter-spacing: 0.1em; }
+  .back { background: none; border: 1px solid var(--line); padding: 6px 14px; font-size: 16px; letter-spacing: 0.1em; }
+  .sect { width: min(900px, 100%); text-align: left; color: var(--acc); letter-spacing: 0.2em; font-size: 14px; margin: 10px 0 6px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; width: min(900px, 100%); }
+  .pick { display: flex; gap: 12px; align-items: center; text-align: left; background: var(--panel); border: 2px solid var(--line); padding: 10px 12px; transition: transform 0.1s, border-color 0.1s; }
+  .pick:hover { transform: translateY(-2px); border-color: #888; }
+  .pick.sel { border-color: var(--acc); box-shadow: 0 0 18px rgba(200, 255, 90, 0.25); }
+  .pick.locked { opacity: 0.6; }
+  .pick .pi, .meta .pi { font-size: 34px; width: 46px; text-align: center; flex: none; }
+  .pick b, .meta b { display: block; font-size: 18px; }
+  .pick small, .meta small { display: block; color: #aaa38a; font-size: 13px; line-height: 1.3; }
+  .pick em { display: block; font-style: normal; font-size: 12px; color: #8a846c; margin-top: 3px; }
+  .afford { color: var(--gold); } .poor { color: #c55; }
+  .shake { animation: shk 0.35s; } @keyframes shk { 25% { transform: translateX(-6px) } 75% { transform: translateX(6px) } }
+  .meta { display: flex; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--line); padding: 10px 12px; text-align: left; }
+  .meta .mi { flex: 1; }
+  .pips { display: flex; gap: 3px; margin-top: 4px; } .pips i { width: 12px; height: 6px; background: #333; } .pips i.on { background: var(--acc); }
+  .meta button { background: var(--gold); color: #15130f; border: none; padding: 8px 12px; font-size: 15px; font-weight: 700; min-width: 76px; }
+  .meta button:disabled { background: #333; color: #777; cursor: default; }
+  #settingsBody { width: min(460px, 100%); background: var(--panel); border: 1px solid var(--line); padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; }
+  .set { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 17px; text-align: left; }
+  .set input[type=range] { width: 50%; accent-color: var(--acc); }
+  .set input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--acc); }
+  .set select { background: #222; color: var(--ink); border: 1px solid var(--line); padding: 4px 8px; font-family: inherit; font-size: 15px; }
+  #loading { background: #0d0c09; z-index: 40; font-size: 28px; letter-spacing: 0.3em; color: #b7ae8e; }
+  #loading span { animation: flick 1.2s infinite; }
 
   /* ---- HUD ---- */
   #hud { position: fixed; inset: 0; pointer-events: none; display: none; z-index: 5; }
@@ -42,28 +70,45 @@
   #hpBar { height: 20px; background: rgba(0, 0, 0, 0.65); border: 1px solid var(--line); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); position: relative; }
   #hpFill { height: 100%; width: 100%; background: linear-gradient(180deg, #ff6a5a, #b8261a); transition: width 0.1s; }
   #hpText { position: absolute; inset: 0; font-size: 13px; line-height: 20px; padding-left: 8px; text-shadow: 0 1px 2px #000; }
-  #weapons, #artbelt { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  #weapons, #artbelt, #syn { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
   .slot { width: 34px; height: 34px; background: var(--panel); border: 1px solid var(--line); position: relative; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .slot.evo { border-color: var(--gold); box-shadow: 0 0 10px rgba(255, 200, 80, 0.5); }
   .slot.perk { border-color: rgba(120, 180, 255, 0.35); width: 28px; height: 28px; font-size: 14px; }
   .slot b { position: absolute; right: 1px; bottom: -2px; font-size: 10px; color: var(--acc); text-shadow: 0 1px 2px #000; }
+  .slot.evo b { color: var(--gold); }
   .art { width: 24px; height: 24px; position: relative; display: flex; align-items: center; justify-content: center; }
-  .art i { width: 14px; height: 14px; background: var(--c); transform: rotate(45deg); box-shadow: 0 0 10px var(--c), 0 0 3px #fff inset; animation: pulse 1.6s infinite; }
+  .art i, .gem { width: 14px; height: 14px; background: var(--c); transform: rotate(45deg); box-shadow: 0 0 10px var(--c), 0 0 3px #fff inset; animation: pulse 1.6s infinite; display: inline-block; }
+  .gem { width: 34px; height: 34px; margin: 8px; }
   .art b { position: absolute; right: -2px; bottom: -4px; font-size: 10px; text-shadow: 0 1px 2px #000; }
+  .chip { font-size: 12px; padding: 1px 5px; border: 1px solid var(--c); color: var(--c); background: rgba(0, 0, 0, 0.5); border-radius: 3px; opacity: 0.6; }
+  .chip.on1 { opacity: 1; box-shadow: 0 0 8px var(--c); } .chip.on2 { opacity: 1; background: var(--c); color: #111; box-shadow: 0 0 14px var(--c); }
   @keyframes pulse { 50% { filter: brightness(1.5); } }
   #topMid { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); text-align: center; }
   #timer { font-size: 34px; font-weight: 700; letter-spacing: 0.06em; text-shadow: 0 2px 6px #000; line-height: 1; }
   #kills { font-size: 15px; color: #d8cfae; text-shadow: 0 1px 3px #000; }
+  #kills span { margin-left: 8px; color: var(--gold); }
   #nextEvt { font-size: 12px; color: #ff9a8a; text-shadow: 0 1px 3px #000; }
   #mmWrap { position: absolute; top: 16px; right: 14px; text-align: right; }
   #minimap { width: 150px; height: 150px; border: 2px solid rgba(200, 255, 90, 0.35); border-radius: 50%; background: #111; box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.4), 0 4px 20px #000; }
   #zoneLbl { font-size: 13px; color: #d8cfae; margin-top: 4px; text-shadow: 0 1px 3px #000; }
-  #dangerLvl { color: #ffcc30; margin-left: 4px; }
+  #envIcon { margin-right: 6px; }
+  #quests { position: absolute; right: 14px; top: 250px; width: min(240px, 44vw); display: flex; flex-direction: column; gap: 5px; }
+  .q { display: flex; gap: 6px; background: var(--panel); border: 1px solid rgba(255, 207, 58, 0.3); padding: 5px 7px; font-size: 13px; text-align: left; animation: qin 0.4s; }
+  .q > span { font-size: 16px; } .q div { flex: 1; } .q b { font-weight: 600; display: block; line-height: 1.15; }
+  .q i { display: block; height: 3px; background: var(--gold); margin: 3px 0 1px; transition: width 0.2s; }
+  .q small { color: #9a947c; font-size: 11px; }
+  @keyframes qin { from { opacity: 0; transform: translateX(30px); } }
   #detWrap { position: absolute; left: 14px; bottom: 16px; width: 110px; background: var(--panel); border: 1px solid var(--line); padding: 6px; border-radius: 6px; text-align: center; }
   #detWrap small { display: block; font-size: 10px; letter-spacing: 0.15em; color: #9a947c; }
   #detector { width: 80px; height: 80px; background: radial-gradient(circle, #0e2412, #061008); border-radius: 50%; border: 2px solid #2a3a22; }
   #detLed { position: absolute; top: 8px; right: 8px; width: 9px; height: 9px; border-radius: 50%; background: #2a3a22; }
   #detLed.on { background: #7dff8a; box-shadow: 0 0 10px #7dff8a; }
   #detDist { font-size: 14px; color: #7dff8a; }
+  #ability { position: absolute; left: 136px; bottom: 16px; width: 88px; height: 88px; background: var(--panel); border: 2px solid var(--line); border-radius: 50%; pointer-events: auto; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+  #ability.ready { border-color: var(--acc); box-shadow: 0 0 20px rgba(200, 255, 90, 0.5); }
+  #abFill, #abilityFill { position: absolute; inset: 0; background: rgba(200, 255, 90, 0.2); transform-origin: bottom; transform: scaleY(0); }
+  #abIcon { font-size: 28px; position: relative; } #abName { font-size: 10px; position: relative; color: #cfc7a8; line-height: 1; } #abCd { font-size: 11px; position: relative; color: var(--acc); }
+  #ability kbd { position: absolute; top: 4px; right: 14px; }
   #boss { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); width: min(520px, 80vw); display: none; text-align: center; }
   #bossName { font-size: 18px; letter-spacing: 0.3em; color: #ff6a5a; text-shadow: 0 0 10px #f00, 0 2px 3px #000; }
   #bossBar { height: 12px; background: rgba(0, 0, 0, 0.7); border: 1px solid #ff6a5a55; margin-top: 3px; }
@@ -74,51 +119,74 @@
   @keyframes blinkbg { to { background: rgba(90, 10, 5, 0.75); } }
   #banner { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0.9); opacity: 0; transition: opacity 0.35s, transform 0.35s; text-align: center; width: 92vw; pointer-events: none; }
   #banner.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  #bTitle { font-size: clamp(28px, 6vw, 56px); font-weight: 700; letter-spacing: 0.08em; color: #f0e6c0; text-shadow: 0 0 24px rgba(0, 0, 0, 0.9), 0 3px 0 #000; }
+  #bTitle { font-size: clamp(24px, 4.4vw, 46px); font-weight: 700; letter-spacing: 0.08em; color: #f0e6c0; text-shadow: 0 0 24px rgba(0, 0, 0, 0.9), 0 3px 0 #000; }
   #bSub { font-size: clamp(14px, 2.4vw, 19px); color: #d8cfae; text-shadow: 0 2px 6px #000; margin-top: 4px; }
   #banner.bad #bTitle { color: #ff5a4a; text-shadow: 0 0 30px #f00, 0 3px 0 #000; }
   #banner.good #bTitle { color: var(--acc); }
   #banner.art #bTitle { color: #bfe9ff; text-shadow: 0 0 30px #4af, 0 3px 0 #000; }
   #zoneName { position: absolute; bottom: 22%; left: 50%; transform: translateX(-50%); font-size: clamp(20px, 4vw, 34px); letter-spacing: 0.4em; color: #e8dcb0; opacity: 0; transition: opacity 0.8s; text-shadow: 0 2px 10px #000; white-space: nowrap; }
   #zoneName.show { opacity: 0.9; }
-  #btns { position: absolute; right: 14px; top: 196px; display: flex; flex-direction: column; gap: 6px; pointer-events: auto; }
+  #radio { position: absolute; left: 50%; bottom: 18px; transform: translate(-50%, 30px); opacity: 0; transition: 0.35s; width: min(560px, 58vw); background: rgba(10, 16, 10, 0.88); border: 1px solid #3f6a3a; padding: 7px 12px; text-align: left; font-size: 15px; }
+  #radio.show { opacity: 1; transform: translate(-50%, 0); }
+  #radioWho { color: #7dff8a; font-weight: 600; letter-spacing: 0.1em; font-size: 12px; display: block; }
+  #radio.monolith #radioWho { color: #c07aff; } #radio.scientist #radioWho { color: #6cc4ff; } #radio.barkeep #radioWho { color: var(--gold); }
+  #radioTxt { color: #d8e0cc; font-family: 'Courier New', monospace; font-size: 14px; }
+  #hint { position: absolute; bottom: 86px; left: 50%; transform: translate(-50%, 20px); opacity: 0; transition: 0.35s; background: rgba(40, 36, 12, 0.92); border: 1px solid var(--gold); padding: 7px 14px; font-size: 15px; width: min(520px, 90vw); }
+  #hint.show { opacity: 1; transform: translate(-50%, 0); }
+  #hint b { color: var(--gold); margin-right: 6px; }
+  #btns { position: absolute; right: 14px; top: 196px; display: flex; gap: 6px; pointer-events: auto; }
   #btns button { width: 40px; height: 40px; font-size: 18px; background: var(--panel); border: 1px solid var(--line); color: #fff; border-radius: 6px; }
   #keysHint { position: absolute; right: 14px; bottom: 14px; font-size: 12px; color: #9a947c; text-align: right; text-shadow: 0 1px 2px #000; }
+  #fps { position: absolute; left: 50%; bottom: 4px; font-size: 11px; color: #7dff8a; transform: translateX(-50%); }
 
   /* ---- touch ---- */
-  #touchUi { display: none; }
-  #touchUi.show { display: block; }
+  #touchUi { display: none; } #touchUi.show { display: block; }
   #joyBase { position: fixed; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.25); background: rgba(0, 0, 0, 0.2); display: none; pointer-events: none; z-index: 6; }
   #joyKnob { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; border-radius: 50%; background: rgba(200, 255, 90, 0.5); transform: translate(-50%, -50%); }
-  #dashBtn { position: fixed; right: 22px; bottom: 30px; width: 80px; height: 80px; border-radius: 50%; border: 2px solid rgba(200, 255, 90, 0.5); background: rgba(0, 0, 0, 0.45); color: #fff; font-size: 15px; font-weight: 700; z-index: 7; overflow: hidden; pointer-events: auto; }
+  .tbtn { position: fixed; border-radius: 50%; border: 2px solid rgba(200, 255, 90, 0.5); background: rgba(0, 0, 0, 0.45); color: #fff; font-weight: 700; z-index: 7; overflow: hidden; pointer-events: auto; }
+  #dashBtn { right: 22px; bottom: 30px; width: 80px; height: 80px; font-size: 15px; }
+  #abilityBtn { right: 112px; bottom: 26px; width: 64px; height: 64px; font-size: 26px; }
   #dashFill { position: absolute; inset: 0; background: rgba(200, 255, 90, 0.25); transform-origin: bottom; }
-  #dashBtn span { position: relative; }
-  #dashBtn.ready { border-color: var(--acc); box-shadow: 0 0 16px rgba(200, 255, 90, 0.5); }
-  @media (pointer: coarse) { #keysHint { display: none; } #detWrap { transform: scale(0.8); transform-origin: bottom left; } }
-  @media (max-width: 600px) { #minimap { width: 96px; height: 96px; } #mmWrap { right: 8px; top: 14px; } #zoneLbl { font-size: 11px; } #btns { top: 136px; right: 8px; } #btns button { width: 36px; height: 36px; } #hpBox { width: 34vw; left: 8px; } #hpText { font-size: 11px; } #lvl { top: 10px; font-size: 12px; } #timer { font-size: 24px; } #topMid { top: 24px; } #nextEvt { font-size: 10px; max-width: 30vw; } #boss { top: 92px; } #emission { top: 128px; font-size: 13px; } }
+  .tbtn span { position: relative; }
+  .tbtn.ready { border-color: var(--acc); box-shadow: 0 0 16px rgba(200, 255, 90, 0.5); }
+  @media (pointer: coarse) { #keysHint, #ability { display: none; } #detWrap { transform: scale(0.8); transform-origin: bottom left; } #radio { bottom: 120px; width: 80vw; } #hint { bottom: 200px; } }
+  @media (max-width: 600px) {
+    #minimap { width: 96px; height: 96px; } #mmWrap { right: 8px; top: 14px; } #zoneLbl { font-size: 11px; }
+    #btns { top: 136px; right: 8px; } #btns button { width: 34px; height: 34px; font-size: 15px; }
+    #hpBox { width: 34vw; left: 8px; } #hpText { font-size: 11px; } #lvl { top: 10px; font-size: 12px; }
+    #timer { font-size: 24px; } #topMid { top: 24px; } #nextEvt { font-size: 10px; max-width: 30vw; }
+    #boss { top: 92px; } #emission { top: 128px; font-size: 13px; } #hint { bottom: 200px; font-size: 13px; }
+    #quests { top: 180px; right: 8px; width: 42vw; } .q { font-size: 11px; padding: 3px 5px; } .q small { display: none; }
+  }
 
-  /* ---- level up ---- */
+  /* ---- level up cards ---- */
   #levelup { background: rgba(8, 8, 5, 0.72); backdrop-filter: blur(3px); }
   #lvTitle { font-size: clamp(34px, 7vw, 60px); font-weight: 700; color: #7dff8a; letter-spacing: 0.1em; text-shadow: 0 0 24px #3f8; }
-  #levelup p { color: #b7ae8e; margin-bottom: 18px; letter-spacing: 0.2em; font-size: 14px; }
+  #lvSub { color: #b7ae8e; margin-bottom: 18px; letter-spacing: 0.2em; font-size: 14px; }
   #cards { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; max-width: 900px; }
-  .card { position: relative; width: min(250px, 90vw); min-height: 220px; background: linear-gradient(180deg, #2a2a20, #17160f); border: 2px solid #555040; color: var(--ink); padding: 16px 14px;
-    display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; animation: cardIn 0.4s backwards cubic-bezier(.2, 1.4, .4, 1); transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s; }
-  .card:hover, .card:focus { transform: translateY(-6px) scale(1.03); border-color: var(--acc); box-shadow: 0 10px 30px rgba(200, 255, 90, 0.25); outline: none; }
-  .card.new { border-color: #c9a040; }
-  .card.perk { border-color: #4a7aaa; }
+  .card { --rc: #555040; position: relative; width: min(250px, 90vw); min-height: 240px; background: linear-gradient(180deg, #2a2a20, #17160f); border: 2px solid var(--rc); color: var(--ink); padding: 14px 14px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; animation: cardIn 0.4s backwards cubic-bezier(.2, 1.4, .4, 1); transition: transform 0.12s, box-shadow 0.12s; }
+  .card:hover, .card:focus { transform: translateY(-6px) scale(1.03); box-shadow: 0 10px 30px color-mix(in srgb, var(--rc) 50%, transparent); outline: none; }
+  .card.r-rare { --rc: #4aa8ff; background: linear-gradient(180deg, #1c2634, #13161c); }
+  .card.r-epic { --rc: #c07aff; background: linear-gradient(180deg, #2a1c34, #17121c); box-shadow: 0 0 22px rgba(192, 122, 255, 0.35); }
+  .card.r-legendary { --rc: #ffb830; background: linear-gradient(180deg, #3a2a10, #1c160a); box-shadow: 0 0 30px rgba(255, 184, 48, 0.45); }
+  .card.evo { animation: cardIn 0.4s backwards, glowgold 1.2s infinite alternate; }
+  @keyframes glowgold { to { box-shadow: 0 0 50px rgba(255, 200, 80, 0.8); } }
   @keyframes cardIn { from { opacity: 0; transform: translateY(40px) scale(0.8) rotate(-3deg); } }
   .ckey { position: absolute; top: 6px; left: 8px; font-size: 12px; color: #777; }
-  .cicon { font-size: 48px; filter: drop-shadow(0 4px 6px #000); }
+  .crar { font-size: 11px; letter-spacing: 0.3em; color: var(--rc); }
+  .cicon { font-size: 46px; filter: drop-shadow(0 4px 6px #000); }
   .ctag { font-size: 12px; letter-spacing: 0.2em; color: #c9a040; }
-  .card.perk .ctag { color: #6ab0ff; }
   .cname { font-size: 22px; font-weight: 600; }
   .cdesc { font-size: 14px; color: #bdb597; line-height: 1.3; }
-  @media (max-width: 600px) { .card { min-height: 0; flex-direction: row; text-align: left; padding: 10px 12px; gap: 12px; } .cicon { font-size: 34px; } .card > div:not(.cicon) { } .ckey { display: none; } .card .cname { font-size: 18px; } }
+  .cdesc em { display: block; color: var(--rc); font-style: normal; }
+  .tagchip { display: block; font-size: 12px; margin-top: 2px; }
+  #rerollBtn { margin-top: 16px; background: rgba(0, 0, 0, 0.5); border: 1px solid var(--gold); color: var(--gold); padding: 8px 18px; font-size: 16px; letter-spacing: 0.1em; }
+  @media (max-width: 600px) { .card { min-height: 0; flex-direction: row; text-align: left; padding: 10px 12px; gap: 10px; } .cicon { font-size: 32px; } .ckey { display: none; } .card .cname { font-size: 18px; } .crar { position: absolute; top: 3px; right: 8px; font-size: 9px; } }
 
   /* ---- pause / over / map ---- */
-  #pause, #over, #mapScreen { background: rgba(8, 8, 5, 0.8); backdrop-filter: blur(3px); }
-  .panel { background: var(--panel); border: 1px solid var(--line); padding: 20px 24px; max-width: 560px; width: 100%; max-height: 80vh; overflow: auto; text-align: left; }
+  #pause, #over, #mapScreen, #setup, #bunker, #settings { background: rgba(8, 8, 5, 0.86); backdrop-filter: blur(3px); }
+  .panel { background: var(--panel); border: 1px solid var(--line); padding: 18px 22px; max-width: 580px; width: 100%; max-height: 86vh; overflow: auto; text-align: left; touch-action: pan-y; }
   .panel h2 { font-size: 40px; letter-spacing: 0.1em; text-align: center; }
   .panel h3 { color: var(--acc); letter-spacing: 0.15em; margin: 12px 0 4px; font-size: 15px; }
   .row { font-size: 15px; padding: 3px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
@@ -126,15 +194,20 @@
   .dim { color: #8a846c; font-size: 13px; }
   .dot { display: inline-block; width: 10px; height: 10px; transform: rotate(45deg); margin-right: 4px; }
   .actions { display: flex; gap: 12px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+  .actions .big { min-width: 200px; }
   #overTitle { font-size: clamp(44px, 10vw, 90px); font-weight: 700; color: #ff4a3a; letter-spacing: 0.06em; text-shadow: 0 0 40px #a00, 0 4px 0 #000; }
-  #overSub { color: #cfc7a8; max-width: 560px; margin: 6px 0 18px; }
+  #overTitle.win { color: var(--acc); text-shadow: 0 0 40px #6a0, 0 4px 0 #000; }
+  #overSub { color: #cfc7a8; max-width: 560px; margin: 6px 0 14px; }
   #stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: min(520px, 92vw); }
   #stats div { background: var(--panel); border: 1px solid var(--line); padding: 8px; font-size: 12px; letter-spacing: 0.15em; color: #9a947c; text-transform: uppercase; }
   #stats b { display: block; font-size: 26px; color: var(--ink); letter-spacing: 0.02em; }
-  #bigmap { border: 2px solid rgba(200, 255, 90, 0.4); box-shadow: 0 10px 50px #000; image-rendering: auto; }
+  #earned { margin-top: 12px; } .earn { font-size: 34px; color: var(--gold); font-weight: 700; text-shadow: 0 0 20px rgba(255, 200, 80, 0.5); }
+  #earned small { color: #9a947c; } .unlock { margin-top: 8px; color: var(--acc); font-size: 20px; animation: flick 2s infinite; }
+  #bigmap { border: 2px solid rgba(200, 255, 90, 0.4); box-shadow: 0 10px 50px #000; }
   #mapScreen small { color: #9a947c; margin-top: 8px; letter-spacing: 0.15em; }
   .legend { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; font-size: 13px; margin-top: 8px; }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+  kbd { background: #2a2820; border: 1px solid #555; border-bottom-width: 3px; padding: 0 5px; border-radius: 3px; font-size: 12px; font-family: monospace; color: #fff; }
 </style>
 </head>
 <body>
@@ -147,55 +220,86 @@
     <div id="hpBar"><div id="hpFill"></div><div id="hpText">100 / 100</div></div>
     <div id="weapons"></div>
     <div id="artbelt"></div>
+    <div id="syn"></div>
   </div>
-  <div id="topMid"><div id="timer">00:00</div><div id="kills">☠ 0</div><div id="nextEvt"></div></div>
-  <div id="mmWrap"><canvas id="minimap" width="300" height="300"></canvas><div id="zoneLbl"><span id="zoneName2"></span></div></div>
+  <div id="topMid"><div id="timer">00:00</div><div id="kills">☠ 0</div><div class="rub" style="color:var(--gold);font-size:14px;text-shadow:0 1px 3px #000"><span id="rub">0 ₽</span></div><div id="nextEvt"></div></div>
+  <div id="mmWrap"><canvas id="minimap" width="300" height="300"></canvas><div id="zoneLbl"><span id="envIcon"></span><span id="zoneName2"></span></div></div>
   <div id="btns"><button id="pauseBtn" title="Pause (Esc)">⏸</button><button id="mapBtn" title="Map (M)">🗺</button><button id="muteBtn" title="Sound">🔊</button></div>
+  <div id="quests"></div>
   <div id="boss"><div id="bossName"></div><div id="bossBar"><div id="bossFill"></div></div></div>
   <div id="emission"><span id="emText"></span></div>
+  <div id="hint"><b>💡</b><span id="hintTxt"></span></div>
   <div id="zoneName"></div>
   <div id="banner"><div id="bTitle"></div><div id="bSub"></div></div>
   <div id="detWrap"><div id="detLed"></div><small>ECHO DETECTOR</small><canvas id="detector" width="80" height="80"></canvas><div id="detDist">---</div><small>danger <span id="dangerLvl"></span></small></div>
-  <div id="keysHint"><kbd>WASD</kbd> move · <kbd>Space</kbd> dash · <kbd>M</kbd> map · <kbd>Esc</kbd> pause</div>
+  <div id="ability" title="Artifact ability (Q)"><div id="abFill"></div><kbd>Q</kbd><span id="abIcon">🔒</span><span id="abName"></span><span id="abCd"></span></div>
+  <div id="radio"><span id="radioWho"></span><span id="radioTxt"></span></div>
+  <div id="keysHint"><kbd>WASD</kbd> move · <kbd>Space</kbd> dash · <kbd>Q</kbd> ability · <kbd>M</kbd> map · <kbd>Esc</kbd> pause</div>
+  <div id="fps"></div>
 </div>
 
 <div id="touchUi">
   <div id="joyBase"><div id="joyKnob"></div></div>
-  <button id="dashBtn"><div id="dashFill"></div><span>DASH</span></button>
+  <button id="dashBtn" class="tbtn"><div id="dashFill"></div><span>DASH</span></button>
+  <button id="abilityBtn" class="tbtn"><div id="abilityFill"></div><span id="abilityIcon">🔒</span></button>
 </div>
 
 <div id="title" class="screen show">
   <h1>ZONE<span>BONK</span></h1>
   <h2>HEART OF THE ZONE</h2>
-  <button class="big" id="startBtn">ENTER THE ZONE</button>
-  <div class="howto">
-    <div><b>SURVIVE</b>Your weapons fire on their own. Keep moving and last 15 minutes.</div>
-    <div><b>ARTIFACTS</b>Follow the Echo Detector into anomaly fields and grab artifacts for powerful bonuses.</div>
-    <div><b>ANOMALIES</b>Electro, Burner, Vortex, Fruit Punch, Springboard. They hurt mutants too, so lure them in.</div>
-    <div><b>EMISSION</b>When the siren sounds, run to a green SHELTER bunker. Everyone left outside dies.</div>
-    <div><b>BOSSES</b>A Pseudogiant, Chimera, Burer, and finally THE MONOLITH at 15:00.</div>
-    <div><b>CONTROLS</b><kbd>WASD</kbd> move · <kbd>Space</kbd> dash · <kbd>M</kbd> map. On touch: drag to move, tap DASH.</div>
+  <div class="rubles">0 ₽</div>
+  <div class="menu" style="margin-top:14px">
+    <button class="big" id="playBtn">PLAY</button>
+    <button class="big ghost" id="bunkerBtn">🏚 SIDOROVICH'S BUNKER</button>
+    <button class="big ghost" id="settingsBtn">⚙ SETTINGS</button>
   </div>
+  <div id="titleStats"></div>
 </div>
+
+<div id="setup" class="screen scroll">
+  <div class="hdr"><button class="back">← BACK</button><h2>PREPARE</h2><span class="rubles">0 ₽</span></div>
+  <div class="sect">MODE</div>
+  <div class="grid" id="modeList"></div>
+  <div class="sect">STAGE</div>
+  <div class="grid" id="stageList"></div>
+  <div class="sect">STALKER</div>
+  <div class="grid" id="charList"></div>
+  <div class="actions" style="margin-bottom:24px"><button class="big" id="startBtn">ENTER THE ZONE</button></div>
+</div>
+
+<div id="bunker" class="screen scroll">
+  <div class="hdr"><button class="back">← BACK</button><h2>THE BUNKER</h2><span class="rubles">0 ₽</span></div>
+  <div class="sect">PERMANENT UPGRADES · EARN RUBLES FROM EVERY RUN</div>
+  <div class="grid" id="metaList"></div>
+  <div class="sect" style="color:#8a846c">New stalkers can be bought on the PLAY screen.</div>
+</div>
+
+<div id="settings" class="screen">
+  <div class="hdr" style="width:min(460px,100%)"><button class="back">← BACK</button><h2>SETTINGS</h2><span></span></div>
+  <div id="settingsBody"></div>
+</div>
+
+<div id="loading" class="screen"><span>ENTERING THE ZONE…</span></div>
 
 <div id="levelup" class="screen">
   <div id="lvTitle">LEVEL UP</div>
-  <p>CHOOSE AN UPGRADE</p>
+  <div id="lvSub">CHOOSE AN UPGRADE</div>
   <div id="cards"></div>
+  <button id="rerollBtn">🎲 REROLL</button>
 </div>
 
 <div id="pause" class="screen">
   <div class="panel">
     <h2>PAUSED</h2>
     <div id="build"></div>
-    <div class="actions"><button class="big" id="resumeBtn">RESUME</button><button class="big ghost" id="quitBtn">RESTART</button></div>
+    <div class="actions"><button class="big" id="resumeBtn">RESUME</button><button class="big ghost" id="pauseSettings">SETTINGS</button><button class="big ghost" id="abandonBtn">ABANDON RUN</button></div>
   </div>
 </div>
 
 <div id="mapScreen" class="screen">
   <canvas id="bigmap"></canvas>
   <div class="legend">
-    <span><i style="background:#fff"></i>You</span><span><i style="background:#5f5;border-radius:0"></i>Shelter</span>
+    <span><i style="background:#fff"></i>You</span><span><i style="background:#5f5;border-radius:0"></i>Shelter</span><span>🕳️ Lab</span><span>❗ Contract</span>
     <span><i style="background:#6cc4ff"></i>Electro</span><span><i style="background:#ff7a2a"></i>Burner</span><span><i style="background:#b9a7ff"></i>Vortex</span>
     <span><i style="background:#8cff5a"></i>Fruit Punch</span><span><i style="background:#d8e0ff"></i>Springboard</span>
   </div>
@@ -206,13 +310,19 @@
   <div id="overTitle">YOU DIED</div>
   <div id="overSub"></div>
   <div id="stats"></div>
-  <div class="actions"><button class="big" id="againBtn">TRY AGAIN</button></div>
+  <div id="earned"></div>
+  <div class="actions"><button class="big" id="continueBtn" style="display:none">♾ KEEP GOING (ENDLESS)</button><button class="big" id="againBtn">TRY AGAIN</button><button class="big ghost" id="menuBtn">BUNKER / MENU</button></div>
 </div>
 
 <script src="js/util.js"></script>
+<script src="js/audio.js"></script>
 <script src="js/data.js"></script>
 <script src="js/world.js"></script>
 <script src="js/render.js"></script>
+<script src="js/render2.js"></script>
+<script src="js/lighting.js"></script>
 <script src="js/game.js"></script>
+<script src="js/systems.js"></script>
+<script src="js/ui.js"></script>
 </body>
 </html>
