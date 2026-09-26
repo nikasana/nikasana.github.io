@@ -35,32 +35,42 @@ const Net = {
       CO.peer = new Peer(CO_PREFIX + CO.code);
       CO.peer.on('open', res);
       CO.peer.on('error', (e) => { if (e.type === 'unavailable-id') { CO.peer.destroy(); CO.code = coCode(); Net.host().then(res, rej); } else { coStatus('⚠️ ' + (e.message || e.type)); rej(e); } });
-      CO.peer.on('connection', (c) => { if (CO.conn) { c.on('open', () => { c.send({ t: 'deny', why: 'The room is full.' }); setTimeout(() => c.close(), 300); }); return; } c.on('open', () => Net.bind(c)); });
+      CO.peer.on('connection', (c) => {
+        if (CO.conn && CO.active) { c.on('open', () => { c.send({ t: 'deny', why: 'The game already started with another player.' }); setTimeout(() => c.close(), 300); }); return; }
+        c.on('open', () => { const old = CO.conn; if (old && old !== c) { old._replaced = true; try { old.close(); } catch (e) { /* already closed */ } } Net.bind(c); });
+      });
+      CO.peer.on('disconnected', () => { if (CO.peer && !CO.peer.destroyed) try { CO.peer.reconnect(); } catch (e) { /* retry later */ } });
     });
   },
   async join(code, pw) {
-    CO.code = code.toUpperCase().trim(); CO.pw = pw || ''; CO.role = 'guest';
+    code = code.toUpperCase().trim();
+    if (CO.role === 'guest' && CO.code === code && (CO.joining || CO.conn)) { coStatus(CO.conn ? '✅ Already connected. Waiting for the host to start…' : '⏳ Still connecting to room ' + code + '…'); return; }
+    Net.leave(); CO.closeWhy = null;
+    CO.code = code; CO.pw = pw || ''; CO.role = 'guest'; CO.joining = true; coJoinBtn();
     if (CO_DEBUG) {
       const lobby = new BroadcastChannel('zb-lobby-' + CO.code);
       const sid = Math.random().toString(36).slice(2);
-      lobby.onmessage = (m) => { if (m.data !== sid) return; const c = bcConn(CO.code + '-' + sid, 'guest'); Net.bind(c); c.send({ t: 'hello', pw: CO.pw, name: coName() }); };
+      lobby.onmessage = (m) => { if (m.data !== sid) return; CO.joining = false; const c = bcConn(CO.code + '-' + sid, 'guest'); Net.bind(c); coJoinBtn(); c.send({ t: 'hello', pw: CO.pw, name: coName() }); };
       lobby.postMessage(sid);
       return;
     }
     await loadPeer();
     CO.peer = new Peer();
-    CO.peer.on('error', (e) => coStatus('⚠️ ' + (e.type === 'peer-unavailable' ? 'Room ' + CO.code + ' not found. Is the host still waiting?' : e.message || e.type)));
-    CO.peer.on('open', () => { const c = CO.peer.connect(CO_PREFIX + CO.code, { reliable: true }); c.on('open', () => { Net.bind(c); c.send({ t: 'hello', pw: CO.pw, name: coName() }); }); });
+    CO.peer.on('error', (e) => { CO.joining = false; coJoinBtn(); coStatus('⚠️ ' + (e.type === 'peer-unavailable' ? 'Room ' + CO.code + ' not found. Is the host still waiting?' : e.message || e.type)); });
+    CO.peer.on('open', () => { const c = CO.peer.connect(CO_PREFIX + CO.code, { reliable: true }); c.on('open', () => { CO.joining = false; Net.bind(c); c.send({ t: 'hello', pw: CO.pw, name: coName() }); coJoinBtn(); }); });
+    setTimeout(() => { if (CO.joining && !CO.conn) { CO.joining = false; coStatus('⚠️ Could not reach room ' + CO.code + '. Check the code and that the host is still waiting, then press JOIN again.'); coJoinBtn(); } }, 15000);
   },
   bind(c) {
     CO.conn = c;
     c.on('data', (m) => Coop.onMsg(m));
-    c.on('close', () => Coop.onClose());
+    c.on('close', () => { if (!c._replaced && CO.conn === c) Coop.onClose(); });
   },
   send(m) { if (CO.conn && CO.conn.open !== false) try { CO.conn.send(m); } catch (e) { /* dropped packet */ } },
-  leave() { try { CO.conn && CO.conn.close(); } catch (e) { /* already closed */ } try { CO.peer && CO.peer.destroy(); } catch (e) { /* already gone */ } CO.conn = null; CO.peer = null; CO.active = false; CO.partner = null; },
+  leave() { CO.joining = false; try { CO.conn && CO.conn.close(); } catch (e) { /* already closed */ } try { CO.peer && CO.peer.destroy(); } catch (e) { /* already gone */ } CO.conn = null; CO.peer = null; CO.active = false; CO.partner = null; },
 };
 function coName() { const c = CHARACTERS.find((x) => x.id === Save.data.char) || CHARACTERS[0]; return c.name; }
+function coStartBtn(name) { const b = $('coStart'); if (!b) return; b.disabled = !name; b.textContent = name ? '▶ START WITH ' + name.toUpperCase() : '⏳ WAITING FOR YOUR FRIEND…'; b.classList.toggle('pulse', !!name); }
+function coJoinBtn() { const b = $('coJoin'); if (!b) return; const busy = CO.role === 'guest' && (CO.joining || CO.conn); b.disabled = !!busy; b.textContent = CO.conn && CO.role === 'guest' ? '✅ CONNECTED' : CO.joining ? '⏳ JOINING…' : '🔗 JOIN'; }
 function coStatus(s) { const el = $('coStatus'); if (el) el.innerHTML = s; }
 
 const Coop = {
@@ -69,9 +79,9 @@ const Coop = {
     if (m.t === 'hello' && CO.role === 'host') {
       if (CO.pw && m.pw !== CO.pw) { Net.send({ t: 'deny', why: 'Wrong password.' }); setTimeout(() => { CO.conn && CO.conn.close(); CO.conn = null; }, 300); coStatus('⚠️ Someone tried to join with a wrong password.'); return; }
       CO.partnerName = m.name; Net.send({ t: 'welcome', name: coName() });
-      coStatus('✅ <b>' + m.name + '</b> joined! Press START when ready.'); $('coStart').disabled = false; Sfx.init(); Sfx.play('quest');
+      coStatus('✅ <b>' + m.name + '</b> joined! Press START when ready.'); coStartBtn(m.name); Sfx.init(); Sfx.play('quest');
     } else if (m.t === 'welcome') { CO.partnerName = m.name; coStatus('✅ Connected to <b>' + m.name + '</b>. Waiting for the host to start…'); }
-    else if (m.t === 'deny') { coStatus('⛔ ' + m.why); Net.leave(); }
+    else if (m.t === 'deny') { CO.closeWhy = '⛔ ' + m.why; coStatus(CO.closeWhy); Net.leave(); coJoinBtn(); }
     else if (m.t === 'start' && CO.role === 'guest') { CO.start = m; NEXT_RUN = { mode: 'standard', mutators: [], ngplus: false }; hide('coop'); startGame(); }
     else if (m.t === 'snap' && CO.role === 'guest' && G && CO.active) this.applySnap(m);
     else if (m.t === 'me' && CO.role === 'host' && G && CO.active) this.applyMe(m);
@@ -79,7 +89,13 @@ const Coop = {
     else if (m.t === 'end' && G && CO.active) { CO.active = false; endRun(m.kind === 'win' ? 'win' : 'quit'); $('overSub').textContent = m.kind === 'win' ? 'Your team conquered the Zone!' : 'The co-op run is over.'; }
     else if (m.t === 'leave' && G && CO.active) { banner('👋 PARTNER LEFT', 'You continue alone.', 2.5, 'bad'); this.solo(); }
   },
-  onClose() { if (G && CO.active && !G.ended) { banner('📡 CONNECTION LOST', 'Your partner disconnected. You continue alone.', 3, 'bad'); this.solo(); } coStatus('Connection closed.'); CO.conn = null; },
+  onClose() {
+    if (G && CO.active && !G.ended) { banner('📡 CONNECTION LOST', 'Your partner disconnected. You continue alone.', 3, 'bad'); this.solo(); }
+    CO.conn = null;
+    if (!CO.closeWhy) coStatus(CO.role === 'host' ? '⏳ Your friend disconnected. Waiting for them to open the link again…' : '⚠️ Lost the connection to the host. Press JOIN to try again.');
+    if (CO.role === 'host') coStartBtn(null);
+    coJoinBtn();
+  },
   solo() {
     CO.active = false; CO.partner = null;
     if (G && G.coGuest) { G.coGuest = false; G.nextBossT = G.t + 60; for (const e of G.enemies) e.cd = rand(1, 3); }
@@ -266,7 +282,7 @@ addEventListener('DOMContentLoaded', () => {
     <label class="set"><span>Password (optional)</span><input id="coPw" type="text" maxlength="24" placeholder="leave empty for none"></label>
     <button class="big" id="coHost">🏠 CREATE ROOM</button>
     <div id="coRoom" style="display:none"><div class="coCode" id="coCodeTxt"></div><div class="coLinkRow"><input id="coLink" readonly><button class="big ghost" id="coCopy">📋 COPY LINK</button></div>
-    <button class="big" id="coStart" disabled>▶ START</button></div>
+    <button class="big" id="coStart" disabled>⏳ WAITING FOR YOUR FRIEND…</button></div>
     <div class="sect">JOIN A FRIEND</div>
     <div class="coLinkRow"><input id="coJoinCode" maxlength="5" placeholder="ROOM CODE"><input id="coJoinPw" placeholder="password (if any)"><button class="big ghost" id="coJoin">🔗 JOIN</button></div>
     <div id="coStatus" class="dim">Share the link: your friend opens it and is in.</div>
