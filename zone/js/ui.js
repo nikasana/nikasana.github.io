@@ -538,9 +538,9 @@ function endRun(kind, src) {
   let unlock = '';
   if (kind === 'win') {
     S.wins++;
-    const i = STAGES.findIndex((s) => s.id === G.stage), nx = STAGES[i + 1];
-    if (nx && !S.stages.includes(nx.id)) { S.stages.push(nx.id); unlock = `<div class="unlock">🔓 NEW STAGE UNLOCKED: ${nx.icon} ${nx.name}</div>`; }
+    unlockNextStage();
   }
+  if (G.unlocked) unlock = `<div class="unlock">🔓 NEW STAGE UNLOCKED: ${G.unlocked.icon} ${G.unlocked.name}</div>`;
   Save.save();
   $('overTitle').textContent = kind === 'win' ? 'VICTORY' : kind === 'quit' ? 'RUN ABANDONED' : 'YOU DIED';
   $('overTitle').className = kind === 'win' ? 'win' : '';
@@ -623,7 +623,7 @@ function buildSetup() {
   for (const b of document.querySelectorAll('[data-mode]')) b.onclick = () => { S.mode = b.dataset.mode; Save.save(); buildSetup(); };
   $('stageList').innerHTML = STAGES.map((st) => {
     const open = S.stages.includes(st.id), best = S.best[st.id];
-    return `<button class="pick ${setupStage === st.id ? 'sel' : ''} ${open ? '' : 'locked'}" data-stage="${st.id}"><div class="pi">${open ? st.icon : '🔒'}</div><div><b>${st.name}</b><small>${open ? st.desc : 'Beat ' + STAGES.find((x) => x.id === st.needs).name + ' to unlock.'}</small>${open ? `<em>Enemy HP ×${st.hpMul}${best ? ' · best ' + fmtTime(best) : ''}</em>` : ''}</div></button>`;
+    return `<button class="pick ${setupStage === st.id ? 'sel' : ''} ${open ? '' : 'locked'}" data-stage="${st.id}"><div class="pi">${open ? st.icon : '🔒'}</div><div><b>${st.name}</b><small>${open ? st.desc : 'Beat ' + STAGES.find((x) => x.id === st.needs).name + ' in Standard, or survive 15:00 there in Endless.'}</small>${open ? `<em>Enemy HP ×${st.hpMul}${best ? ' · best ' + fmtTime(best) : ''}</em>` : ''}</div></button>`;
   }).join('');
   $('charList').innerHTML = CHARACTERS.map((c) => {
     const own = S.chars.includes(c.id);

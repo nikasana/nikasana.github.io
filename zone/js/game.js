@@ -404,6 +404,8 @@ function director(dt) {
   }
   if (G.endless && G.t >= G.tierT) {
     G.tier++; G.tierT += 900;
+    const nx = unlockNextStage();
+    if (nx) G.timers.push({ t: 4.5, fn: () => banner('🔓 NEW STAGE UNLOCKED', nx.icon + ' ' + nx.name + ' is now open on the PLAY screen.', 4, 'good', 2) });
     banner('☢ ZONE TIER ' + G.tier + ' ☢', 'The Zone grows stronger. So do its rewards.', 4, 'bad', 2);
     G.rubles += 150;
   }
@@ -422,6 +424,13 @@ function director(dt) {
       spawnBoss(id, { name: World.lab.name + ' GUARDIAN', hpMul: 0.5 + G.t / 900, labBoss: true, at: { x: (r.mx + 0.5) * LAB_T, y: (r.my + 0.5) * LAB_T } });
     }
   }
+}
+// next stage in the chain; unlocked by winning Standard or reaching Tier 2 (15:00) in Endless
+function unlockNextStage() {
+  const S = Save.data, i = STAGES.findIndex((s) => s.id === G.stage), nx = STAGES[i + 1];
+  if (!nx || S.stages.includes(nx.id)) return null;
+  S.stages.push(nx.id); Save.save(); G.unlocked = nx;
+  return nx;
 }
 function nextBossTime() {
   if (!G.endless) return G.bossIdx < BOSS_SCHEDULE.length ? BOSS_SCHEDULE[G.bossIdx].t : null;
