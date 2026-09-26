@@ -498,6 +498,7 @@ function jag(x1, y1, x2, y2, n, amp) {
 }
 function drawAnomalyGround(a) {
   const t = NOW + a.seed, r = a.r;
+  if (ANOMALIES[a.type] && !['electro', 'burner', 'vortex', 'acid', 'spring'].includes(a.type)) { drawAnomalyGround2(a); return; }
   switch (a.type) {
     case 'electro': {
       ctx.fillStyle = 'rgba(20,30,50,0.25)'; ctx.beginPath(); ctx.ellipse(a.x, a.y, r * 0.9, r * 0.55, 0, 0, TAU); ctx.fill();
@@ -538,6 +539,7 @@ function drawAnomalyGround(a) {
 }
 function drawAnomalyTop(a) {
   const t = NOW + a.seed, r = a.r;
+  if (!['electro', 'burner', 'vortex', 'acid', 'spring'].includes(a.type)) { drawAnomalyTop2(a); return; }
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   switch (a.type) {
     case 'electro': {
@@ -595,17 +597,16 @@ function drawAnomalyTop(a) {
   ctx.restore();
 }
 function drawArtifact(art, alpha) {
-  const A = ARTIFACTS[art.type], t = NOW * 2 + art.t, y = art.y - 16 - Math.sin(t) * 5;
+  const A = ARTIFACTS[art.type], t = NOW * 2 + art.t, y = art.y - 18 - Math.sin(t) * 5;
   ctx.save(); ctx.globalAlpha = alpha;
-  shadow(art.x, art.y, 8, 3, 0.35);
+  shadow(art.x, art.y, 9, 3, 0.35);
   ctx.globalCompositeOperation = 'lighter';
-  const g = ctx.createRadialGradient(art.x, y, 1, art.x, y, 34);
+  const g = ctx.createRadialGradient(art.x, y, 1, art.x, y, 36);
   g.addColorStop(0, A.color); g.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = g; ctx.globalAlpha = alpha * (0.6 + Math.sin(t * 2) * 0.2); ctx.beginPath(); ctx.arc(art.x, y, 34, 0, TAU); ctx.fill();
-  ctx.globalAlpha = alpha * 0.6; ctx.strokeStyle = A.color; ctx.lineWidth = 1.5;
-  for (let i = 0; i < 4; i++) { const an = t * 0.5 + i * (TAU / 4); ctx.beginPath(); ctx.moveTo(art.x + Math.cos(an) * 10, y + Math.sin(an) * 10); ctx.lineTo(art.x + Math.cos(an) * 26, y + Math.sin(an) * 26); ctx.stroke(); }
+  ctx.fillStyle = g; ctx.globalAlpha = alpha * (0.55 + Math.sin(t * 2) * 0.2); ctx.beginPath(); ctx.arc(art.x, y, 36, 0, TAU); ctx.fill();
+  ctx.globalAlpha = alpha * 0.5; ctx.strokeStyle = A.c2; ctx.lineWidth = 1.2;
+  for (let i = 0; i < 4; i++) { const an = t * 0.5 + i * (TAU / 4); ctx.beginPath(); ctx.moveTo(art.x + Math.cos(an) * 14, y + Math.sin(an) * 14); ctx.lineTo(art.x + Math.cos(an) * 28, y + Math.sin(an) * 28); ctx.stroke(); }
   ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = alpha;
-  ctx.fillStyle = A.color; ctx.beginPath(); ctx.moveTo(art.x, y - 9); ctx.lineTo(art.x + 7, y - 2); ctx.lineTo(art.x + 4, y + 7); ctx.lineTo(art.x - 4, y + 7); ctx.lineTo(art.x - 7, y - 2); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.moveTo(art.x, y - 9); ctx.lineTo(art.x + 3, y - 2); ctx.lineTo(art.x - 3, y - 2); ctx.fill();
+  drawArtShape(ctx, A, art.x, y, 1.15, t);
   ctx.restore();
 }

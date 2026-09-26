@@ -81,6 +81,8 @@ const Quests = {
     if (pois.length) opts.push(['poi', 2.5]);
     const labsLeft = World.kind === 'over' && World.hatches.length && !this.list.some((q) => q.type === 'lab') && !G.labsVisited;
     if (labsLeft) opts.push(['lab', 1.5]);
+    const lairs = World.kind === 'over' ? World.lairs.filter((l) => !l.dead) : [];
+    if (lairs.length && !this.list.some((q) => q.type === 'lair')) opts.push(['lair', 2]);
     let tot = 0; for (const o of opts) tot += o[1];
     let r = rand(tot), type = 'kill'; for (const o of opts) { r -= o[1]; if (r <= 0) { type = o[0]; break; } }
     const reward = Math.round(40 + m * 12);
@@ -94,6 +96,9 @@ const Quests = {
     else if (type === 'lab') {
       let h = World.hatches[0]; for (const x of World.hatches) if (dist2(x.x, x.y, P.x, P.y) < dist2(h.x, h.y, P.x, P.y)) h = x;
       q = { type, n: 1, p: 0, text: `Descend into ${h.name}`, icon: '🕳️', loc: h, reward: reward + 60 };
+    } else if (type === 'lair') {
+      let l = lairs[0]; for (const x of lairs) if (dist2(x.x, x.y, P.x, P.y) < dist2(l.x, l.y, P.x, P.y)) l = x;
+      q = { type, n: 1, p: 0, text: `Destroy the ${ENEMIES[l.family].name} lair`, icon: '☣️', loc: l, reward: reward + 40 };
     } else {
       const regs = World.regions.filter((rg) => rg.name !== World.region(P.x, P.y).name && dist(rg.x, rg.y, P.x, P.y) < 2600);
       const rg = regs.length ? pick(regs) : World.regions[0];
@@ -142,36 +147,7 @@ function recomputeTags() {
       Hints.show('synergy');
     }
   }
-  let best = null, bv = 0;
-  for (const k in ac) if (ac[k] > bv) { bv = ac[k]; best = k; }
-  if (best && !P.ability) Hints.show('ability');
-  P.ability = best; P.abilityPow = bv;
-}
-function useAbility() {
-  if (!G || G.state !== 'play' || !P.ability || P.abCd > 0) return;
-  const k = P.ability, pow = 1 + (P.abilityPow - 1) * 0.25;
-  P.abCd = 22;
-  Sfx.play('ability'); shake(8);
-  banner(TAGS[k].icon + ' ' + TAGS[k].ability.toUpperCase(), '', 1.4, 'art');
-  if (k === 'electric') {
-    const n = Math.round(10 + 3 * pow);
-    for (let i = 0; i < n; i++) G.timers.push({ t: i * 0.09, fn: () => { const t = randomEnemyNear(P.x, P.y, 650); const x = t ? t.x : P.x + rand(-300, 300), y = t ? t.y : P.y + rand(-250, 250); strike(x, y, 70 * pow, 60, false); } });
-  } else if (k === 'fire') {
-    G.fx.push({ k: 'nova', x: P.x, y: P.y, r: 10, max: 340 * P.areaMul, spd: 900, dmg: 110 * pow, hit: new Set(), life: 1, maxl: 1 });
-    Sfx.play('fire');
-  } else if (k === 'psi') {
-    for (const e of G.enemies) if (dist2(e.x, e.y, P.x, P.y) < 750 * 750) { e.stun = 2.6; hurtEnemy(e, 45 * pow, 0, 0, true); }
-    G.ebullets.length = 0; G.psiFlash = 1; flash(0.5, '190,120,255');
-  } else if (k === 'gravity') {
-    let tx = P.x + P.lastMx * 200, ty = P.y + P.lastMy * 200;
-    const t = randomEnemyNear(P.x, P.y, 450); if (t) { tx = t.x; ty = t.y; }
-    G.fx.push({ k: 'hole', x: tx, y: ty, r: 280 * P.areaMul, life: 3, max: 3, dps: 30 * pow, pull: 520, end: 170 * pow, tick: 0 });
-    Sfx.play('vortex');
-  } else if (k === 'bio') {
-    G.healT = 3; G.healRate = (P.maxhp * 0.35) / 3;
-    G.fx.push({ k: 'cloud', follow: true, x: P.x, y: P.y, r: 160 * P.areaMul, life: 5, max: 5, dps: 45 * pow, tick: 0 });
-    Sfx.play('heal');
-  }
+  if (Object.keys(P.arts).length && !P.hadArt) { P.hadArt = true; Hints.show('ability'); }
 }
 function randomEnemyNear(x, y, r) {
   EG.query(x, y, r, TMP2);

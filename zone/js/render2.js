@@ -181,3 +181,22 @@ Object.assign(ENEMY_DRAW, {
   polterking: (e) => { drawPoltergeist(e); crown(e, 18, '#ffcf3a'); },
   ratqueen: (e) => { drawRat(e); crown(e, 14, '#ffcf3a'); },
 });
+
+// ---------- mutant lair ----------
+function drawLair(p) {
+  const L = p.lair, hit = L && L.hitT > 0, pulse = 0.5 + Math.sin(NOW * 3 + p.x) * 0.3;
+  if (L) L.hitT -= 1 / 60;
+  shadow(p.x + 10, p.y + 6, 70, 22, 0.35);
+  ctx.fillStyle = hit ? '#fff' : '#4a3a2a'; ctx.beginPath(); ctx.ellipse(p.x, p.y - 8, 62, 30, 0, Math.PI, TAU); ctx.lineTo(p.x + 62, p.y); ctx.ellipse(p.x, p.y, 62, 14, 0, 0, Math.PI); ctx.fill();
+  ctx.fillStyle = hit ? '#fff' : '#5e4a34'; ctx.beginPath(); ctx.ellipse(p.x - 8, p.y - 22, 40, 18, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#120c08'; ctx.beginPath(); ctx.ellipse(p.x, p.y - 10, 26, 13, 0, 0, TAU); ctx.fill();
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = `rgba(180,230,60,${pulse * 0.6})`; ctx.beginPath(); ctx.ellipse(p.x, p.y - 10, 20, 9, 0, 0, TAU); ctx.fill(); ctx.restore();
+  ctx.strokeStyle = '#d8d0b8'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  for (let i = 0; i < 5; i++) { const a = i * 1.3 + 0.4; ctx.beginPath(); ctx.moveTo(p.x + Math.cos(a) * 50, p.y + Math.sin(a) * 10 - 4); ctx.lineTo(p.x + Math.cos(a) * 64, p.y + Math.sin(a) * 12 - 18); ctx.stroke(); }
+  ctx.font = 'bold 12px Oswald, sans-serif'; ctx.textAlign = 'center';
+  const label = '☣ ' + ENEMIES[p.family].name.toUpperCase() + ' LAIR';
+  ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillText(label, p.x + 1, p.y - 67); ctx.fillStyle = '#c8f060'; ctx.fillText(label, p.x, p.y - 68);
+  if (Math.random() < 0.05) part(p.x + rand(-20, 20), p.y - 10, { z: 5, vz: 40, g: -10, c: '180,230,60', add: true, s: 3, life: 1 });
+}
+PROP_DRAW.lair = drawLair;

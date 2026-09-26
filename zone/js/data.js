@@ -67,6 +67,40 @@ const PERKS = {
   regen: { name: 'Field Medic', icon: '💉', max: 5, desc: (m) => `+${(0.4 * m).toFixed(1)} HP/s regeneration`, apply: (P, m) => { P.regen += 0.4 * m; } },
   area: { name: 'Demolitions', icon: '🧨', max: 4, desc: (m) => `+${Math.round(12 * m)}% area of effect`, apply: (P, m) => { P.areaMul += 0.12 * m; } },
   crit: { name: 'Sharpshooter', icon: '✴️', max: 4, desc: (m) => `+${Math.round(5 * m)}% critical chance`, apply: (P, m) => { P.crit += 0.05 * m; } },
+  glass: { name: 'Glass Cannon', icon: '🥃', max: 3, desc: (m) => `+${Math.round(25 * m)}% damage, -10% max HP`, apply: (P, m) => { P.dmgMul += 0.25 * m; P.maxhp *= 0.9; P.hp = Math.min(P.hp, P.maxhp); } },
+  bloodthirst: { name: 'Bloodthirst', icon: '🩸', max: 4, desc: (m) => `Heal ${(m * 0.4 * 3).toFixed(1)} HP per 3 kills`, apply: (P, m) => { P.soul += 0.4 * m; } },
+  execute: { name: 'Executioner', icon: '🪓', max: 4, desc: (m) => `+${Math.round(25 * m)}% damage to mutants below 30% HP`, apply: (P, m) => { P.execute += 0.25 * m; } },
+  slayer: { name: 'Giant Slayer', icon: '🗡️', max: 5, desc: (m) => `+${Math.round(15 * m)}% damage to bosses, alphas & elites`, apply: (P, m) => { P.bossDmg += 0.15 * m; } },
+  deadeye: { name: 'Deadeye', icon: '👁️', max: 4, desc: (m) => `+${Math.round(30 * m)}% critical damage`, apply: (P, m) => { P.critMul += 0.3 * m; } },
+  treasure: { name: 'Treasure Hunter', icon: '💰', max: 3, desc: (m) => `+${Math.round(50 * m)}% medkit & loot drops`, apply: (P, m) => { P.dropMul += 0.5 * m; } },
+  haggler: { name: 'Haggler', icon: '🤝', max: 3, desc: (m) => `+${Math.round(20 * m)}% rubles from this run`, apply: (P, m) => { P.rubMul += 0.2 * m; } },
+  dashmaster: { name: 'Dash Master', icon: '💨', max: 4, desc: (m) => `-${Math.round(12 * m)}% dash cooldown`, apply: (P, m) => { P.dashMul *= 1 - 0.12 * m; } },
+  bladedash: { name: 'Blade Dash', icon: '⚔️', max: 4, desc: (m) => `Dashing through mutants deals ${Math.round(40 * m)} damage`, apply: (P, m) => { P.dashDmg += 40 * m; } },
+  medic: { name: 'Combat Medic', icon: '🩺', max: 3, desc: (m) => `Medkits heal +${Math.round(50 * m)}%`, apply: (P, m) => { P.medMul += 0.5 * m; } },
+  adrenaline: { name: 'Adrenaline Rush', icon: '⚡', max: 3, desc: (m) => `+${Math.round(20 * m)}% speed for 2s after getting hit`, apply: (P, m) => { P.adren += 0.2 * m; } },
+  berserk: { name: 'Berserker', icon: '😡', max: 4, desc: (m) => `Up to +${Math.round(40 * m)}% damage as your HP drops`, apply: (P, m) => { P.berserk += 0.4 * m; } },
+  standfirm: { name: 'Stand Firm', icon: '🧱', max: 3, desc: (m) => `-${Math.round(15 * m)}% damage taken while standing still`, apply: (P, m) => { P.standFirm += 0.15 * m; } },
+  spikes: { name: 'Spiked Armor', icon: '🦔', max: 4, desc: (m) => `Attackers take ${Math.round(15 * m)} damage`, apply: (P, m) => { P.thorns += 15 * m; } },
+  nimble: { name: 'Nimble', icon: '🤸', max: 4, desc: (m) => `+${Math.round(5 * m)}% dodge chance`, apply: (P, m) => { P.dodge = Math.min(0.5, P.dodge + 0.05 * m); } },
+  scholar: { name: 'Scholar', icon: '🎓', max: 5, desc: (m) => `+${Math.round(12 * m)}% XP`, apply: (P, m) => { P.xpMul += 0.12 * m; } },
+  penetrator: { name: 'Penetrator', icon: '📌', max: 3, desc: (m) => `+${Math.max(1, Math.round(m))} pierce on all projectiles`, apply: (P, m) => { P.pierce += Math.max(1, Math.round(m)); } },
+  quickhands: { name: 'Quick Hands', icon: '🖐️', max: 4, desc: (m) => `-${Math.round(10 * m)}% artifact power cooldowns`, apply: (P, m) => { P.actCdMul *= 1 - 0.1 * m; } },
+  tuner: { name: 'Artifact Tuner', icon: '🎛️', max: 5, desc: (m) => `+${Math.round(20 * m)}% artifact power strength`, apply: (P, m) => { P.actPow += 0.2 * m; } },
+  pyro: { name: 'Pyromaniac', icon: '🔥', max: 4, desc: (m) => `Burning deals +${Math.round(30 * m)}% damage`, apply: (P, m) => { P.burnMul += 0.3 * m; } },
+  static: { name: 'Static Charge', icon: '🌩️', max: 4, desc: (m) => `${Math.round(8 * m)}% chance hits zap a nearby mutant`, apply: (P, m) => { P.zapChance += 0.08 * m; } },
+  vampire: { name: 'Vampire Rounds', icon: '🧛', max: 4, desc: (m) => `Heal ${(0.6 * m).toFixed(1)}% of damage dealt (max 5 HP/s)`, apply: (P, m) => { P.lifesteal += 0.006 * m; } },
+  hollow: { name: 'Hollow Points', icon: '💣', max: 4, desc: (m) => `${Math.round(8 * m)}% chance hits explode`, apply: (P, m) => { P.exChance += 0.08 * m; } },
+  cryo: { name: 'Cryo Rounds', icon: '❄️', max: 3, desc: (m) => `${Math.round(20 * m)}% chance hits slow mutants`, apply: (P, m) => { P.frostChance += 0.2 * m; } },
+  hunter: { name: 'Mutant Hunter', icon: '🏹', max: 5, desc: (m) => `+${Math.round(10 * m)}% damage to regular mutants`, apply: (P, m) => { P.hunter += 0.1 * m; } },
+  marathon: { name: 'Marathon', icon: '🏃', max: 3, desc: (m) => `+${Math.round(6 * m)}% speed, -${Math.round(5 * m)}% dash cooldown`, apply: (P, m) => { P.spdMul += 0.06 * m; P.dashMul *= 1 - 0.05 * m; } },
+  ironlung: { name: 'Iron Lung', icon: '🫁', max: 3, desc: (m) => `-${Math.round(25 * m)}% anomaly & radiation damage`, apply: (P, m) => { P.anomRes = Math.min(0.9, P.anomRes + 0.25 * m); } },
+  reload: { name: 'Fast Reload', icon: '🔄', max: 5, desc: (m) => `+${Math.round(6 * m)}% attack speed, +${Math.round(3 * m)}% damage`, apply: (P, m) => { P.rateMul += 0.06 * m; P.dmgMul += 0.03 * m; } },
+  caliber: { name: 'Heavy Caliber', icon: '🔫', max: 4, desc: (m) => `+${Math.round(8 * m)}% damage, +${Math.round(5 * m)}% area`, apply: (P, m) => { P.dmgMul += 0.08 * m; P.areaMul += 0.05 * m; } },
+  secondheart: { name: 'Second Heart', icon: '💗', max: 3, desc: (m) => `Triple regeneration below 30% HP, +${(0.3 * m).toFixed(1)} HP/s`, apply: (P, m) => { P.lowRegen = 3; P.regen += 0.3 * m; } },
+  momentum: { name: 'Momentum', icon: '📈', max: 3, desc: (m) => `+1% damage per ${Math.round(25 / m)} kills (up to 30%)`, apply: (P, m) => { P.momentum += m; } },
+  looter: { name: 'Looter', icon: '🎒', max: 3, desc: (m) => `+${Math.round(30 * m)}% XP from gems & crates`, apply: (P, m) => { P.xpMul += 0.1 * m; P.dropMul += 0.2 * m; } },
+  sprinter: { name: 'Sprinter', icon: '👟', max: 3, desc: (m) => `+${Math.round(10 * m)}% speed when no mutant is close`, apply: (P, m) => { P.sprint += 0.1 * m; } },
+  thickskin: { name: 'Thick Skin', icon: '🐘', max: 4, desc: (m) => `+${Math.round(30 * m)} max HP, -3% speed`, apply: (P, m) => { P.maxhp += 30 * m; P.hp += 30 * m; P.spdMul -= 0.03; } },
 };
 const FALLBACK = [
   { kind: 'heal', name: 'Army Medkit', icon: '🩹', desc: 'Restore 50% HP' },
@@ -99,38 +133,7 @@ const TAGS = {
     ability: 'Healing Spores', adesc: 'Heal 35% HP and surround yourself with a toxic cloud.' },
 };
 
-// ---------- artifacts ----------
-const ARTIFACTS = {
-  medusa: { name: 'Medusa', tag: 'bio', color: '#b6e36a', desc: '-7% damage taken', apply: (P) => { P.dr += 0.07; } },
-  stoneblood: { name: 'Stone Blood', tag: 'bio', color: '#d8423a', desc: '+0.8 HP/s regeneration', apply: (P) => { P.regen += 0.8; } },
-  flash: { name: 'Flash', tag: 'electric', color: '#7fe3ff', desc: '+10% move speed', apply: (P) => { P.spdMul += 0.1; } },
-  moonlight: { name: 'Moonlight', tag: 'psi', color: '#d4f2ff', desc: 'Orbiting psi-shard (+1)', apply: (P) => { P.shards++; } },
-  battery: { name: 'Battery', tag: 'electric', color: '#4aa8ff', desc: 'Chain lightning (+1 arc)', apply: (P) => { P.lightning++; } },
-  fireball: { name: 'Fireball', tag: 'fire', color: '#ff8a2a', desc: 'Burning aura (+size, +dmg)', apply: (P) => { P.aura++; } },
-  nightstar: { name: 'Night Star', tag: 'gravity', color: '#f0ea72', desc: '+40% pickup range, +10% XP', apply: (P) => { P.pickup *= 1.4; P.xpMul += 0.1; } },
-  soul: { name: 'Soul', tag: 'psi', color: '#ff9ad5', desc: 'Heal 1 HP per 3 kills', apply: (P) => { P.soul++; } },
-  kolobok: { name: 'Kolobok', tag: 'fire', color: '#e0b86a', desc: '+12% damage', apply: (P) => { P.dmgMul += 0.12; } },
-  gravi: { name: 'Gravi', tag: 'gravity', color: '#a98cff', desc: '+1 pierce on all projectiles', apply: (P) => { P.pierce++; } },
-  crystal: { name: 'Crystal', tag: 'fire', color: '#ff6464', desc: '+25 max HP', apply: (P) => { P.maxhp += 25; P.hp += 25; } },
-  jellyfish: { name: 'Jellyfish', tag: 'electric', color: '#7df5c6', desc: '+10% attack speed', apply: (P) => { P.rateMul += 0.1; } },
-  eye: { name: 'Eye', tag: 'psi', color: '#ffd0ff', desc: '+8% critical chance', apply: (P) => { P.crit += 0.08; } },
-  thorn: { name: 'Thorn', tag: 'bio', color: '#9ad04a', desc: 'Attackers take 20 damage', apply: (P) => { P.thorns += 20; } },
-  compass: { name: 'Compass', tag: 'gravity', color: '#ffe8a0', desc: '-20% dash cooldown, +8% speed', apply: (P) => { P.dashMul *= 0.8; P.spdMul += 0.08; } },
-};
-const ANOM_ARTS = {
-  electro: ['battery', 'flash', 'moonlight', 'jellyfish', 'eye'],
-  burner: ['fireball', 'crystal', 'stoneblood', 'kolobok'],
-  vortex: ['gravi', 'medusa', 'nightstar', 'moonlight', 'compass'],
-  acid: ['stoneblood', 'soul', 'medusa', 'jellyfish', 'thorn'],
-  spring: ['kolobok', 'flash', 'gravi', 'nightstar', 'soul', 'compass'],
-};
-const ANOMALIES = {
-  electro: { name: 'Electro', r: 58, color: '#6cc4ff' },
-  burner: { name: 'Burner', r: 44, color: '#ff7a2a' },
-  vortex: { name: 'Vortex', r: 120, color: '#b9a7ff' },
-  acid: { name: 'Fruit Punch', r: 62, color: '#8cff5a' },
-  spring: { name: 'Springboard', r: 48, color: '#d8e0ff' },
-};
+// artifacts, anomalies and artifact actives live in artifacts.js
 
 // ---------- enemies ----------
 const ENEMIES = {
@@ -279,7 +282,7 @@ const HINTS = {
   detector: 'Your detector is beeping: an ARTIFACT is hidden in that anomaly field. Grab it!',
   levelup: 'Pick an upgrade. Card color shows rarity, and rarer cards are stronger.',
   crate: 'Walk into supply crates to loot them.',
-  ability: 'Artifact ability unlocked! Press Q (or tap the ability button). It changes with your artifact types.',
+  ability: 'Every artifact has its own power! Press Q to use it, and scroll the mouse wheel or press E to switch artifacts.',
   emission: 'Follow the green arrow to a SHELTER bunker, or hide underground in a lab!',
   night: 'Night: it\'s darker and more mutants come out. Your flashlight points where you move.',
   quest: 'Contracts appear on the right. Complete them for rubles to spend in the Bunker.',

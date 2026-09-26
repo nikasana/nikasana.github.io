@@ -36,9 +36,9 @@ const TMP = [], TMP2 = [], TMP3 = [];
 const xpNeed = (l) => Math.floor(5 + l * 5 + Math.pow(l, 1.75));
 const stageDef = () => STAGES.find((s) => s.id === G.stage);
 
-function newGame(stageId, charId, mode) {
+function newGame(stageId, charId, mode, spawnIdx = 0) {
   const ch = CHARACTERS.find((c) => c.id === charId) || CHARACTERS[0];
-  World.genStage(stageId, (Math.random() * 1e9) | 0);
+  World.genStage(stageId, (Math.random() * 1e9) | 0, spawnIdx);
   G = {
     t: 0, state: 'play', stage: stageId, char: ch.id, kills: 0, level: 1, xp: 0, xpNeed: xpNeed(1), pendingLv: 0,
     enemies: [], bullets: [], ebullets: [], gems: [], pickups: [], particles: [], texts: [], decals: [], fx: [], throws: [], timers: [],
@@ -50,11 +50,13 @@ function newGame(stageId, charId, mode) {
   };
   const M = (id) => Save.meta(id), mod = ch.mod;
   P = {
-    x: START.x, y: START.y, z: 0, r: 13, hp: 120, maxhp: 120, face: 1, aim: 0, lookA: -Math.PI / 2, anim: 0, moving: false, inv: 0, muzzle: 0,
+    x: World.start.x, y: World.start.y, z: 0, r: 13, hp: 120, maxhp: 120, face: 1, aim: 0, lookA: -Math.PI / 2, anim: 0, moving: false, inv: 0, muzzle: 0,
     dashCd: 0, dashT: 0, dashVx: 0, dashVy: 0, lastMx: 0, lastMy: -1, kvx: 0, kvy: 0, slow: 0, slowNext: 0, psiSlowT: 0,
     dmgMul: 1, rateMul: 1, areaMul: 1, spdMul: 1, pickup: 85, xpMul: 1, dr: 0, regen: 0, pierce: 0, crit: 0, thorns: 0, dashMul: 1,
     shards: 0, lightning: 0, aura: 0, soul: 0, soulAcc: 0, luck: 0, rerolls: 0, revives: 0, anomRes: 0, psiImmune: false, detect: 1,
-    weapons: [{ id: ch.weapon, lv: 1, cd: 0.5 }], perks: {}, arts: {}, tags: {}, syn: {}, ability: null, abilityPow: 0, abCd: 0, hatchT: 0, bioHp: 0,
+    weapons: [{ id: ch.weapon, lv: 1, cd: 0.5 }], perks: {}, arts: {}, tags: {}, syn: {}, actSel: 0, actCd: {}, shieldT: 0, dodge: 0, lvlHeal: 0,
+    execute: 0, bossDmg: 0, critMul: 2, dropMul: 1, rubMul: 1, dashDmg: 0, medMul: 1, adren: 0, adrenT: 0, berserk: 0, standFirm: 0, zapChance: 0,
+    lifesteal: 0, lsAcc: 0, exChance: 0, frostChance: 0, hunter: 0, actCdMul: 1, actPow: 0, burnMul: 1, lowRegen: 1, momentum: 0, sprint: 0, hatchT: 0, bioHp: 0,
     pal: { ...PAL_PLAYER, ...ch.pal },
   };
   // meta upgrades
@@ -78,6 +80,7 @@ function newGame(stageId, charId, mode) {
 }
 function spawnArtifact(f) {
   const a = pick(f.anoms), an = Math.random() * TAU, d = a.r * 0.45 * Math.random();
+  if (ANOMALIES[f.type].moving) { f.art = { x: f.x + rand(-30, 30), y: f.y + rand(-20, 20), type: pick(ANOM_ARTS[f.type]), t: Math.random() * 10 }; return; }
   f.art = { x: a.x + Math.cos(an) * d, y: a.y + Math.sin(an) * d, type: pick(ANOM_ARTS[f.type]), t: Math.random() * 10 };
 }
 
@@ -116,7 +119,16 @@ function critChance() { return 0.07 + P.crit + (P.syn.psi ? 0.15 : 0); }
 function hurtEnemy(e, dmg, kx = 0, ky = 0, raw = false, proc = true) {
   if (e.dead) return;
   let crit = false;
-  if (!raw) { dmg *= P.dmgMul; if (Math.random() < critChance()) { crit = true; dmg *= 2; } }
+  if (!raw) {
+    dmg *= P.dmgMul;
+    if (P.execute && e.hp < e.maxhp * 0.3) dmg *= 1 + P.execute;
+    if (P.bossDmg && (e.boss || e.mini || e.affix)) dmg *= 1 + P.bossDmg;
+    if (P.hunter && !e.boss && !e.mini) dmg *= 1 + P.hunter;
+    if (P.berserk) dmg *= 1 + P.berserk * (1 - P.hp / P.maxhp);
+    if (P.momentum) dmg *= 1 + Math.min(0.3, G.kills * 0.0004 * P.momentum);
+    if (Math.random() < critChance()) { crit = true; dmg *= P.critMul; }
+    if (P.lifesteal && P.lsAcc < 5) { const h = Math.min(5 - P.lsAcc, dmg * P.lifesteal); P.lsAcc += h; P.hp = Math.min(P.maxhp, P.hp + h); }
+  }
   if (e.shield > 0) dmg *= 0.15;
   if (e.affix === 'armored') dmg *= 0.5;
   e.hp -= dmg; e.flash = 0.09; G.dmg += dmg;
@@ -126,6 +138,12 @@ function hurtEnemy(e, dmg, kx = 0, ky = 0, raw = false, proc = true) {
   Sfx.play(crit ? 'crit' : 'hit');
   if (!raw && proc) {
     if (P.syn.fire) { e.burnT = 2.2; e.burnDps = Math.max(e.burnDps || 0, dmg * 0.35); }
+    if (P.frostChance && Math.random() < P.frostChance) e.slowT = 1.5;
+    if (P.exChance && Math.random() < P.exChance) { const x = e.x, y = e.y; G.timers.push({ t: 0, fn: () => explode(x, y, 55 * P.areaMul, dmg * 0.5, true) }); }
+    if (P.zapChance && Math.random() < P.zapChance) {
+      const n = nearestTo(e.x, e.y, 200, e);
+      if (n) { G.fx.push({ k: 'lightning', pts: [[e.x, e.y - e.z - 14], [n.x, n.y - n.z - 14]], life: 0.15, max: 0.15 }); hurtEnemy(n, dmg * 0.6, 0, 0, true); }
+    }
     if (P.syn.electric && Math.random() < 0.1) {
       const n = nearestTo(e.x, e.y, 180, e);
       if (n) { G.fx.push({ k: 'lightning', pts: [[e.x, e.y - e.z - 14], [n.x, n.y - n.z - 14]], life: 0.15, max: 0.15 }); hurtEnemy(n, dmg * 0.5, 0, 0, true); }
@@ -172,8 +190,8 @@ function killEnemy(e) {
       if (e.affix === 'volatile') { G.timers.push({ t: 0.25, fn: () => explode(e.x, e.y, 95, 35, false) }); }
     } else {
       dropGem(e.x, e.y, xp);
-      if (Math.random() < 0.012) G.pickups.push({ type: 'med', x: e.x, y: e.y, t: 0 });
-      else if (Math.random() < 0.003) G.pickups.push({ type: 'magnet', x: e.x, y: e.y, t: 0 });
+      if (Math.random() < 0.012 * P.dropMul) G.pickups.push({ type: 'med', x: e.x, y: e.y, t: 0 });
+      else if (Math.random() < 0.003 * P.dropMul) G.pickups.push({ type: 'magnet', x: e.x, y: e.y, t: 0 });
     }
     G.rubles += 0.5;
     if (e.mut) mutDeath(e);
@@ -253,8 +271,11 @@ function dropGem(x, y, v) {
 function hurtPlayer(d, src, ignoreInv = false, kind = '') {
   if (G.state !== 'play') return;
   if (!ignoreInv && (P.inv > 0 || P.dashT > 0)) return;
+  if (P.shieldT > 0) { if (!ignoreInv) { P.inv = 0.3; text(P.x, P.y - 50, 'BLOCK', '#9fe8ff', false, true); } return; }
+  if (!ignoreInv && P.dodge && Math.random() < P.dodge) { P.inv = 0.3; text(P.x, P.y - 50, 'DODGE', '#d0a0ff', false, true); return; }
   if (kind === 'anomaly' || kind === 'rad') d *= 1 - P.anomRes;
-  d *= 1 - Math.min(0.75, P.dr);
+  d *= 1 - Math.min(0.75, P.dr + (!P.moving ? P.standFirm : 0));
+  if (P.adren && !ignoreInv) P.adrenT = 2;
   P.hp -= d;
   if (!ignoreInv) P.inv = 0.6;
   text(P.x, P.y - 50, '-' + Math.round(d), '#ff5a4a', false, true);
@@ -283,9 +304,19 @@ function explode(x, y, r, dmg, fromPlayer = true) {
 function damageOb(ob, dmg) {
   if (!ob.hp || ob.dead) return;
   ob.hp -= dmg;
-  if (ob.hp > 0) { if (ob.kind === 'fence') burst(ob.x + ob.w / 2, ob.y, 3, '120,90,60', 80); return; }
+  if (ob.hp > 0) { if (ob.kind === 'fence') burst(ob.x + ob.w / 2, ob.y, 3, '120,90,60', 80); if (ob.kind === 'lair') { ob.lair.hitT = 0.1; text(ob.x, ob.y - 60, Math.round(dmg), '#ffcf6a'); } return; }
   ob.dead = true;
   World.destroy(ob);
+  if (ob.kind === 'lair') {
+    const L = ob.lair; L.dead = true;
+    explode(L.x, L.y, 140, 60, true); shake(14);
+    G.rubles += 40; G.elites++;
+    for (let i = 0; i < 10; i++) dropGem(L.x + rand(-60, 60), L.y + rand(-50, 50), 4 + Math.floor(G.t / 60));
+    G.pickups.push({ type: Math.random() < 0.4 ? 'art' : 'med', x: L.x, y: L.y + 30, t: 0 });
+    banner('LAIR DESTROYED', '+40 ₽ and loot', 2.5, 'good');
+    Quests.prog('lair');
+    return;
+  }
   if (ob.kind === 'barrel') { explode(ob.x, ob.y, 115 * P.areaMul, 80, true); G.fx.push({ k: 'ring', x: ob.x, y: ob.y, r: 115, life: 0.4, max: 0.4, c: '255,160,60' }); }
   else { burst(ob.x + (ob.w || 0) / 2, ob.y, 14, '130,95,60', 200, { s: 5 }); Sfx.play('break'); }
 }
@@ -501,7 +532,7 @@ function updateEnemies(dt) {
     e.t += dt; e.flash -= dt; e.cd -= dt; e.cd2 -= dt; e.cd3 -= dt; e.cast -= dt; e.shield -= dt; e.reveal -= dt; e.slowT -= dt; e.stun -= dt;
     if (e.burnT > 0) {
       e.burnT -= dt; e.burnTick -= dt;
-      if (e.burnTick <= 0) { e.burnTick = 0.5; hurtEnemy(e, e.burnDps * 0.5, 0, 0, true); if (e.dead) continue; }
+      if (e.burnTick <= 0) { e.burnTick = 0.5; hurtEnemy(e, e.burnDps * 0.5 * P.burnMul, 0, 0, true); if (e.dead) continue; }
       if (Math.random() < 0.3) part(e.x + rand(-6, 6), e.y - e.z - 10, { z: 10, vz: 60, g: -20, c: '255,140,40', add: true, s: 3, life: 0.4 });
     } else e.burnDps = 0;
     if (e.affix === 'regen') e.hp = Math.min(e.maxhp, e.hp + e.maxhp * 0.03 * dt);
@@ -782,8 +813,9 @@ function updateEnemies(dt) {
 // ---------- anomalies ----------
 function updateAnomalies(dt) {
   const wet = World.kind === 'over' && (Env.weather === 'rain' || Env.weather === 'storm');
+  P.portT = (P.portT || 0) - dt;
   for (const a of World.anomalies) {
-    if (Math.abs(a.x - P.x) > 1300 || Math.abs(a.y - P.y) > 1100) continue;
+    if (Math.abs((a.cx ?? a.x) - P.x) > 1500 || Math.abs((a.cy ?? a.y) - P.y) > 1300) continue;
     a.cd -= dt; a.act = Math.max(0, a.act - dt);
     const R = a.type === 'electro' && wet ? a.r * 1.3 : a.r;
     const pd = dist(a.x, a.y, P.x, P.y), pin = pd < R + P.r * 0.5 && P.dashT <= 0;
@@ -830,6 +862,71 @@ function updateAnomalies(dt) {
           if (P.acidAcc > 5) { hurtPlayer(P.acidAcc, 'a Fruit Punch anomaly', true, 'anomaly'); P.acidAcc = 0; }
           if (Math.random() < 0.3) part(P.x + rand(-8, 8), P.y, { vz: 60, z: 2, g: 0, c: '160,255,80', add: true, s: 3, life: 0.5 });
         }
+        break;
+      case 'teleport': {
+        const port = (o, isP) => {
+          const q = a.pair; if (!q) return;
+          const an = rand(TAU); o.x = q.x + Math.cos(an) * (q.r + o.r + 14); o.y = q.y + Math.sin(an) * (q.r + o.r + 14) * 0.8;
+          a.act = q.act = 0.5; burst(a.x, a.y - 20, 12, '160,220,255', 140, { add: true }); burst(o.x, o.y - 20, 12, '160,220,255', 140, { add: true });
+          if (isP) { P.portT = 1.2; P.kvx = P.kvy = 0; Sfx.play('dash'); CAM.x = lerp(CAM.x, P.x, 0.7); CAM.y = lerp(CAM.y, P.y, 0.7); }
+        };
+        if (pin && !(P.portT > 0)) port(P, true);
+        for (const e of TMP2) if (!e.boss && !(e.portT > G.t) && dist2(a.x, a.y, e.x, e.y) < a.r * a.r) { e.portT = G.t + 2; port(e, false); }
+        break;
+      }
+      case 'cryo':
+        for (const e of TMP2) if (!e.d.fly && dist(a.x, a.y, e.x, e.y) < a.r) { e.slowT = 0.4; e.coldAcc = (e.coldAcc || 0) + 14 * dt; if (e.coldAcc > 7) { hurtEnemy(e, e.coldAcc, 0, 0, true); e.coldAcc = 0; } }
+        if (pd < a.r && P.dashT <= 0) { P.slowNext = Math.max(P.slowNext, 0.55 * (1 - P.anomRes)); P.coldAcc = (P.coldAcc || 0) + 7 * dt; if (P.coldAcc > 5) { hurtPlayer(P.coldAcc, 'a Frost anomaly', true, 'anomaly'); P.coldAcc = 0; } }
+        break;
+      case 'gas':
+        if (a.cd <= 0) {
+          a.cd = 2; a.act = 0.6;
+          for (const e of TMP2) if (dist(a.x, a.y, e.x, e.y) < a.r) hurtEnemy(e, 22, 0, 0, true);
+          if (pd < a.r) hurtPlayer(10, 'Chemical Gas', true, 'anomaly');
+        }
+        break;
+      case 'mincer': {
+        const pull = (o, str) => {
+          const ox = a.x - o.x, oy = a.y - o.y, dd = Math.hypot(ox, oy) || 1;
+          if (dd > a.r) return false;
+          const f = (1 - dd / a.r) * str; o.x += (ox / dd) * f * dt + (-oy / dd) * f * 0.5 * dt; o.y += (oy / dd) * f * dt + (ox / dd) * f * 0.5 * dt;
+          return dd < 24;
+        };
+        for (const e of TMP2) { if (e.boss || e.d.fly) continue; if (pull(e, 480)) { e.vt += dt; if (e.vt > 0.35) { e.vt = 0; hurtEnemy(e, 150, 0, 0, true); a.act = 0.5; burst(a.x, a.y - 20, 22, '150,20,20', 300, { s: 4 }); decal(a.x, a.y, 30, '90,10,10'); if (pd < 700) Sfx.play('vortex'); } } }
+        if (P.dashT <= 0 && pull(P, 270 * (1 - P.anomRes * 0.5))) {
+          P.vt = (P.vt || 0) + dt;
+          if (P.vt > 0.5) { P.vt = 0; hurtPlayer(34, 'a Mincer anomaly', false, 'anomaly'); const an = rand(TAU); P.kvx = Math.cos(an) * 800; P.kvy = Math.sin(an) * 800; a.act = 0.5; shake(12); }
+        } else P.vt = 0;
+        break;
+      }
+      case 'tesla': {
+        a.ang += dt * a.spd; a.x = a.cx + Math.cos(a.ang) * a.orb; a.y = a.cy + Math.sin(a.ang) * a.orb * 0.62;
+        if (a.zapT > 0) a.zapT -= dt; else a.zap = null;
+        if (a.cd <= 0) {
+          let tgt = null, td = 90 * 90;
+          if (dist2(a.x, a.y, P.x, P.y) < td && P.dashT <= 0) tgt = P;
+          if (!tgt) for (const e of TMP2) if (dist2(a.x, a.y, e.x, e.y) < td) { tgt = e; break; }
+          if (tgt) {
+            a.cd = 0.7; a.zap = [tgt.x, tgt.y - 20]; a.zapT = 0.15;
+            if (tgt === P) hurtPlayer(12, 'a Tesla anomaly', false, 'anomaly'); else hurtEnemy(tgt, 35, 0, 0, true);
+            if (pd < 600) Sfx.play('zap');
+          }
+        }
+        break;
+      }
+      case 'comet': {
+        a.ang += dt * a.spd * a.dir; a.x = a.cx + Math.cos(a.ang) * a.orb; a.y = a.cy + Math.sin(a.ang) * a.orb * 0.62;
+        if (pd < a.r + P.r && !(P.cometT > G.t) && P.dashT <= 0) { P.cometT = G.t + 1; hurtPlayer(22, 'a Comet anomaly', false, 'anomaly'); P.kvx = (P.x - a.x) * 8; P.kvy = (P.y - a.y) * 8; }
+        for (const e of TMP2) if (!(e.cometT > G.t) && dist2(a.x, a.y, e.x, e.y) < (a.r + e.r) ** 2) { e.cometT = G.t + 1; hurtEnemy(e, 60, (e.x - a.x) * 10, (e.y - a.y) * 10, true); e.burnT = 2; e.burnDps = 15; }
+        break;
+      }
+      case 'fuzz':
+        for (const e of TMP2) if (!e.d.fly && dist(a.x, a.y, e.x, e.y) < a.r) { e.fuzzAcc = (e.fuzzAcc || 0) + 18 * dt; if (e.fuzzAcc > 9) { hurtEnemy(e, e.fuzzAcc, 0, 0, true); e.fuzzAcc = 0; a.act = 0.3; } }
+        if (pd < a.r && P.moving && P.dashT <= 0) { a.act = 0.3; P.fuzzAcc = (P.fuzzAcc || 0) + 12 * dt; if (P.fuzzAcc > 5) { hurtPlayer(P.fuzzAcc, 'Burnt Fuzz', true, 'anomaly'); P.fuzzAcc = 0; } }
+        break;
+      case 'psifield':
+        if (pd < a.r && !P.psiImmune) { G.psi = Math.max(G.psi, 0.6); P.slowNext = Math.max(P.slowNext, 0.2); P.psiAcc = (P.psiAcc || 0) + 5 * dt; if (P.psiAcc > 5) { hurtPlayer(P.psiAcc, 'a Psi-Field', true, 'anomaly'); P.psiAcc = 0; } }
+        if (a.cd <= 0) { a.cd = 3; for (const e of TMP2) if (!e.boss && dist(a.x, a.y, e.x, e.y) < a.r) { e.stun = 1; hurtEnemy(e, 15, 0, 0, true); } }
         break;
       case 'spring':
         if (a.cd <= 0) {
@@ -1062,7 +1159,7 @@ function updatePickups(dt) {
     p.t += dt;
     if (dist2(p.x, p.y, P.x, P.y) < 34 * 34) {
       p.dead = true;
-      if (p.type === 'med') { P.hp = Math.min(P.maxhp, P.hp + 35); text(P.x, P.y - 50, '+35 HP', '#6f6', false, true); Sfx.play('heal'); }
+      if (p.type === 'med') { const h = Math.round(35 * P.medMul); P.hp = Math.min(P.maxhp, P.hp + h); text(P.x, P.y - 50, '+' + h + ' HP', '#6f6', false, true); Sfx.play('heal'); }
       else if (p.type === 'magnet') { for (const g of G.gems) g.mag = true; banner('MAGNET', 'All XP pulled in!', 1.5, 'good'); Sfx.play('heal'); }
       else if (p.type === 'art') takeArtifact(pick(Object.keys(ARTIFACTS)));
       else if (p.type === 'stash') { P.hp = P.maxhp; takeArtifact(pick(Object.keys(ARTIFACTS)), ' • full heal, +1 level'); G.pendingLv++; }
@@ -1091,6 +1188,24 @@ function updatePickups(dt) {
   for (const h of World.hatches) if (dist2(h.x, h.y, P.x, P.y) < 42 * 42) on = h;
   if (on) { P.hatchT += dt; if (P.hatchT > 0.9) { P.hatchT = 0; useHatch(on); } } else P.hatchT = 0;
   G.onHatch = on;
+  // mutant lairs
+  if (World.kind === 'over') for (const L of World.lairs) {
+    if (L.dead) continue;
+    const d2 = dist2(L.x, L.y, P.x, P.y);
+    if (d2 > 1000 * 1000) continue;
+    if (L.state === 0) {
+      L.state = 1; L.ob.hp = L.maxhp = 450 * hpScale(G.t / 60) * stageDef().hpMul;
+      banner('☣ ' + ENEMIES[L.family].name.toUpperCase() + ' LAIR', 'It keeps spawning mutants. Shoot it to destroy it!', 3, 'bad'); Hints.show('poi');
+    }
+    L.spawned = L.spawned.filter((e) => !e.dead);
+    L.spawnT -= dt;
+    if (L.spawnT <= 0 && L.spawned.length < 7 && d2 < 900 * 900) {
+      L.spawnT = 3.2;
+      const n = L.family === 'rat' ? 3 : L.family === 'dog' || L.family === 'pseudodog' ? 2 : 1;
+      for (let i = 0; i < n; i++) { const a = rand(TAU); L.spawned.push(spawnEnemy(L.family, L.x + Math.cos(a) * 70, L.y + Math.sin(a) * 50, { noElite: true })); }
+      burst(L.x, L.y - 10, 12, '120,90,60', 140, { s: 4 });
+    }
+  }
   // points of interest
   if (World.kind === 'over') for (const poi of World.pois) {
     if (poi.state === 0 && dist2(poi.x, poi.y, P.x, P.y) < 560 * 560) {
@@ -1109,7 +1224,7 @@ function updatePickups(dt) {
 }
 function useHatch(h) {
   Sfx.play('hatch');
-  if (h.exit) goLevel('over', G.returnPos || { x: START.x, y: START.y });
+  if (h.exit) goLevel('over', G.returnPos || { x: World.start.x, y: World.start.y });
   else { G.returnPos = { x: h.x, y: h.y + 80 }; goLevel('lab' + h.idx); }
 }
 function goLevel(key, pos) {
@@ -1147,7 +1262,7 @@ function takeArtifact(type, extra) {
 }
 function addXp(v) {
   G.xp += v * P.xpMul;
-  while (G.xp >= G.xpNeed) { G.xp -= G.xpNeed; G.level++; G.xpNeed = xpNeed(G.level); G.pendingLv++; }
+  while (G.xp >= G.xpNeed) { G.xp -= G.xpNeed; G.level++; G.xpNeed = xpNeed(G.level); G.pendingLv++; if (P.lvlHeal) P.hp = Math.min(P.maxhp, P.hp + P.lvlHeal); }
 }
 
 // ---------- level up / choice cards ----------
@@ -1170,7 +1285,9 @@ function rollChoices() {
   const perkOpts = Object.keys(PERKS).filter((id) => (P.perks[id] || 0) < PERKS[id].max).length;
   for (const id in INFINITE) pool.push({ kind: 'inf', id, w: perkOpts < 3 ? 1.5 : 0.2 });
   if (P.weapons.length < 6) for (const id in WEAPONS) if (!P.weapons.some((w) => w.id === id)) pool.push({ kind: 'wnew', id, w: 2.2 });
-  for (const id in PERKS) if ((P.perks[id] || 0) < PERKS[id].max) pool.push({ kind: 'perk', id, w: 1.4 });
+  // big perk pool: share a fixed total weight so weapons still show up often
+  const perkIds = Object.keys(PERKS).filter((id) => (P.perks[id] || 0) < PERKS[id].max);
+  for (const id of perkIds) pool.push({ kind: 'perk', id, w: (P.perks[id] ? 2.5 : 1) * (16 / Math.max(8, perkIds.length)) });
   const out = [];
   while (out.length < 3 && pool.length) {
     let tot = 0; for (const p of pool) tot += p.w;
@@ -1213,7 +1330,7 @@ function renderCards() {
     } else if (c.kind === 'perk') { const p = PERKS[c.id], lv = P.perks[c.id] || 0; icon = p.icon; name = p.name; tag = lv ? `LV ${lv} → ${lv + 1}` : 'NEW PERK'; desc = p.desc(m); }
     else if (c.kind === 'mastery') { const W = WEAPONS[c.id], w = P.weapons.find((x) => x.id === c.id); icon = w.evo ? EVOLUTIONS[c.id].icon : W.icon; name = (w.evo ? EVOLUTIONS[c.id].name : W.name) + ' Mastery'; tag = 'MASTERY ' + ((w.mast || 0) + 1); desc = `+${Math.round(12 * m)}% weapon damage`; }
     else if (c.kind === 'inf') { const I = INFINITE[c.id]; icon = I.icon; name = I.name; tag = 'LIMITLESS'; desc = I.desc(m); }
-    else if (c.kind === 'art') { const A = ARTIFACTS[c.id]; icon = `<i class="gem" style="--c:${A.color}"></i>`; name = A.name; tag = `${TAGS[A.tag].icon} ${TAGS[A.tag].name.toUpperCase()}`; desc = A.desc; }
+    else if (c.kind === 'art') { const A = ARTIFACTS[c.id]; icon = artImg(c.id, 'big'); name = A.name; tag = `${TAGS[A.tag].icon} ${TAGS[A.tag].name.toUpperCase()}`; desc = `${A.desc}<em>Q: ${ACTIVES[A.act].name}</em>`; }
     else { const f = FALLBACK.find((x) => x.kind === c.kind); icon = f.icon; name = f.name; tag = 'SUPPLY'; desc = f.desc; }
     const el = document.createElement('button');
     el.className = `card r-${c.rar.id} ${c.kind}`;
@@ -1260,9 +1377,13 @@ function updatePlayer(dt) {
   P.moving = ml > 0.1;
   P.psiSlowT -= dt;
   P.slow = Math.max(P.slowNext, P.psiSlowT > 0 && !P.psiImmune ? 0.35 : 0); P.slowNext = 0;
-  const spd = 200 * P.spdMul * (1 - P.slow);
+  P.adrenT -= dt; P.lsAcc = Math.max(0, P.lsAcc - 5 * dt);
+  let spdB = P.adrenT > 0 ? P.adren : 0;
+  if (P.sprint) { EG.query(P.x, P.y, 160, TMP); if (!TMP.some((e) => !e.dead && dist2(e.x, e.y, P.x, P.y) < 160 * 160)) spdB += P.sprint; }
+  const spd = 200 * (P.spdMul + spdB) * (1 - P.slow);
   if (P.dashT > 0) {
     P.dashT -= dt; P.x += P.dashVx * dt; P.y += P.dashVy * dt;
+    if (P.dashDmg) { EG.query(P.x, P.y, 40, TMP); for (const e of TMP) if (!e.dead && !P.dashHit.includes(e) && dist2(e.x, e.y, P.x, P.y) < (e.r + 24) ** 2) { P.dashHit.push(e); hurtEnemy(e, P.dashDmg, P.dashVx * 0.3, P.dashVy * 0.3, false, false); } }
     part(P.x + rand(-6, 6), P.y, { z: rand(5, 30), c: '180,220,160', s: 5, life: 0.25, g: 0, add: true });
   } else { P.x += mx * spd * dt; P.y += my * spd * dt; }
   P.x += P.kvx * dt; P.y += P.kvy * dt;
@@ -1276,8 +1397,9 @@ function updatePlayer(dt) {
   if (Math.cos(P.aim) * P.face < 0 && P.muzzle <= -0.3) P.aim = P.face > 0 ? 0 : Math.PI;
   P.muzzle -= dt;
   World.collide(P);
-  P.dashCd -= dt; P.inv -= dt; P.abCd -= dt;
-  const regen = P.regen + (P.syn.bio ? 1.5 : 0);
+  P.dashCd -= dt; P.inv -= dt; P.shieldT -= dt;
+  for (const k in P.actCd) P.actCd[k] -= dt;
+  const regen = (P.regen + (P.syn.bio ? 1.5 : 0)) * (P.hp < P.maxhp * 0.3 ? P.lowRegen : 1);
   if (regen) P.hp = Math.min(P.maxhp, P.hp + regen * dt);
   if (G.healT > 0) { G.healT -= dt; P.hp = Math.min(P.maxhp, P.hp + G.healRate * dt); if (Math.random() < 0.4) part(P.x + rand(-12, 12), P.y - 20, { z: 10, vz: 60, g: -20, c: '120,255,140', add: true, s: 3, life: 0.6 }); }
   let rad = 0;
@@ -1297,6 +1419,7 @@ function tryDash() {
   if (!G || G.state !== 'play' || P.dashCd > 0) return;
   let dx = P.lastMx, dy = P.lastMy; if (!dx && !dy) dx = P.face;
   const l = Math.hypot(dx, dy) || 1;
+  P.dashHit = [];
   P.dashVx = (dx / l) * 760; P.dashVy = (dy / l) * 760; P.dashT = 0.18; P.dashCd = 1.4 * P.dashMul; P.inv = Math.max(P.inv, 0.28);
   Sfx.play('dash');
 }

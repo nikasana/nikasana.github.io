@@ -158,6 +158,11 @@ function render(title = false) {
     if (e.mini) { ctx.font = 'bold 11px Oswald, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffcf6a'; ctx.fillText(e.name, e.x, top - 5); }
     if (e.stun > 0) { ctx.fillStyle = '#ffe070'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('✦ ✦', e.x + Math.sin(NOW * 8) * 6, top); }
   }
+  for (const L of World.lairs) {
+    if (L.dead || L.state === 0 || L.x < x0 || L.x > x1 || L.y < y0 || L.y > y1 + 100) continue;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(L.x - 41, L.y - 96, 82, 7);
+    ctx.fillStyle = '#b8e040'; ctx.fillRect(L.x - 40, L.y - 95, 80 * clamp(L.ob.hp / L.maxhp, 0, 1), 5);
+  }
   ctx.textAlign = 'center';
   for (const t of G.texts) {
     ctx.globalAlpha = clamp(t.life * 2, 0, 1);
@@ -224,11 +229,19 @@ function render(title = false) {
   for (const b of G.bosses) edge(b.x, b.y, '#ff3a2a', '💀');
   for (const q of Quests.list) if (q.loc && World.kind === 'over') edge(q.loc.x, q.loc.y, '#ffcf3a', q.icon);
 }
+function drawShield() {
+  if (!(P.shieldT > 0)) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  ctx.strokeStyle = P.shieldC || '#9fe8ff'; ctx.globalAlpha = 0.5 + Math.sin(NOW * 12) * 0.2; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.ellipse(P.x, P.y - 22, 30, 36, 0, 0, TAU); ctx.stroke();
+  ctx.globalAlpha = 0.12; ctx.fillStyle = P.shieldC || '#9fe8ff'; ctx.fill(); ctx.restore();
+}
 function drawPlayer() {
   const blink = P.inv > 0 && P.dashT <= 0 && Math.floor(NOW * 20) % 2 === 0;
   if (blink) ctx.globalAlpha = 0.5;
   drawStalker(P, P.pal, true);
   ctx.globalAlpha = 1;
+  drawShield();
 }
 function drawPlayerFx() {
   if (P.aura) {
@@ -442,17 +455,22 @@ function hudBuild() {
     wb.appendChild(d);
   }
   const ab = $('artbelt'); ab.innerHTML = '';
-  for (const id in P.arts) {
-    const A = ARTIFACTS[id], d = document.createElement('div'); d.className = 'art';
-    d.style.setProperty('--c', A.color); d.title = A.name + ': ' + A.desc;
-    d.innerHTML = `<i></i>${P.arts[id] > 1 ? '<b>' + P.arts[id] + '</b>' : ''}`;
+  const sel = selectedArt();
+  ownedArts().forEach((id, i) => {
+    const A = ARTIFACTS[id], d = document.createElement('div'); d.className = 'art' + (id === sel ? ' sel' : '');
+    d.style.setProperty('--c', A.color); d.title = `${A.name}: ${A.desc} · Q: ${ACTIVES[A.act].name}`;
+    d.innerHTML = `${artImg(id)}${P.arts[id] > 1 ? '<b>' + P.arts[id] + '</b>' : ''}`;
+    d.onclick = () => { P.actSel = i; hudBuild(); };
     ab.appendChild(d);
-  }
+  });
   $('syn').innerHTML = Object.keys(TAGS).filter((k) => P.tags[k] > 0).map((k) => `<span class="chip ${P.syn[k] ? 'on' + P.syn[k] : ''}" style="--c:${TAGS[k].color}" title="${TAGS[k].name}: 3 → ${TAGS[k].b3} · 6 → ${TAGS[k].b6}">${TAGS[k].icon}${P.tags[k]}</span>`).join('');
-  const T = P.ability ? TAGS[P.ability] : null;
-  $('abIcon').textContent = T ? T.icon : '🔒';
-  $('abName').textContent = T ? T.ability : 'Find an artifact';
-  $('abilityIcon').textContent = T ? T.icon : '🔒';
+  const A = sel ? ARTIFACTS[sel] : null;
+  $('abIcon').innerHTML = A ? artImg(sel) : '🔒';
+  $('abName').textContent = A ? ACTIVES[A.act].name : 'Find an artifact';
+  $('abArt').textContent = A ? A.name : '';
+  $('abilityIcon').innerHTML = A ? artImg(sel) : '🔒';
+  const many = ownedArts().length > 1;
+  for (const id of ['abPrev', 'abNext', 'tPrev', 'tNext']) $(id).style.visibility = many ? 'visible' : 'hidden';
 }
 let fpsAcc = 0, fpsN = 0, fpsShow = 0;
 function hud(dt) {
@@ -466,11 +484,12 @@ function hud(dt) {
   setText('envIcon', (World.kind === 'lab' ? '🕳️' : Env.isNight() ? '🌙' : '☀️') + (World.kind === 'over' && Env.weather !== 'clear' ? ' ' + WEATHER[Env.weather].icon : ''));
   $('dashFill').style.transform = `scaleY(${clamp(1 - P.dashCd / (1.4 * P.dashMul), 0, 1)})`;
   $('dashBtn').classList.toggle('ready', P.dashCd <= 0);
-  const abr = P.ability ? clamp(1 - P.abCd / 22, 0, 1) : 0;
+  const sel = selectedArt(), cdLeft = sel ? Math.max(0, P.actCd[sel] || 0) : 0;
+  const abr = sel ? clamp(1 - cdLeft / ARTIFACTS[sel].cd, 0, 1) : 0;
   $('abFill').style.transform = `scaleY(${abr})`; $('abilityFill').style.transform = `scaleY(${abr})`;
-  const abReady = P.ability && P.abCd <= 0;
+  const abReady = sel && cdLeft <= 0;
   $('ability').classList.toggle('ready', !!abReady); $('abilityBtn').classList.toggle('ready', !!abReady);
-  setText('abCd', !P.ability ? '' : abReady ? 'READY' : Math.ceil(P.abCd) + 's');
+  setText('abCd', !sel ? '' : abReady ? 'READY' : Math.ceil(cdLeft) + 's');
   const b = G.bosses[0];
   if (b) { $('boss').style.display = 'block'; setText('bossName', b.name + (G.bosses.length > 1 ? ' + ' + G.bosses[1].name : '')); $('bossFill').style.width = (b.hp / b.maxhp) * 100 + '%'; }
   else $('boss').style.display = 'none';
@@ -502,6 +521,7 @@ function drawMinimap() {
   mmx.font = '15px sans-serif'; mmx.textAlign = 'center';
   for (const h of World.hatches) { const x = tx(h.x), y = ty(h.y); if (inb(x, y)) mmx.fillText('🕳️', x, y + 5); }
   for (const p of World.pois) { const x = tx(p.x), y = ty(p.y); if (inb(x, y) && p.state < 2) mmx.fillText(p.icon, x, y + 5); }
+  for (const l of World.lairs) { const x = tx(l.x), y = ty(l.y); if (inb(x, y) && !l.dead) mmx.fillText('☣️', x, y + 5); }
   mmx.fillStyle = '#f44';
   for (const e of G.enemies) { const x = tx(e.x), y = ty(e.y); if (x < 0 || x > S || y < 0 || y > S) continue; if (e.boss) mmx.fillText('💀', x, y + 5); else if (e.mini || e.affix) { mmx.fillStyle = '#fb3'; mmx.fillRect(x - 2, y - 2, 4, 4); mmx.fillStyle = '#f44'; } else mmx.fillRect(x - 1, y - 1, 2, 2); }
   for (const q of Quests.list) if (q.loc && World.kind === 'over') { const x = clamp(tx(q.loc.x), 8, S - 8), y = clamp(ty(q.loc.y), 8, S - 8); mmx.fillStyle = '#ffcf3a'; mmx.font = 'bold 18px Oswald, sans-serif'; mmx.fillText('!', x, y + 6); }
@@ -530,8 +550,9 @@ function endRun(kind, src) {
   if (G.ended) return; G.ended = true;
   G.state = 'over';
   const S = Save.data, mins = Math.floor(G.t / 60);
-  const earned = Math.floor(G.rubles - G.paidR + (mins - G.paidMin) * 15 + (kind === 'win' ? 500 : 0));
-  const loot = Math.floor(G.rubles - G.paidR), tb = (mins - G.paidMin) * 15;
+  const loot = Math.floor((G.rubles - G.paidR) * P.rubMul);
+  const earned = Math.floor(loot + (mins - G.paidMin) * 15 + (kind === 'win' ? 500 : 0));
+  const tb = (mins - G.paidMin) * 15;
   G.paidR = G.rubles; G.paidMin = mins;
   S.rubles += earned;
   const bk = G.stage + (G.endless ? '_endless' : ''), best = S.best[bk] || 0; if (G.t > best) S.best[bk] = G.t;
@@ -574,7 +595,7 @@ function buildPause() {
   h += '<h3>Artifacts</h3>';
   const ak = Object.keys(P.arts);
   if (!ak.length) h += '<div class="row dim">None yet. Look inside anomaly fields (colored circles on the minimap).</div>';
-  for (const id of ak) h += `<div class="row"><i class="dot" style="background:${ARTIFACTS[id].color}"></i> ${ARTIFACTS[id].name} ×${P.arts[id]} <span class="dim">${TAGS[ARTIFACTS[id].tag].icon} ${ARTIFACTS[id].desc}</span></div>`;
+  for (const id of ak) h += `<div class="row">${artImg(id, 'sm')} ${ARTIFACTS[id].name} ×${P.arts[id]} <span class="dim">${TAGS[ARTIFACTS[id].tag].icon} ${ARTIFACTS[id].desc} · Q: ${ACTIVES[ARTIFACTS[id].act].name}</span></div>`;
   $('build').innerHTML = h;
 }
 function toggleMap() {
@@ -603,6 +624,9 @@ function drawBigMap() {
   g.font = '16px sans-serif';
   for (const h of World.hatches) g.fillText('🕳️', h.x * f, h.y * f + 5);
   for (const p of World.pois) g.fillText(p.state === 2 ? '✅' : p.icon, p.x * f, p.y * f + 5);
+  g.font = '12px sans-serif';
+  for (const l of World.lairs) if (!l.dead) g.fillText('☣️', l.x * f, l.y * f + 4);
+  g.font = '16px sans-serif';
   for (const q of Quests.list) if (q.loc && World.kind === 'over') { g.fillStyle = '#ffcf3a'; g.font = 'bold 20px Oswald'; g.fillText('!', q.loc.x * f + 12, q.loc.y * f - 6); }
   g.font = '18px sans-serif';
   for (const b of G.bosses) g.fillText('💀', b.x * f, b.y * f + 6);
@@ -625,6 +649,10 @@ function buildSetup() {
     const open = S.stages.includes(st.id), best = S.best[st.id];
     return `<button class="pick ${setupStage === st.id ? 'sel' : ''} ${open ? '' : 'locked'}" data-stage="${st.id}"><div class="pi">${open ? st.icon : '🔒'}</div><div><b>${st.name}</b><small>${open ? st.desc : 'Beat ' + STAGES.find((x) => x.id === st.needs).name + ' in Standard, or survive 15:00 there in Endless.'}</small>${open ? `<em>Enemy HP ×${st.hpMul}${best ? ' · best ' + fmtTime(best) : ''}</em>` : ''}</div></button>`;
   }).join('');
+  S.spawn = S.spawn || {};
+  const sps = STAGE_WORLD[setupStage].spawns, si = Math.min(S.spawn[setupStage] || 0, sps.length - 1);
+  $('spawnList').innerHTML = sps.map((sp, i) => `<button class="pick ${si === i ? 'sel' : ''}" data-spawn="${i}"><div class="pi">${sp.icon}</div><div><b>${sp.name}</b><small>${sp.desc}</small></div></button>`).join('');
+  for (const b of document.querySelectorAll('[data-spawn]')) b.onclick = () => { S.spawn[setupStage] = +b.dataset.spawn; Save.save(); buildSetup(); };
   $('charList').innerHTML = CHARACTERS.map((c) => {
     const own = S.chars.includes(c.id);
     return `<button class="pick ${setupChar === c.id ? 'sel' : ''} ${own ? '' : 'locked'}" data-char="${c.id}"><div class="pi">${c.icon}</div><div><b>${c.name}</b><small>${c.desc}</small><em>${WEAPONS[c.weapon].icon} ${WEAPONS[c.weapon].name}${own ? '' : ` · <span class="${S.rubles >= c.cost ? 'afford' : 'poor'}">BUY ${c.cost} ₽</span>`}</em></div></button>`;
@@ -668,6 +696,7 @@ addEventListener('keydown', (e) => {
   keys[e.code] = true;
   if (e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') { tryDash(); e.preventDefault(); }
   if (e.code === 'KeyQ') useAbility();
+  if (e.code === 'KeyE') cycleActive(1);
   if (e.code === 'Escape' || e.code === 'KeyP') { if (G && G.state === 'map') toggleMap(); else togglePause(); }
   if (e.code === 'KeyM' || e.code === 'Tab') { toggleMap(); e.preventDefault(); }
   if (G && G.state === 'levelup') { if (['Digit1', 'Digit2', 'Digit3'].includes(e.code)) chooseCard(+e.code.slice(5) - 1); if (e.code === 'KeyR') reroll(); }
@@ -693,7 +722,12 @@ const endJoy = (e) => { if (e.pointerId === joy.id) { joy.active = false; joy.dx
 addEventListener('pointerup', endJoy); addEventListener('pointercancel', endJoy);
 $('dashBtn').addEventListener('pointerdown', (e) => { e.stopPropagation(); tryDash(); });
 $('abilityBtn').addEventListener('pointerdown', (e) => { e.stopPropagation(); useAbility(); });
-$('ability').addEventListener('click', () => useAbility());
+$('abUse').addEventListener('click', () => useAbility());
+$('abPrev').addEventListener('click', () => cycleActive(-1));
+$('abNext').addEventListener('click', () => cycleActive(1));
+$('tPrev').addEventListener('pointerdown', (e) => { e.stopPropagation(); cycleActive(-1); });
+$('tNext').addEventListener('pointerdown', (e) => { e.stopPropagation(); cycleActive(1); });
+addEventListener('wheel', (e) => { if (G && !G.title && G.state === 'play') cycleActive(e.deltaY > 0 ? 1 : -1); }, { passive: true });
 $('pauseBtn').addEventListener('click', () => togglePause());
 $('mapBtn').addEventListener('click', () => toggleMap());
 $('mapScreen').addEventListener('click', () => toggleMap());
@@ -722,7 +756,7 @@ function startGame() {
   for (const s of ['title', 'setup', 'bunker', 'settings', 'over', 'pause', 'levelup']) hide(s);
   $('loading').classList.add('show');
   setTimeout(() => {
-    newGame(S.stage, S.char, S.mode || 'standard');
+    newGame(S.stage, S.char, S.mode || 'standard', (S.spawn || {})[S.stage] || 0);
     $('loading').classList.remove('show');
     $('hud').classList.add('show');
     if (matchMedia('(pointer: coarse)').matches) $('touchUi').classList.add('show');
@@ -756,7 +790,7 @@ function renderTitle(dt) {
 }
 
 // ---------- boot ----------
-Save.load(); applySettings();
+Save.load(); applySettings(); buildArtIcons();
 resize();
 EG.init();
 World.genStage('zone', 20260926);
