@@ -746,7 +746,7 @@ function drawW2Top(x0, y0, x1, y1) {
   ctx.globalAlpha = 1;
   // interaction rings for towers
   for (const t of [...W.wtowers, ...W.rtowers]) if (t.hold > 0) { ctx.strokeStyle = '#ffcf6a'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(t.x, t.y - 110, 16, -Math.PI / 2, -Math.PI / 2 + TAU * clamp(t.hold / (t.on === undefined ? 1.2 : 1.5), 0, 1)); ctx.stroke(); }
-  if (G.nearGuide) { ctx.font = 'bold 12px Oswald, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffcf6a'; ctx.fillText('GUIDE · open the map (M) to travel', G.nearGuide.x, G.nearGuide.y - 80); }
+  if (G.nearGuide && !(typeof nearVehicle === 'function' && (P.veh || nearVehicle()))) { ctx.font = 'bold 12px Oswald, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffcf6a'; ctx.fillText('GUIDE · open the map (M) to travel', G.nearGuide.x, G.nearGuide.y - 80); }
 }
 function nearestRailS(r) {
   let best = 1e12, bs = 0, acc = 0;

@@ -119,7 +119,8 @@
   #artbelt .art.sel { outline: 2px solid var(--acc); background: rgba(200, 255, 90, 0.15); }
   .tsmall { width: 38px; height: 38px; font-size: 14px; bottom: 96px; }
   #tPrev { right: 150px; } #tNext { right: 104px; }
-  #vehBtn { right: 22px; bottom: 124px; width: 54px; height: 54px; font-size: 24px; display: none; }
+  #vehBtn { right: 18px; bottom: 124px; width: 72px; height: 72px; font-size: 28px; display: none; flex-direction: column; align-items: center; justify-content: center; line-height: 1; border-color: #ffe070; box-shadow: 0 0 14px rgba(255,224,112,0.45); }
+  #vehBtn small { font-size: 10px; letter-spacing: 0.08em; margin-top: 3px; color: #ffe070; font-weight: bold; }
   #boltBtn { right: 190px; bottom: 30px; width: 50px; height: 50px; font-size: 20px; }
   #abFill, #abilityFill { position: absolute; inset: 0; background: rgba(200, 255, 90, 0.2); transform-origin: bottom; transform: scaleY(0); }
   #abIcon { font-size: 28px; position: relative; line-height: 1; } #abCd { font-size: 11px; position: relative; color: var(--acc); }
@@ -383,23 +384,24 @@
     el.innerHTML = 'Something failed to load: ' + (e.message || 'script error') + ' <button onclick="location.reload(true)" style="margin-left:8px;padding:4px 10px">Reload</button>';
   });
 </script>
-<script src="js/util.js?v=16"></script>
-<script src="js/audio.js?v=16"></script>
-<script src="js/radio.js?v=16"></script>
-<script src="js/ambience.js?v=16"></script>
-<script src="js/data.js?v=16"></script>
-<script src="js/artifacts.js?v=16"></script>
-<script src="js/world.js?v=16"></script>
-<script src="js/render.js?v=16"></script>
-<script src="js/render2.js?v=16"></script>
-<script src="js/lighting.js?v=16"></script>
-<script src="js/game.js?v=16"></script>
-<script src="js/systems.js?v=16"></script>
-<script src="js/weapons2.js?v=16"></script>
-<script src="js/mutants3.js?v=16"></script>
-<script src="js/events.js?v=16"></script>
-<script src="js/hazards.js?v=16"></script>
-<script src="js/world2.js?v=16"></script>
-<script src="js/ui.js?v=16"></script>
+<script src="js/util.js?v=17"></script>
+<script src="js/audio.js?v=17"></script>
+<script src="js/radio.js?v=17"></script>
+<script src="js/ambience.js?v=17"></script>
+<script src="js/data.js?v=17"></script>
+<script src="js/artifacts.js?v=17"></script>
+<script src="js/world.js?v=17"></script>
+<script src="js/render.js?v=17"></script>
+<script src="js/render2.js?v=17"></script>
+<script src="js/lighting.js?v=17"></script>
+<script src="js/game.js?v=17"></script>
+<script src="js/systems.js?v=17"></script>
+<script src="js/weapons2.js?v=17"></script>
+<script src="js/mutants3.js?v=17"></script>
+<script src="js/events.js?v=17"></script>
+<script src="js/hazards.js?v=17"></script>
+<script src="js/world2.js?v=17"></script>
+<script src="js/vehicles.js?v=17"></script>
+<script src="js/ui.js?v=17"></script>
 </body>
 </html>

@@ -113,7 +113,7 @@ function render(title = false) {
     else if (it.t === 6) drawPoiChest(o);
   }
   for (const a of World.anomalies) if (a.x > x0 - a.r && a.x < x1 + a.r && a.y > y0 - 150 && a.y < y1 + a.r) drawAnomalyTop(a);
-  if (!title) { drawHazardsTop(x0, y0, x1, y1); drawW2Top(x0, y0, x1, y1); drawPlayerFx(); }
+  if (!title) { drawHazardsTop(x0, y0, x1, y1); drawW2Top(x0, y0, x1, y1); drawVehPrompt(); drawPlayerFx(); }
   // bullets
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
   for (const b of G.bullets) {
@@ -511,8 +511,7 @@ function hud(dt) {
   $('dashFill').style.transform = `scaleY(${clamp(1 - P.dashCd / (1.4 * P.dashMul), 0, 1)})`;
   $('dashBtn').classList.toggle('ready', P.dashCd <= 0);
   const vb = $('vehBtn'), nv = P.veh || nearVehicle();
-  vb.style.display = nv ? 'block' : 'none'; if (nv) vb.textContent = P.veh ? '⏏' : VEH[nv.kind].icon;
-  if (!P.veh && nv && !matchMedia('(pointer: coarse)').matches) text(nv.x, nv.y - 50, 'F: ride ' + VEH[nv.kind].name, '#ffe070', false, true);
+  vb.style.display = nv ? 'flex' : 'none'; if (nv) { const h = (P.veh ? '⏏<small>GET OFF</small>' : VEH[nv.kind].icon + '<small>RIDE</small>'); if (vb._h !== h) { vb._h = h; vb.innerHTML = h; } }
   const sel = selectedArt(), cdLeft = sel ? Math.max(0, P.actCd[sel] || 0) : 0;
   const abr = sel ? clamp(1 - cdLeft / ARTIFACTS[sel].cd, 0, 1) : 0;
   $('abFill').style.transform = `scaleY(${abr})`; $('abilityFill').style.transform = `scaleY(${abr})`;

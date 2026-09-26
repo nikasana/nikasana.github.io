@@ -200,7 +200,7 @@ aiExtra = function (e, dt, d, ux, uy, sp, dx, dy) {
 
 // ---------- vehicles ----------
 const VEH = { bike: { name: 'Dirt Bike', spd: 2.1, ram: 30, icon: '🏍️' }, jeep: { name: 'UAZ Jeep', spd: 1.75, ram: 60, icon: '🚙', fuel: true, dr: 0.3 } };
-function nearVehicle() { if (World.kind !== 'over') return null; let b = null; for (const v of World.vehicles) if (dist2(v.x, v.y, P.x, P.y) < 60 * 60) b = v; return b; }
+function nearVehicle() { if (World.kind !== 'over') return null; let b = null; for (const v of World.vehicles) if (!v.broken && dist2(v.x, v.y, P.x, P.y) < 95 * 95) b = v; return b; }
 function toggleVehicle() {
   if (!G || G.state !== 'play') return;
   if (P.veh) { const v = P.veh; P.veh = null; v.x = P.x + 30; v.y = P.y + 10; banner('DISMOUNTED', '', 1, ''); return; }
