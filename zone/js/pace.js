@@ -164,38 +164,33 @@ const Suggest = {
     if (!r.dead) s = Math.min(s, 0.5); // a win is never 'too hard'
     return Math.max(0, Math.min(1, s));
   },
-  SIGMA: 0.5, GOAL: 15, SURE: 0.75, // 75% chance to survive 15:00: you win Standard most of the time, not always (a typical run lasts ~21 min)
-  // typical player's median survival (minutes) on a setting; Ascension adds HP and damage on top
-  med(d, p, a) { return Forecast.median(d, p) / (1 + 0.17 * (a || 0)); },
-  // your skill: how long you survive compared with a typical player (recent runs weigh more)
-  skill() {
-    const log = (Save.data.runLog || []).filter((r) => !(r.q && r.t < 120)).slice(-5);
-    if (!log.length) { const b = Math.max(0, ...Object.values(Save.data.best || {}).map(Number).filter((x) => x > 0)); if (!b) return null; return { s: Math.max(0.05, (b / 60) / this.med(Save.data.diff || 'rookie', Save.data.pace || 'normal', 0)), n: 0 }; }
-    const w = [1, 1.5, 2, 3, 4].slice(-log.length); let sum = 0, ws = 0;
-    log.forEach((r, i) => {
-      let ratio = (r.t / 60) / this.med(r.d, r.p, r.a || 0);
-      if (!r.dead || r.q || r.t >= 900) ratio *= r.hp !== undefined ? 1 + Math.max(0, r.hp - 0.4) : 1.2; // survived: you could have lasted longer
-      sum += w[i] * Math.log(Math.max(0.01, ratio)); ws += w[i];
-    });
-    return { s: Math.min(5000, Math.max(0.03, Math.exp(sum / ws))), n: log.length };
+  // anchored on your own runs: each run says 'at this setting I got this far'
+  lvlOf(d, p) { return Math.max(0, DIFFICULTIES.findIndex((x) => x.id === d)) + Math.max(0, PACES.findIndex((x) => x.id === p)); },
+  // how far off a run was: 0 = right fit (reached 15:00), negative = too hard, positive = too easy
+  delta(r) {
+    let q = r.t / 900;
+    if (!r.dead || (r.q && r.t >= 600) || r.t >= 900) q = Math.max(1, q) * (r.hp !== undefined ? 1 + Math.max(0, r.hp - 0.5) : 1.15);
+    return Math.max(-4, Math.min(4, 3 * Math.log2(Math.max(0.01, q))));
   },
-  surv(medMin) { return 1 - Forecast.cdf(this.GOAL, medMin); }, // chance to survive the goal time
   get() {
-    const k = this.skill(); if (!k) return null;
-    const need = this.GOAL * Math.exp(0.674 * this.SIGMA); // your median must be this long for 75% at 15:00
-    let best = null;
-    for (let a = 0; a <= 0; a++) {
-      let hardest = Infinity;
-      for (const d of DIFFICULTIES) for (const p of PACES) {
-        const m = this.med(d.id, p.id, a) * k.s; hardest = Math.min(hardest, m);
-        if (m >= need && (!best || m < best.m)) best = { d, p, a, m };
-      }
-      if (hardest < need) break;
+    const S = Save.data, idx = (arr, id, def) => Math.max(0, arr.findIndex((x) => x.id === (id || def)));
+    const dc = idx(DIFFICULTIES, S.diff, 'rookie'), pc = idx(PACES, S.pace, 'normal');
+    let log = (S.runLog || []).filter((r) => !(r.q && r.t < 120) && !(r.dead && !r.q && r.t < 45)).slice(-5);
+    if (!log.length) { const b = Math.max(0, ...Object.values(S.best || {}).map(Number).filter((x) => x > 0)); if (!b) return null; log = [{ d: S.diff || 'rookie', p: S.pace || 'normal', t: b, dead: true }]; }
+    // early deaths are about difficulty (pace barely matters in the first minutes); late deaths are about pace
+    const dE = [], pE = [];
+    for (const r of log) {
+      const d0 = idx(DIFFICULTIES, r.d, 'rookie'), p0 = idx(PACES, r.p, 'normal'), x = this.delta(r);
+      if (x < 0 && r.t < 480) { dE.push(d0 + x); pE.push(p0); }
+      else if (x < 0) { dE.push(d0); pE.push(p0 + x); }
+      else { dE.push(d0 + Math.round(x * 0.6)); pE.push(p0 + Math.round(x * 0.4)); }
     }
-    if (!best) best = { d: DIFFICULTIES[0], p: PACES[0], a: 0, m: this.med(DIFFICULTIES[0].id, PACES[0].id, 0) * k.s };
-    const pct = Math.round(this.surv(best.m) * 100);
-    const why = `Your skill ×${k.s.toFixed(2)} vs a typical stalker (${k.n || 'best time'}${k.n ? ' runs' : ''}). ${pct}% chance to survive 15:00 · typical run ~${fmtTime(Math.round(Math.min(best.m, 99) * 60))}`;
-    return { d: best.d, p: best.p, a: best.a, n: k.n, why };
+    const med = (a) => { a = a.slice().sort((x, y) => x - y); const m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }; // one freak run can't swing it
+    const clampI = (v, c, n) => Math.max(0, Math.min(n - 1, Math.max(c - 2, Math.min(c + 2, Math.round(v))))); // at most 2 steps per click
+    const di = clampI(med(dE), dc, DIFFICULTIES.length), pi = clampI(med(pE), pc, PACES.length);
+    const dir = di + pi > dc + pc ? 'harder' : di + pi < dc + pc ? 'easier' : 'keep';
+    const why = `Based on your last ${log.length} runs (typical: ${fmtTime(Math.round(log.map((r) => r.t).sort((a, b) => a - b)[log.length >> 1]))}) → ${dir}`;
+    return { d: DIFFICULTIES[di], p: PACES[pi], a: 0, n: log.length, why };
   },
   label() { const s = this.get(); return s ? `✨ Suggested: ${s.d.icon} ${s.d.name} – ${s.p.icon} ${s.p.name}${s.a ? ' – Ascension ' + s.a : ''}` : '✨ Suggested: play a run first'; },
   apply() {
