@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#15130f" />
 <title>ZONEBONK — Heart of the Zone</title>
-<link rel="icon" type="image/svg+xml" href="icon.svg?v=49" />
-<link rel="apple-touch-icon" href="icon.svg?v=49" />
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=50" />
+<link rel="apple-touch-icon" href="icon.svg?v=50" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -213,7 +213,7 @@
   @media (max-width: 600px) { .card { min-height: 0; flex-direction: row; text-align: left; padding: 10px 12px; gap: 10px; } .cicon { font-size: 32px; } .ckey { display: none; } .card .cname { font-size: 18px; } .crar { position: absolute; top: 3px; right: 8px; font-size: 9px; } }
 
   /* ---- pause / over / map ---- */
-  #pause, #over, #mapScreen, #setup, #bunker, #settings, #coop, #runs, #profiles { background: rgba(8, 8, 5, 0.86); backdrop-filter: blur(3px); }
+  #pause, #over, #mapScreen, #setup, #bunker, #settings, #coop, #crewHQ, #runs, #profiles { background: rgba(8, 8, 5, 0.86); backdrop-filter: blur(3px); }
   .panel { background: var(--panel); border: 1px solid var(--line); padding: 18px 22px; max-width: 580px; width: 100%; max-height: 86vh; overflow: auto; text-align: left; touch-action: pan-y; }
   .panel h2 { font-size: 40px; letter-spacing: 0.1em; text-align: center; }
   .panel h3 { color: var(--acc); letter-spacing: 0.15em; margin: 12px 0 4px; font-size: 15px; }
@@ -256,7 +256,7 @@
   .metaLines { margin-top: 8px; color: #c8e060; font-size: 14px; line-height: 1.6; }
   #titleChal { color: #c8b070; font-size: 13px; margin-top: 6px; }
   .pulse { animation: pulse 1.4s infinite; } @keyframes pulse { 50% { box-shadow: 0 0 18px rgba(200,224,96,0.8); } }
-  #coop { z-index: 12; }
+  #coop, #crewHQ { z-index: 12; }
   .coBox { width: min(560px, 100%); display: flex; flex-direction: column; gap: 10px; }
   .coBox .dim { color: #9a947c; font-size: 14px; margin: 0; } .coBox .small { font-size: 12px; }
   .coCode { font: 700 34px Oswald, sans-serif; letter-spacing: 0.25em; color: #c8e060; text-align: center; margin: 6px 0; }
@@ -479,41 +479,41 @@
       '<button onclick="location.reload()" style="' + btn + 'background:#ffcf3a;color:#111;border:2px solid #ffcf3a">🔄 RELOAD</button>';
   });
 </script>
-<script src="js/util.js?v=49"></script>
-<script src="js/audio.js?v=49"></script>
-<script src="js/radio.js?v=49"></script>
-<script src="js/ambience.js?v=49"></script>
-<script src="js/data.js?v=49"></script>
-<script src="js/artifacts.js?v=49"></script>
-<script src="js/world.js?v=49"></script>
-<script src="js/render.js?v=49"></script>
-<script src="js/render2.js?v=49"></script>
-<script src="js/lighting.js?v=49"></script>
-<script src="js/game.js?v=49"></script>
-<script src="js/systems.js?v=49"></script>
-<script src="js/weapons2.js?v=49"></script>
-<script src="js/mutants3.js?v=49"></script>
-<script src="js/events.js?v=49"></script>
-<script src="js/hazards.js?v=49"></script>
-<script src="js/world2.js?v=49"></script>
-<script src="js/vehicles.js?v=49"></script>
-<script src="js/stages3.js?v=49"></script>
-<script src="js/story.js?v=49"></script>
-<script src="js/meta.js?v=49"></script>
-<script src="js/coop.js?v=49"></script>
-<script src="js/crews.js?v=49"></script>
-<script src="js/crewhq.js?v=49"></script>
-<script src="js/content.js?v=49"></script>
-<script src="js/replay.js?v=49"></script>
-<script src="js/ux.js?v=49"></script>
-<script src="js/saves.js?v=49"></script>
-<script src="js/polish.js?v=49"></script>
-<script src="js/voice.js?v=49"></script>
-<script src="js/i18n_a.js?v=49"></script>
-<script src="js/i18n_b.js?v=49"></script>
-<script src="js/i18n_c.js?v=49"></script>
-<script src="js/i18n.js?v=49"></script>
-<script src="js/guard.js?v=49"></script>
-<script src="js/ui.js?v=49"></script>
+<script src="js/util.js?v=50"></script>
+<script src="js/audio.js?v=50"></script>
+<script src="js/radio.js?v=50"></script>
+<script src="js/ambience.js?v=50"></script>
+<script src="js/data.js?v=50"></script>
+<script src="js/artifacts.js?v=50"></script>
+<script src="js/world.js?v=50"></script>
+<script src="js/render.js?v=50"></script>
+<script src="js/render2.js?v=50"></script>
+<script src="js/lighting.js?v=50"></script>
+<script src="js/game.js?v=50"></script>
+<script src="js/systems.js?v=50"></script>
+<script src="js/weapons2.js?v=50"></script>
+<script src="js/mutants3.js?v=50"></script>
+<script src="js/events.js?v=50"></script>
+<script src="js/hazards.js?v=50"></script>
+<script src="js/world2.js?v=50"></script>
+<script src="js/vehicles.js?v=50"></script>
+<script src="js/stages3.js?v=50"></script>
+<script src="js/story.js?v=50"></script>
+<script src="js/meta.js?v=50"></script>
+<script src="js/coop.js?v=50"></script>
+<script src="js/crews.js?v=50"></script>
+<script src="js/crewhq.js?v=50"></script>
+<script src="js/content.js?v=50"></script>
+<script src="js/replay.js?v=50"></script>
+<script src="js/ux.js?v=50"></script>
+<script src="js/saves.js?v=50"></script>
+<script src="js/polish.js?v=50"></script>
+<script src="js/voice.js?v=50"></script>
+<script src="js/i18n_a.js?v=50"></script>
+<script src="js/i18n_b.js?v=50"></script>
+<script src="js/i18n_c.js?v=50"></script>
+<script src="js/i18n.js?v=50"></script>
+<script src="js/guard.js?v=50"></script>
+<script src="js/ui.js?v=50"></script>
 </body>
 </html>

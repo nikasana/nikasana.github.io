@@ -26,7 +26,7 @@ const CrewHQ = {
     return true;
   },
   cur: null, tab: 'maps',
-  open(id) { this.cur = id; show('crewHQ'); this.build(); },
+  open(id) { this.cur = id; hide('coop'); show('crewHQ'); this.build(); },
   build() {
     const c = Crews.get(this.cur); if (!c) { hide('crewHQ'); return; }
     const t = this.tab;
@@ -102,7 +102,8 @@ addEventListener('DOMContentLoaded', () => {
     <div id="hqTabs" class="hqTabs"><button class="tab" data-hqt="maps">🗺️ MAPS</button><button class="tab" data-hqt="ups">⭐ UPGRADES</button><button class="tab" data-hqt="stats">📊 STATS</button></div>
     <div id="hqBody"></div>`;
   document.body.appendChild(s);
-  $('hqBack').onclick = () => { hide('crewHQ'); if (typeof coUI === 'function') coUI(); };
+  const _os = openScreen; openScreen = function (id) { hide('crewHQ'); return _os(id); };
+  $('hqBack').onclick = () => { hide('crewHQ'); show('coop'); if (typeof coUI === 'function') coUI(); };
   for (const b of s.querySelectorAll('[data-hqt]')) b.onclick = () => { CrewHQ.tab = b.dataset.hqt; CrewHQ.build(); };
   // entry points: a button on every crew card and one in the lobby's crew line
   const _ui = coUI;
