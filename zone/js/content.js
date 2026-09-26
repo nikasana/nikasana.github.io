@@ -204,7 +204,7 @@ killEnemy = function (e, ...a) {
   return r;
 };
 const _ctDash = tryDash;
-tryDash = function () { const was = P.dashT > 0; _ctDash(); if (!was && P.dashT > 0 && G && G.char === 'ghost') { P.inv = Math.max(P.inv, P.dashT + 1); P.ghostFx = 1.2; } };
+tryDash = function () { if (!P || !G || G.title) return _ctDash(); const was = P.dashT > 0; _ctDash(); if (!was && P.dashT > 0 && G && G.char === 'ghost') { P.inv = Math.max(P.inv, P.dashT + 1); P.ghostFx = 1.2; } };
 const _ctW2Up = W2.update.bind(W2);
 W2.update = function (dt) {
   _ctW2Up(dt);

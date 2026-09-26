@@ -21,7 +21,7 @@ const Mastery = {
 };
 
 // ----- Ascension: an endless dial on top of difficulty and pace -----
-function ascLevel() { return Math.max(0, Save.data.asc | 0); }
+function ascLevel() { return 0; } // Ascension was removed; more difficulties and paces replace it
 
 // ----- Apex bosses: kill enough of a mutant and its Apex version starts hunting you -----
 const APEX_KILLS = 150;
@@ -133,14 +133,4 @@ addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ----- main menu: Ascension next to difficulty and pace -----
-  const row = $('diffPaceRow');
-  if (row) {
-    const a = document.createElement('label'); a.id = 'ascRow'; a.innerHTML = 'Ascension <button id="ascM">−</button><b id="ascV"></b><button id="ascP">+</button>';
-    row.appendChild(a);
-    const upd = () => { const v = ascLevel(); $('ascV').textContent = v; a.title = v ? `+${v * 20}% mutant HP, +${v * 15}% damage, +${v * 10}% rubles` : 'Endless extra difficulty on top of everything'; };
-    $('ascM').onclick = () => { Save.data.asc = Math.max(0, ascLevel() - 1); Save.save(); upd(); };
-    $('ascP').onclick = () => { Save.data.asc = ascLevel() + 1; Save.save(); upd(); };
-    upd();
-  }
 });

@@ -716,6 +716,26 @@ Object.assign(UI_TR, {
   '+300 ₽ and an artifact.': U('+300 ₽ და არტეფაქტი.', '+300 ₽ и артефакт.', '+300 ₽ і артефакт.'),
   'An Apex mutant hunts you. Big reward if you bring it down.': U('აპექს-მუტანტი შენზე ნადირობს. დიდი ჯილდო, თუ მოკლავ.', 'Апекс-мутант охотится на тебя. Большая награда, если убьёшь.', 'Апекс-мутант полює на тебе. Велика нагорода, якщо вбʼєш.'),
 });
+// extra difficulties and paces
+Object.assign(UI_TR, {
+  'Doom': U('განწირულება', 'Рок', 'Приреченість'),
+  'Reduction capped at 15%, healing −65%. ×6 rubles.': U('შემცირება მაქს. 15%, მკურნალობა −65%. ×6 რუბლი.', 'Снижение не больше 15%, лечение −65%. ×6 рублей.', 'Зниження не більше 15%, лікування −65%. ×6 рублів.'),
+  'Annihilation': U('განადგურება', 'Аннигиляция', 'Анігіляція'),
+  'Reduction capped at 10%, healing −70%. ×7 rubles.': U('შემცირება მაქს. 10%, მკურნალობა −70%. ×7 რუბლი.', 'Снижение не больше 10%, лечение −70%. ×7 рублей.', 'Зниження не більше 10%, лікування −70%. ×7 рублів.'),
+  'Eternal Night': U('მარადიული ღამე', 'Вечная ночь', 'Вічна ніч'),
+  'Reduction capped at 8%, healing −75%. ×8.5 rubles.': U('შემცირება მაქს. 8%, მკურნალობა −75%. ×8.5 რუბლი.', 'Снижение не больше 8%, лечение −75%. ×8.5 рубля.', 'Зниження не більше 8%, лікування −75%. ×8.5 рубля.'),
+  'Zone God': U('ზონის ღმერთი', 'Бог Зоны', 'Бог Зони'),
+  'Reduction capped at 5%, healing −80%. ×10 rubles.': U('შემცირება მაქს. 5%, მკურნალობა −80%. ×10 რუბლი.', 'Снижение не больше 5%, лечение −80%. ×10 рублей.', 'Зниження не більше 5%, лікування −80%. ×10 рублів.'),
+  'Singularity': U('სინგულარობა', 'Сингулярность', 'Сингулярність'),
+  'No damage reduction, healing −85%. The true end. ×12 rubles.': U('ზიანის შემცირების გარეშე, მკურნალობა −85%. ნამდვილი დასასრული. ×12 რუბლი.', 'Без снижения урона, лечение −85%. Настоящий конец. ×12 рублей.', 'Без зниження шкоди, лікування −85%. Справжній кінець. ×12 рублів.'),
+  'Relentless': U('შეუჩერებელი', 'Неумолимый', 'Невблаганний'),
+  'Doomsday': U('განკითხვის დღე', 'Судный день', 'Судний день'),
+  'Extinction': U('გადაშენება', 'Вымирание', 'Вимирання'),
+  'Event Horizon': U('მოვლენათა ჰორიზონტი', 'Горизонт событий', 'Горизонт подій'),
+  'Beyond': U('მიღმა', 'За гранью', 'За межею'),
+  '+7000% every 10 minutes. Nothing is faster.': U('+7000% ყოველ 10 წუთში. ამაზე სწრაფი არაფერია.', '+7000% каждые 10 минут. Быстрее не бывает.', '+7000% кожні 10 хвилин. Швидше не буває.'),
+  'Applies from your next run.': U('მოქმედებს შემდეგი რბოლიდან.', 'Действует со следующего забега.', 'Діє з наступного забігу.'),
+});
 const UI_PATTERNS = [
   [/^Your skill ×([\d.]+) vs a typical stalker \((\d+) runs\)\. (\d+)% chance to survive 15:00 · typical run ~(\d+:\d\d)$/, U('შენი უნარი ×$1 ჩვეულებრივ სტალკერთან შედარებით ($2 რბოლა). 15:00-მდე გადარჩენის შანსი $3% · ჩვეულებრივი რბოლა ~$4', 'Твой навык ×$1 от обычного сталкера ($2 забегов). Шанс дожить до 15:00: $3% · обычный забег ~$4', 'Твоя навичка ×$1 від звичайного сталкера ($2 забігів). Шанс дожити до 15:00: $3% · звичайний забіг ~$4')],
   [/^Your skill ×([\d.]+) vs a typical stalker \(best time\)\. (\d+)% chance to survive 15:00 · typical run ~(\d+:\d\d)$/, U('შენი უნარი ×$1 (საუკეთესო დრო). 15:00-მდე გადარჩენის შანსი $2% · ჩვეულებრივი რბოლა ~$3', 'Твой навык ×$1 (по лучшему времени). Шанс дожить до 15:00: $2% · обычный забег ~$3', 'Твоя навичка ×$1 (за найкращим часом). Шанс дожити до 15:00: $2% · звичайний забіг ~$3')],
@@ -890,7 +910,7 @@ I18n.trText = function (n) {
   const t = raw.trim(); if (!t || !/[a-z]/i.test(t)) { n._tr = raw; return; }
   n._en = raw; const out = raw.replace(t, this.tc(t)); n._tr = out; if (out !== raw) n.nodeValue = out;
 };
-addEventListener('DOMContentLoaded', () => {
+const i18nObserve = () => {
   const skip = /^(SCRIPT|STYLE|TEXTAREA|INPUT)$/;
   new MutationObserver((ms) => {
     if (I18n.cur === 'en') return;
@@ -903,7 +923,11 @@ addEventListener('DOMContentLoaded', () => {
       }
     }
   }).observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['placeholder', 'title', 'data-tip'] });
-});
+};
+if (document.body) i18nObserve(); else addEventListener('DOMContentLoaded', i18nObserve);
+// safety sweep: catches text created before the language was known (it only fixes leftovers, so nothing flickers)
+const i18nSweep = () => { if (Save.data && I18n.cur !== 'en') try { I18n.dom(document.body); } catch (e) { /* keep going */ } };
+addEventListener('DOMContentLoaded', () => setTimeout(i18nSweep, 0)); addEventListener('load', i18nSweep); setInterval(i18nSweep, 1500);
 // text drawn on the game canvas (labels, prompts, floating texts) is translated too
 {
   const C = CanvasRenderingContext2D.prototype, tr = (s) => (typeof s === 'string' && I18n.cur !== 'en' && /[A-Za-z]{2}/.test(s) ? I18n.tc(s) : s);

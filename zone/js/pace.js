@@ -46,7 +46,7 @@ spawnEnemy = function (id, x, y, o) {
   return e;
 };
 const _paMods = Events.mods.bind(Events);
-Events.mods = function () { const m = _paMods(); const f = paceNow(); if (f !== 1) m.spawn *= Math.min(3.5, Math.sqrt(f)); return m; };
+Events.mods = function () { const m = _paMods(); const f = paceNow(); if (f !== 1) m.spawn *= Math.min(4.5, Math.sqrt(f)); return m; };
 
 // ----- setup screen: the pace picker next to the difficulty, with the forecast -----
 addEventListener('DOMContentLoaded', () => {
@@ -88,6 +88,21 @@ PACES.push(
   { id: 'absolute', icon: '♾️', name: 'Absolute', k: 1.3, desc: '+1300% every 10 minutes. The absolute maximum.' },
 );
 Object.assign(PACE_BASE, { nightmare: 10, hell: 7, apocalypse: 5, oblivion: 3.5, impossible: 2.5 });
+DIFFICULTIES.push(
+  { id: 'doom', icon: '☠️', name: 'Doom', desc: 'Reduction capped at 15%, healing −65%. ×6 rubles.', hp: 11, dmg: 10, spawn: 2.9, boss: 10, regen: 0, rev: 0, xp: 1, rub: 6, hpBonus: 0, drCap: 0.15, healMul: 0.35 },
+  { id: 'annihilation', icon: '💥', name: 'Annihilation', desc: 'Reduction capped at 10%, healing −70%. ×7 rubles.', hp: 15, dmg: 13, spawn: 3.2, boss: 13, regen: 0, rev: 0, xp: 1, rub: 7, hpBonus: 0, drCap: 0.1, healMul: 0.3 },
+  { id: 'eternal', icon: '🌑', name: 'Eternal Night', desc: 'Reduction capped at 8%, healing −75%. ×8.5 rubles.', hp: 20, dmg: 17, spawn: 3.5, boss: 17, regen: 0, rev: 0, xp: 1, rub: 8.5, hpBonus: 0, drCap: 0.08, healMul: 0.25 },
+  { id: 'zonegod', icon: '👁️', name: 'Zone God', desc: 'Reduction capped at 5%, healing −80%. ×10 rubles.', hp: 28, dmg: 23, spawn: 3.8, boss: 23, regen: 0, rev: 0, xp: 1, rub: 10, hpBonus: 0, drCap: 0.05, healMul: 0.2 },
+  { id: 'singularity', icon: '⚫', name: 'Singularity', desc: 'No damage reduction, healing −85%. The true end. ×12 rubles.', hp: 40, dmg: 32, spawn: 4.2, boss: 32, regen: 0, rev: 0, xp: 1, rub: 12, hpBonus: 0, drCap: 0, healMul: 0.15 },
+);
+PACES.push(
+  { id: 'relentless', icon: '⚡', name: 'Relentless', k: 1.8, desc: '+1800% every 10 minutes.' },
+  { id: 'doomsday', icon: '🌪️', name: 'Doomsday', k: 2.5, desc: '+2500% every 10 minutes.' },
+  { id: 'extinction', icon: '🦴', name: 'Extinction', k: 3.5, desc: '+3500% every 10 minutes.' },
+  { id: 'event', icon: '🌀', name: 'Event Horizon', k: 5, desc: '+5000% every 10 minutes.' },
+  { id: 'beyond', icon: '♾️', name: 'Beyond', k: 7, desc: '+7000% every 10 minutes. Nothing is faster.' },
+);
+Object.assign(PACE_BASE, { doom: 1.8, annihilation: 1.3, eternal: 1, zonegod: 0.75, singularity: 0.55 });
 // upgrades can no longer make you nearly immune on the top difficulties: damage reduction is capped and healing is weaker
 const _paHurt = hurtPlayer;
 hurtPlayer = function (d, ...a) {
@@ -149,7 +164,7 @@ const Suggest = {
     if (!r.dead) s = Math.min(s, 0.5); // a win is never 'too hard'
     return Math.max(0, Math.min(1, s));
   },
-  SIGMA: 0.5, GOAL: 15, SURE: 0.95, // 95% chance to survive 15:00 (a typical run then lasts ~30+ min)
+  SIGMA: 0.5, GOAL: 15, SURE: 0.75, // 75% chance to survive 15:00: you win Standard most of the time, not always (a typical run lasts ~21 min)
   // typical player's median survival (minutes) on a setting; Ascension adds HP and damage on top
   med(d, p, a) { return Forecast.median(d, p) / (1 + 0.17 * (a || 0)); },
   // your skill: how long you survive compared with a typical player (recent runs weigh more)
@@ -167,9 +182,9 @@ const Suggest = {
   surv(medMin) { return 1 - Forecast.cdf(this.GOAL, medMin); }, // chance to survive the goal time
   get() {
     const k = this.skill(); if (!k) return null;
-    const need = this.GOAL * Math.exp(1.645 * this.SIGMA); // your median must be this long for 95% at 15:00
+    const need = this.GOAL * Math.exp(0.674 * this.SIGMA); // your median must be this long for 75% at 15:00
     let best = null;
-    for (let a = 0; a <= 60; a++) { // Ascension only once even Impossible + Absolute is too easy for you
+    for (let a = 0; a <= 0; a++) {
       let hardest = Infinity;
       for (const d of DIFFICULTIES) for (const p of PACES) {
         const m = this.med(d.id, p.id, a) * k.s; hardest = Math.min(hardest, m);
@@ -185,7 +200,7 @@ const Suggest = {
   label() { const s = this.get(); return s ? `✨ Suggested: ${s.d.icon} ${s.d.name} – ${s.p.icon} ${s.p.name}${s.a ? ' – Ascension ' + s.a : ''}` : '✨ Suggested: play a run first'; },
   apply() {
     const s = this.get(); if (!s) return;
-    Save.data.diff = s.d.id; Save.data.pace = s.p.id; Save.data.asc = s.a || 0; Save.save(); const av = $('ascV'); if (av) av.textContent = Save.data.asc; Sfx.init(); Sfx.play('quest');
+    Save.data.diff = s.d.id; Save.data.pace = s.p.id; Save.data.asc = 0; Save.save(); Sfx.init(); Sfx.play('quest');
     if (typeof diffTitle === 'function') diffTitle();
     if ($('setup') && $('setup').classList.contains('show')) buildSetup();
     this.refresh();
@@ -201,4 +216,25 @@ addEventListener('DOMContentLoaded', () => {
   const _bst = buildSettings; buildSettings = function (...a) { const r = _bst(...a); const body = $('settingsBody'); if (body && !body.querySelector('.suggestBtn')) { const row = document.createElement('div'); row.className = 'set'; row.innerHTML = '<span>Difficulty & pace</span>'; row.appendChild(Suggest.button()); body.prepend(row); } Suggest.refresh(); return r; };
   const _er = endRun; endRun = function (...a) { const r = _er(...a); Suggest.refresh(); return r; };
   Suggest.refresh();
+});
+
+// ----- the same Difficulty – Pace picker in every menu (Settings, pause menu, co-op lobby) -----
+function diffPacePicker(id) {
+  const w = document.createElement('div'); w.className = 'dpPick'; w.id = id;
+  w.innerHTML = `<label>Difficulty <select class="dpD"></select></label><span class="dash">–</span><label>Pace <select class="dpP"></select></label>`;
+  const fill = () => {
+    const S = Save.data; if (!S) return;
+    w.querySelector('.dpD').innerHTML = DIFFICULTIES.map((d) => `<option value="${d.id}" ${d.id === (S.diff || 'rookie') ? 'selected' : ''}>${d.icon} ${d.name}</option>`).join('');
+    w.querySelector('.dpP').innerHTML = PACES.map((p) => `<option value="${p.id}" ${p.id === (S.pace || 'normal') ? 'selected' : ''}>${p.icon} ${p.name}</option>`).join('');
+  };
+  const sync = () => { fill(); if (typeof diffTitle === 'function') diffTitle(); if ($('setup') && $('setup').classList.contains('show')) buildSetup(); Suggest.refresh(); for (const o of document.querySelectorAll('.dpPick')) if (o !== w && o._fill) o._fill(); };
+  w.querySelector('.dpD').onchange = (e) => { Save.data.diff = e.target.value; Save.save(); if (CO && CO.role === 'host' && CO.settings && $('coDiff')) { CO.settings.diff = e.target.value; $('coDiff').value = e.target.value; $('coDiff').onchange && $('coDiff').onchange(); } sync(); };
+  w.querySelector('.dpP').onchange = (e) => { Save.data.pace = e.target.value; Save.save(); sync(); };
+  w._fill = fill; fill(); return w;
+}
+addEventListener('DOMContentLoaded', () => {
+  const _bs3 = buildSettings; buildSettings = function (...a) { const r = _bs3(...a); const body = $('settingsBody'); if (body && !$('dpSettings')) body.prepend(diffPacePicker('dpSettings')); else if ($('dpSettings')) $('dpSettings')._fill(); return r; };
+  const pz = $('pause'); if (pz) { const act = pz.querySelector('.actions'); const pk = diffPacePicker('dpPause'); const note = document.createElement('small'); note.className = 'dim dpNote'; note.textContent = 'Applies from your next run.'; if (act) { act.before(pk); pk.after(note); } }
+  const _tp = togglePause; togglePause = function (...a) { const r = _tp(...a); if ($('dpPause')) $('dpPause')._fill(); return r; };
+  const _cl = coLobbyUI; coLobbyUI = function (...a) { const r = _cl(...a); const box = $('coSetEdit') || $('coLobby'); if (box && !$('dpCoop')) box.appendChild(diffPacePicker('dpCoop')); else if ($('dpCoop')) $('dpCoop')._fill(); return r; };
 });
