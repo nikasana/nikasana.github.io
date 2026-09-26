@@ -113,7 +113,7 @@ function render(title = false) {
     else if (it.t === 6) drawPoiChest(o);
   }
   for (const a of World.anomalies) if (a.x > x0 - a.r && a.x < x1 + a.r && a.y > y0 - 150 && a.y < y1 + a.r) drawAnomalyTop(a);
-  if (!title) { drawHazardsTop(x0, y0, x1, y1); drawW2Top(x0, y0, x1, y1); drawStory(x0, y0, x1, y1); drawVehPrompt(); drawPlayerFx(); }
+  if (!title) { drawHazardsTop(x0, y0, x1, y1); drawW2Top(x0, y0, x1, y1); drawStory(x0, y0, x1, y1); drawPartner(); drawVehPrompt(); drawPlayerFx(); }
   // bullets
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
   for (const b of G.bullets) {
