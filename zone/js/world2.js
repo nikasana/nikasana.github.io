@@ -579,8 +579,32 @@ drawMinimap = function () {
   for (const t of World.wtowers) if (!t.used) mmx.fillText('🗼', tx(t.x), ty(t.y) + 4);
   if (G.artMarkT > 0) for (const fl of G.artMarks || []) if (fl.art) mmx.fillText('💎', tx(fl.art.x), ty(fl.art.y) + 4);
   if (W2.train && W2.train.warn <= 0) { const [x, y] = W2.railPos(W2.train.r, W2.train.s); mmx.fillText('🚂', tx(x), ty(y) + 4); }
+  if (Save.set.mmArrows !== false) mmArrows(S, span);
 };
 });
+
+// ----- minimap arrows: each kind of target sits on its own ring so they are easy to tell apart -----
+function mmArrows(S, span) {
+  const c = S / 2, far = (o) => dist2(o.x, o.y, P.x, P.y) > (span * 0.45) ** 2;
+  const nearest = (list) => { let b = null, bd = 1e18; for (const o of list) { const d = dist2(o.x, o.y, P.x, P.y); if (d < bd) { bd = d; b = o; } } return b; };
+  const T = [];
+  for (const q of Quests.list.slice(0, 3)) if (q.loc && q.loc.x !== undefined) T.push([q.loc, 0.43, '#ffcf3a', q.icon]);
+  if (Events.cur && Events.cur.loc) T.push([Events.cur.loc, 0.34, '#ff8a3a', EVENTS[Events.cur.id].icon]);
+  const poi = nearest(World.pois.filter((p) => p.state < 2)); if (poi) T.push([poi, 0.25, '#e8c070', poi.icon]);
+  const b = nearest(G.bosses); if (b) T.push([b, 0.18, '#ff3a2a', '💀']);
+  else if (G.em && G.em.phase !== 'after') { const s = nearestShelter(); if (s) T.push([s, 0.18, '#5f5', '🛡️']); }
+  const z = S / 110; mmx.font = Math.round(13 * z) + 'px sans-serif'; mmx.textAlign = 'center'; mmx.textBaseline = 'middle';
+  for (const [o, rk, col, ic] of T) {
+    if (!far(o)) continue;
+    const a = Math.atan2(o.y - P.y, o.x - P.x), R = S * rk, x = c + Math.cos(a) * R, y = c + Math.sin(a) * R;
+    mmx.save(); mmx.translate(x, y); mmx.rotate(a); mmx.scale(z, z);
+    mmx.fillStyle = col; mmx.strokeStyle = 'rgba(0,0,0,0.8)'; mmx.lineWidth = 1.5;
+    mmx.beginPath(); mmx.moveTo(9, 0); mmx.lineTo(-4, -6); mmx.lineTo(-1, 0); mmx.lineTo(-4, 6); mmx.closePath(); mmx.stroke(); mmx.fill();
+    mmx.restore();
+    const sg = rk > 0.3 ? -1 : 1; mmx.fillText(ic, x + sg * Math.cos(a) * 15 * z, y + sg * Math.sin(a) * 15 * z);
+  }
+  mmx.textBaseline = 'alphabetic';
+}
 
 // ----- satellite crash event -----
 EVENTS.satellite = { name: 'Satellite Crash', icon: '🛰️', minT: 200, w: 1.3, dur: 80, goal: 3, desc: 'Something fell from orbit. Reach the crash site and salvage the core (stand on it for 3s).',
