@@ -64,8 +64,8 @@ addEventListener('DOMContentLoaded', () => {
   const _er = endRun;
   endRun = function (kind, src) {
     const was = G && G.ended, r = _er(kind, src);
-    if (!was && G && !G.tutorial && !G.coGuest && (kind === 'dead' || kind === 'win') && G.t > 20) {
-      const S = Save.data; S.runLog = (S.runLog || []).concat([{ d: G.diff, p: G.pace || 'normal', t: Math.floor(G.t), dead: kind === 'dead' }]).slice(-80); Save.save();
+    if (!was && G && !G.title && !G.tutorial && G.t > 10) { // every run end counts: death, win, quit, co-op
+      const S = Save.data; S.runLog = (S.runLog || []).concat([{ d: G.diff, p: G.pace || 'normal', t: Math.floor(G.t), dead: kind !== 'win', q: kind === 'quit' }]).slice(-80); Save.save();
     }
     return r;
   };
@@ -128,9 +128,14 @@ addEventListener('DOMContentLoaded', () => {
 const Suggest = {
   level(d, p) { return Math.max(0, DIFFICULTIES.findIndex((x) => x.id === d)) + Math.max(0, PACES.findIndex((x) => x.id === p)); },
   get() {
-    const log = (Save.data.runLog || []).slice(-3); if (!log.length) return null;
+    let log = (Save.data.runLog || []).slice(-3);
+    if (!log.length) { // no runs logged yet: fall back to your best time on record
+      const b = Math.max(0, ...Object.values(Save.data.best || {}).map(Number).filter((x) => x > 0));
+      if (!b) return null;
+      log = [{ d: Save.data.diff || 'rookie', p: Save.data.pace || 'normal', t: b, dead: true }];
+    }
     // won / 15:00+ → much harder, 10–15 min → harder, 6–10 min → keep, under 6 min → easier
-    const step = (r) => (!r.dead || r.t >= 900 ? 2 : r.t >= 600 ? 1 : r.t >= 360 ? 0 : -1);
+    const step = (r) => (!r.dead || r.t >= 900 ? 2 : r.t >= 600 ? 1 : r.t >= 360 || r.q ? 0 : -1); // quitting early is not a sign it was too hard
     const last = log[log.length - 1], avg = log.reduce((a, r) => a + step(r), 0) / log.length;
     const L = Math.max(0, Math.min(DIFFICULTIES.length + PACES.length - 2, this.level(last.d, last.p) + Math.round(avg)));
     const di = Math.min(DIFFICULTIES.length - 1, Math.ceil(L / 2)), pi = Math.max(0, Math.min(PACES.length - 1, L - di));
