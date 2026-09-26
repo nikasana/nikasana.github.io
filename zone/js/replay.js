@@ -74,3 +74,20 @@ addEventListener('DOMContentLoaded', () => {
   const _tm = toMenu;
   toMenu = function (...a) { const r = _tm(...a); const t = $('omenTag'); if (t) t.style.display = 'none'; return r; };
 });
+
+// ----- self-update: an old cached copy notices the newer version and reloads itself while you are on the menu -----
+const Updater = {
+  newer: 0,
+  check() { fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then((r) => (r.ok ? r.text() : '')).then((t) => { const v = parseInt(t, 10); if (v > ZB_BUILD) { this.newer = v; this.apply(); } }).catch(() => { /* offline */ }); },
+  idle() { return (!G || G.title) && !CO.role; },
+  apply() {
+    if (!this.newer) return;
+    let tried = null; try { tried = sessionStorage.getItem('zb_upd'); } catch (e) { /* storage blocked */ }
+    if (this.idle() && tried !== String(this.newer)) {
+      try { sessionStorage.setItem('zb_upd', String(this.newer)); } catch (e) { /* storage blocked */ }
+      const q = new URLSearchParams(location.search); q.set('u', this.newer); location.replace(location.pathname + '?' + q.toString());
+    } else if (!this.told) { this.told = 1; let el = $('glitch'); if (!el) { el = document.createElement('div'); el.id = 'glitch'; document.body.appendChild(el); } { el.textContent = '🔄 A new version of the game is out — it installs when you return to the menu.'; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 6000); } }
+  },
+};
+addEventListener('load', () => { setTimeout(() => Updater.check(), 1500); setInterval(() => Updater.check(), 4 * 60 * 1000); });
+addEventListener('DOMContentLoaded', () => { const _tm2 = toMenu; toMenu = function (...a) { const r = _tm2(...a); setTimeout(() => Updater.apply(), 500); return r; }; });

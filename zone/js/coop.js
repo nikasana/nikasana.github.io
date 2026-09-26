@@ -68,7 +68,7 @@ const Net = {
   },
   // reconnect a guest to a (new) host without leaving the running game
   async rejoin(code) {
-    const hello = { t: 'hello', pw: CO.pw, name: coNick(), char: Save.data.char, rejoin: CO.me, inGame: true };
+    const hello = { t: 'hello', build: ZB_BUILD, pw: CO.pw, name: coNick(), char: Save.data.char, rejoin: CO.me, inGame: true };
     if (CO_DEBUG) { const lobby = new BroadcastChannel('zb-lobby-' + code), sid = Math.random().toString(36).slice(2); lobby.onmessage = (m) => { if (m.data !== sid) return; const c = bcConn(code + '-' + sid, 'guest'); Net.bindGuest(c); c.send(hello); }; lobby.postMessage(sid); return; }
     await loadPeer();
     try { CO.peer && CO.peer.destroy(); } catch (e) { /* already gone */ }
@@ -86,7 +86,7 @@ const Net = {
     Net.leave(); CO.closeWhy = null;
     CO.code = code; CO.pw = pw || ''; CO.role = 'guest'; CO.joining = true; coUI();
     let rj = CO.rejoinId || null; try { rj = rj || sessionStorage.getItem('zb_rejoin_' + code); } catch (e) { /* storage blocked */ }
-    const hello = { t: 'hello', pw: CO.pw, name: coNick(), char: Save.data.char, rejoin: rj };
+    const hello = { t: 'hello', build: ZB_BUILD, pw: CO.pw, name: coNick(), char: Save.data.char, rejoin: rj };
     if (CO_DEBUG) {
       const lobby = new BroadcastChannel('zb-lobby-' + CO.code), sid = Math.random().toString(36).slice(2);
       const nf = setTimeout(() => { if (CO.joining && !CO.conn && CO.code === code) { CO.joining = false; coUI(); coStatus('⚠️ Room ' + code + ' not found. Is the host still waiting?'); if (CO.onJoinFail) { const f = CO.onJoinFail; CO.onJoinFail = null; f(true); } } }, 1500);
@@ -140,6 +140,7 @@ function coLobbyMsg() { return { t: 'lobby', players: [...CO.players.values()].m
 const Coop = {
   // ----- lobby (host) -----
   hello(c, m) {
+    if (m.build !== ZB_BUILD) { c.send({ t: 'deny', why: 'Different game versions: you have ' + (m.build ? 'v' + m.build : 'an older one') + ', the host has v' + ZB_BUILD + '. Both refresh the page (it updates itself), then join again.' }); setTimeout(() => c.close(), 300); return; }
     if (CO.pw && m.pw !== CO.pw) { c.send({ t: 'deny', why: 'Wrong password.' }); setTimeout(() => c.close(), 300); return; }
     let pid = m.rejoin && CO.players.has(m.rejoin) && m.rejoin !== 'h' ? m.rejoin : null;
     if (pid && CO.conns.has(pid) && CO.conns.get(pid) !== c) { const old = CO.conns.get(pid); old.pid = null; try { old.close(); } catch (e) { /* already closed */ } } // same player back after a refresh: drop the stale connection
@@ -471,7 +472,7 @@ function coUI() {
 function coLobbyUI() {
   if (!$('coLobby') || CO.active) return;
   const host = CO.role === 'host', S = CO.settings || coDefaultSettings(), me = CO.players.get(CO.me);
-  $('coCodeTxt').textContent = 'ROOM ' + CO.code; $('coLinkRow').style.display = host ? '' : 'none'; if (host) $('coLink').value = coLink();
+  $('coCodeTxt').textContent = 'ROOM ' + CO.code; $('coLinkRow').style.display = ''; $('coLink').value = coLink();
   const slots = [...CO.players.values()];
   let h = '';
   for (let i = 0; i < CO_MAX; i++) {

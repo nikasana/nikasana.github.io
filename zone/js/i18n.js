@@ -93,13 +93,17 @@ const I18n = {
   // translate visible UI text (keeps the English original on each text node)
   dom(root) {
     if (!root || !this.dict) return;
-    const L = this.cur, w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.parentNode && /^(SCRIPT|STYLE|TEXTAREA|OPTION)$/.test(n.parentNode.nodeName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
+    const L = this.cur, w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.parentNode && /^(SCRIPT|STYLE|TEXTAREA)$/.test(n.parentNode.nodeName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
     let n; while ((n = w.nextNode())) {
       const raw = n.nodeValue, t = raw.trim(); if (!t || !/[a-z]/i.test(t) && n._en === undefined) continue;
       if (n._en !== undefined && n._tr !== raw) n._en = undefined; // the game rewrote this text
       if (n._en === undefined) { if (!/[a-z]/i.test(t)) continue; n._en = raw; }
       const src = n._en.trim(), out = L === 'en' ? src : this.t(src, L);
       const v = n._en.replace(src, out); if (v !== raw) n.nodeValue = v; n._tr = n.nodeValue;
+    }
+    for (const el of root.querySelectorAll ? root.querySelectorAll('[placeholder]') : []) { // input hints too
+      if (el.dataset.enPh === undefined) el.dataset.enPh = el.placeholder;
+      const en = el.dataset.enPh, out = L === 'en' ? en : this.t(en, L); if (el.placeholder !== out) el.placeholder = out;
     }
   },
 };
@@ -231,10 +235,40 @@ Object.assign(UI_TR, {
 // crews: fixed rooms and shared maps
 Object.assign(UI_TR, {
   '🗣️ Voices': U('🗣️ ხმები', '🗣️ Голоса', '🗣️ Голоси'),
-  '🔗 JOIN': U('🔗 შესვლა', '🔗 ВОЙТИ', '🔗 УВІЙТИ'), '🏠 HOST': U('🏠 ჰოსტი', '🏠 СОЗДАТЬ', '🏠 СТВОРИТИ'),
+  '🔗 JOIN': U('🔗 შესვლა', '🔗 ВОЙТИ', '🔗 УВІЙТИ'), '🏠 HOST': U('🏠 ჰოსტი', '🏠 ХОСТ', '🏠 ХОСТ'),
   'Saved on every teammate\'s device. Next time: one of you presses 🏠 HOST on the crew, the others press 🔗 JOIN.': U('შენახულია ყველა თანაგუნდელის მოწყობილობაზე. შემდეგ ჯერზე: ერთი დააჭერს 🏠 ჰოსტს, დანარჩენები — 🔗 შესვლას.', 'Сохранено у каждого участника. В следующий раз: один жмёт 🏠 СОЗДАТЬ у отряда, остальные — 🔗 ВОЙТИ.', 'Збережено в кожного учасника. Наступного разу: один тисне 🏠 СТВОРИТИ, решта — 🔗 УВІЙТИ.'),
 });
+// co-op screen, lobby and statuses
+Object.assign(UI_TR, {
+  'Stalker name': U('სტალკერის სახელი', 'Имя сталкера', 'Ім\'я сталкера'), 'New crew name': U('ახალი რაზმის სახელი', 'Название нового отряда', 'Назва нового загону'), 'leave empty for none': U('ცარიელი — პაროლის გარეშე', 'пусто — без пароля', 'порожньо — без пароля'),
+  'ROOM CODE': U('ოთახის კოდი', 'КОД КОМНАТЫ', 'КОД КІМНАТИ'), 'password (if any)': U('პაროლი (თუ არის)', 'пароль (если есть)', 'пароль (якщо є)'),
+  'You left the room.': U('ოთახი დატოვე.', 'Ты вышел из комнаты.', 'Ти вийшов з кімнати.'), 'Enter the 5-letter room code.': U('შეიყვანე 5-ასოიანი ოთახის კოდი.', 'Введи 5-значный код комнаты.', 'Введи 5-значний код кімнати.'),
+  '⏳ Creating room…': U('⏳ ოთახი იქმნება…', '⏳ Создаю комнату…', '⏳ Створюю кімнату…'), '⚠️ Lost the connection to the host. Press JOIN to try again.': U('⚠️ ჰოსტთან კავშირი გაწყდა. დააჭირე შესვლას ხელახლა.', '⚠️ Связь с хостом потеряна. Нажми ВОЙТИ ещё раз.', '⚠️ Зв\'язок із хостом втрачено. Натисни УВІЙТИ ще раз.'),
+  '📋 Link copied! Send it to your friends.': U('📋 ბმული დაკოპირდა! გაუგზავნე მეგობრებს.', '📋 Ссылка скопирована! Отправь её друзьям.', '📋 Посилання скопійовано! Надішли його друзям.'), '📋 Link copied!': U('📋 ბმული დაკოპირდა!', '📋 Ссылка скопирована!', '📋 Посилання скопійовано!'),
+  'Co-op uses a free public connection service (PeerJS) to introduce the browsers, then plays directly between them. Some strict networks can block it.': U('კოოპი იყენებს უფასო საჯარო სერვისს (PeerJS) ბრაუზერების დასაკავშირებლად, შემდეგ თამაში პირდაპირ მიდის. ზოგიერთმა მკაცრმა ქსელმა შეიძლება დაბლოკოს.', 'Кооператив использует бесплатный публичный сервис (PeerJS), чтобы познакомить браузеры, дальше игра идёт напрямую. Некоторые строгие сети могут это блокировать.', 'Кооператив використовує безкоштовний публічний сервіс (PeerJS), щоб познайомити браузери, далі гра йде напряму. Деякі суворі мережі можуть це блокувати.'),
+  'Your name': U('შენი სახელი', 'Твоё имя', 'Твоє ім\'я'), 'Your stalker': U('შენი სტალკერი', 'Твой сталкер', 'Твій сталкер'), 'Password (optional)': U('პაროლი (არასავალდებულო)', 'Пароль (необязательно)', 'Пароль (необов\'язково)'), 'Stage': U('ეტაპი', 'Локация', 'Локація'), 'Start point': U('საწყისი წერტილი', 'Точка старта', 'Точка старту'), 'Difficulty': U('სირთულე', 'Сложность', 'Складність'), 'Crew': U('რაზმი', 'Отряд', 'Загін'),
+  'HOST A ROOM': U('ოთახის შექმნა', 'СОЗДАТЬ КОМНАТУ', 'СТВОРИТИ КІМНАТУ'), 'JOIN A FRIEND': U('მეგობართან შესვლა', 'ПРИСОЕДИНИТЬСЯ К ДРУГУ', 'ПРИЄДНАТИСЯ ДО ДРУГА'), '🏠 CREATE ROOM': U('🏠 ოთახის შექმნა', '🏠 СОЗДАТЬ КОМНАТУ', '🏠 СТВОРИТИ КІМНАТУ'), '📋 COPY LINK': U('📋 ბმულის კოპირება', '📋 КОПИРОВАТЬ ССЫЛКУ', '📋 КОПІЮВАТИ ПОСИЛАННЯ'), '🚪 LEAVE ROOM': U('🚪 ოთახიდან გასვლა', '🚪 ВЫЙТИ ИЗ КОМНАТЫ', '🚪 ВИЙТИ З КІМНАТИ'),
+  '👍 I\'M READY': U('👍 მზად ვარ', '👍 Я ГОТОВ', '👍 Я ГОТОВИЙ'), '✅ READY (tap to cancel)': U('✅ მზად (დააჭირე გასაუქმებლად)', '✅ ГОТОВ (нажми, чтобы отменить)', '✅ ГОТОВИЙ (натисни, щоб скасувати)'), '✅ READY': U('✅ მზად', '✅ ГОТОВ', '✅ ГОТОВИЙ'),
+  '⏳ WAITING FOR PLAYERS…': U('⏳ მოთამაშეებს ველოდებით…', '⏳ ЖДЁМ ИГРОКОВ…', '⏳ ЧЕКАЄМО ГРАВЦІВ…'), '⏳ WAITING FOR EVERYONE TO BE READY': U('⏳ ველოდებით, სანამ ყველა მზად იქნება', '⏳ ЖДЁМ ГОТОВНОСТИ ВСЕХ', '⏳ ЧЕКАЄМО ГОТОВНОСТІ ВСІХ'),
+  'Pick your stalker, then press READY.': U('აირჩიე სტალკერი და დააჭირე „მზად ვარ“.', 'Выбери сталкера и нажми «Я ГОТОВ».', 'Обери сталкера й натисни «Я ГОТОВИЙ».'), 'Waiting for the host to start…': U('ველოდებით ჰოსტს დასაწყებად…', 'Ждём, пока хост начнёт…', 'Чекаємо, поки хост почне…'),
+  'Open slot': U('თავისუფალი ადგილი', 'Свободное место', 'Вільне місце'), 'send the link to a friend': U('გაუგზავნე ბმული მეგობარს', 'отправь ссылку другу', 'надішли посилання другу'), 'Wrong password.': U('არასწორი პაროლი.', 'Неверный пароль.', 'Невірний пароль.'),
+  'Reconnecting to the new host…': U('ახალ ჰოსტთან ხელახლა დაკავშირება…', 'Переподключаюсь к новому хосту…', 'Перепідключаюся до нового хоста…'), 'The host left. The run continues with you in charge.': U('ჰოსტი წავიდა. რბოლა შენი ხელმძღვანელობით გრძელდება.', 'Хост ушёл. Забег продолжается, теперь главный ты.', 'Хост пішов. Забіг триває, тепер головний ти.'),
+  '⚡ Quick match (no crew)': U('⚡ სწრაფი თამაში (რაზმის გარეშე)', '⚡ Быстрая игра (без отряда)', '⚡ Швидка гра (без загону)'), '⚡ Quick match: no crew progress is saved': U('⚡ სწრაფი თამაში: რაზმის პროგრესი არ ინახება', '⚡ Быстрая игра: прогресс отряда не сохраняется', '⚡ Швидка гра: прогрес загону не зберігається'),
+  '⏳ not ready': U('⏳ არ არის მზად', '⏳ не готов', '⏳ не готовий'), '(you)': U('(შენ)', '(ты)', '(ти)'),
+  '➕ NEW CREW': U('➕ ახალი რაზმი', '➕ НОВЫЙ ОТРЯД', '➕ НОВИЙ ЗАГІН'), '🔄 A new version of the game is out — it installs when you return to the menu.': U('🔄 თამაშის ახალი ვერსია გამოვიდა — დაყენდება მენიუში დაბრუნებისას.', '🔄 Вышла новая версия игры — она установится, когда вернёшься в меню.', '🔄 Вийшла нова версія гри — вона встановиться, коли повернешся в меню.'),
+});
 const UI_PATTERNS = [
+  [/^(.+) \(you\)$/, U('$1 (შენ)', '$1 (ты)', '$1 (ти)')],
+  [/^🛡️ Crew (.+) · level (\d+) · \+(\d+)% damage & XP bonus · 🗺️ (\d+)\/(\d+) maps unlocked together · room (\w+)$/, U('🛡️ რაზმი $1 · დონე $2 · +$3% ზიანი და გამოცდილება · 🗺️ $4/$5 რუკა ერთად · ოთახი $6', '🛡️ Отряд $1 · уровень $2 · +$3% к урону и опыту · 🗺️ $4/$5 карт открыто вместе · комната $6', '🛡️ Загін $1 · рівень $2 · +$3% до шкоди й досвіду · 🗺️ $4/$5 мап відкрито разом · кімната $6')],
+  [/^ROOM (\w+)$/, U('ოთახი $1', 'КОМНАТА $1', 'КІМНАТА $1')],
+  [/^▶ START \((\d+) players\)$/, U('▶ დაწყება ($1 მოთამაშე)', '▶ СТАРТ ($1 игрока)', '▶ СТАРТ ($1 гравці)')],
+  [/^(\d+)\/(\d+) in the room\. Everyone presses READY, then you START\.$/, U('ოთახში $1/$2. ყველა აჭერს „მზად ვარ“, შემდეგ შენ იწყებ.', 'В комнате $1/$2. Все жмут «ГОТОВ», потом ты жмёшь СТАРТ.', 'У кімнаті $1/$2. Усі тиснуть «ГОТОВИЙ», потім ти тиснеш СТАРТ.')],
+  [/^Send the link to your friends\. Up to (\d+) players\.$/, U('გაუგზავნე ბმული მეგობრებს. მაქსიმუმ $1 მოთამაშე.', 'Отправь ссылку друзьям. До $1 игроков.', 'Надішли посилання друзям. До $1 гравців.')],
+  [/^⚠️ Room (\w+) not found\. Is the host still waiting\?$/, U('⚠️ ოთახი $1 ვერ მოიძებნა. ჰოსტი ჯერ კიდევ ელოდება?', '⚠️ Комната $1 не найдена. Хост ещё ждёт?', '⚠️ Кімнату $1 не знайдено. Хост ще чекає?')],
+  [/^⚠️ Could not reach room (\w+)\. .*$/, U('⚠️ ოთახთან $1 დაკავშირება ვერ მოხერხდა. შეამოწმე კოდი და სცადე ხელახლა.', '⚠️ Не удалось связаться с комнатой $1. Проверь код и попробуй снова.', '⚠️ Не вдалося зв\'язатися з кімнатою $1. Перевір код і спробуй знову.')],
+  [/^⛔ The room is full \((\d+)\/(\d+)\)\.$/, U('⛔ ოთახი სავსეა ($1/$2).', '⛔ Комната заполнена ($1/$2).', '⛔ Кімната заповнена ($1/$2).')],
+  [/^⛔ Different game versions: you have (.+), the host has (v\d+)\. .*$/, U('⛔ თამაშის სხვადასხვა ვერსია: შენ — $1, ჰოსტს — $2. ორივემ განაახლეთ გვერდი და ხელახლა შედით.', '⛔ Разные версии игры: у тебя $1, у хоста $2. Обновите страницу оба и зайдите снова.', '⛔ Різні версії гри: у тебе $1, у хоста $2. Оновіть сторінку обидва й зайдіть знову.')],
+  [/^⛔ Wrong password\.$/, U('⛔ არასწორი პაროლი.', '⛔ Неверный пароль.', '⛔ Невірний пароль.')],
   [/^(.+) · ☠ (.+) in (\d+:\d\d)$/, U('$1 · ☠ $2 $3-ში', '$1 · ☠ $2 через $3', '$1 · ☠ $2 через $3')],
   [/^⏳ Connecting to room (\w+)… \(try (\d+)\)$/, U('⏳ ოთახთან დაკავშირება $1… (ცდა $2)', '⏳ Подключение к комнате $1… (попытка $2)', '⏳ Підключення до кімнати $1… (спроба $2)')],
   [/^⏳ Connecting to the server… \(try (\d+)\/5\)$/, U('⏳ სერვერთან დაკავშირება… (ცდა $1/5)', '⏳ Подключение к серверу… (попытка $1/5)', '⏳ Підключення до сервера… (спроба $1/5)')],
@@ -314,4 +348,14 @@ setInterval(() => {
 addEventListener('DOMContentLoaded', () => {
   const _st = setText;
   setText = function (id, v) { if (I18n.cur !== 'en' && typeof v === 'string' && /\p{L}/u.test(v)) { try { v = I18n.t(v); } catch (e) { /* keep english */ } } return _st(id, v); };
+});
+
+// the co-op lobby redraws itself every second: translate right after each redraw
+addEventListener('DOMContentLoaded', () => {
+  const tr = () => { if (I18n.cur !== 'en' && $('coop')) try { I18n.dom($('coop')); } catch (e) { /* keep english */ } };
+  for (const name of ['coLobbyUI', 'coUI', 'coStatus']) {
+    const f = window[name]; if (typeof f !== 'function') continue;
+    const w = function (...a) { const r = f.apply(this, a); tr(); return r; };
+    try { window[name] = w; } catch (e) { /* not replaceable */ }
+  }
 });

@@ -46,21 +46,25 @@ const Crews = {
 // every crew has its own fixed room: the same code on every teammate's device
 function crewCode(c) { const A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let h = 2166136261; for (const ch of c.id) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; } let s = ''; for (let i = 0; i < 5; i++) { s += A[h % A.length]; h = Math.floor(h / A.length) + (i + 1) * 7919; } return s; }
 // host the crew's room; if a teammate already hosts it, join them instead
-async function crewHost(c) {
+async function crewHost(c, again = true) {
   CO.crewId = c.id; CO.pw = '';
   coStatus('⏳ Opening the room of crew ' + c.name + '…');
   try { await Net.host(crewCode(c)); coUI(); }
-  catch (e) { if (e && e.type === 'taken') { coStatus('👥 A teammate is already hosting ' + c.name + ' — joining them…'); crewJoin(c); } else coStatus('⚠️ ' + ((e && e.message) || e)); }
+  catch (e) { if (e && e.type === 'taken') { coStatus('👥 A teammate is already hosting ' + c.name + ' — joining them…'); crewJoin(c, again); } else coStatus('⚠️ ' + ((e && e.message) || e)); }
 }
-function crewJoin(c) {
-  CO.onJoinFail = (missing) => { if (missing) coStatus('Nobody is hosting ' + c.name + ' yet. Press 🏠 HOST to open the crew room — teammates then press 🔗 JOIN.'); };
+function crewJoin(c, rehost) {
+  // the room code can stay reserved for a few seconds after its host left: then host it ourselves
+  CO.onJoinFail = (missing) => { if (missing && rehost) { setTimeout(() => crewHost(c, false), 2500); return; } if (missing) coStatus('Nobody is hosting ' + c.name + ' yet. Press 🏠 HOST to open the crew room — teammates then press 🔗 JOIN.'); };
   coStatus('⏳ Looking for crew ' + c.name + '…');
   Net.join(crewCode(c), '');
 }
+const CREW_W = { runs: ['რბოლა', 'забегов', 'забігів'], wins: ['მოგება', 'побед', 'перемог'], maps: ['რუკა', 'карт', 'мап'], room: ['ოთახი', 'комната', 'кімната'], none: ['ჯერ რბოლა არ ყოფილა', 'ещё не играли', 'ще не грали'] };
+function cw(k, en) { const L = typeof I18n !== 'undefined' ? I18n.cur : 'en', i = ['ka', 'ru', 'uk'].indexOf(L); return i < 0 ? en : CREW_W[k][i]; }
+function crewLink(c) { return location.origin + location.pathname + '?join=' + crewCode(c) + (CO_DEBUG ? '&coopdebug=1' : ''); }
 function crewCard(c, btns) {
   const st = (c.stages || []).map((id) => (STAGES.find((s) => s.id === id) || {}).icon || '').join(' ');
   const need = Crews.xpNeed(c.level), when = new Date(c.last || c.created).toLocaleDateString([], { month: 'short', day: 'numeric' });
-  return `<div class="runRow crew"><div class="pi">🛡️</div><div class="runInfo"><b>${c.name} · LV ${c.level}</b><small>🗺️ ${(c.stages || []).length}/${STAGES.length} maps ${st} · room ${crewCode(c)} · ${c.runs} runs · ${c.wins} wins · ${(c.members || []).map((m) => m.name).join(', ') || 'no runs yet'} · ${when}</small><i class="bar"><i style="width:${Math.min(100, (c.xp / need) * 100)}%"></i></i></div>${btns}</div>`;
+  return `<div class="runRow crew"><div class="pi">🛡️</div><div class="runInfo"><b>${c.name} · LV ${c.level}</b><small>🗺️ ${(c.stages || []).length}/${STAGES.length} ${cw('maps', 'maps')} ${st} · ${c.runs} ${cw('runs', 'runs')} · ${c.wins} ${cw('wins', 'wins')} · ${(c.members || []).map((m) => m.name).join(', ') || cw('none', 'no runs yet')} · ${when}</small><span class="crewLink"><code>${cw('room', 'room')} ${crewCode(c)}</code><input readonly value="${crewLink(c)}"><button class="big ghost small" data-crewcopy="${c.id}">📋</button></span><i class="bar"><i style="width:${Math.min(100, (c.xp / need) * 100)}%"></i></i></div>${btns}</div>`;
 }
 
 addEventListener('DOMContentLoaded', () => {
@@ -71,12 +75,13 @@ addEventListener('DOMContentLoaded', () => {
     const list = Crews.all();
     $('crewList').innerHTML = list.length ? list.map((c) => crewCard(c, `<button class="big" data-crewhost="${c.id}">🏠 HOST</button><button class="big" data-crewjoin="${c.id}">🔗 JOIN</button><button class="big ghost" data-crewdel="${c.id}">🗑</button>`)).join('') : '<p class="dim">No crews yet. Create one, or join a friend\'s crew: it is saved here automatically.</p>';
     for (const b of document.querySelectorAll('[data-crewhost]')) b.onclick = () => { const c = Crews.get(b.dataset.crewhost); if (c) crewHost(c); };
+    for (const b of document.querySelectorAll('[data-crewcopy]')) b.onclick = () => { const c = Crews.get(b.dataset.crewcopy); if (!c) return; const v = crewLink(c), inp = b.parentNode.querySelector('input'); (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(() => coStatus('📋 Link copied! Send it to your friends.'), () => { inp.select(); document.execCommand('copy'); coStatus('📋 Link copied!'); }); };
     for (const b of document.querySelectorAll('[data-crewjoin]')) b.onclick = () => { const c = Crews.get(b.dataset.crewjoin); if (c) crewJoin(c); };
     for (const b of document.querySelectorAll('[data-crewdel]')) b.onclick = () => { if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'DELETE?'; return; } Crews.remove(b.dataset.crewdel); buildCrews(); };
   };
   $('crewNewBtn').onclick = () => { const c = Crews.create($('crewNew').value.trim()); $('crewNew').value = ''; buildCrews(); crewHost(c); };
   const _coUI = coUI;
-  coUI = function () { _coUI(); buildCrews(); };
+  coUI = function () { _coUI(); buildCrews(); if (typeof Updater !== 'undefined') Updater.apply(); };
   // ----- lobby: crew picker for the host, crew banner for everyone -----
   $('coSlots').insertAdjacentHTML('beforebegin', '<div id="crewBar" class="coSet"></div>');
   $('coSetEdit').insertAdjacentHTML('afterbegin', '<label class="set"><span>Crew</span><select id="crewSel"></select></label>');
@@ -91,7 +96,8 @@ addEventListener('DOMContentLoaded', () => {
     _lui();
     if (!$('coLobby') || CO.active) return;
     const host = CO.role === 'host', c = CO.crew;
-    $('crewBar').innerHTML = c ? `🛡️ Crew <b>${c.name}</b> · level ${c.level} · +${Math.min(25, c.level - 1)}% damage & XP bonus · 🗺️ ${c.stages.length}/${STAGES.length} maps unlocked together · room <b>${crewCode(c)}</b>` : '⚡ Quick match: no crew progress is saved';
+    const Lc = ['ka', 'ru', 'uk'].indexOf(typeof I18n !== 'undefined' ? I18n.cur : 'en'), W = (en, ka, ru, uk) => [ka, ru, uk][Lc] || en;
+    $('crewBar').innerHTML = c ? `🛡️ ${W('Crew', 'რაზმი', 'Отряд', 'Загін')} <b>${c.name}</b> · ${W('level', 'დონე', 'уровень', 'рівень')} ${c.level} · +${Math.min(25, c.level - 1)}% ${W('damage & XP bonus', 'ზიანი და გამოცდილება', 'к урону и опыту', 'до шкоди й досвіду')} · 🗺️ ${c.stages.length}/${STAGES.length} ${W('maps unlocked together', 'რუკა ერთად გახსნილი', 'карт открыто вместе', 'мап відкрито разом')} · ${W('room', 'ოთახი', 'комната', 'кімната')} <b>${crewCode(c)}</b>` : '⚡ Quick match: no crew progress is saved';
     if (host) {
       $('crewSel').innerHTML = '<option value="">⚡ Quick match (no crew)</option>' + Crews.all().map((x) => `<option value="${x.id}" ${x.id === CO.crewId ? 'selected' : ''}>🛡️ ${x.name} · LV ${x.level}</option>`).join('');
       // a crew plays the stages the crew has unlocked
