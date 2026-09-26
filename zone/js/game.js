@@ -36,9 +36,10 @@ const TMP = [], TMP2 = [], TMP3 = [];
 const xpNeed = (l) => Math.floor(5 + l * 5 + Math.pow(l, 1.75));
 const stageDef = () => STAGES.find((s) => s.id === G.stage);
 
-function newGame(stageId, charId, mode, spawnIdx = 0) {
+function newGame(stageId, charId, mode, spawnIdx = 0, seed) {
   const ch = CHARACTERS.find((c) => c.id === charId) || CHARACTERS[0];
-  World.genStage(stageId, (Math.random() * 1e9) | 0, spawnIdx);
+  seed = seed || (Math.random() * 1e9) | 0;
+  World.genStage(stageId, seed, spawnIdx);
   G = {
     t: 0, state: 'play', stage: stageId, char: ch.id, kills: 0, level: 1, xp: 0, xpNeed: xpNeed(1), pendingLv: 0,
     enemies: [], bullets: [], ebullets: [], gems: [], pickups: [], particles: [], texts: [], decals: [], fx: [], throws: [], timers: [],
@@ -46,7 +47,7 @@ function newGame(stageId, charId, mode, spawnIdx = 0) {
     zone: '', arts: 0, dmg: 0, crates: [], lightT: 0, auraT: 0, thunderT: 4, detT: 0, won: false, regionT: 0, fade: 1,
     rubles: 0, questsDone: 0, elites: 0, levelCrates: {}, levelPickups: {}, labsVisited: 0, returnPos: null, healT: 0, healRate: 0,
     lowHpT: 0, streak: 100, bossKills: 0, flowT: 0, rerollsUsed: 0,
-    endless: mode === 'endless', tier: 1, tierT: 900, shotBudget: 5, wave: 0, waveT: 150, waveMut: null, nextBossT: 150, bossN: -1, paidR: 0, paidMin: 0,
+    endless: mode === 'endless', seed, spawnIdx, tier: 1, tierT: 900, shotBudget: 5, wave: 0, waveT: 150, waveMut: null, nextBossT: 150, bossN: -1, paidR: 0, paidMin: 0,
   };
   const M = (id) => Save.meta(id), mod = ch.mod;
   P = {
@@ -1236,7 +1237,10 @@ function goLevel(key, pos) {
   G.enemies = []; G.bosses = [];
   World.enterLevel(key);
   EG.clear();
-  if (World.kind === 'lab' && !World.lab.init) { World.lab.init = true; for (const f of World.fields) spawnArtifact(f); }
+  if (World.kind === 'lab' && !World.lab.init) {
+    World.lab.init = true; for (const f of World.fields) spawnArtifact(f);
+    if ((G.clearedLabs || []).includes(key)) { World.lab.cleared = World.lab.bossSpawned = true; }
+  }
   G.crates = G.levelCrates[key] || World.crateSpots.map((s) => ({ x: s.x, y: s.y, open: 0 }));
   G.pickups = G.levelPickups[key] || [];
   const p = World.kind === 'lab' ? { x: World.lab.start.x, y: World.lab.start.y + 70 } : pos;
@@ -1503,7 +1507,8 @@ function update(dt) {
   updateBullets(dt);
   updatePickups(dt);
   updateFx(dt);
-  Quests.update(dt); Radio.update(dt); Hints.update(dt);
+  Quests.update(dt); Radio.update(dt); Hints.update(dt); Amb.update(dt); RunSave.tick(dt);
+  Music.setTheme(G.bosses.length ? 'boss' : World.kind === 'lab' ? 'lab' : G.stage, G.bosses.length ? hashStr(G.bosses[0].id) % 5 - 2 : 0);
   const art = nearestArtifact();
   if (art && art.d < 1200 * P.detect) {
     G.detT -= dt;

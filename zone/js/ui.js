@@ -502,6 +502,7 @@ function hud(dt) {
   } else $('emission').style.display = 'none';
   const nbT = nextBossTime(), nb = G.endless ? null : BOSS_SCHEDULE[G.bossIdx];
   const wv = `Wave ${G.wave + 1}${G.waveMut ? ' ' + MUTATIONS[G.waveMut].name : ''}${G.endless ? ' · Tier ' + G.tier : ''}`;
+  $('nextEvt').style.display = G.bosses.length ? 'none' : '';
   setText('nextEvt', nbT === null ? wv : `${wv} · ☠ ${nb ? (nb.id === 'final' ? stageDef().final.name : ENEMIES[nb.id].name) : 'Boss'} in ${fmtTime(Math.max(0, nbT - G.t))}`);
   bannerTick(dt);
   if (Save.set.fps) { fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { fpsShow = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; } setText('fps', fpsShow + ' FPS'); } else setText('fps', '');
@@ -547,7 +548,7 @@ function drawDetector() {
 function show(id) { $(id).classList.add('show'); }
 function hide(id) { $(id).classList.remove('show'); }
 function endRun(kind, src) {
-  if (G.ended) return; G.ended = true;
+  if (G.ended) return; G.ended = true; RunSave.clear();
   G.state = 'over';
   const S = Save.data, mins = Math.floor(G.t / 60);
   const loot = Math.floor((G.rubles - G.paidR) * P.rubMul);
@@ -582,7 +583,7 @@ function continueEndless() {
 function winGame() { flash(1); endRun('win'); }
 function togglePause() {
   if (!G || G.title) return;
-  if (G.state === 'play') { G.state = 'pause'; buildPause(); show('pause'); }
+  if (G.state === 'play') { G.state = 'pause'; buildPause(); show('pause'); RunSave.save(); }
   else if (G.state === 'pause') { G.state = 'play'; hide('pause'); }
 }
 function buildPause() {
@@ -636,7 +637,7 @@ function drawBigMap() {
 // ---------- menus ----------
 let setupStage = null, setupChar = null, settingsBack = 'title';
 function menuRubles() { for (const el of document.querySelectorAll('.rubles')) el.textContent = Save.data.rubles + ' ₽'; }
-function openScreen(id) { for (const s of ['title', 'setup', 'bunker', 'settings']) hide(s); show(id); menuRubles(); }
+function openScreen(id) { for (const s of ['title', 'setup', 'bunker', 'settings']) hide(s); show(id); menuRubles(); if (id === 'title') titleContinue(); }
 function buildSetup() {
   const S = Save.data;
   setupStage = setupStage || (S.stages.includes(S.stage) ? S.stage : 'zone');
@@ -680,7 +681,7 @@ function buildSettings() {
   const s = Save.set;
   const slider = (k, label) => `<label class="set"><span>${label}</span><input type="range" min="0" max="1" step="0.05" value="${s[k]}" data-set="${k}"></label>`;
   const tog = (k, label) => `<label class="set"><span>${label}</span><input type="checkbox" ${s[k] ? 'checked' : ''} data-tog="${k}"></label>`;
-  $('settingsBody').innerHTML = slider('master', 'Master volume') + slider('music', 'Music') + slider('sfx', 'Sound effects') +
+  $('settingsBody').innerHTML = slider('master', 'Master volume') + slider('music', 'Music / radio') + slider('sfx', 'Sound effects') + slider('amb', 'Ambience') + slider('voice', 'Radio chatter & UI') +
     tog('shake', 'Screen shake') + tog('numbers', 'Damage numbers') + tog('hints', 'Tutorial hints') + tog('fps', 'Show FPS') +
     `<label class="set"><span>Graphics quality</span><select data-q><option value="high" ${s.quality === 'high' ? 'selected' : ''}>High</option><option value="low" ${s.quality === 'low' ? 'selected' : ''}>Low (faster)</option></select></label>` +
     `<button class="big ghost small" id="resetHints">Replay tutorial hints</button>`;
@@ -689,7 +690,7 @@ function buildSettings() {
   document.querySelector('[data-q]').onchange = (e) => { s.quality = e.target.value; Save.save(); };
   $('resetHints').onclick = () => { Save.data.hints = []; Save.save(); $('resetHints').textContent = 'Hints will show again ✓'; };
 }
-function applySettings() { const s = Save.set; Sfx.vol.master = s.master; Sfx.vol.music = s.music; Sfx.vol.sfx = s.sfx; Sfx.applyVol(); }
+function applySettings() { const s = Save.set; Sfx.vol.master = s.master; Sfx.vol.music = s.music; Sfx.vol.sfx = s.sfx; Sfx.vol.amb = s.amb; Sfx.vol.voice = s.voice; Sfx.applyVol(); }
 
 // ---------- input ----------
 addEventListener('keydown', (e) => {
@@ -697,6 +698,8 @@ addEventListener('keydown', (e) => {
   if (e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') { tryDash(); e.preventDefault(); }
   if (e.code === 'KeyQ') useAbility();
   if (e.code === 'KeyE') cycleActive(1);
+  if (e.code === 'KeyN') { Sfx.init(); FM.tune(1); }
+  if (e.code === 'KeyB') { Sfx.init(); FM.tune(-1); }
   if (e.code === 'Escape' || e.code === 'KeyP') { if (G && G.state === 'map') toggleMap(); else togglePause(); }
   if (e.code === 'KeyM' || e.code === 'Tab') { toggleMap(); e.preventDefault(); }
   if (G && G.state === 'levelup') { if (['Digit1', 'Digit2', 'Digit3'].includes(e.code)) chooseCard(+e.code.slice(5) - 1); if (e.code === 'KeyR') reroll(); }
@@ -732,6 +735,34 @@ $('pauseBtn').addEventListener('click', () => togglePause());
 $('mapBtn').addEventListener('click', () => toggleMap());
 $('mapScreen').addEventListener('click', () => toggleMap());
 $('muteBtn').addEventListener('click', () => { $('muteBtn').textContent = Sfx.toggle() ? '🔇' : '🔊'; });
+let radioBack = null;
+function openRadio() {
+  Sfx.init(); radioBack = G && !G.title && G.state === 'play' ? 'game' : 'menu';
+  if (radioBack === 'game') G.state = 'pause';
+  buildStations(); radioUI(); show('radioPanel');
+}
+function closeRadio() { hide('radioPanel'); if (radioBack === 'game' && G && G.state === 'pause') G.state = 'play'; }
+$('radioBtn').addEventListener('click', openRadio);
+$('radioTitleBtn').addEventListener('click', openRadio);
+$('radioClose').addEventListener('click', closeRadio);
+$('radioPrev').addEventListener('click', () => FM.tune(-1));
+$('radioNext').addEventListener('click', () => FM.tune(1));
+$('radioSkip').addEventListener('click', () => FM.skip());
+$('continueRunBtn').addEventListener('click', () => {
+  Sfx.init(); applySettings();
+  for (const s of ['title', 'setup', 'bunker', 'settings']) hide(s);
+  $('loading').classList.add('show');
+  setTimeout(() => {
+    if (!RunSave.restore()) { $('loading').classList.remove('show'); openScreen('title'); return; }
+    $('loading').classList.remove('show'); $('hud').classList.add('show');
+    if (matchMedia('(pointer: coarse)').matches) $('touchUi').classList.add('show');
+  }, 30);
+});
+function titleContinue() {
+  const d = RunSave.peek(), b = $('continueRunBtn');
+  if (d && d.g) { b.style.display = 'inline-block'; b.textContent = `▶ CONTINUE RUN · ${(STAGES.find((s) => s.id === d.g.stage) || STAGES[0]).name} ${fmtTime(d.g.t)} · LV ${d.g.level}`; }
+  else b.style.display = 'none';
+}
 $('resumeBtn').addEventListener('click', () => togglePause());
 $('pauseSettings').addEventListener('click', () => { settingsBack = 'pause'; hide('pause'); buildSettings(); show('settings'); });
 $('abandonBtn').addEventListener('click', () => endRun('quit'));
@@ -747,6 +778,7 @@ for (const b of document.querySelectorAll('.back')) b.addEventListener('click', 
   openScreen('title');
 });
 $('startBtn').addEventListener('click', () => startGame());
+addEventListener('pagehide', () => { if (G && !G.title) RunSave.save(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && G && G.state === 'play' && !G.title) togglePause(); });
 
 function startGame() {
@@ -790,7 +822,7 @@ function renderTitle(dt) {
 }
 
 // ---------- boot ----------
-Save.load(); applySettings(); buildArtIcons();
+Save.load(); applySettings(); buildArtIcons(); FM.init(); titleContinue(); radioUI();
 resize();
 EG.init();
 World.genStage('zone', 20260926);

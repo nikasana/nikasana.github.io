@@ -84,7 +84,8 @@
   .chip { font-size: 12px; padding: 1px 5px; border: 1px solid var(--c); color: var(--c); background: rgba(0, 0, 0, 0.5); border-radius: 3px; opacity: 0.6; }
   .chip.on1 { opacity: 1; box-shadow: 0 0 8px var(--c); } .chip.on2 { opacity: 1; background: var(--c); color: #111; box-shadow: 0 0 14px var(--c); }
   @keyframes pulse { 50% { filter: brightness(1.5); } }
-  #topMid { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); text-align: center; }
+  #topStack { position: absolute; top: 28px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(520px, 80vw); }
+  #topMid { text-align: center; }
   #timer { font-size: 34px; font-weight: 700; letter-spacing: 0.06em; text-shadow: 0 2px 6px #000; line-height: 1; }
   #kills { font-size: 15px; color: #d8cfae; text-shadow: 0 1px 3px #000; }
   #kills span { margin-left: 8px; color: var(--gold); }
@@ -109,7 +110,7 @@
   #ability > button { width: 24px; height: 44px; background: var(--panel); border: 1px solid var(--line); color: #cfc7a8; font-size: 12px; border-radius: 4px; }
   #abUse { position: relative; width: 84px; height: 84px; background: var(--panel); border: 2px solid var(--line); border-radius: 50%; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
   #ability.ready #abUse { border-color: var(--acc); box-shadow: 0 0 20px rgba(200, 255, 90, 0.5); }
-  #abInfo { display: flex; flex-direction: column; text-shadow: 0 1px 3px #000; max-width: 150px; } #abInfo b { font-size: 14px; color: var(--acc); } #abInfo small { font-size: 12px; color: #cfc7a8; }
+  #abInfo { display: flex; flex-direction: column; text-shadow: 0 1px 3px #000; max-width: 110px; } #abInfo b { font-size: 14px; color: var(--acc); } #abInfo small { font-size: 12px; color: #cfc7a8; }
   .aicon { width: 22px; height: 22px; vertical-align: middle; } .aicon.sm { width: 20px; height: 20px; } .aicon.big { width: 60px; height: 60px; }
   #abIcon .aicon, #abilityIcon .aicon { width: 44px; height: 44px; }
   #artbelt .art { pointer-events: auto; cursor: pointer; border-radius: 4px; }
@@ -119,11 +120,11 @@
   #abFill, #abilityFill { position: absolute; inset: 0; background: rgba(200, 255, 90, 0.2); transform-origin: bottom; transform: scaleY(0); }
   #abIcon { font-size: 28px; position: relative; line-height: 1; } #abCd { font-size: 11px; position: relative; color: var(--acc); }
   #abUse kbd { position: absolute; top: 3px; right: 12px; z-index: 1; }
-  #boss { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); width: min(520px, 80vw); display: none; text-align: center; }
+  #boss { width: 100%; display: none; text-align: center; }
   #bossName { font-size: 18px; letter-spacing: 0.3em; color: #ff6a5a; text-shadow: 0 0 10px #f00, 0 2px 3px #000; }
   #bossBar { height: 12px; background: rgba(0, 0, 0, 0.7); border: 1px solid #ff6a5a55; margin-top: 3px; }
   #bossFill { height: 100%; background: linear-gradient(90deg, #8a0e0e, #ff3a2a); box-shadow: 0 0 12px #ff3a2a; transition: width 0.15s; }
-  #emission { position: absolute; top: 150px; left: 50%; transform: translateX(-50%); display: none; font-size: clamp(16px, 3.4vw, 24px); font-weight: 700; letter-spacing: 0.08em; color: #fff;
+  #emission { display: none; font-size: clamp(16px, 3.4vw, 24px); font-weight: 700; letter-spacing: 0.08em; color: #fff;
     background: rgba(160, 20, 10, 0.75); padding: 6px 16px; border: 1px solid #ff6a5a; animation: blinkbg 0.6s infinite alternate; white-space: nowrap; }
   #emission.safe { background: rgba(20, 110, 40, 0.75); border-color: #7dff8a; animation: none; }
   @keyframes blinkbg { to { background: rgba(90, 10, 5, 0.75); } }
@@ -136,7 +137,7 @@
   #banner.art #bTitle { color: #bfe9ff; text-shadow: 0 0 30px #4af, 0 3px 0 #000; }
   #zoneName { position: absolute; bottom: 22%; left: 50%; transform: translateX(-50%); font-size: clamp(20px, 4vw, 34px); letter-spacing: 0.4em; color: #e8dcb0; opacity: 0; transition: opacity 0.8s; text-shadow: 0 2px 10px #000; white-space: nowrap; }
   #zoneName.show { opacity: 0.9; }
-  #radio { position: absolute; left: 50%; bottom: 18px; transform: translate(-50%, 30px); opacity: 0; transition: 0.35s; width: min(560px, 58vw); background: rgba(10, 16, 10, 0.88); border: 1px solid #3f6a3a; padding: 7px 12px; text-align: left; font-size: 15px; }
+  #radio { position: absolute; left: 50%; bottom: 18px; transform: translate(-50%, 30px); opacity: 0; transition: 0.35s; width: min(440px, 40vw); background: rgba(10, 16, 10, 0.88); border: 1px solid #3f6a3a; padding: 7px 12px; text-align: left; font-size: 15px; }
   #radio.show { opacity: 1; transform: translate(-50%, 0); }
   #radioWho { color: #7dff8a; font-weight: 600; letter-spacing: 0.1em; font-size: 12px; display: block; }
   #radio.monolith #radioWho { color: #c07aff; } #radio.scientist #radioWho { color: #6cc4ff; } #radio.barkeep #radioWho { color: var(--gold); }
@@ -147,6 +148,10 @@
   #btns { position: absolute; right: 14px; top: 196px; display: flex; gap: 6px; pointer-events: auto; }
   #btns button { width: 40px; height: 40px; font-size: 18px; background: var(--panel); border: 1px solid var(--line); color: #fff; border-radius: 6px; }
   #keysHint { position: absolute; right: 14px; bottom: 14px; font-size: 12px; color: #9a947c; text-align: right; text-shadow: 0 1px 2px #000; }
+  #npHud { position: absolute; right: 14px; bottom: 36px; font-size: 12px; color: #cfc7a8; text-shadow: 0 1px 3px #000; max-width: 40vw; text-align: right; }
+  .np { width: min(900px, 100%); text-align: center; color: var(--gold); font-size: 18px; margin-bottom: 4px; }
+  #radioPanel { background: rgba(8, 8, 5, 0.97); z-index: 30; }
+  @media (pointer: coarse) { #npHud { bottom: 120px; right: 8px; font-size: 11px; } }
   #fps { position: absolute; left: 50%; bottom: 4px; font-size: 11px; color: #7dff8a; transform: translateX(-50%); }
 
   /* ---- touch ---- */
@@ -164,8 +169,8 @@
     #minimap { width: 96px; height: 96px; } #mmWrap { right: 8px; top: 14px; } #zoneLbl { font-size: 11px; }
     #btns { top: 136px; right: 8px; } #btns button { width: 34px; height: 34px; font-size: 15px; }
     #hpBox { width: 34vw; left: 8px; } #hpText { font-size: 11px; } #lvl { top: 10px; font-size: 12px; }
-    #timer { font-size: 24px; } #topMid { top: 24px; } #nextEvt { font-size: 10px; max-width: 30vw; }
-    #boss { top: 92px; } #emission { top: 128px; font-size: 13px; } #hint { bottom: 200px; font-size: 13px; }
+    #timer { font-size: 24px; } #topStack { top: 22px; width: 50vw; } #nextEvt { font-size: 10px; max-width: 30vw; }
+    #emission { font-size: 13px; white-space: normal; } #hint { bottom: 200px; font-size: 13px; }
     #quests { top: 180px; right: 8px; width: 42vw; } .q { font-size: 11px; padding: 3px 5px; } .q small { display: none; }
   }
 
@@ -233,12 +238,15 @@
     <div id="artbelt"></div>
     <div id="syn"></div>
   </div>
-  <div id="topMid"><div id="timer">00:00</div><div id="kills">☠ 0</div><div class="rub" style="color:var(--gold);font-size:14px;text-shadow:0 1px 3px #000"><span id="rub">0 ₽</span></div><div id="nextEvt"></div></div>
   <div id="mmWrap"><canvas id="minimap" width="300" height="300"></canvas><div id="zoneLbl"><span id="envIcon"></span><span id="zoneName2"></span></div></div>
-  <div id="btns"><button id="pauseBtn" title="Pause (Esc)">⏸</button><button id="mapBtn" title="Map (M)">🗺</button><button id="muteBtn" title="Sound">🔊</button></div>
+  <div id="btns"><button id="pauseBtn" title="Pause (Esc)">⏸</button><button id="mapBtn" title="Map (M)">🗺</button><button id="muteBtn" title="Sound">🔊</button><button id="radioBtn" title="Radio (N / B to switch)">📻</button></div>
+  <div id="npHud" class="nowPlaying"></div>
   <div id="quests"></div>
+  <div id="topStack">
+  <div id="topMid"><div id="timer">00:00</div><div id="kills">☠ 0</div><div class="rub" style="color:var(--gold);font-size:14px;text-shadow:0 1px 3px #000"><span id="rub">0 ₽</span></div><div id="nextEvt"></div></div>
   <div id="boss"><div id="bossName"></div><div id="bossBar"><div id="bossFill"></div></div></div>
   <div id="emission"><span id="emText"></span></div>
+  </div>
   <div id="hint"><b>💡</b><span id="hintTxt"></span></div>
   <div id="zoneName"></div>
   <div id="banner"><div id="bTitle"></div><div id="bSub"></div></div>
@@ -261,11 +269,14 @@
   <h2>HEART OF THE ZONE</h2>
   <div class="rubles">0 ₽</div>
   <div class="menu" style="margin-top:14px">
+    <button class="big" id="continueRunBtn" style="display:none">▶ CONTINUE RUN</button>
     <button class="big" id="playBtn">PLAY</button>
     <button class="big ghost" id="bunkerBtn">🏚 SIDOROVICH'S BUNKER</button>
+    <button class="big ghost" id="radioTitleBtn">📻 RADIO</button>
     <button class="big ghost" id="settingsBtn">⚙ SETTINGS</button>
   </div>
   <div id="titleStats"></div>
+  <div class="nowPlaying" style="margin-top:8px;color:#8a846c;font-size:13px"></div>
 </div>
 
 <div id="setup" class="screen scroll">
@@ -291,6 +302,14 @@
 <div id="settings" class="screen">
   <div class="hdr" style="width:min(460px,100%)"><button class="back">← BACK</button><h2>SETTINGS</h2><span></span></div>
   <div id="settingsBody"></div>
+</div>
+
+<div id="radioPanel" class="screen scroll">
+  <div class="hdr"><button class="back" id="radioClose">← BACK</button><h2>📻 ZONE RADIO</h2><span></span></div>
+  <div class="np"><span class="nowPlaying"></span></div>
+  <div class="actions" style="margin:6px 0 10px"><button class="big ghost small" id="radioPrev">◀ PREV</button><button class="big ghost small" id="radioSkip">⏭ NEXT SONG</button><button class="big ghost small" id="radioNext">NEXT ▶</button></div>
+  <div class="sect">STATIONS · every station composes endless new songs · keys N / B</div>
+  <div class="grid" id="stationList"></div>
 </div>
 
 <div id="loading" class="screen"><span>ENTERING THE ZONE…</span></div>
@@ -337,16 +356,18 @@
     el.innerHTML = 'Something failed to load: ' + (e.message || 'script error') + ' <button onclick="location.reload(true)" style="margin-left:8px;padding:4px 10px">Reload</button>';
   });
 </script>
-<script src="js/util.js?v=8"></script>
-<script src="js/audio.js?v=8"></script>
-<script src="js/data.js?v=8"></script>
-<script src="js/artifacts.js?v=8"></script>
-<script src="js/world.js?v=8"></script>
-<script src="js/render.js?v=8"></script>
-<script src="js/render2.js?v=8"></script>
-<script src="js/lighting.js?v=8"></script>
-<script src="js/game.js?v=8"></script>
-<script src="js/systems.js?v=8"></script>
-<script src="js/ui.js?v=8"></script>
+<script src="js/util.js?v=10"></script>
+<script src="js/audio.js?v=10"></script>
+<script src="js/radio.js?v=10"></script>
+<script src="js/ambience.js?v=10"></script>
+<script src="js/data.js?v=10"></script>
+<script src="js/artifacts.js?v=10"></script>
+<script src="js/world.js?v=10"></script>
+<script src="js/render.js?v=10"></script>
+<script src="js/render2.js?v=10"></script>
+<script src="js/lighting.js?v=10"></script>
+<script src="js/game.js?v=10"></script>
+<script src="js/systems.js?v=10"></script>
+<script src="js/ui.js?v=10"></script>
 </body>
 </html>

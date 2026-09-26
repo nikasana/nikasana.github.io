@@ -4,7 +4,7 @@ const Save = {
   data: null,
   def() {
     return { rubles: 0, meta: {}, chars: ['rookie'], char: 'rookie', stages: ['zone'], stage: 'zone', best: {}, hints: [], runs: 0, wins: 0,
-      settings: { master: 0.8, music: 0.5, sfx: 0.8, shake: true, numbers: true, quality: 'high', hints: true, fps: false } };
+      settings: { master: 0.8, music: 0.5, sfx: 0.8, amb: 0.7, voice: 0.8, shake: true, numbers: true, quality: 'high', hints: true, fps: false } };
   },
   load() {
     let s = null;
@@ -164,3 +164,46 @@ function strike(x, y, dmg, r, hurtsPlayer) {
   burst(x, y, 14, '200,230,255', 200, { add: true });
   Sfx.play('thunder');
 }
+
+// ---------- save & continue a run (localStorage) ----------
+const RunSave = {
+  KEY: 'zonebonk_run', t: 0,
+  PKEYS: ['hp', 'maxhp', 'dmgMul', 'rateMul', 'areaMul', 'spdMul', 'pickup', 'xpMul', 'dr', 'regen', 'pierce', 'crit', 'thorns', 'dashMul', 'shards', 'lightning', 'aura', 'soul',
+    'luck', 'rerolls', 'revives', 'anomRes', 'psiImmune', 'detect', 'dodge', 'lvlHeal', 'execute', 'bossDmg', 'critMul', 'dropMul', 'rubMul', 'dashDmg', 'medMul', 'adren', 'berserk',
+    'standFirm', 'zapChance', 'lifesteal', 'exChance', 'frostChance', 'hunter', 'actCdMul', 'actPow', 'burnMul', 'lowRegen', 'momentum', 'sprint', 'bioHp', 'actSel', 'face'],
+  GKEYS: ['t', 'stage', 'char', 'endless', 'kills', 'level', 'xp', 'xpNeed', 'pendingLv', 'rubles', 'questsDone', 'elites', 'bossIdx', 'emIdx', 'rushT', 'tier', 'tierT', 'wave', 'waveT',
+    'waveMut', 'nextBossT', 'bossN', 'arts', 'dmg', 'labsVisited', 'paidR', 'paidMin', 'streak', 'bossKills', 'seed', 'spawnIdx', 'won'],
+  has() { try { return !!localStorage.getItem(this.KEY); } catch (e) { return false; } },
+  peek() { try { return JSON.parse(localStorage.getItem(this.KEY)); } catch (e) { return null; } },
+  clear() { try { localStorage.removeItem(this.KEY); } catch (e) { /* storage unavailable */ } },
+  save() {
+    if (!G || G.title || G.ended || G.state === 'over') return;
+    const over = World.levels.over || World.snapshot();
+    const crates = World.cur === 'over' ? G.crates : G.levelCrates.over || [];
+    const pos = World.kind === 'lab' ? G.returnPos || World.start : { x: P.x, y: P.y };
+    const d = { v: 1, g: {}, p: {}, pos, weapons: P.weapons, perks: P.perks, arts: P.arts, actCd: P.actCd, pal: P.pal,
+      fields: over.fields.map((f) => (f.art ? f.art.type : null)), crates: crates.map((c) => (c.open ? 1 : 0)),
+      pois: over.pois.map((p) => (p.state === 2 ? 2 : 0)), lairs: (over.lairs || []).map((l) => (l.dead ? 1 : 0)),
+      labs: Object.keys(World.levels).filter((k) => k.startsWith('lab') && World.levels[k].lab && World.levels[k].lab.cleared) };
+    for (const k of this.GKEYS) d.g[k] = G[k];
+    for (const k of this.PKEYS) d.p[k] = P[k];
+    try { localStorage.setItem(this.KEY, JSON.stringify(d)); } catch (e) { /* storage full or blocked */ }
+  },
+  tick(dt) { this.t -= dt; if (this.t <= 0) { this.t = 15; this.save(); } },
+  restore() {
+    const d = this.peek(); if (!d) return false;
+    newGame(d.g.stage, d.g.char, d.g.endless ? 'endless' : 'standard', d.g.spawnIdx || 0, d.g.seed);
+    for (const k of this.GKEYS) if (d.g[k] !== undefined) G[k] = d.g[k];
+    for (const k of this.PKEYS) if (d.p[k] !== undefined) P[k] = d.p[k];
+    P.weapons = d.weapons; P.perks = d.perks; P.arts = d.arts; P.actCd = d.actCd || {}; if (d.pal) P.pal = d.pal;
+    P.x = d.pos.x; P.y = d.pos.y; World.collide(P); CAM.x = P.x; CAM.y = P.y;
+    World.fields.forEach((f, i) => { const t = d.fields[i]; f.art = t && ARTIFACTS[t] ? { ...f.art, type: t } : null; if (t && !f.art) spawnArtifact(f); });
+    G.crates.forEach((c, i) => { if (d.crates[i]) c.open = 2; });
+    World.pois.forEach((p, i) => { if (d.pois[i] === 2) p.state = 2; });
+    World.lairs.forEach((l, i) => { if (d.lairs[i]) { l.dead = true; World.destroy(l.ob); } });
+    G.clearedLabs = d.labs || [];
+    recomputeTags(); hudBuild();
+    banner('RUN RESTORED', `${fmtTime(G.t)} · level ${G.level}`, 3, 'good', 2);
+    return true;
+  },
+};
