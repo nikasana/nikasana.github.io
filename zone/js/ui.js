@@ -48,6 +48,7 @@ function render(title = false) {
     ctx.beginPath(); ctx.ellipse(p.x, p.y, 230, 150, 0, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
   }
   for (const a of World.anomalies) if (a.x > x0 - a.r && a.x < x1 + a.r && a.y > y0 - a.r && a.y < y1 + a.r) drawAnomalyGround(a);
+  if (!title && G.owned) drawOwned();
   for (const g of G.gems) {
     if (g.x < x0 || g.x > x1 || g.y < y0 || g.y > y1) continue;
     const big = g.v >= 20, mid = g.v >= 5, s = big ? 7 : mid ? 5.5 : 4, c = big ? '#ff6ad5' : mid ? '#6ad0ff' : '#7dff8a';
@@ -101,6 +102,7 @@ function render(title = false) {
       if (vs !== 1) { ctx.save(); ctx.translate(o.x, o.y); ctx.scale(vs, vs); ctx.translate(-o.x, -o.y); ENEMY_DRAW[o.id](o); ctx.restore(); }
       else ENEMY_DRAW[o.id](o);
       FL = false;
+      if (o.frozen && o.stun > 0) { ctx.fillStyle = 'rgba(170,225,255,0.45)'; ctx.beginPath(); ctx.ellipse(o.x, o.y - o.r * 1.2, o.r * 1.3, o.r * 1.5, 0, 0, TAU); ctx.fill(); } else if (o.frozen) o.frozen = 0;
       if (o.burnT > 0 && Math.random() < 0.2) part(o.x + rand(-8, 8), o.y - o.z - 16, { z: 0, vz: 40, g: -20, c: '255,120,30', add: true, s: 3, life: 0.4 });
     }
     else if (it.t === 2) drawPlayer();
@@ -115,6 +117,7 @@ function render(title = false) {
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
   for (const b of G.bullets) {
     if (b.k === 'bolt') continue;
+    if (drawBullet2(b)) continue;
     if (b.rocket) { ctx.fillStyle = '#ffb040'; ctx.beginPath(); ctx.arc(b.x, b.y, 6, 0, TAU); ctx.fill(); continue; }
     ctx.strokeStyle = b.ignite ? 'rgba(255,140,40,0.95)' : b.big ? 'rgba(255,240,180,1)' : 'rgba(255,220,140,0.9)'; ctx.lineWidth = b.r * 0.9;
     ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - b.vx * 0.022, b.y - b.vy * 0.022); ctx.stroke();
@@ -280,8 +283,13 @@ function drawFx() {
         ctx.globalCompositeOperation = 'source-over';
         break;
       }
+      case 'sound':
+        ctx.strokeStyle = `rgba(255,190,90,${k * 0.8})`; ctx.lineWidth = 6;
+        for (const m of [1, 0.75, 0.5]) { ctx.beginPath(); ctx.ellipse(f.x, f.y - 10, f.r * m, f.r * m * 0.62, 0, 0, TAU); ctx.stroke(); }
+        break;
       case 'beam':
         ctx.globalCompositeOperation = 'lighter';
+        if (f.ice) { ctx.strokeStyle = `rgba(160,230,255,${k * 0.7})`; ctx.lineWidth = f.w * 2 * k + 4; ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.x2, f.y2); ctx.stroke(); }
         ctx.strokeStyle = f.psi ? `rgba(200,110,255,${k * 0.7})` : `rgba(90,180,255,${k * 0.6})`; ctx.lineWidth = f.w * 2 * k + 4;
         ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.x2, f.y2); ctx.stroke();
         ctx.strokeStyle = `rgba(240,250,255,${k})`; ctx.lineWidth = f.w * 0.6 * k + 1;
@@ -425,6 +433,7 @@ function drawPickup(p) {
   }
   const y = p.y - 14 - Math.sin(NOW * 4 + p.x) * 3;
   shadow(p.x, p.y, 10, 4, 0.3);
+  if (p.type === 'item') { ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(ITEMS[p.id].icon, p.x, y + 8); return; }
   if (p.type === 'art') { drawArtifact({ x: p.x, y: p.y, type: 'moonlight', t: p.x }, 1); return; }
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   const c = p.type === 'med' ? '120,255,120' : '120,180,255';
@@ -463,6 +472,7 @@ function hudBuild() {
     d.onclick = () => { P.actSel = i; hudBuild(); };
     ab.appendChild(d);
   });
+  itemsUI();
   $('syn').innerHTML = Object.keys(TAGS).filter((k) => P.tags[k] > 0).map((k) => `<span class="chip ${P.syn[k] ? 'on' + P.syn[k] : ''}" style="--c:${TAGS[k].color}" title="${TAGS[k].name}: 3 → ${TAGS[k].b3} · 6 → ${TAGS[k].b6}">${TAGS[k].icon}${P.tags[k]}</span>`).join('');
   const A = sel ? ARTIFACTS[sel] : null;
   $('abIcon').innerHTML = A ? artImg(sel) : '🔒';
@@ -589,7 +599,7 @@ function togglePause() {
 function buildPause() {
   let h = '<h3>Weapons</h3>';
   for (const w of P.weapons) h += `<div class="row">${w.evo ? EVOLUTIONS[w.id].icon + ' ' + EVOLUTIONS[w.id].name + ' <b>★</b>' : WEAPONS[w.id].icon + ' ' + WEAPONS[w.id].name + ' <b>Lv ' + w.lv + '</b>'}</div>`;
-  const evos = P.weapons.filter((w) => !w.evo).map((w) => `${WEAPONS[w.id].icon} max + <span style="color:${ARTIFACTS[EVOLUTIONS[w.id].art].color}">${ARTIFACTS[EVOLUTIONS[w.id].art].name}</span> → ${EVOLUTIONS[w.id].name}`);
+  const evos = P.weapons.filter((w) => !w.evo && EVOLUTIONS[w.id]).map((w) => `${WEAPONS[w.id].icon} max + <span style="color:${ARTIFACTS[EVOLUTIONS[w.id].art].color}">${ARTIFACTS[EVOLUTIONS[w.id].art].name}</span> → ${EVOLUTIONS[w.id].name}`);
   if (evos.length) h += `<div class="row dim">Evolutions: ${evos.join(' · ')}</div>`;
   h += '<h3>Synergies</h3>';
   for (const k in TAGS) h += `<div class="row"><span style="color:${TAGS[k].color}">${TAGS[k].icon} ${TAGS[k].name}</span> <b>${P.tags[k] || 0}</b><div class="dim">3: ${TAGS[k].b3} · 6: ${TAGS[k].b6}</div></div>`;
@@ -697,7 +707,9 @@ addEventListener('keydown', (e) => {
   keys[e.code] = true;
   if (e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') { tryDash(); e.preventDefault(); }
   if (e.code === 'KeyQ') useAbility();
-  if (e.code === 'KeyE') cycleActive(1);
+  if (G && !G.title && G.state === 'play') { const k = { Digit1: 'medkit', Digit2: 'energy', Digit3: 'vodka', Digit4: 'antirad' }[e.code]; if (k) useItem(k); }
+  if (e.code === 'KeyE' || e.code === 'Equal' || e.code === 'NumpadAdd') cycleActive(1);
+  if (e.code === 'Minus' || e.code === 'NumpadSubtract') cycleActive(-1);
   if (e.code === 'KeyN') { Sfx.init(); FM.tune(1); }
   if (e.code === 'KeyB') { Sfx.init(); FM.tune(-1); }
   if (e.code === 'Escape' || e.code === 'KeyP') { if (G && G.state === 'map') toggleMap(); else togglePause(); }

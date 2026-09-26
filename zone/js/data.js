@@ -282,7 +282,7 @@ const HINTS = {
   detector: 'Your detector is beeping: an ARTIFACT is hidden in that anomaly field. Grab it!',
   levelup: 'Pick an upgrade. Card color shows rarity, and rarer cards are stronger.',
   crate: 'Walk into supply crates to loot them.',
-  ability: 'Every artifact has its own power! Press Q to use it, and scroll the mouse wheel or press E to switch artifacts.',
+  ability: 'Every artifact has its own power! Press Q to use it. Switch artifacts with the mouse wheel, E, or the - and + keys.',
   emission: 'Follow the green arrow to a SHELTER bunker, or hide underground in a lab!',
   night: 'Night: it\'s darker and more mutants come out. Your flashlight points where you move.',
   quest: 'Contracts appear on the right. Complete them for rubles to spend in the Bunker.',

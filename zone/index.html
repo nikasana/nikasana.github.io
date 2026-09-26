@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#15130f" />
 <title>ZONEBONK — Heart of the Zone</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=1" />
+<link rel="apple-touch-icon" href="icon.svg?v=1" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -152,6 +154,12 @@
   .np { width: min(900px, 100%); text-align: center; color: var(--gold); font-size: 18px; margin-bottom: 4px; }
   #radioPanel { background: rgba(8, 8, 5, 0.97); z-index: 30; }
   @media (pointer: coarse) { #npHud { bottom: 120px; right: 8px; font-size: 11px; } }
+  #items { display: flex; gap: 4px; margin-top: 6px; pointer-events: auto; }
+  .item { position: relative; width: 34px; height: 34px; background: var(--panel); border: 1px solid rgba(255, 207, 106, 0.4); font-size: 17px; display: flex; align-items: center; justify-content: center; }
+  .item.empty { opacity: 0.35; }
+  .item b { position: absolute; right: 2px; bottom: -1px; font-size: 10px; color: var(--gold); }
+  .item kbd { position: absolute; left: -2px; top: -5px; font-size: 8px; padding: 0 2px; }
+  @media (pointer: coarse) { .item kbd { display: none; } .item { width: 38px; height: 38px; } }
   #fps { position: absolute; left: 50%; bottom: 4px; font-size: 11px; color: #7dff8a; transform: translateX(-50%); }
 
   /* ---- touch ---- */
@@ -237,6 +245,7 @@
     <div id="weapons"></div>
     <div id="artbelt"></div>
     <div id="syn"></div>
+    <div id="items"></div>
   </div>
   <div id="mmWrap"><canvas id="minimap" width="300" height="300"></canvas><div id="zoneLbl"><span id="envIcon"></span><span id="zoneName2"></span></div></div>
   <div id="btns"><button id="pauseBtn" title="Pause (Esc)">⏸</button><button id="mapBtn" title="Map (M)">🗺</button><button id="muteBtn" title="Sound">🔊</button><button id="radioBtn" title="Radio (N / B to switch)">📻</button></div>
@@ -253,7 +262,7 @@
   <div id="detWrap"><div id="detLed"></div><small>ECHO DETECTOR</small><canvas id="detector" width="80" height="80"></canvas><div id="detDist">---</div><small>danger <span id="dangerLvl"></span></small></div>
   <div id="ability"><button id="abPrev" title="Previous artifact (wheel)">◀</button><div id="abUse" title="Use artifact power (Q)"><div id="abFill"></div><kbd>Q</kbd><span id="abIcon">🔒</span><span id="abCd"></span></div><button id="abNext" title="Next artifact (E / wheel)">▶</button><div id="abInfo"><b id="abName"></b><small id="abArt"></small></div></div>
   <div id="radio"><span id="radioWho"></span><span id="radioTxt"></span></div>
-  <div id="keysHint"><kbd>WASD</kbd> move · <kbd>Space</kbd> dash · <kbd>Q</kbd> ability · <kbd>M</kbd> map · <kbd>Esc</kbd> pause</div>
+  <div id="keysHint"><kbd>WASD</kbd> move · <kbd>Space</kbd> dash · <kbd>Q</kbd> ability · <kbd>-</kbd> <kbd>+</kbd> artifact · <kbd>N</kbd> radio · <kbd>M</kbd> map · <kbd>Esc</kbd> pause</div>
   <div id="fps"></div>
 </div>
 
@@ -356,18 +365,19 @@
     el.innerHTML = 'Something failed to load: ' + (e.message || 'script error') + ' <button onclick="location.reload(true)" style="margin-left:8px;padding:4px 10px">Reload</button>';
   });
 </script>
-<script src="js/util.js?v=10"></script>
-<script src="js/audio.js?v=10"></script>
-<script src="js/radio.js?v=10"></script>
-<script src="js/ambience.js?v=10"></script>
-<script src="js/data.js?v=10"></script>
-<script src="js/artifacts.js?v=10"></script>
-<script src="js/world.js?v=10"></script>
-<script src="js/render.js?v=10"></script>
-<script src="js/render2.js?v=10"></script>
-<script src="js/lighting.js?v=10"></script>
-<script src="js/game.js?v=10"></script>
-<script src="js/systems.js?v=10"></script>
-<script src="js/ui.js?v=10"></script>
+<script src="js/util.js?v=11"></script>
+<script src="js/audio.js?v=11"></script>
+<script src="js/radio.js?v=11"></script>
+<script src="js/ambience.js?v=11"></script>
+<script src="js/data.js?v=11"></script>
+<script src="js/artifacts.js?v=11"></script>
+<script src="js/world.js?v=11"></script>
+<script src="js/render.js?v=11"></script>
+<script src="js/render2.js?v=11"></script>
+<script src="js/lighting.js?v=11"></script>
+<script src="js/game.js?v=11"></script>
+<script src="js/systems.js?v=11"></script>
+<script src="js/weapons2.js?v=11"></script>
+<script src="js/ui.js?v=11"></script>
 </body>
 </html>

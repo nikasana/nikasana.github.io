@@ -47,7 +47,7 @@ function newGame(stageId, charId, mode, spawnIdx = 0, seed) {
     zone: '', arts: 0, dmg: 0, crates: [], lightT: 0, auraT: 0, thunderT: 4, detT: 0, won: false, regionT: 0, fade: 1,
     rubles: 0, questsDone: 0, elites: 0, levelCrates: {}, levelPickups: {}, labsVisited: 0, returnPos: null, healT: 0, healRate: 0,
     lowHpT: 0, streak: 100, bossKills: 0, flowT: 0, rerollsUsed: 0,
-    endless: mode === 'endless', seed, spawnIdx, tier: 1, tierT: 900, shotBudget: 5, wave: 0, waveT: 150, waveMut: null, nextBossT: 150, bossN: -1, paidR: 0, paidMin: 0,
+    endless: mode === 'endless', seed, spawnIdx, owned: [], pendingTal: 0, tier: 1, tierT: 900, shotBudget: 5, wave: 0, waveT: 150, waveMut: null, nextBossT: 150, bossN: -1, paidR: 0, paidMin: 0,
   };
   const M = (id) => Save.meta(id), mod = ch.mod;
   P = {
@@ -56,6 +56,7 @@ function newGame(stageId, charId, mode, spawnIdx = 0, seed) {
     dmgMul: 1, rateMul: 1, areaMul: 1, spdMul: 1, pickup: 85, xpMul: 1, dr: 0, regen: 0, pierce: 0, crit: 0, thorns: 0, dashMul: 1,
     shards: 0, lightning: 0, aura: 0, soul: 0, soulAcc: 0, luck: 0, rerolls: 0, revives: 0, anomRes: 0, psiImmune: false, detect: 1,
     weapons: [{ id: ch.weapon, lv: 1, cd: 0.5 }], perks: {}, arts: {}, tags: {}, syn: {}, actSel: 0, actCd: {}, shieldT: 0, dodge: 0, lvlHeal: 0,
+    items: { medkit: 1 }, talents: {}, maxWeapons: 6, buffT: 0, vodkaT: 0, antiradT: 0, lastStand: false, lastStandT: 0, echo: false, basePsi: false,
     execute: 0, bossDmg: 0, critMul: 2, dropMul: 1, rubMul: 1, dashDmg: 0, medMul: 1, adren: 0, adrenT: 0, berserk: 0, standFirm: 0, zapChance: 0,
     lifesteal: 0, lsAcc: 0, exChance: 0, frostChance: 0, hunter: 0, actCdMul: 1, actPow: 0, burnMul: 1, lowRegen: 1, momentum: 0, sprint: 0, hatchT: 0, bioHp: 0,
     pal: { ...PAL_PLAYER, ...ch.pal },
@@ -66,7 +67,7 @@ function newGame(stageId, charId, mode, spawnIdx = 0, seed) {
   G.pendingLv = M('start');
   // character
   P.maxhp += mod.maxhp || 0; P.spdMul += mod.spdMul || 0; P.dr += mod.dr || 0; P.dmgMul += mod.dmgMul || 0; P.luck += mod.luck || 0;
-  P.anomRes = mod.anomRes || 0; P.psiImmune = !!mod.psiImmune; P.detect = mod.detect || 1;
+  P.anomRes = mod.anomRes || 0; P.psiImmune = P.basePsi = !!mod.psiImmune; P.detect = mod.detect || 1;
   P.hp = P.maxhp;
   if (mod.art) { P.arts[mod.art] = 1; ARTIFACTS[mod.art].apply(P); }
   for (const f of World.fields) spawnArtifact(f);
@@ -121,7 +122,7 @@ function hurtEnemy(e, dmg, kx = 0, ky = 0, raw = false, proc = true) {
   if (e.dead) return;
   let crit = false;
   if (!raw) {
-    dmg *= P.dmgMul;
+    dmg *= P.dmgMul * (P.vodkaT > 0 ? 1.2 : 1);
     if (P.execute && e.hp < e.maxhp * 0.3) dmg *= 1 + P.execute;
     if (P.bossDmg && (e.boss || e.mini || e.affix)) dmg *= 1 + P.bossDmg;
     if (P.hunter && !e.boss && !e.mini) dmg *= 1 + P.hunter;
@@ -192,6 +193,7 @@ function killEnemy(e) {
     } else {
       dropGem(e.x, e.y, xp);
       if (Math.random() < 0.012 * P.dropMul) G.pickups.push({ type: 'med', x: e.x, y: e.y, t: 0 });
+      else if (Math.random() < 0.005 * P.dropMul) G.pickups.push({ type: 'item', id: pick(Object.keys(ITEMS)), x: e.x, y: e.y, t: 0 });
       else if (Math.random() < 0.003 * P.dropMul) G.pickups.push({ type: 'magnet', x: e.x, y: e.y, t: 0 });
     }
     G.rubles += 0.5;
@@ -274,6 +276,7 @@ function hurtPlayer(d, src, ignoreInv = false, kind = '') {
   if (!ignoreInv && (P.inv > 0 || P.dashT > 0)) return;
   if (P.shieldT > 0) { if (!ignoreInv) { P.inv = 0.3; text(P.x, P.y - 50, 'BLOCK', '#9fe8ff', false, true); } return; }
   if (!ignoreInv && P.dodge && Math.random() < P.dodge) { P.inv = 0.3; text(P.x, P.y - 50, 'DODGE', '#d0a0ff', false, true); return; }
+  if ((kind === 'anomaly' || kind === 'rad') && P.antiradT > 0) return;
   if (kind === 'anomaly' || kind === 'rad') d *= 1 - P.anomRes;
   d *= 1 - Math.min(0.75, P.dr + (!P.moving ? P.standFirm : 0));
   if (P.adren && !ignoreInv) P.adrenT = 2;
@@ -282,6 +285,7 @@ function hurtPlayer(d, src, ignoreInv = false, kind = '') {
   text(P.x, P.y - 50, '-' + Math.round(d), '#ff5a4a', false, true);
   shake(ignoreInv ? 2 : 6); flash(ignoreInv ? 0.08 : 0.25, '255,30,20'); Sfx.play('hurt');
   if (P.hp < P.maxhp * 0.25 && G.t - G.lowHpT > 30) { G.lowHpT = G.t; Radio.say('lowhp'); }
+  if (P.lastStand && P.hp > 0 && P.hp < P.maxhp * 0.2 && G.t > P.lastStandT) { P.lastStandT = G.t + 60; P.inv = 3; P.shieldT = 3; P.shieldC = '#7dff8a'; banner('LAST STAND', '3 seconds of invulnerability!', 2, 'good', 2); }
   if (P.hp <= 0) {
     if (P.revives > 0) {
       P.revives--; P.hp = P.maxhp * 0.5; P.inv = 2.5;
@@ -1042,11 +1046,11 @@ function fireWeapon(w, s) {
       Sfx.play('knife'); return true;
     }
   }
-  return false;
+  return fireWeapon2(w, s, bm);
 }
 function updateWeapons(dt) {
   for (const w of P.weapons) {
-    w.cd -= dt * P.rateMul * (w.evo && w.id === 'ak' ? 1.7 : 1);
+    w.cd -= dt * P.rateMul * (w.evo && w.id === 'ak' ? 1.7 : 1) * (P.buffT > 0 ? 1.4 : 1);
     if (w.cd > 0) continue;
     const s = WEAPONS[w.id].stats(w.lv);
     w.cd = fireWeapon(w, s) ? Math.max(0.05, s.cd * (w.evo && w.id === 'shotgun' ? 0.8 : 1)) : 0.12;
@@ -1091,15 +1095,18 @@ function updateWeapons(dt) {
 }
 function updateBullets(dt) {
   for (const b of G.bullets) {
+    if (b.update) { b.update(b, dt); if (b.dead) continue; }
     b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
-    if (b.life <= 0) { b.dead = true; if (b.rocket) rocketBoom(b); continue; }
+    if (b.life <= 0) { b.dead = true; if (b.rocket) rocketBoom(b); if (b.endFn) b.endFn(b); continue; }
     if (b.rocket && Math.random() < 0.7) part(b.x, b.y + 20, { z: 20, c: '200,200,200', s: 5, life: 0.5, g: -20 });
-    const ob = World.solidAt(b.x, b.y + 22);
+    const ob = b.noWall ? null : World.solidAt(b.x, b.y + 22);
     if (ob) {
+      if (b.endFn) { b.dead = true; b.endFn(b); continue; }
       if (ob.hp) damageOb(ob, b.dmg);
       if (b.k === 'bolt' && b.bounces > 0) { b.bounces--; b.vx *= -1; b.vy *= -1; b.x += b.vx * dt * 2; b.y += b.vy * dt * 2; }
       else { b.dead = true; if (b.rocket) rocketBoom(b); else if (b.ex) explode(b.x, b.y + 20, b.ex, b.dmg * 0.5, true); else burst(b.x, b.y + 20, 4, '220,200,160', 90, { z: 20, life: 0.3 }); continue; }
     }
+    if (b.noHit) continue;
     EG.query(b.x, b.y + 16, 50, TMP);
     for (const e of TMP) {
       if (e.dead || b.hits.includes(e)) continue;
@@ -1110,6 +1117,7 @@ function updateBullets(dt) {
         const sp = Math.hypot(b.vx, b.vy) || 1;
         hurtEnemy(e, b.dmg, (b.vx / sp) * b.knock, (b.vy / sp) * b.knock);
         if (b.ignite) { e.burnT = 3; e.burnDps = Math.max(e.burnDps, b.dmg * P.dmgMul * 0.6); }
+        if (b.hitFn) { b.hits.push(e); b.hitFn(e, b); break; }
         if (b.ex) explode(e.x, e.y, b.ex, b.dmg * 0.4, true);
         if (b.vortex) G.fx.push({ k: 'hole', x: e.x, y: e.y, r: 110, life: 1.2, max: 1.2, dps: 25, pull: 300, end: b.dmg, tick: 0 });
         b.hits.push(e);
@@ -1134,11 +1142,12 @@ function updateBullets(dt) {
     }
   }
   G.ebullets = G.ebullets.filter((b) => !b.dead);
-  for (const t of G.throws) { t.t += dt; if (t.t >= t.T) { t.dead = true; explode(t.x1, t.y1, t.r, t.dmg); } }
+  for (const t of G.throws) { t.t += dt; if (t.t >= t.T) { t.dead = true; if (!throwLand(t)) explode(t.x1, t.y1, t.r, t.dmg); } }
   G.throws = G.throws.filter((t) => !t.dead);
 }
 function rocketBoom(b) {
   explode(b.x, b.y + 20, b.rocket, b.dmg, true);
+  if (b.rpg) { shake(8); return; }
   for (let i = 0; i < 5; i++) { const a = (i / 5) * TAU; G.throws.push({ x0: b.x, y0: b.y, x1: b.x + Math.cos(a) * 110, y1: b.y + 20 + Math.sin(a) * 80, t: 0, T: 0.45, dmg: b.dmg * 0.5, r: b.rocket * 0.6 }); }
 }
 
@@ -1161,10 +1170,11 @@ function updatePickups(dt) {
     if (dist2(p.x, p.y, P.x, P.y) < 34 * 34) {
       p.dead = true;
       if (p.type === 'med') { const h = Math.round(35 * P.medMul); P.hp = Math.min(P.maxhp, P.hp + h); text(P.x, P.y - 50, '+' + h + ' HP', '#6f6', false, true); Sfx.play('heal'); }
+      else if (p.type === 'item') { giveItem(p.id); Sfx.play('stash'); }
       else if (p.type === 'magnet') { for (const g of G.gems) g.mag = true; banner('MAGNET', 'All XP pulled in!', 1.5, 'good'); Sfx.play('heal'); }
       else if (p.type === 'art') takeArtifact(pick(Object.keys(ARTIFACTS)));
       else if (p.type === 'stash') { P.hp = P.maxhp; takeArtifact(pick(Object.keys(ARTIFACTS)), ' • full heal, +1 level'); G.pendingLv++; }
-      else if (p.type === 'poistash') { G.rubles += 60; takeArtifact(pick(Object.keys(ARTIFACTS)), ' • +60 ₽'); for (let i = 0; i < 10; i++) dropGem(p.x + rand(-50, 50), p.y + rand(-50, 50), 4 + Math.floor(G.t / 60)); }
+      else if (p.type === 'poistash') { G.rubles += 60; giveItem(pick(Object.keys(ITEMS))); takeArtifact(pick(Object.keys(ARTIFACTS)), ' • +60 ₽'); for (let i = 0; i < 10; i++) dropGem(p.x + rand(-50, 50), p.y + rand(-50, 50), 4 + Math.floor(G.t / 60)); }
       else if (p.type === 'labstash') { G.rubles += 150; P.hp = P.maxhp; openArtifactChoice(); }
     }
   }
@@ -1174,7 +1184,8 @@ function updatePickups(dt) {
     if (dist2(c.x, c.y, P.x, P.y) < 34 * 34) {
       c.open = 0.001; Sfx.play('stash'); burst(c.x, c.y, 14, '140,100,60', 160, { s: 4 });
       const r = Math.random();
-      if (r < 0.45) G.pickups.push({ type: 'med', x: c.x + 10, y: c.y + 10, t: 0 });
+      if (r < 0.32) G.pickups.push({ type: 'med', x: c.x + 10, y: c.y + 10, t: 0 });
+      else if (r < 0.55) G.pickups.push({ type: 'item', id: pick(Object.keys(ITEMS)), x: c.x + 10, y: c.y + 10, t: 0 });
       else if (r < 0.85) for (let i = 0; i < 6; i++) dropGem(c.x, c.y, 3 + Math.floor(G.t / 60));
       else G.pickups.push({ type: 'magnet', x: c.x + 10, y: c.y + 10, t: 0 });
       G.rubles += 3;
@@ -1266,7 +1277,7 @@ function takeArtifact(type, extra) {
 }
 function addXp(v) {
   G.xp += v * P.xpMul;
-  while (G.xp >= G.xpNeed) { G.xp -= G.xpNeed; G.level++; G.xpNeed = xpNeed(G.level); G.pendingLv++; if (P.lvlHeal) P.hp = Math.min(P.maxhp, P.hp + P.lvlHeal); }
+  while (G.xp >= G.xpNeed) { G.xp -= G.xpNeed; G.level++; G.xpNeed = xpNeed(G.level); G.pendingLv++; if (G.level % 5 === 0) G.pendingTal++; if (P.lvlHeal) P.hp = Math.min(P.maxhp, P.hp + P.lvlHeal); }
 }
 
 // ---------- level up / choice cards ----------
@@ -1282,13 +1293,16 @@ function rollChoices() {
   const pool = [];
   for (const w of P.weapons) {
     const E = EVOLUTIONS[w.id];
-    if (w.lv >= WEAPONS[w.id].max && !w.evo && P.arts[E.art]) { pool.push({ kind: 'evo', id: w.id, w: 1000 }); Hints.show('evolution'); }
+    if (E && w.lv >= WEAPONS[w.id].max && !w.evo && P.arts[E.art]) { pool.push({ kind: 'evo', id: w.id, w: 1000 }); Hints.show('evolution'); }
     else if (w.lv < WEAPONS[w.id].max) pool.push({ kind: 'wup', id: w.id, w: 3 });
     else pool.push({ kind: 'mastery', id: w.id, w: 1.2 });
   }
   const perkOpts = Object.keys(PERKS).filter((id) => (P.perks[id] || 0) < PERKS[id].max).length;
   for (const id in INFINITE) pool.push({ kind: 'inf', id, w: perkOpts < 3 ? 1.5 : 0.2 });
-  if (P.weapons.length < 6) for (const id in WEAPONS) if (!P.weapons.some((w) => w.id === id)) pool.push({ kind: 'wnew', id, w: 2.2 });
+  if (P.weapons.length < (P.maxWeapons || 6)) {
+    const fresh = Object.keys(WEAPONS).filter((id) => !P.weapons.some((w) => w.id === id));
+    for (const id of fresh) pool.push({ kind: 'wnew', id, w: 10 / Math.max(4, fresh.length) });
+  }
   // big perk pool: share a fixed total weight so weapons still show up often
   const perkIds = Object.keys(PERKS).filter((id) => (P.perks[id] || 0) < PERKS[id].max);
   for (const id of perkIds) pool.push({ kind: 'perk', id, w: (P.perks[id] ? 2.5 : 1) * (16 / Math.max(8, perkIds.length)) });
@@ -1332,6 +1346,7 @@ function renderCards() {
       desc = (c.kind === 'wnew' ? W.desc : W.ups[w.lv]) + (m > 1 ? ` <em>+${Math.round((m - 1) * 15)}% weapon damage</em>` : '');
       if (W.tag) desc += ` <span class="tagchip" style="color:${TAGS[W.tag].color}">${TAGS[W.tag].icon} ${TAGS[W.tag].name}</span>`;
     } else if (c.kind === 'perk') { const p = PERKS[c.id], lv = P.perks[c.id] || 0; icon = p.icon; name = p.name; tag = lv ? `LV ${lv} → ${lv + 1}` : 'NEW PERK'; desc = p.desc(m); }
+    else if (c.kind === 'tal') { const T = TALENTS[c.id], n = P.talents[c.id] || 0, N = T.nodes[n]; icon = T.icon; name = N[0]; tag = `${T.name.toUpperCase()} · TIER ${n + 1}/5`; desc = N[1] + `<em>${'●'.repeat(n + 1)}${'○'.repeat(4 - n)}</em>`; }
     else if (c.kind === 'mastery') { const W = WEAPONS[c.id], w = P.weapons.find((x) => x.id === c.id); icon = w.evo ? EVOLUTIONS[c.id].icon : W.icon; name = (w.evo ? EVOLUTIONS[c.id].name : W.name) + ' Mastery'; tag = 'MASTERY ' + ((w.mast || 0) + 1); desc = `+${Math.round(12 * m)}% weapon damage`; }
     else if (c.kind === 'inf') { const I = INFINITE[c.id]; icon = I.icon; name = I.name; tag = 'LIMITLESS'; desc = I.desc(m); }
     else if (c.kind === 'art') { const A = ARTIFACTS[c.id]; icon = artImg(c.id, 'big'); name = A.name; tag = `${TAGS[A.tag].icon} ${TAGS[A.tag].name.toUpperCase()}`; desc = `${A.desc}<em>Q: ${ACTIVES[A.act].name}</em>`; }
@@ -1339,7 +1354,7 @@ function renderCards() {
     const el = document.createElement('button');
     el.className = `card r-${c.rar.id} ${c.kind}`;
     el.style.animationDelay = i * 0.07 + 's';
-    el.innerHTML = `<div class="ckey">${i + 1}</div><div class="crar">${c.kind === 'evo' ? '★ EVOLUTION ★' : c.rar.name}</div><div class="cicon">${icon}</div><div><div class="ctag">${tag}</div><div class="cname">${name}</div><div class="cdesc">${desc}</div></div>`;
+    el.innerHTML = `<div class="ckey">${i + 1}</div><div class="crar">${c.kind === 'evo' ? '★ EVOLUTION ★' : c.kind === 'tal' ? '✦ TALENT ✦' : c.rar.name}</div><div class="cicon">${icon}</div><div><div class="ctag">${tag}</div><div class="cname">${name}</div><div class="cdesc">${desc}</div></div>`;
     el.onclick = () => chooseCard(i);
     box.appendChild(el);
   });
@@ -1362,6 +1377,7 @@ function chooseCard(i) {
   else if (c.kind === 'wnew') P.weapons.push({ id: c.id, lv: 1, cd: 0.2, bonus: (m - 1) * 0.15 });
   else if (c.kind === 'perk') { P.perks[c.id] = (P.perks[c.id] || 0) + 1; PERKS[c.id].apply(P, m); }
   else if (c.kind === 'art') takeArtifact(c.id);
+  else if (c.kind === 'tal') { const n = P.talents[c.id] || 0; TALENTS[c.id].nodes[n][2](P); P.talents[c.id] = n + 1; banner(TALENTS[c.id].icon + ' ' + TALENTS[c.id].nodes[n][0].toUpperCase(), TALENTS[c.id].nodes[n][1], 2.5, 'art', 2); }
   else if (c.kind === 'mastery') { const w = P.weapons.find((x) => x.id === c.id); w.bonus = (w.bonus || 0) + 0.12 * m; w.mast = (w.mast || 0) + 1; }
   else if (c.kind === 'inf') INFINITE[c.id].apply(P, m);
   else if (c.kind === 'heal') P.hp = Math.min(P.maxhp, P.hp + P.maxhp * 0.5);
@@ -1382,7 +1398,8 @@ function updatePlayer(dt) {
   P.psiSlowT -= dt;
   P.slow = Math.max(P.slowNext, P.psiSlowT > 0 && !P.psiImmune ? 0.35 : 0); P.slowNext = 0;
   P.adrenT -= dt; P.lsAcc = Math.max(0, P.lsAcc - 5 * dt);
-  let spdB = P.adrenT > 0 ? P.adren : 0;
+  P.buffT -= dt; P.vodkaT -= dt; P.antiradT -= dt; P.psiImmune = P.basePsi || P.vodkaT > 0;
+  let spdB = (P.adrenT > 0 ? P.adren : 0) + (P.buffT > 0 ? 0.4 : 0);
   if (P.sprint) { EG.query(P.x, P.y, 160, TMP); if (!TMP.some((e) => !e.dead && dist2(e.x, e.y, P.x, P.y) < 160 * 160)) spdB += P.sprint; }
   const spd = 200 * (P.spdMul + spdB) * (1 - P.slow);
   if (P.dashT > 0) {
@@ -1456,6 +1473,7 @@ function updateFx(dt) {
       const d = dist(P.x, P.y, f.x, f.y);
       if (!f.hit && Math.abs(d - f.r) < 24 && P.dashT <= 0) { f.hit = true; hurtPlayer(f.dmg, f.psi ? 'a psi wave' : 'a shockwave'); P.kvx = ((P.x - f.x) / d) * 400; P.kvy = ((P.y - f.y) / d) * 400; }
       if (f.r > f.max) f.life = 0;
+    } else if (f.k === 'sound') { f.r = f.max * (1 - Math.max(0, f.life) / f.maxl);
     } else if (f.k === 'nova') {
       f.r += f.spd * dt;
       EG.query(f.x, f.y, f.r + 20, TMP);
@@ -1506,6 +1524,7 @@ function update(dt) {
   updateWeapons(dt);
   updateBullets(dt);
   updatePickups(dt);
+  updateOwned(dt);
   updateFx(dt);
   Quests.update(dt); Radio.update(dt); Hints.update(dt); Amb.update(dt); RunSave.tick(dt);
   Music.setTheme(G.bosses.length ? 'boss' : World.kind === 'lab' ? 'lab' : G.stage, G.bosses.length ? hashStr(G.bosses[0].id) % 5 - 2 : 0);
@@ -1517,6 +1536,7 @@ function update(dt) {
   Music.setIntensity(G.bosses.length || (G.em && G.em.phase !== 'after') ? 2 : G.enemies.length > 50 || Env.isNight() || World.kind === 'lab' ? 1 : 0);
   const k = 1 - Math.exp(-dt * 6);
   CAM.x = lerp(CAM.x, P.x + P.lastMx * 50, k); CAM.y = lerp(CAM.y, P.y - 20 + P.lastMy * 40, k);
+  if (G.pendingTal > 0 && G.state === 'play') openTalent();
   if (G.pendingLv > 0 && G.state === 'play') openLevelUp();
 }
 function nearestArtifact() {

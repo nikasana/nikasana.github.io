@@ -367,6 +367,7 @@ function useAbility() {
   Sfx.play('ability'); shake(6);
   banner(ACTIVES[A.act].name.toUpperCase(), A.name, 1.2, 'art', 2);
   runActive(A.act, pow, A);
+  if (P.echo) G.timers.push({ t: 0.45, fn: () => runActive(A.act, pow * 0.7, A) });
 }
 function runActive(k, pow, A) {
   const cloud = (x, y, r, life, dps) => G.fx.push({ k: 'cloud', x, y, r: r * P.areaMul, life, max: life, dps, tick: 0 });

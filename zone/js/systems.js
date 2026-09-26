@@ -170,7 +170,7 @@ const RunSave = {
   KEY: 'zonebonk_run', t: 0,
   PKEYS: ['hp', 'maxhp', 'dmgMul', 'rateMul', 'areaMul', 'spdMul', 'pickup', 'xpMul', 'dr', 'regen', 'pierce', 'crit', 'thorns', 'dashMul', 'shards', 'lightning', 'aura', 'soul',
     'luck', 'rerolls', 'revives', 'anomRes', 'psiImmune', 'detect', 'dodge', 'lvlHeal', 'execute', 'bossDmg', 'critMul', 'dropMul', 'rubMul', 'dashDmg', 'medMul', 'adren', 'berserk',
-    'standFirm', 'zapChance', 'lifesteal', 'exChance', 'frostChance', 'hunter', 'actCdMul', 'actPow', 'burnMul', 'lowRegen', 'momentum', 'sprint', 'bioHp', 'actSel', 'face'],
+    'standFirm', 'zapChance', 'lifesteal', 'exChance', 'frostChance', 'hunter', 'actCdMul', 'actPow', 'burnMul', 'lowRegen', 'momentum', 'sprint', 'bioHp', 'actSel', 'face', 'maxWeapons', 'lastStand', 'echo', 'basePsi'],
   GKEYS: ['t', 'stage', 'char', 'endless', 'kills', 'level', 'xp', 'xpNeed', 'pendingLv', 'rubles', 'questsDone', 'elites', 'bossIdx', 'emIdx', 'rushT', 'tier', 'tierT', 'wave', 'waveT',
     'waveMut', 'nextBossT', 'bossN', 'arts', 'dmg', 'labsVisited', 'paidR', 'paidMin', 'streak', 'bossKills', 'seed', 'spawnIdx', 'won'],
   has() { try { return !!localStorage.getItem(this.KEY); } catch (e) { return false; } },
@@ -181,7 +181,7 @@ const RunSave = {
     const over = World.levels.over || World.snapshot();
     const crates = World.cur === 'over' ? G.crates : G.levelCrates.over || [];
     const pos = World.kind === 'lab' ? G.returnPos || World.start : { x: P.x, y: P.y };
-    const d = { v: 1, g: {}, p: {}, pos, weapons: P.weapons, perks: P.perks, arts: P.arts, actCd: P.actCd, pal: P.pal,
+    const d = { v: 1, g: {}, p: {}, pos, weapons: P.weapons, perks: P.perks, arts: P.arts, actCd: P.actCd, pal: P.pal, items: P.items, talents: P.talents,
       fields: over.fields.map((f) => (f.art ? f.art.type : null)), crates: crates.map((c) => (c.open ? 1 : 0)),
       pois: over.pois.map((p) => (p.state === 2 ? 2 : 0)), lairs: (over.lairs || []).map((l) => (l.dead ? 1 : 0)),
       labs: Object.keys(World.levels).filter((k) => k.startsWith('lab') && World.levels[k].lab && World.levels[k].lab.cleared) };
@@ -195,7 +195,7 @@ const RunSave = {
     newGame(d.g.stage, d.g.char, d.g.endless ? 'endless' : 'standard', d.g.spawnIdx || 0, d.g.seed);
     for (const k of this.GKEYS) if (d.g[k] !== undefined) G[k] = d.g[k];
     for (const k of this.PKEYS) if (d.p[k] !== undefined) P[k] = d.p[k];
-    P.weapons = d.weapons; P.perks = d.perks; P.arts = d.arts; P.actCd = d.actCd || {}; if (d.pal) P.pal = d.pal;
+    P.weapons = d.weapons; P.perks = d.perks; P.arts = d.arts; P.actCd = d.actCd || {}; if (d.pal) P.pal = d.pal; P.items = d.items || { medkit: 1 }; P.talents = d.talents || {};
     P.x = d.pos.x; P.y = d.pos.y; World.collide(P); CAM.x = P.x; CAM.y = P.y;
     World.fields.forEach((f, i) => { const t = d.fields[i]; f.art = t && ARTIFACTS[t] ? { ...f.art, type: t } : null; if (t && !f.art) spawnArtifact(f); });
     G.crates.forEach((c, i) => { if (d.crates[i]) c.open = 2; });

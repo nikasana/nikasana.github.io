@@ -103,6 +103,7 @@ const Env = {
       for (const h of World.hatches) light(h.x, h.y - 40, 110, 0.6);
       if (World.kind === 'lab') for (const r of World.lab.rooms) { const fl = Math.sin(NOW * 7 + r.mx * 3) > -0.85 ? 1 : 0.3; light((r.mx + 0.5) * LAB_T, (r.my + 0.5) * LAB_T, Math.min(r.w, r.h) * LAB_T * 0.6, 0.55 * fl); }
       for (const p of World.pois) light(p.x, p.y, 140, 0.35);
+      for (const o of G.owned || []) if (o.k === 'flarezone') light(o.x, o.y, o.r * 2.4, 0.9);
       for (const e of G.enemies) if (e.id === 'poltergeist' || e.id === 'monolith') light(e.x, e.y - e.z, e.id === 'monolith' ? 260 : 100, 0.8);
       let nb = 0;
       for (const b of G.ebullets) { if (nb++ > 60) break; light(b.x, b.y, 40, 0.6); }
