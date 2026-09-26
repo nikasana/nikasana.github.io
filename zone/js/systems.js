@@ -4,7 +4,7 @@ const Save = {
   data: null,
   def() {
     return { rubles: 0, meta: {}, chars: ['rookie'], char: 'rookie', stages: ['zone'], stage: 'zone', best: {}, hints: [], runs: 0, wins: 0,
-      settings: { master: 0.8, music: 0.5, sfx: 0.8, amb: 0.7, voice: 0.8, shake: true, numbers: true, quality: 'high', hints: true, fps: false } };
+      settings: { master: 0.8, music: 0.5, sfx: 0.8, amb: 0.7, voice: 0.8, shake: 0.4, numbers: true, quality: 'high', hints: true, fps: false } };
   },
   load() {
     let s = null;

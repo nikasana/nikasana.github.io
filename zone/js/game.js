@@ -103,7 +103,8 @@ function text(x, y, s, c = '#fff', big = false, force = false) {
   G.texts.push({ x: x + rand(-8, 8), y, s, c, life: 0.8, big });
 }
 function decal(x, y, r, c) { if (G.decals.length > 160) G.decals.shift(); G.decals.push({ x, y, r, c, a: rand(TAU), life: 40 }); }
-function shake(v) { if (Save.set.shake) G.shake = Math.min(24, G.shake + v); }
+function shakeK() { const s = Save.set.shake; return s === true ? 0.5 : s === false ? 0 : +s || 0; }
+function shake(v) { const k = shakeK(); if (k > 0 && G) G.shake = Math.min(9 * k, Math.max(G.shake, v * 0.55 * k)); }
 function flash(v, c = '255,255,255') { G.flash = Math.max(G.flash, v); G.flashCol = c; }
 // banners queue up instead of stacking; priority 2 (bosses, emissions) cuts in line
 let bannerTimer = 0, bannerCur = '';
@@ -311,7 +312,7 @@ function explode(x, y, r, dmg, fromPlayer = true) {
   burst(x, y, 26, '255,170,60', r * 3, { add: true, s: 4, life: 0.6 });
   for (let i = 0; i < 10; i++) part(x + rand(-r / 2, r / 2), y + rand(-r / 3, r / 3), { vz: rand(20, 60), z: 10, g: -30, c: '70,65,60', s: rand(8, 16), life: rand(0.8, 1.5) });
   decal(x, y, r * 0.6, '20,18,16');
-  shake(8); Sfx.play('boom');
+  shake(fromPlayer ? 2.5 : 8); Sfx.play('boom');
   const obs = World.destructiblesNear(x, y, r + 20);
   if (obs.length) G.timers.push({ t: 0.12, fn: () => { for (const ob of obs) damageOb(ob, dmg); } });
 }
@@ -1543,7 +1544,7 @@ function updateFx(dt) {
   if (tmpRad) World.rads = World.rads.filter((r) => r.life === undefined || r.life > 0);
   for (const t of G.timers) { t.t -= dt; if (t.t <= 0) { t.done = true; t.fn(); } }
   G.timers = G.timers.filter((t) => !t.done);
-  G.shake = Math.max(0, G.shake - dt * 40);
+  G.shake = Math.max(0, G.shake - dt * (14 + G.shake * 7));
   G.flash = Math.max(0, G.flash - dt * 2.5);
   G.psi = Math.max(0, G.psi - dt * 0.8);
   G.fade = Math.max(0, G.fade - dt * 1.5);

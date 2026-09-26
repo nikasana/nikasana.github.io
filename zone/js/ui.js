@@ -7,7 +7,7 @@ function render(title = false) {
   if (!G) return;
   const low = Save.set.quality === 'low';
   const sc = ZOOM * DPR;
-  const sx = (Math.random() - 0.5) * G.shake, sy = (Math.random() - 0.5) * G.shake;
+  const sx = G.shake * (Math.sin(NOW * 41) * 0.35 + Math.sin(NOW * 67) * 0.2), sy = G.shake * (Math.cos(NOW * 37) * 0.35 + Math.sin(NOW * 59) * 0.2);
   const cx = CAM.x + sx, cy = CAM.y + sy;
   ctx.setTransform(sc, 0, 0, sc, cv.width / 2 - cx * sc, cv.height / 2 - cy * sc);
   const hw = VW / 2 / ZOOM, hh = VH / 2 / ZOOM;
@@ -715,7 +715,7 @@ function buildSettings() {
   const slider = (k, label) => `<label class="set"><span>${label}</span><input type="range" min="0" max="1" step="0.05" value="${s[k]}" data-set="${k}"></label>`;
   const tog = (k, label) => `<label class="set"><span>${label}</span><input type="checkbox" ${s[k] ? 'checked' : ''} data-tog="${k}"></label>`;
   $('settingsBody').innerHTML = slider('master', 'Master volume') + slider('music', 'Music / radio') + slider('sfx', 'Sound effects') + slider('amb', 'Ambience') + slider('voice', 'Radio chatter & UI') +
-    tog('shake', 'Screen shake') + tog('numbers', 'Damage numbers') + tog('hints', 'Tutorial hints') + tog('fps', 'Show FPS') +
+    `<label class="set"><span>Screen shake</span><input type="range" min="0" max="1" step="0.05" value="${shakeK()}" data-set="shake"></label>` + tog('numbers', 'Damage numbers') + tog('hints', 'Tutorial hints') + tog('fps', 'Show FPS') +
     `<label class="set"><span>Graphics quality</span><select data-q><option value="high" ${s.quality === 'high' ? 'selected' : ''}>High</option><option value="low" ${s.quality === 'low' ? 'selected' : ''}>Low (faster)</option></select></label>` +
     `<button class="big ghost small" id="resetHints">Replay tutorial hints</button>`;
   for (const i of document.querySelectorAll('[data-set]')) i.oninput = () => { s[i.dataset.set] = +i.value; applySettings(); Save.save(); };
