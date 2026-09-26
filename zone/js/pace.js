@@ -123,3 +123,36 @@ addEventListener('DOMContentLoaded', () => {
   fill();
   const _bs = buildSetup; buildSetup = function (...a) { const r = _bs(...a); fill(); return r; };
 });
+
+// ----- one-tap suggestion from your last 3 runs: difficulty + pace together -----
+const Suggest = {
+  level(d, p) { return Math.max(0, DIFFICULTIES.findIndex((x) => x.id === d)) + Math.max(0, PACES.findIndex((x) => x.id === p)); },
+  get() {
+    const log = (Save.data.runLog || []).slice(-3); if (!log.length) return null;
+    // won / 15:00+ → much harder, 10–15 min → harder, 6–10 min → keep, under 6 min → easier
+    const step = (r) => (!r.dead || r.t >= 900 ? 2 : r.t >= 600 ? 1 : r.t >= 360 ? 0 : -1);
+    const last = log[log.length - 1], avg = log.reduce((a, r) => a + step(r), 0) / log.length;
+    const L = Math.max(0, Math.min(DIFFICULTIES.length + PACES.length - 2, this.level(last.d, last.p) + Math.round(avg)));
+    const di = Math.min(DIFFICULTIES.length - 1, Math.ceil(L / 2)), pi = Math.max(0, Math.min(PACES.length - 1, L - di));
+    return { d: DIFFICULTIES[di], p: PACES[pi], n: log.length };
+  },
+  label() { const s = this.get(); return s ? `✨ Suggested: ${s.d.icon} ${s.d.name} – ${s.p.icon} ${s.p.name}` : '✨ Suggested: play a run first'; },
+  apply() {
+    const s = this.get(); if (!s) return;
+    Save.data.diff = s.d.id; Save.data.pace = s.p.id; Save.save(); Sfx.init(); Sfx.play('quest');
+    if (typeof diffTitle === 'function') diffTitle();
+    if ($('setup') && $('setup').classList.contains('show')) buildSetup();
+    this.refresh();
+  },
+  refresh() { for (const b of document.querySelectorAll('.suggestBtn')) { b.textContent = this.label(); b.disabled = !this.get(); b.title = 'Based on your last 3 runs'; } },
+  button() { const b = document.createElement('button'); b.className = 'big ghost small suggestBtn'; b.onclick = () => this.apply(); b.textContent = this.label(); return b; },
+};
+addEventListener('DOMContentLoaded', () => {
+  const add = (where, how) => { const el = typeof where === 'string' ? $(where) : where; if (el) { const b = Suggest.button(); how(el, b); } };
+  add('diffPaceRow', (el, b) => el.after(b)); // main menu
+  add('pause', (el, b) => { const x = $('autoPauseBtn'); if (x) x.after(b); else el.appendChild(b); }); // pause menu (applies next run)
+  const _bs = buildSetup; buildSetup = function (...a) { const r = _bs(...a); const box = $('paceBox'); if (box && !box.querySelector('.suggestBtn')) box.prepend(Suggest.button()); Suggest.refresh(); return r; };
+  const _bst = buildSettings; buildSettings = function (...a) { const r = _bst(...a); const body = $('settingsBody'); if (body && !body.querySelector('.suggestBtn')) { const row = document.createElement('div'); row.className = 'set'; row.innerHTML = '<span>Difficulty & pace</span>'; row.appendChild(Suggest.button()); body.prepend(row); } Suggest.refresh(); return r; };
+  const _er = endRun; endRun = function (...a) { const r = _er(...a); Suggest.refresh(); return r; };
+  Suggest.refresh();
+});
