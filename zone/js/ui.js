@@ -26,6 +26,7 @@ function render(title = false) {
     ctx.fillStyle = `rgba(${d.c},${Math.min(0.55, d.life / 10)})`;
     ctx.beginPath(); ctx.ellipse(d.x, d.y, d.r, d.r * 0.55, d.a, 0, TAU); ctx.fill();
   }
+  drawW2Base(x0, y0, x1, y1, title);
   for (const r of World.rads) {
     if (r.x + r.r < x0 || r.x - r.r > x1 || r.y + r.r < y0 || r.y - r.r > y1) continue;
     const g = ctx.createRadialGradient(r.x, r.y, 0, r.x, r.y, r.r);
@@ -98,8 +99,8 @@ function render(title = false) {
     if (it.t === 0) PROP_DRAW[o.kind](o);
     else if (it.t === 1) {
       FL = o.flash > 0;
-      const vs = (o.sc || 1) * (o.d.vsc || 1);
-      if (vs !== 1) { ctx.save(); ctx.translate(o.x, o.y); ctx.scale(vs, vs); ctx.translate(-o.x, -o.y); ENEMY_DRAW[o.id](o); ctx.restore(); }
+      const vs = (o.sc || 1) * (o.d.vsc || 1), an = animSquash(o);
+      if (vs !== 1 || an) { ctx.save(); ctx.translate(o.x, o.y); ctx.scale(vs * (1 + an), vs * (1 - an)); ctx.translate(-o.x, -o.y); ENEMY_DRAW[o.id](o); ctx.restore(); }
       else ENEMY_DRAW[o.id](o);
       FL = false;
       if (o.frozen && o.stun > 0) { ctx.fillStyle = 'rgba(170,225,255,0.45)'; ctx.beginPath(); ctx.ellipse(o.x, o.y - o.r * 1.2, o.r * 1.3, o.r * 1.5, 0, 0, TAU); ctx.fill(); } else if (o.frozen) o.frozen = 0;
@@ -112,7 +113,7 @@ function render(title = false) {
     else if (it.t === 6) drawPoiChest(o);
   }
   for (const a of World.anomalies) if (a.x > x0 - a.r && a.x < x1 + a.r && a.y > y0 - 150 && a.y < y1 + a.r) drawAnomalyTop(a);
-  if (!title) { drawHazardsTop(x0, y0, x1, y1); drawPlayerFx(); }
+  if (!title) { drawHazardsTop(x0, y0, x1, y1); drawW2Top(x0, y0, x1, y1); drawPlayerFx(); }
   // bullets
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
   for (const b of G.bullets) {
@@ -206,6 +207,7 @@ function render(title = false) {
   // ---- screen space ----
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   Env.render(cx, cy);
+  drawW2Screen(cx, cy, title);
   if (G.em) { const k = G.em.phase === 'warn' ? (1 - G.em.t / 30) * 0.3 : G.em.phase === 'blast' ? 0.42 + Math.sin(NOW * 12) * 0.1 : 0.3 * (G.em.t / 3); ctx.fillStyle = `rgba(160,30,20,${World.kind === 'lab' ? k * 0.3 : k})`; ctx.fillRect(0, 0, VW, VH); }
   else { ctx.fillStyle = 'rgba(40,50,30,0.1)'; ctx.fillRect(0, 0, VW, VH); }
   if (G.rad > 0) { ctx.fillStyle = `rgba(200,200,40,${G.rad * 0.12})`; ctx.fillRect(0, 0, VW, VH); }
@@ -585,7 +587,7 @@ function endRun(kind, src) {
   const tb = (mins - G.paidMin) * 15;
   G.paidR = G.rubles; G.paidMin = mins;
   S.rubles += earned;
-  const bk = G.stage + (G.bossrush ? '_bossrush' : G.endless ? '_endless' : ''), best = S.best[bk] || 0; if (G.t > best) S.best[bk] = G.t;
+  const bk = G.stage + (G.bossrush ? '_bossrush' : G.endless ? '_endless' : G.daily ? '_daily' : ''), best = S.best[bk] || 0; if (G.t > best) S.best[bk] = G.t;
   let unlock = '';
   if (kind === 'win') {
     S.wins++;
@@ -674,7 +676,7 @@ function buildSetup() {
   const mode = S.mode || 'standard', dif = S.diff || 'rookie';
   $('diffList').innerHTML = DIFFICULTIES.map((d) => `<button class="pick ${dif === d.id ? 'sel' : ''}" data-diff="${d.id}"><div class="pi">${d.icon}</div><div><b>${d.name}</b><small>${d.desc}</small><em>enemy HP ×${d.hp} · damage taken ×${d.dmg}${d.rub !== 1 ? ' · rubles ×' + d.rub : ''}</em></div></button>`).join('');
   for (const b of document.querySelectorAll('[data-diff]')) b.onclick = () => { S.diff = b.dataset.diff; Save.save(); buildSetup(); };
-  $('modeList').innerHTML = [['standard', '⏱️', 'Standard', '15 minutes, 6 bosses, then the final boss. Win to unlock the next stage.'], ['endless', '♾️', 'Endless', 'Bosses forever. Every 15 minutes the Zone grows a tier stronger. Play for hours.'], ['bossrush', '👑', 'Boss Rush', 'A new boss every minute. How many can you beat?']]
+  $('modeList').innerHTML = [['standard', '⏱️', 'Standard', '15 minutes, 6 bosses, then the final boss. Win to unlock the next stage.'], ['endless', '♾️', 'Endless', 'Bosses forever. Every 15 minutes the Zone grows a tier stronger. Play for hours.'], ['bossrush', '👑', 'Boss Rush', 'A new boss every minute. How many can you beat?'], ['daily', '📅', 'Daily Run', 'Today\'s seed: the same map and loot for everyone. Changes every day.']]
     .map(([id, ic, n, d]) => `<button class="pick ${mode === id ? 'sel' : ''}" data-mode="${id}"><div class="pi">${ic}</div><div><b>${n}</b><small>${d}</small>${S.best[(setupStage || 'zone') + (id === 'standard' ? '' : '_' + id)] ? `<em>best ${fmtTime(S.best[(setupStage || 'zone') + (id === 'standard' ? '' : '_' + id)])}</em>` : ''}</div></button>`).join('');
   for (const b of document.querySelectorAll('[data-mode]')) b.onclick = () => { S.mode = b.dataset.mode; Save.save(); buildSetup(); };
   $('stageList').innerHTML = STAGES.map((st) => {
@@ -828,14 +830,16 @@ function startGame() {
   for (const s of ['title', 'setup', 'bunker', 'settings', 'over', 'pause', 'levelup']) hide(s);
   $('loading').classList.add('show');
   setTimeout(() => {
-    newGame(S.stage, S.char, S.mode || 'standard', (S.spawn || {})[S.stage] || 0);
+    const daily = S.mode === 'daily', d = new Date(), ds = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+    newGame(S.stage, S.char, daily ? 'standard' : S.mode || 'standard', (S.spawn || {})[S.stage] || 0, daily ? ds * 31 + hashStr(S.stage) % 1000 : undefined);
+    if (daily) { G.daily = ds; banner('📅 DAILY RUN ' + ds, 'Same seed for everyone today.', 3, 'good'); }
     $('loading').classList.remove('show');
     $('hud').classList.add('show');
     if (matchMedia('(pointer: coarse)').matches) $('touchUi').classList.add('show');
   }, 30);
 }
 function toMenu() {
-  hide('over'); hide('pause'); $('hud').classList.remove('show'); $('touchUi').classList.remove('show');
+  hide('over'); hide('pause'); hide('mapScreen'); $('hud').classList.remove('show'); $('touchUi').classList.remove('show');
   G = null; P = null; World.genStage('zone', 20260926); titleCam.x = 3200; titleCam.y = 4200;
   openScreen('title');
 }

@@ -19,6 +19,7 @@ const Env = {
     if (G && !G.title && Events.mods().dark) return Events.mods().dark;
     const p = this.phase();
     let d = clamp(Math.cos((p - 0.75) * TAU) * 1.4 - 0.4, 0, 1) * 0.8;
+    const sn = (STAGE_WORLD[World.stage] || {}).night; if (sn) d = Math.max(d, sn);
     if (this.weather === 'storm') d = Math.max(d, 0.35);
     else if (this.weather === 'rain') d = Math.max(d, 0.18);
     else if (this.weather === 'psi') d = Math.max(d, 0.22);
@@ -38,8 +39,10 @@ const Env = {
       if (this.weather !== 'clear') this.setWeather('clear');
       else {
         const opts = [['rain', 3], ['fog', 2], ['storm', G.t > 90 ? 2 : 0], ['psi', G.t > 240 ? 1.5 : 0], ['heat', G.t > 120 ? 1.2 : 0], ['snow', 1.3], ['radstorm', G.t > 300 ? 0.9 : 0]];
+        const wb = (STAGE_WORLD[World.stage] || {}).wbias || {}; for (const o of opts) o[1] *= wb[o[0]] ?? 1;
         let tot = 0; for (const o of opts) tot += o[1];
-        let r = rand(tot); for (const o of opts) { r -= o[1]; if (r <= 0) { this.setWeather(o[0]); break; } }
+        if (tot <= 0) this.wT = 60;
+        else { let r = rand(tot); for (const o of opts) { if (!o[1]) continue; r -= o[1]; if (r <= 0) { this.setWeather(o[0]); break; } } }
       }
     }
     const indoor = World.kind === 'lab', w = indoor ? 'clear' : this.weather;
@@ -88,7 +91,7 @@ const Env = {
       };
       // player: ambient + flashlight cone
       light(P.x, P.y - 20, 120, 0.8);
-      const a = P.lookA ?? 0, X = sx(P.x), Y = sy(P.y - 20), R = 460 * zs;
+      const a = P.lookA ?? 0, X = sx(P.x), Y = sy(P.y - 20), R = 460 * zs * ((STAGE_WORLD[World.stage] || {}).torch || 1);
       const g = l.createRadialGradient(X, Y, 10 * zs, X, Y, R);
       g.addColorStop(0, 'rgba(0,0,0,0.95)'); g.addColorStop(0.6, 'rgba(0,0,0,0.6)'); g.addColorStop(1, 'rgba(0,0,0,0)');
       l.fillStyle = g; l.beginPath(); l.moveTo(X, Y); l.arc(X, Y, R, a - 0.5, a + 0.5); l.closePath(); l.fill();

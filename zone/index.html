@@ -230,6 +230,15 @@
   #earned { margin-top: 12px; } .earn { font-size: 34px; color: var(--gold); font-weight: 700; text-shadow: 0 0 20px rgba(255, 200, 80, 0.5); }
   #earned small { color: #9a947c; } .unlock { margin-top: 8px; color: var(--acc); font-size: 20px; animation: flick 2s infinite; }
   #bigmap { border: 2px solid rgba(200, 255, 90, 0.4); box-shadow: 0 10px 50px #000; }
+  #mapInfo { margin-top: 8px; color: #c8c0a0; font-size: 13px; text-align: center; max-width: 92vw; }
+  #mapInfo .travel { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 6px; }
+  #mapInfo .travel button { font-size: 13px; padding: 6px 10px; }
+  #mapInfo .dim { color: #8a846c; margin-top: 4px; }
+  #bossCard { position: fixed; left: 0; top: 30%; z-index: 30; pointer-events: none; padding: 14px 40px 14px 24px; background: linear-gradient(90deg, rgba(120,10,6,0.92), rgba(40,6,4,0.85) 70%, rgba(0,0,0,0)); border-left: 6px solid #ff3a2a; transform: translateX(-110%); opacity: 0; transition: transform 0.45s cubic-bezier(.2,.9,.3,1.2), opacity 0.4s; max-width: 80vw; }
+  #bossCard.show { transform: translateX(0); opacity: 1; }
+  #bossCard small { display: block; color: #ffb0a0; letter-spacing: 0.35em; font-size: 12px; }
+  #bossCard b { display: block; font-family: Oswald, Impact, sans-serif; font-size: clamp(24px, 5vw, 44px); color: #fff; letter-spacing: 0.06em; text-shadow: 0 3px 0 #000; }
+  #bossCard span { display: block; color: #f0d8c8; font-size: 14px; margin-top: 2px; }
   #mapScreen small { color: #9a947c; margin-top: 8px; letter-spacing: 0.15em; }
   .legend { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; font-size: 13px; margin-top: 8px; }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
@@ -348,6 +357,7 @@
 
 <div id="mapScreen" class="screen">
   <canvas id="bigmap"></canvas>
+  <div id="mapInfo"></div>
   <div class="legend">
     <span><i style="background:#fff"></i>You</span><span><i style="background:#5f5;border-radius:0"></i>Shelter</span><span>🕳️ Lab</span><span>❗ Contract</span><span>☣️ Lair</span><span>⚑ Start</span>
     <span><i style="background:#6cc4ff"></i>Electro</span><span><i style="background:#ff7a2a"></i>Burner</span><span><i style="background:#b9a7ff"></i>Vortex</span>
@@ -373,22 +383,23 @@
     el.innerHTML = 'Something failed to load: ' + (e.message || 'script error') + ' <button onclick="location.reload(true)" style="margin-left:8px;padding:4px 10px">Reload</button>';
   });
 </script>
-<script src="js/util.js?v=14"></script>
-<script src="js/audio.js?v=14"></script>
-<script src="js/radio.js?v=14"></script>
-<script src="js/ambience.js?v=14"></script>
-<script src="js/data.js?v=14"></script>
-<script src="js/artifacts.js?v=14"></script>
-<script src="js/world.js?v=14"></script>
-<script src="js/render.js?v=14"></script>
-<script src="js/render2.js?v=14"></script>
-<script src="js/lighting.js?v=14"></script>
-<script src="js/game.js?v=14"></script>
-<script src="js/systems.js?v=14"></script>
-<script src="js/weapons2.js?v=14"></script>
-<script src="js/mutants3.js?v=14"></script>
-<script src="js/events.js?v=14"></script>
-<script src="js/hazards.js?v=14"></script>
-<script src="js/ui.js?v=14"></script>
+<script src="js/util.js?v=15"></script>
+<script src="js/audio.js?v=15"></script>
+<script src="js/radio.js?v=15"></script>
+<script src="js/ambience.js?v=15"></script>
+<script src="js/data.js?v=15"></script>
+<script src="js/artifacts.js?v=15"></script>
+<script src="js/world.js?v=15"></script>
+<script src="js/render.js?v=15"></script>
+<script src="js/render2.js?v=15"></script>
+<script src="js/lighting.js?v=15"></script>
+<script src="js/game.js?v=15"></script>
+<script src="js/systems.js?v=15"></script>
+<script src="js/weapons2.js?v=15"></script>
+<script src="js/mutants3.js?v=15"></script>
+<script src="js/events.js?v=15"></script>
+<script src="js/hazards.js?v=15"></script>
+<script src="js/world2.js?v=15"></script>
+<script src="js/ui.js?v=15"></script>
 </body>
 </html>

@@ -137,7 +137,8 @@ const World = {
     const G = WORLD / 64;
     this.regionGrid = new Int8Array(G * G);
     for (let gy = 0; gy < G; gy++) for (let gx = 0; gx < G; gx++) this.regionGrid[gy * G + gx] = this.regionIdxRaw(gx * 64 + 32, gy * 64 + 32).i;
-    if (stage === 'zone') this.genZone(R); else if (stage === 'pripyat') this.genPripyat(R); else this.genNPP(R);
+    this.genRiver(S);
+    if (stage === 'zone') this.genZone(R); else if (stage === 'pripyat') this.genPripyat(R); else if (stage === 'npp') this.genNPP(R); else this.genStage2(stage, R);
     this.genShelters(R);
     this.genHatches(R);
     this.genPOIs(R);
@@ -146,6 +147,7 @@ const World = {
     this.genNature(R);
     this.genMisc(R);
     genHazards(R);
+    this.genWorld2(R);
     this.labels.push({ x: this.start.x, y: this.start.y + 60, name: '⚑ ' + sp.name });
     // make sure the chosen spawn point is standing room
     for (let i = 0; i < 200 && !this.free(this.start.x, this.start.y, 20); i++) { this.start.x += Math.cos(i) * 12 * i * 0.2; this.start.y += Math.sin(i) * 12 * i * 0.2; }

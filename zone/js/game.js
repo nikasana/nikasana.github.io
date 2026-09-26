@@ -74,7 +74,7 @@ function newGame(stageId, charId, mode, spawnIdx = 0, seed, diff) {
   for (const f of World.fields) spawnArtifact(f);
   G.crates = World.crateSpots.map((s) => ({ x: s.x, y: s.y, open: 0 }));
   CAM.x = P.x; CAM.y = P.y;
-  Env.reset(); Radio.reset(); Hints.reset(); Quests.reset(); Events.reset(); Hz.reset();
+  Env.reset(); Radio.reset(); Hints.reset(); Quests.reset(); Events.reset(); Hz.reset(); W2.reset();
   if (G.bossrush) G.nextBossT = 30;
   recomputeTags(); hudBuild();
   const sd = stageDef();
@@ -400,7 +400,7 @@ function spawnBoss(id, o = {}) {
   const e = spawnEnemy(id, x, y, o);
   if (o.final) e.final = true;
   if (o.labBoss) e.labBoss = true;
-  banner('⚠ ' + e.name + ' ⚠', o.final ? 'The heart of the Zone awakens. Destroy it!' : o.labBoss ? 'The laboratory guardian awakens.' : 'A massive mutant is hunting you.', 4.5, 'bad', 2);
+  bossCard(e, o);
   Sfx.play('boss'); shake(12); Radio.say('boss');
   return e;
 }
@@ -1440,7 +1440,7 @@ function updatePlayer(dt) {
     part(P.x + rand(-6, 6), P.y, { z: rand(5, 30), c: '180,220,160', s: 5, life: 0.25, g: 0, add: true });
   } else {
     const vm = vehicleUpdate(dt), tx = mx * spd * vm, ty = my * spd * vm;
-    let ice = false;
+    let ice = World.iceAt(P.x, P.y);
     if (World.kind === 'over') for (const a of World.anomalies) if (a.type === 'cryo' && Math.abs(a.x - P.x) < 150 && dist2(a.x, a.y, P.x, P.y) < (a.r * 1.8) ** 2) { ice = true; break; }
     if (ice && !P.veh) { P.ivx = lerp(P.ivx || 0, tx, dt * 1.6); P.ivy = lerp(P.ivy || 0, ty, dt * 1.6); } else { P.ivx = tx; P.ivy = ty; }
     P.x += P.ivx * dt; P.y += P.ivy * dt;
@@ -1566,10 +1566,11 @@ function update(dt) {
   updatePickups(dt);
   updateOwned(dt);
   Hz.update(dt);
+  W2.update(dt);
   for (const b of G.bullets) if (b.k === 'bolt') revealAt(b.x, b.y + 20, 20);
   updateFx(dt);
   Quests.update(dt); Radio.update(dt); Hints.update(dt); Amb.update(dt); RunSave.tick(dt);
-  Music.setTheme(G.bosses.length ? 'boss' : World.kind === 'lab' ? 'lab' : G.stage, G.bosses.length ? hashStr(G.bosses[0].id) % 5 - 2 : 0);
+  Music.setTheme(G.bosses.length ? 'boss' : World.kind === 'lab' ? 'lab' : (STAGE_WORLD[G.stage].theme || G.stage), G.bosses.length ? hashStr(G.bosses[0].id) % 5 - 2 : 0);
   const art = nearestArtifact();
   if (art && art.d < 1200 * P.detect) {
     G.detT -= dt;
