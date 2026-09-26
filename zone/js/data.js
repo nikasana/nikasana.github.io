@@ -293,3 +293,13 @@ const HINTS = {
   synergy: 'SYNERGY! 3 items with the same tag grant a set bonus. Get 6 for more.',
   elite: 'ELITE mutant! Glowing ones are much tougher but drop great loot.',
 };
+
+// ---------- difficulty (picked first on the setup screen) ----------
+const DIFFICULTIES = [
+  { id: 'tourist', icon: '🧃', name: 'Tourist', desc: 'Story mode. Weak, slow-spawning mutants, fast healing, 2 extra revives.', hp: 0.5, dmg: 0.35, spawn: 0.6, boss: 0.55, regen: 1.5, rev: 2, xp: 1.3, rub: 0.8, hpBonus: 60 },
+  { id: 'rookie', icon: '🌱', name: 'Rookie', desc: 'Relaxed. Softer mutants, gentle healing and 1 extra revive.', hp: 0.72, dmg: 0.55, spawn: 0.8, boss: 0.75, regen: 0.6, rev: 1, xp: 1.15, rub: 0.9, hpBonus: 30 },
+  { id: 'stalker', icon: '🎒', name: 'Stalker', desc: 'The intended balance.', hp: 1, dmg: 1, spawn: 1, boss: 1, regen: 0, rev: 0, xp: 1, rub: 1, hpBonus: 0 },
+  { id: 'veteran', icon: '🎖️', name: 'Veteran', desc: 'Tougher, hungrier mutants. +40% rubles.', hp: 1.3, dmg: 1.3, spawn: 1.15, boss: 1.3, regen: 0, rev: 0, xp: 1, rub: 1.4, hpBonus: 0 },
+  { id: 'legend', icon: '💀', name: 'Legend', desc: 'The Zone wants you dead. Double rubles.', hp: 1.7, dmg: 1.7, spawn: 1.3, boss: 1.6, regen: 0, rev: 0, xp: 1, rub: 2, hpBonus: 0 },
+];
+function diffDef(id) { return DIFFICULTIES.find((d) => d.id === (id || (G && G.diff))) || DIFFICULTIES[1]; }

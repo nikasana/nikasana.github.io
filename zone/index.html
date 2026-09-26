@@ -284,6 +284,7 @@
   <div class="rubles">0 ₽</div>
   <div class="menu" style="margin-top:14px">
     <button class="big" id="continueRunBtn" style="display:none">▶ CONTINUE RUN</button>
+    <button class="big ghost" id="diffTitleBtn" style="font-size:14px;padding:8px 18px"></button>
     <button class="big" id="playBtn">PLAY</button>
     <button class="big ghost" id="bunkerBtn">🏚 SIDOROVICH'S BUNKER</button>
     <button class="big ghost" id="radioTitleBtn">📻 RADIO</button>
@@ -295,6 +296,8 @@
 
 <div id="setup" class="screen scroll">
   <div class="hdr"><button class="back">← BACK</button><h2>PREPARE</h2><span class="rubles">0 ₽</span></div>
+  <div class="sect">DIFFICULTY</div>
+  <div class="grid" id="diffList"></div>
   <div class="sect">MODE</div>
   <div class="grid" id="modeList"></div>
   <div class="sect">STAGE</div>
@@ -370,22 +373,22 @@
     el.innerHTML = 'Something failed to load: ' + (e.message || 'script error') + ' <button onclick="location.reload(true)" style="margin-left:8px;padding:4px 10px">Reload</button>';
   });
 </script>
-<script src="js/util.js?v=13"></script>
-<script src="js/audio.js?v=13"></script>
-<script src="js/radio.js?v=13"></script>
-<script src="js/ambience.js?v=13"></script>
-<script src="js/data.js?v=13"></script>
-<script src="js/artifacts.js?v=13"></script>
-<script src="js/world.js?v=13"></script>
-<script src="js/render.js?v=13"></script>
-<script src="js/render2.js?v=13"></script>
-<script src="js/lighting.js?v=13"></script>
-<script src="js/game.js?v=13"></script>
-<script src="js/systems.js?v=13"></script>
-<script src="js/weapons2.js?v=13"></script>
-<script src="js/mutants3.js?v=13"></script>
-<script src="js/events.js?v=13"></script>
-<script src="js/hazards.js?v=13"></script>
-<script src="js/ui.js?v=13"></script>
+<script src="js/util.js?v=14"></script>
+<script src="js/audio.js?v=14"></script>
+<script src="js/radio.js?v=14"></script>
+<script src="js/ambience.js?v=14"></script>
+<script src="js/data.js?v=14"></script>
+<script src="js/artifacts.js?v=14"></script>
+<script src="js/world.js?v=14"></script>
+<script src="js/render.js?v=14"></script>
+<script src="js/render2.js?v=14"></script>
+<script src="js/lighting.js?v=14"></script>
+<script src="js/game.js?v=14"></script>
+<script src="js/systems.js?v=14"></script>
+<script src="js/weapons2.js?v=14"></script>
+<script src="js/mutants3.js?v=14"></script>
+<script src="js/events.js?v=14"></script>
+<script src="js/hazards.js?v=14"></script>
+<script src="js/ui.js?v=14"></script>
 </body>
 </html>

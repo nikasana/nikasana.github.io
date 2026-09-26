@@ -36,12 +36,12 @@ const TMP = [], TMP2 = [], TMP3 = [];
 const xpNeed = (l) => Math.floor(5 + l * 5 + Math.pow(l, 1.75));
 const stageDef = () => STAGES.find((s) => s.id === G.stage);
 
-function newGame(stageId, charId, mode, spawnIdx = 0, seed) {
+function newGame(stageId, charId, mode, spawnIdx = 0, seed, diff) {
   const ch = CHARACTERS.find((c) => c.id === charId) || CHARACTERS[0];
   seed = seed || (Math.random() * 1e9) | 0;
   World.genStage(stageId, seed, spawnIdx);
   G = {
-    t: 0, state: 'play', stage: stageId, char: ch.id, kills: 0, level: 1, xp: 0, xpNeed: xpNeed(1), pendingLv: 0,
+    t: 0, state: 'play', diff: diff || (Save.data.diff || 'rookie'), stage: stageId, char: ch.id, kills: 0, level: 1, xp: 0, xpNeed: xpNeed(1), pendingLv: 0,
     enemies: [], bullets: [], ebullets: [], gems: [], pickups: [], particles: [], texts: [], decals: [], fx: [], throws: [], timers: [],
     bosses: [], bossIdx: 0, spawnAcc: 0, rushT: 80, emIdx: 0, em: null, shake: 0, flash: 0, flashCol: '255,255,255', psi: 0,
     zone: '', arts: 0, dmg: 0, crates: [], lightT: 0, auraT: 0, thunderT: 4, detT: 0, won: false, regionT: 0, fade: 1,
@@ -68,6 +68,7 @@ function newGame(stageId, charId, mode, spawnIdx = 0, seed) {
   // character
   P.maxhp += mod.maxhp || 0; P.spdMul += mod.spdMul || 0; P.dr += mod.dr || 0; P.dmgMul += mod.dmgMul || 0; P.luck += mod.luck || 0;
   P.anomRes = mod.anomRes || 0; P.psiImmune = P.basePsi = !!mod.psiImmune; P.detect = mod.detect || 1;
+  const DF = diffDef(G.diff); P.maxhp += DF.hpBonus; P.regen += DF.regen; P.revives += DF.rev; P.xpMul *= DF.xp;
   P.hp = P.maxhp;
   if (mod.art) { P.arts[mod.art] = 1; ARTIFACTS[mod.art].apply(P); }
   for (const f of World.fields) spawnArtifact(f);
@@ -285,6 +286,7 @@ function hurtPlayer(d, src, ignoreInv = false, kind = '') {
   if ((kind === 'anomaly' || kind === 'rad') && P.antiradT > 0) return;
   if (kind === 'anomaly' || kind === 'rad') d *= 1 - P.anomRes;
   d *= 1 - Math.min(0.75, P.dr + (!P.moving ? P.standFirm : 0));
+  d *= diffDef().dmg;
   if (P.veh && VEH[P.veh.kind].dr) d *= 1 - VEH[P.veh.kind].dr;
   if (P.adren && !ignoreInv) P.adrenT = 2;
   P.hp -= d;
@@ -337,7 +339,7 @@ function damageOb(ob, dmg) {
 // ---------- enemies ----------
 function spawnEnemy(id, x, y, o = {}) {
   const d = ENEMIES[id], m = G.t / 60, sm = stageDef().hpMul;
-  const hpMul = (d.boss ? 1 + Math.max(0, m - 2.5) * 0.1 : hpScale(m)) * sm * (o.hpMul || 1);
+  const hpMul = (d.boss ? 1 + Math.max(0, m - 2.5) * 0.1 : hpScale(m)) * sm * (o.hpMul || 1) * (d.boss ? diffDef().boss : diffDef().hp);
   const e = {
     id, d, x, y, z: 0, vz: 0, r: d.r, hp: d.hp * hpMul, maxhp: d.hp * hpMul, spd: d.spd * (d.boss ? 1 : 1 + Math.min(0.3, m * 0.018)),
     dmg: d.dmg * (d.boss ? 1 : 1 + m * 0.05) * (0.8 + sm * 0.2), kvx: 0, kvy: 0, face: 1, aim: 0, anim: rand(10), flash: 0, t: 0, cd: rand(1, 3), cd2: rand(4, 8), cd3: rand(5, 8),
@@ -406,7 +408,7 @@ function director(dt) {
   const m = G.t / 60, reg = World.region(P.x, P.y), lab = World.kind === 'lab', night = Env.isNight();
   const bossUp = G.bosses.length > 0;
   const cap = Math.min(170 + (G.tier - 1) * 10, 18 + m * 13) * (lab ? 0.6 : 1) * (bossUp ? 0.6 : 1);
-  const rate = Events.mods().spawn * Math.min(7, 0.5 + m * 0.42) * (0.75 + reg.danger * 0.13) * (night ? 1.25 : 1) * (G.em && G.em.phase === 'blast' ? 0 : 1) * (lab ? 0.7 : 1) * (bossUp ? 0.4 : 1);
+  const rate = diffDef().spawn * Events.mods().spawn * Math.min(7, 0.5 + m * 0.42) * (0.75 + reg.danger * 0.13) * (night ? 1.25 : 1) * (G.em && G.em.phase === 'blast' ? 0 : 1) * (lab ? 0.7 : 1) * (bossUp ? 0.4 : 1);
   G.spawnAcc += rate * dt;
   while (G.spawnAcc >= 1) {
     G.spawnAcc--;

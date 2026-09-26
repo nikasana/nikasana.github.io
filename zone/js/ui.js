@@ -581,7 +581,7 @@ function endRun(kind, src) {
   G.state = 'over';
   const S = Save.data, mins = Math.floor(G.t / 60);
   const loot = Math.floor((G.rubles - G.paidR) * P.rubMul);
-  const earned = Math.floor(loot + (mins - G.paidMin) * 15 + (kind === 'win' ? 500 : 0));
+  const earned = Math.floor((loot + (mins - G.paidMin) * 15 + (kind === 'win' ? 500 : 0)) * diffDef().rub);
   const tb = (mins - G.paidMin) * 15;
   G.paidR = G.rubles; G.paidMin = mins;
   S.rubles += earned;
@@ -595,9 +595,9 @@ function endRun(kind, src) {
   Save.save();
   $('overTitle').textContent = kind === 'win' ? 'VICTORY' : kind === 'quit' ? 'RUN ABANDONED' : 'YOU DIED';
   $('overTitle').className = kind === 'win' ? 'win' : '';
-  $('overSub').textContent = kind === 'win' ? `${stageDef().final.name} shatters. You reached the heart of ${stageDef().name}.` : kind === 'quit' ? 'You fled back to the bunker.' : `Killed by ${src || 'the Zone'}. The Zone claims another stalker.`;
+  $('overSub').textContent = kind === 'win' ? `${stageDef().final.name} shatters. You reached the heart of ${stageDef().name}.` : kind === 'quit' ? 'You fled back to the bunker.' : `Killed by ${src || 'the Zone'}. The Zone claims another stalker.` + (kind !== 'win' && kind !== 'quit' && G.t < 360 && G.diff !== 'tourist' ? ' Tip: pick an easier difficulty in PLAY, or buy Bunker upgrades.' : '');
   $('stats').innerHTML = `<div><b>${fmtTime(G.t)}</b>survived</div><div><b>${G.level}</b>level</div><div><b>${G.kills}</b>kills</div><div><b>${G.arts}</b>artifacts</div><div><b>${G.questsDone}</b>contracts</div><div><b>${fmtTime(Math.max(best, G.t))}</b>best</div>`;
-  $('earned').innerHTML = `<div class="earn">+${earned} ₽</div><small>run loot ${loot} · time bonus ${tb}${kind === 'win' ? ' · victory 500' : ''}  •  total ${S.rubles} ₽</small>${unlock}`;
+  $('earned').innerHTML = `<div class="earn">+${earned} ₽</div><small>run loot ${loot} · time bonus ${tb}${kind === 'win' ? ' · victory 500' : ''} · ${diffDef().icon} ${diffDef().name} ×${diffDef().rub}  •  total ${S.rubles} ₽</small>${unlock}`;
   $('continueBtn').style.display = kind === 'win' && !G.endless ? 'inline-block' : 'none';
   hide('pause'); hide('levelup'); show('over'); $('touchUi').classList.remove('show');
   Music.setIntensity(0);
@@ -671,7 +671,9 @@ function buildSetup() {
   const S = Save.data;
   setupStage = setupStage || (S.stages.includes(S.stage) ? S.stage : 'zone');
   setupChar = setupChar || (S.chars.includes(S.char) ? S.char : 'rookie');
-  const mode = S.mode || 'standard';
+  const mode = S.mode || 'standard', dif = S.diff || 'rookie';
+  $('diffList').innerHTML = DIFFICULTIES.map((d) => `<button class="pick ${dif === d.id ? 'sel' : ''}" data-diff="${d.id}"><div class="pi">${d.icon}</div><div><b>${d.name}</b><small>${d.desc}</small><em>enemy HP ×${d.hp} · damage taken ×${d.dmg}${d.rub !== 1 ? ' · rubles ×' + d.rub : ''}</em></div></button>`).join('');
+  for (const b of document.querySelectorAll('[data-diff]')) b.onclick = () => { S.diff = b.dataset.diff; Save.save(); buildSetup(); };
   $('modeList').innerHTML = [['standard', '⏱️', 'Standard', '15 minutes, 6 bosses, then the final boss. Win to unlock the next stage.'], ['endless', '♾️', 'Endless', 'Bosses forever. Every 15 minutes the Zone grows a tier stronger. Play for hours.'], ['bossrush', '👑', 'Boss Rush', 'A new boss every minute. How many can you beat?']]
     .map(([id, ic, n, d]) => `<button class="pick ${mode === id ? 'sel' : ''}" data-mode="${id}"><div class="pi">${ic}</div><div><b>${n}</b><small>${d}</small>${S.best[(setupStage || 'zone') + (id === 'standard' ? '' : '_' + id)] ? `<em>best ${fmtTime(S.best[(setupStage || 'zone') + (id === 'standard' ? '' : '_' + id)])}</em>` : ''}</div></button>`).join('');
   for (const b of document.querySelectorAll('[data-mode]')) b.onclick = () => { S.mode = b.dataset.mode; Save.save(); buildSetup(); };
@@ -794,6 +796,7 @@ $('continueRunBtn').addEventListener('click', () => {
   }, 30);
 });
 function titleContinue() {
+  diffTitle();
   const d = RunSave.peek(), b = $('continueRunBtn');
   if (d && d.g) { b.style.display = 'inline-block'; b.textContent = `▶ CONTINUE RUN · ${(STAGES.find((s) => s.id === d.g.stage) || STAGES[0]).name} ${fmtTime(d.g.t)} · LV ${d.g.level}`; }
   else b.style.display = 'none';
@@ -806,6 +809,8 @@ $('continueBtn').addEventListener('click', () => continueEndless());
 $('menuBtn').addEventListener('click', () => toMenu());
 $('rerollBtn').addEventListener('click', () => reroll());
 $('playBtn').addEventListener('click', () => { Sfx.init(); buildSetup(); openScreen('setup'); });
+function diffTitle() { const d = diffDef(Save.data.diff || 'rookie'); $('diffTitleBtn').textContent = 'Difficulty: ' + d.icon + ' ' + d.name + '  ▸ change'; }
+$('diffTitleBtn').addEventListener('click', () => { Sfx.init(); const i = DIFFICULTIES.findIndex((d) => d.id === (Save.data.diff || 'rookie')); Save.data.diff = DIFFICULTIES[(i + 1) % DIFFICULTIES.length].id; Save.save(); diffTitle(); });
 $('bunkerBtn').addEventListener('click', () => { Sfx.init(); buildBunker(); openScreen('bunker'); });
 $('settingsBtn').addEventListener('click', () => { Sfx.init(); settingsBack = 'title'; buildSettings(); openScreen('settings'); });
 for (const b of document.querySelectorAll('.back')) b.addEventListener('click', () => {
