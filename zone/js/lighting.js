@@ -37,7 +37,7 @@ const Env = {
     if (this.wT <= 0) {
       if (this.weather !== 'clear') this.setWeather('clear');
       else {
-        const opts = [['rain', 3], ['fog', 2], ['storm', G.t > 90 ? 2 : 0], ['psi', G.t > 240 ? 1.5 : 0]];
+        const opts = [['rain', 3], ['fog', 2], ['storm', G.t > 90 ? 2 : 0], ['psi', G.t > 240 ? 1.5 : 0], ['heat', G.t > 120 ? 1.2 : 0], ['snow', 1.3], ['radstorm', G.t > 300 ? 0.9 : 0]];
         let tot = 0; for (const o of opts) tot += o[1];
         let r = rand(tot); for (const o of opts) { r -= o[1]; if (r <= 0) { this.setWeather(o[0]); break; } }
       }
@@ -135,6 +135,14 @@ const Env = {
       ctx.stroke();
       ctx.fillStyle = `rgba(20,30,50,${0.12 * this.rainA})`; ctx.fillRect(0, 0, VW, VH);
     }
+    if (World.kind !== 'lab' && this.weather === 'snow') {
+      if (!this.flakes) this.flakes = Array.from({ length: 140 }, () => ({ x: rand(VW), y: rand(VH), s: rand(1, 3), v: rand(30, 70) }));
+      ctx.fillStyle = 'rgba(240,245,255,0.8)';
+      for (const f of this.flakes) { f.y += f.v / 60; f.x += Math.sin(NOW + f.s * 3) * 0.5; if (f.y > VH) { f.y = -5; f.x = rand(VW); } ctx.fillRect(f.x, f.y, f.s, f.s); }
+      ctx.fillStyle = 'rgba(220,230,245,0.12)'; ctx.fillRect(0, 0, VW, VH);
+    }
+    if (World.kind !== 'lab' && this.weather === 'heat') { ctx.fillStyle = `rgba(255,150,40,${0.1 + Math.sin(NOW * 1.5) * 0.03})`; ctx.fillRect(0, 0, VW, VH); }
+    if (World.kind !== 'lab' && this.weather === 'radstorm') { ctx.fillStyle = `rgba(180,210,40,${0.14 + Math.sin(NOW * 4) * 0.04})`; ctx.fillRect(0, 0, VW, VH); }
     if (World.kind !== 'lab' && this.weather === 'psi') { ctx.fillStyle = `rgba(120,40,180,${0.1 + Math.sin(NOW * 2) * 0.04})`; ctx.fillRect(0, 0, VW, VH); }
   },
 };

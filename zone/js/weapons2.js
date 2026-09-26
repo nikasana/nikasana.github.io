@@ -330,6 +330,7 @@ function drawOwned() {
 }
 // landing effects for lobbed shots
 function throwLand(t) {
+  if (t.k === 'reveal') { revealAt(t.x1, t.y1, 60); burst(t.x1, t.y1, 6, '220,220,200', 80); return true; }
   if (t.k === 'erock') { explode(t.x1, t.y1, t.r, t.dmg, false); return true; }
   if (t.k === 'acid') { G.owned.push({ k: 'zone', x: t.x1, y: t.y1, r: t.r, life: t.life, max: t.life, dps: t.dmg * P.dmgMul, tick: 0, c: '150,255,80' }); Sfx.play('fire'); return true; }
   if (t.k === 'flare') { G.owned.push({ k: 'flarezone', x: t.x1, y: t.y1, r: t.r, life: t.life, max: t.life, dps: t.dmg * P.dmgMul, tick: 0, c: '255,130,50' }); Sfx.play('fire'); return true; }

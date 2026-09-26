@@ -498,6 +498,7 @@ function jag(x1, y1, x2, y2, n, amp) {
 }
 function drawAnomalyGround(a) {
   const t = NOW + a.seed, r = a.r;
+  if (a.hidden) { if (Math.random() < 0.02) { ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(a.x, a.y, r * 0.5, r * 0.3, 0, 0, TAU); ctx.stroke(); } return; }
   if (ANOMALIES[a.type] && !['electro', 'burner', 'vortex', 'acid', 'spring'].includes(a.type)) { drawAnomalyGround2(a); return; }
   switch (a.type) {
     case 'electro': {
@@ -539,6 +540,7 @@ function drawAnomalyGround(a) {
 }
 function drawAnomalyTop(a) {
   const t = NOW + a.seed, r = a.r;
+  if (a.hidden) return;
   if (!['electro', 'burner', 'vortex', 'acid', 'spring'].includes(a.type)) { drawAnomalyTop2(a); return; }
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   switch (a.type) {

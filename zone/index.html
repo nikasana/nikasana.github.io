@@ -119,6 +119,8 @@
   #artbelt .art.sel { outline: 2px solid var(--acc); background: rgba(200, 255, 90, 0.15); }
   .tsmall { width: 38px; height: 38px; font-size: 14px; bottom: 96px; }
   #tPrev { right: 150px; } #tNext { right: 104px; }
+  #vehBtn { right: 22px; bottom: 124px; width: 54px; height: 54px; font-size: 24px; display: none; }
+  #boltBtn { right: 190px; bottom: 30px; width: 50px; height: 50px; font-size: 20px; }
   #abFill, #abilityFill { position: absolute; inset: 0; background: rgba(200, 255, 90, 0.2); transform-origin: bottom; transform: scaleY(0); }
   #abIcon { font-size: 28px; position: relative; line-height: 1; } #abCd { font-size: 11px; position: relative; color: var(--acc); }
   #abUse kbd { position: absolute; top: 3px; right: 12px; z-index: 1; }
@@ -264,7 +266,7 @@
   <div id="detWrap"><div id="detLed"></div><small>ECHO DETECTOR</small><canvas id="detector" width="80" height="80"></canvas><div id="detDist">---</div><small>danger <span id="dangerLvl"></span></small></div>
   <div id="ability"><button id="abPrev" title="Previous artifact (wheel)">◀</button><div id="abUse" title="Use artifact power (Q)"><div id="abFill"></div><kbd>Q</kbd><span id="abIcon">🔒</span><span id="abCd"></span></div><button id="abNext" title="Next artifact (E / wheel)">▶</button><div id="abInfo"><b id="abName"></b><small id="abArt"></small></div></div>
   <div id="radio"><span id="radioWho"></span><span id="radioTxt"></span></div>
-  <div id="keysHint"><kbd>WASD</kbd> move · <kbd>Space</kbd> dash · <kbd>Q</kbd> ability · <kbd>-</kbd> <kbd>+</kbd> artifact · <kbd>N</kbd> radio · <kbd>M</kbd> map · <kbd>Esc</kbd> pause</div>
+  <div id="keysHint"><kbd>WASD</kbd> move · <kbd>Space</kbd> dash · <kbd>Q</kbd> ability · <kbd>-</kbd> <kbd>+</kbd> artifact · <kbd>F</kbd> ride · <kbd>T</kbd> bolt · <kbd>N</kbd> radio · <kbd>M</kbd> map · <kbd>Esc</kbd> pause</div>
   <div id="fps"></div>
 </div>
 
@@ -272,6 +274,7 @@
   <div id="joyBase"><div id="joyKnob"></div></div>
   <button id="dashBtn" class="tbtn"><div id="dashFill"></div><span>DASH</span></button>
   <button id="abilityBtn" class="tbtn"><div id="abilityFill"></div><span id="abilityIcon">🔒</span></button>
+  <button id="vehBtn" class="tbtn">🏍️</button><button id="boltBtn" class="tbtn">🔩</button>
   <button id="tPrev" class="tbtn tsmall">◀</button><button id="tNext" class="tbtn tsmall">▶</button>
 </div>
 
@@ -367,21 +370,22 @@
     el.innerHTML = 'Something failed to load: ' + (e.message || 'script error') + ' <button onclick="location.reload(true)" style="margin-left:8px;padding:4px 10px">Reload</button>';
   });
 </script>
-<script src="js/util.js?v=12"></script>
-<script src="js/audio.js?v=12"></script>
-<script src="js/radio.js?v=12"></script>
-<script src="js/ambience.js?v=12"></script>
-<script src="js/data.js?v=12"></script>
-<script src="js/artifacts.js?v=12"></script>
-<script src="js/world.js?v=12"></script>
-<script src="js/render.js?v=12"></script>
-<script src="js/render2.js?v=12"></script>
-<script src="js/lighting.js?v=12"></script>
-<script src="js/game.js?v=12"></script>
-<script src="js/systems.js?v=12"></script>
-<script src="js/weapons2.js?v=12"></script>
-<script src="js/mutants3.js?v=12"></script>
-<script src="js/events.js?v=12"></script>
-<script src="js/ui.js?v=12"></script>
+<script src="js/util.js?v=13"></script>
+<script src="js/audio.js?v=13"></script>
+<script src="js/radio.js?v=13"></script>
+<script src="js/ambience.js?v=13"></script>
+<script src="js/data.js?v=13"></script>
+<script src="js/artifacts.js?v=13"></script>
+<script src="js/world.js?v=13"></script>
+<script src="js/render.js?v=13"></script>
+<script src="js/render2.js?v=13"></script>
+<script src="js/lighting.js?v=13"></script>
+<script src="js/game.js?v=13"></script>
+<script src="js/systems.js?v=13"></script>
+<script src="js/weapons2.js?v=13"></script>
+<script src="js/mutants3.js?v=13"></script>
+<script src="js/events.js?v=13"></script>
+<script src="js/hazards.js?v=13"></script>
+<script src="js/ui.js?v=13"></script>
 </body>
 </html>

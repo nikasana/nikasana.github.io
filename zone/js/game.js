@@ -73,7 +73,7 @@ function newGame(stageId, charId, mode, spawnIdx = 0, seed) {
   for (const f of World.fields) spawnArtifact(f);
   G.crates = World.crateSpots.map((s) => ({ x: s.x, y: s.y, open: 0 }));
   CAM.x = P.x; CAM.y = P.y;
-  Env.reset(); Radio.reset(); Hints.reset(); Quests.reset(); Events.reset();
+  Env.reset(); Radio.reset(); Hints.reset(); Quests.reset(); Events.reset(); Hz.reset();
   if (G.bossrush) G.nextBossT = 30;
   recomputeTags(); hudBuild();
   const sd = stageDef();
@@ -285,6 +285,7 @@ function hurtPlayer(d, src, ignoreInv = false, kind = '') {
   if ((kind === 'anomaly' || kind === 'rad') && P.antiradT > 0) return;
   if (kind === 'anomaly' || kind === 'rad') d *= 1 - P.anomRes;
   d *= 1 - Math.min(0.75, P.dr + (!P.moving ? P.standFirm : 0));
+  if (P.veh && VEH[P.veh.kind].dr) d *= 1 - VEH[P.veh.kind].dr;
   if (P.adren && !ignoreInv) P.adrenT = 2;
   P.hp -= d;
   if (!ignoreInv) P.inv = 0.6;
@@ -561,7 +562,7 @@ function updateEnemies(dt) {
     const dx = TG.x - e.x, dy = TG.y - e.y, d = Math.hypot(dx, dy) || 1;
     let ux = dx / d, uy = dy / d;
     if (lab && d > 90) { const f = World.flowDir(e.x, e.y); if (f) { ux = f[0]; uy = f[1]; } }
-    let sp = e.spd * (e.slowT > 0 ? 0.55 : 1) * (G.markT > 0 && !e.boss ? 1.25 : 1) * (flood && !e.d.fly ? 0.75 : 1), vx = ux * sp, vy = uy * sp;
+    let sp = e.spd * (!e.d.fly && World.kind === 'over' && Math.abs(e.x - P.x) < 1400 && World.isWater(e.x, e.y) ? 0.55 : 1) * (e.slowT > 0 ? 0.55 : 1) * (G.markT > 0 && !e.boss ? 1.25 : 1) * (flood && !e.d.fly ? 0.75 : 1), vx = ux * sp, vy = uy * sp;
     if (!e.boss && !e.mini && d > farR) { const p = ringPos(); if (p) { e.x = p[0]; e.y = p[1]; } continue; }
     if (e.stun > 0) { vx = vy = 0; }
     else switch (e.id) {
@@ -842,7 +843,9 @@ function updateAnomalies(dt) {
     if (Math.abs((a.cx ?? a.x) - P.x) > 1500 || Math.abs((a.cy ?? a.y) - P.y) > 1300) continue;
     a.cd -= dt; a.act = Math.max(0, a.act - dt);
     const R = a.type === 'electro' && wet ? a.r * 1.3 : a.r;
-    const pd = dist(a.x, a.y, P.x, P.y), pin = pd < R + P.r * 0.5 && P.dashT <= 0;
+    const pd = dist(a.x, a.y, P.x, P.y), pin = pd < R + P.r * 0.5 && P.dashT <= 0 && P.z <= 0;
+    if (pin && a.hidden) { a.hidden = false; burst(a.x, a.y - 10, 16, '255,255,200', 160, { add: true }); }
+    if (a.type === 'burner' && Env.weather === 'heat') a.cd -= dt;
     EG.query(a.x, a.y, R, TMP2);
     switch (a.type) {
       case 'electro':
@@ -952,6 +955,7 @@ function updateAnomalies(dt) {
         if (pd < a.r && !P.psiImmune) { G.psi = Math.max(G.psi, 0.6); P.slowNext = Math.max(P.slowNext, 0.2); P.psiAcc = (P.psiAcc || 0) + 5 * dt; if (P.psiAcc > 5) { hurtPlayer(P.psiAcc, 'a Psi-Field', true, 'anomaly'); P.psiAcc = 0; } }
         if (a.cd <= 0) { a.cd = 3; for (const e of TMP2) if (!e.boss && dist(a.x, a.y, e.x, e.y) < a.r) { e.stun = 1; hurtEnemy(e, 15, 0, 0, true); } }
         break;
+      default: Hz.anomaly(a, dt, pd, pin); break;
       case 'spring':
         if (a.cd <= 0) {
           let fired = false;
@@ -1192,6 +1196,7 @@ function updatePickups(dt) {
       p.dead = true;
       if (p.type === 'med') { const h = Math.round(35 * P.medMul); P.hp = Math.min(P.maxhp, P.hp + h); text(P.x, P.y - 50, '+' + h + ' HP', '#6f6', false, true); Sfx.play('heal'); }
       else if (p.type === 'item') { giveItem(p.id); Sfx.play('stash'); }
+      else if (p.type === 'fuel') { let n = 0; for (const v of World.vehicles) if (v.kind === 'jeep' && dist2(v.x, v.y, P.x, P.y) < 1500 * 1500) { v.fuel = Math.min(100, v.fuel + 50); n++; } banner('FUEL CAN', n ? 'Nearby jeeps refueled.' : 'No jeep nearby.', 1.5, 'good'); }
       else if (p.type === 'magnet') { for (const g of G.gems) g.mag = true; banner('MAGNET', 'All XP pulled in!', 1.5, 'good'); Sfx.play('heal'); }
       else if (p.type === 'art') takeArtifact(pick(Object.keys(ARTIFACTS)));
       else if (p.type === 'stash') { P.hp = P.maxhp; takeArtifact(pick(Object.keys(ARTIFACTS)), ' • full heal, +1 level'); G.pendingLv++; }
@@ -1208,6 +1213,7 @@ function updatePickups(dt) {
       const r = Math.random();
       if (r < 0.32) G.pickups.push({ type: 'med', x: c.x + 10, y: c.y + 10, t: 0 });
       else if (r < 0.55) G.pickups.push({ type: 'item', id: pick(Object.keys(ITEMS)), x: c.x + 10, y: c.y + 10, t: 0 });
+      else if (r < 0.62) G.pickups.push({ type: 'fuel', x: c.x + 10, y: c.y + 10, t: 0 });
       else if (r < 0.85) for (let i = 0; i < 6; i++) dropGem(c.x, c.y, 3 + Math.floor(G.t / 60));
       else G.pickups.push({ type: 'magnet', x: c.x + 10, y: c.y + 10, t: 0 });
       G.rubles += 3;
@@ -1416,6 +1422,7 @@ function updatePlayer(dt) {
   if (keys.KeyA || keys.ArrowLeft) mx--; if (keys.KeyD || keys.ArrowRight) mx++;
   if (joy.active) { mx += joy.dx; my += joy.dy; }
   const ml = Math.hypot(mx, my); if (ml > 1) { mx /= ml; my /= ml; }
+  if (P.flipT > 0) { mx = -mx; my = -my; }
   P.moving = ml > 0.1;
   P.psiSlowT -= dt;
   P.chillT = (P.chillT || 0) - dt;
@@ -1429,7 +1436,13 @@ function updatePlayer(dt) {
     P.dashT -= dt; P.x += P.dashVx * dt; P.y += P.dashVy * dt;
     if (P.dashDmg) { EG.query(P.x, P.y, 40, TMP); for (const e of TMP) if (!e.dead && !P.dashHit.includes(e) && dist2(e.x, e.y, P.x, P.y) < (e.r + 24) ** 2) { P.dashHit.push(e); hurtEnemy(e, P.dashDmg, P.dashVx * 0.3, P.dashVy * 0.3, false, false); } }
     part(P.x + rand(-6, 6), P.y, { z: rand(5, 30), c: '180,220,160', s: 5, life: 0.25, g: 0, add: true });
-  } else { P.x += mx * spd * dt; P.y += my * spd * dt; }
+  } else {
+    const vm = vehicleUpdate(dt), tx = mx * spd * vm, ty = my * spd * vm;
+    let ice = false;
+    if (World.kind === 'over') for (const a of World.anomalies) if (a.type === 'cryo' && Math.abs(a.x - P.x) < 150 && dist2(a.x, a.y, P.x, P.y) < (a.r * 1.8) ** 2) { ice = true; break; }
+    if (ice && !P.veh) { P.ivx = lerp(P.ivx || 0, tx, dt * 1.6); P.ivy = lerp(P.ivy || 0, ty, dt * 1.6); } else { P.ivx = tx; P.ivy = ty; }
+    P.x += P.ivx * dt; P.y += P.ivy * dt;
+  }
   P.x += P.kvx * dt; P.y += P.kvy * dt;
   const kd = Math.pow(0.01, dt); P.kvx *= kd; P.kvy *= kd;
   if (P.moving) {
@@ -1550,6 +1563,8 @@ function update(dt) {
   updateBullets(dt);
   updatePickups(dt);
   updateOwned(dt);
+  Hz.update(dt);
+  for (const b of G.bullets) if (b.k === 'bolt') revealAt(b.x, b.y + 20, 20);
   updateFx(dt);
   Quests.update(dt); Radio.update(dt); Hints.update(dt); Amb.update(dt); RunSave.tick(dt);
   Music.setTheme(G.bosses.length ? 'boss' : World.kind === 'lab' ? 'lab' : G.stage, G.bosses.length ? hashStr(G.bosses[0].id) % 5 - 2 : 0);

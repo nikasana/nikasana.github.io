@@ -110,7 +110,7 @@ const POI_TYPES = [
   { type: 'camp', name: 'Loner Hideout', guard: 'cat', icon: '⛺' },
 ];
 const LEVEL_KEYS = ['kind', 'regions', 'roads', 'regionGrid', 'obstacles', 'obGrid', 'props', 'propGrid', 'anomalies', 'fields', 'shelters', 'rads',
-  'crateSpots', 'chunks', 'chunkOrder', 'labels', 'mapImg', 'hatches', 'pois', 'lairs', 'lab', 'dark'];
+  'crateSpots', 'chunks', 'chunkOrder', 'labels', 'mapImg', 'hatches', 'pois', 'lairs', 'lab', 'dark', 'spores', 'crystals', 'attics', 'vehicles', 'tornados'];
 
 const World = {
   stage: 'zone', stamp: 1, levels: {}, cur: 'over',
@@ -119,6 +119,7 @@ const World = {
     this.kind = kind; this.regions = []; this.roads = [];
     this.obstacles = []; this.props = []; this.anomalies = []; this.fields = []; this.shelters = []; this.rads = [];
     this.crateSpots = []; this.chunks = new Map(); this.chunkOrder = []; this.labels = []; this.hatches = []; this.pois = []; this.lairs = []; this.lab = null; this.dark = 0;
+    this.spores = []; this.crystals = []; this.attics = []; this.vehicles = []; this.tornados = [];
     const OC = WORLD / OBCELL; this.obGrid = []; for (let i = 0; i < OC * OC; i++) this.obGrid.push([]);
     const PC = WORLD / PCELL; this.propGrid = []; for (let i = 0; i < PC * PC; i++) this.propGrid.push([]);
   },
@@ -144,6 +145,7 @@ const World = {
     this.genAnomalies(R, 150);
     this.genNature(R);
     this.genMisc(R);
+    genHazards(R);
     this.labels.push({ x: this.start.x, y: this.start.y + 60, name: '⚑ ' + sp.name });
     // make sure the chosen spawn point is standing room
     for (let i = 0; i < 200 && !this.free(this.start.x, this.start.y, 20); i++) { this.start.x += Math.cos(i) * 12 * i * 0.2; this.start.y += Math.sin(i) * 12 * i * 0.2; }
@@ -473,7 +475,8 @@ const World = {
       if (this.fields.some((f) => dist(f.x, f.y, x, y) < 520)) continue;
       if (this.pois.some((p) => dist(p.x, p.y, x, y) < 400) || this.hatches.some((h) => dist(h.x, h.y, x, y) < 300)) continue;
       if (!this.free(x, y, 90)) continue;
-      const reg = this.region(x, y), type = pick(reg.anoms);
+      const reg = this.region(x, y), type = R() < 0.18 ? pick(NEW_ANOMS) : pick(reg.anoms);
+      this.hideNext = reg.danger >= 3 && R() < 0.3;
       this.makeField(x, y, type, 3 + Math.floor(R() * 4) + (reg.danger > 3 ? 2 : 0), 230, R);
       made++;
     }
@@ -490,7 +493,7 @@ const World = {
       const a = R() * TAU, d = 30 + R() * spread, ax = x + Math.cos(a) * d, ay = y + Math.sin(a) * d;
       const r = ANOMALIES[type].r * (0.8 + R() * 0.4);
       if (!this.free(ax, ay, 20) || f.anoms.some((o) => dist(o.x, o.y, ax, ay) < o.r + r + 20)) continue;
-      const an = { type, x: ax, y: ay, r, cd: R() * 2, t: 0, act: 0, seed: R() * 100, field: f };
+      const an = { type, x: ax, y: ay, r, cd: R() * 2, t: 0, act: 0, seed: R() * 100, field: f, hidden: !!this.hideNext };
       f.anoms.push(an); this.anomalies.push(an);
     }
     if (ANOMALIES[type].moving) for (const [i, an] of f.anoms.entries()) {
@@ -499,6 +502,7 @@ const World = {
     // teleports link in pairs; an odd one out sends you back to the first portal
     if (type === 'teleport') for (let i = 0; i < f.anoms.length; i++) { const q = f.anoms[i ^ 1] || f.anoms[0]; f.anoms[i].pair = q !== f.anoms[i] ? q : null; }
     if (f.anoms.length) this.fields.push(f);
+    this.hideNext = false;
   },
   genNature(R) {
     for (let i = 0; i < 16000 * MS * MS; i++) {

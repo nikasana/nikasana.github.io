@@ -48,7 +48,7 @@ function render(title = false) {
     ctx.beginPath(); ctx.ellipse(p.x, p.y, 230, 150, 0, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
   }
   for (const a of World.anomalies) if (a.x > x0 - a.r && a.x < x1 + a.r && a.y > y0 - a.r && a.y < y1 + a.r) drawAnomalyGround(a);
-  if (!title && G.owned) { drawOwned(); drawEventWorld(); }
+  if (!title && G.owned) { drawHazardsGround(x0, y0, x1, y1); drawOwned(); drawEventWorld(); }
   for (const g of G.gems) {
     if (g.x < x0 || g.x > x1 || g.y < y0 || g.y > y1) continue;
     const big = g.v >= 20, mid = g.v >= 5, s = big ? 7 : mid ? 5.5 : 4, c = big ? '#ff6ad5' : mid ? '#6ad0ff' : '#7dff8a';
@@ -112,7 +112,7 @@ function render(title = false) {
     else if (it.t === 6) drawPoiChest(o);
   }
   for (const a of World.anomalies) if (a.x > x0 - a.r && a.x < x1 + a.r && a.y > y0 - 150 && a.y < y1 + a.r) drawAnomalyTop(a);
-  if (!title) drawPlayerFx();
+  if (!title) { drawHazardsTop(x0, y0, x1, y1); drawPlayerFx(); }
   // bullets
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
   for (const b of G.bullets) {
@@ -248,8 +248,10 @@ function drawShield() {
 function drawPlayer() {
   const blink = P.inv > 0 && P.dashT <= 0 && Math.floor(NOW * 20) % 2 === 0;
   if (blink) ctx.globalAlpha = 0.5;
-  drawStalker(P, P.pal, true);
+  if (P.veh) { drawVehicle(P.veh, P.x, P.y); ctx.save(); ctx.translate(0, P.veh.kind === 'jeep' ? -26 : -12); drawStalker(P, P.pal, true); ctx.restore(); }
+  else drawStalker(P, P.pal, true);
   ctx.globalAlpha = 1;
+  if (P.inWater && P.z <= 0) { ctx.fillStyle = 'rgba(60,110,120,0.75)'; ctx.beginPath(); ctx.ellipse(P.x, P.y - 4, 17, 8, 0, 0, TAU); ctx.fill(); ctx.strokeStyle = 'rgba(200,230,240,0.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(P.x, P.y - 4, 20 + Math.sin(NOW * 4) * 3, 9, 0, 0, TAU); ctx.stroke(); }
   drawShield();
 }
 function drawPlayerFx() {
@@ -506,6 +508,9 @@ function hud(dt) {
   setText('envIcon', (World.kind === 'lab' ? '🕳️' : Env.isNight() ? '🌙' : '☀️') + (World.kind === 'over' && Env.weather !== 'clear' ? ' ' + WEATHER[Env.weather].icon : ''));
   $('dashFill').style.transform = `scaleY(${clamp(1 - P.dashCd / (1.4 * P.dashMul), 0, 1)})`;
   $('dashBtn').classList.toggle('ready', P.dashCd <= 0);
+  const vb = $('vehBtn'), nv = P.veh || nearVehicle();
+  vb.style.display = nv ? 'block' : 'none'; if (nv) vb.textContent = P.veh ? '⏏' : VEH[nv.kind].icon;
+  if (!P.veh && nv && !matchMedia('(pointer: coarse)').matches) text(nv.x, nv.y - 50, 'F: ride ' + VEH[nv.kind].name, '#ffe070', false, true);
   const sel = selectedArt(), cdLeft = sel ? Math.max(0, P.actCd[sel] || 0) : 0;
   const abr = sel ? clamp(1 - cdLeft / ARTIFACTS[sel].cd, 0, 1) : 0;
   $('abFill').style.transform = `scaleY(${abr})`; $('abilityFill').style.transform = `scaleY(${abr})`;
@@ -721,7 +726,9 @@ addEventListener('keydown', (e) => {
   keys[e.code] = true;
   if (e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') { tryDash(); e.preventDefault(); }
   if (e.code === 'KeyQ') useAbility();
-  if (G && !G.title && G.state === 'play') { const k = { Digit1: 'medkit', Digit2: 'energy', Digit3: 'vodka', Digit4: 'antirad' }[e.code]; if (k) useItem(k); }
+  if (G && !G.title && G.state === 'play') { const k = { Digit1: 'medkit', Digit2: 'energy', Digit3: 'vodka', Digit4: 'antirad', Digit5: 'scanner' }[e.code]; if (k) useItem(k); }
+  if (e.code === 'KeyF') toggleVehicle();
+  if (e.code === 'KeyT') throwBolt();
   if (e.code === 'KeyE' || e.code === 'Equal' || e.code === 'NumpadAdd') cycleActive(1);
   if (e.code === 'Minus' || e.code === 'NumpadSubtract') cycleActive(-1);
   if (e.code === 'KeyN') { Sfx.init(); FM.tune(1); }
@@ -750,6 +757,8 @@ addEventListener('pointermove', (e) => {
 const endJoy = (e) => { if (e.pointerId === joy.id) { joy.active = false; joy.dx = joy.dy = 0; jbase.style.display = 'none'; } };
 addEventListener('pointerup', endJoy); addEventListener('pointercancel', endJoy);
 $('dashBtn').addEventListener('pointerdown', (e) => { e.stopPropagation(); tryDash(); });
+$('vehBtn').addEventListener('pointerdown', (e) => { e.stopPropagation(); toggleVehicle(); });
+$('boltBtn').addEventListener('pointerdown', (e) => { e.stopPropagation(); throwBolt(); });
 $('abilityBtn').addEventListener('pointerdown', (e) => { e.stopPropagation(); useAbility(); });
 $('abUse').addEventListener('click', () => useAbility());
 $('abPrev').addEventListener('click', () => cycleActive(-1));

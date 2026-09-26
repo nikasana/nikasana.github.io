@@ -250,6 +250,7 @@ const artImg = (id, cls = '') => `<img class="aicon ${cls}" src="${ART_ICON[id]}
 // ---------- new anomaly visuals ----------
 function drawAnomalyGround2(a) {
   const t = NOW + a.seed, r = a.r;
+  if (NEW_ANOMS.includes(a.type)) { drawAnomaly4(a, false); return; }
   switch (a.type) {
     case 'teleport': {
       ctx.strokeStyle = `rgba(160,220,255,${0.4 + Math.sin(t * 4) * 0.15})`; ctx.lineWidth = 3;
@@ -302,6 +303,7 @@ function drawAnomalyGround2(a) {
 }
 function drawAnomalyTop2(a) {
   const t = NOW + a.seed, r = a.r;
+  if (NEW_ANOMS.includes(a.type)) { drawAnomaly4(a, true); return; }
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   switch (a.type) {
     case 'teleport': {
