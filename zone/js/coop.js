@@ -25,6 +25,7 @@ function bcConn(code, me) {
 }
 function coNick() { return (Save.data.nick || '').trim() || (CHARACTERS.find((x) => x.id === Save.data.char) || CHARACTERS[0]).name; }
 function coPal(char) { const c = CHARACTERS.find((x) => x.id === char) || CHARACTERS[0]; return { ...PAL_PLAYER, ...c.pal }; }
+function coClock() { return performance.now() / 1000; } // real time: keeps ticking in background tabs
 function coStatus(s) { const el = $('coStatus'); if (el) el.innerHTML = s; }
 
 const Net = {
@@ -46,9 +47,30 @@ const Net = {
       CO.peer.on('disconnected', () => { if (CO.peer && !CO.peer.destroyed) try { CO.peer.reconnect(); } catch (e) { /* retry later */ } });
     });
   },
+  // host a room under a given code, keeping the current players (host migration)
+  async hostAt(code) {
+    CO.code = code;
+    if (CO_DEBUG) { const lobby = new BroadcastChannel('zb-lobby-' + code); CO.lobbyCh = lobby; lobby.onmessage = (m) => { const c = bcConn(code + '-' + m.data, 'host'); Net.accept(c); lobby.postMessage(m.data); }; return; }
+    await loadPeer();
+    await new Promise((res, rej) => {
+      try { CO.peer && CO.peer.destroy(); } catch (e) { /* already gone */ }
+      CO.peer = new Peer(CO_PREFIX + code);
+      CO.peer.on('open', res); CO.peer.on('error', rej);
+      CO.peer.on('connection', (c) => c.on('open', () => Net.accept(c)));
+    });
+  },
+  // reconnect a guest to a (new) host without leaving the running game
+  async rejoin(code) {
+    const hello = { t: 'hello', pw: CO.pw, name: coNick(), char: Save.data.char, rejoin: CO.me, inGame: true };
+    if (CO_DEBUG) { const lobby = new BroadcastChannel('zb-lobby-' + code), sid = Math.random().toString(36).slice(2); lobby.onmessage = (m) => { if (m.data !== sid) return; const c = bcConn(code + '-' + sid, 'guest'); Net.bindGuest(c); c.send(hello); }; lobby.postMessage(sid); return; }
+    await loadPeer();
+    try { CO.peer && CO.peer.destroy(); } catch (e) { /* already gone */ }
+    CO.peer = new Peer();
+    CO.peer.on('open', () => { const c = CO.peer.connect(CO_PREFIX + code, { reliable: true }); c.on('open', () => { Net.bindGuest(c); c.send(hello); }); });
+  },
   // host: a new connection waits for its hello before it becomes a player
   accept(c) {
-    c.on('data', (m) => { if (m && m.t === 'hello') Coop.hello(c, m); else if (c.pid) Coop.onMsg(m, c.pid); });
+    c.on('data', (m) => { if (m && m.t === 'hello') Coop.hello(c, m); else if (c.pid) { const p = CO.players.get(c.pid); if (p) p.heard = coClock(); Coop.onMsg(m, c.pid); } });
     c.on('close', () => { if (c.pid && CO.conns.get(c.pid) === c) Coop.dropped(c.pid); });
   },
   async join(code, pw) {
@@ -71,9 +93,9 @@ const Net = {
     setTimeout(() => { if (CO.joining && !CO.conn) { CO.joining = false; coStatus('⚠️ Could not reach room ' + CO.code + '. Check the code and that the host is still waiting, then press JOIN again.'); coUI(); } }, 15000);
   },
   bindGuest(c) {
-    CO.conn = c;
-    c.on('data', (m) => Coop.onMsg(m, 'h'));
-    c.on('close', () => { if (CO.conn === c) Coop.onClose(); });
+    CO.conn = c; CO.lastHostMsg = coClock();
+    c.on('data', (m) => { if (CO.conn === c) CO.lastHostMsg = coClock(); Coop.onMsg(m, 'h'); });
+    c.on('close', () => { if (CO.conn === c) { CO.conn = null; Coop.onClose(); } });
   },
   send(m) { const c = CO.conn; if (c && c.open !== false) try { c.send(m); } catch (e) { /* dropped packet */ } },
   sendTo(pid, m) { const c = CO.conns.get(pid); if (c && c.open !== false) try { c.send(m); } catch (e) { /* dropped packet */ } },
@@ -102,9 +124,10 @@ const Coop = {
       CO.players.set(pid, { pid, name: String(m.name || 'Stalker').slice(0, 16), char: CHARACTERS.some((x) => x.id === m.char) ? m.char : 'rookie', ready: false, ping: 0 });
     }
     const p = CO.players.get(pid); p.gone = false; p.last = NOW;
+    if (m.inGame && CO.active) banner('📡 ' + p.name.toUpperCase() + ' RECONNECTED', '', 1.8, 'good');
     c.pid = pid; CO.conns.set(pid, c);
     c.send({ t: 'welcome', pid, host: coNick() });
-    if (CO.active && CO.startMsg) { p.ready = true; c.send(CO.startMsg); banner('👋 ' + p.name.toUpperCase() + ' JOINED', 'They drop into the Zone next to you.', 2.5, 'good'); }
+    if (CO.active && CO.startMsg && !m.inGame) { p.ready = true; c.send(CO.startMsg); banner('👋 ' + p.name.toUpperCase() + ' JOINED', 'They drop into the Zone next to you.', 2.5, 'good'); }
     Net.bcast(coLobbyMsg()); coLobbyUI(); Sfx.init(); Sfx.play('quest');
   },
   dropped(pid) {
@@ -134,14 +157,40 @@ const Coop = {
     else if (m.t === 'count') coCountdown(m.n);
     else if (m.t === 'start') { CO.start = m; NEXT_RUN = { mode: 'standard', mutators: [], ngplus: false }; hide('coop'); coCountdown(0); startGame(); }
     else if (m.t === 'snap' && G && CO.active) this.applySnap(m);
+    else if (m.t === 'level' && G && CO.active) coGoLevel(m);
     else if (m.t === 'dmg' && G && G.state === 'play') { P.inv = 0; hurtPlayer(m.d, m.src); }
     else if (m.t === 'end' && G && CO.active) { CO.active = false; CO.results = m.stats; endRun(m.kind === 'win' ? 'win' : 'quit'); $('overSub').textContent = m.kind === 'win' ? 'Your team conquered the Zone!' : m.kind === 'dead' ? 'The whole team went down.' : 'The host ended the run.'; coResults(m.stats); }
   },
   onClose() {
+    if (G && CO.active && !G.ended && this.migrate()) return;
     if (G && CO.active && !G.ended) { banner('📡 HOST DISCONNECTED', 'You continue alone. Open the link again to rejoin.', 3.5, 'bad'); this.solo(); }
     CO.conn = null;
     if (!CO.closeWhy) coStatus('⚠️ Lost the connection to the host. Press JOIN to try again.');
     coUI();
+  },
+  // the host dropped mid-run: the first remaining guest becomes the new host, everyone else reconnects to them
+  migrate() {
+    const left = [...CO.players.values()].filter((p) => p.pid !== 'h' && !p.gone).map((p) => p.pid).sort();
+    if (!left.length || !left.includes(CO.me)) return false;
+    const newCode = CO.code.length === 5 ? CO.code + 'B' : CO.code.slice(0, 5) + String.fromCharCode(CO.code.charCodeAt(5) + 1);
+    CO.conn = null;
+    if (left[0] === CO.me) {
+      banner('👑 YOU ARE THE HOST NOW', 'The host left. The run continues with you in charge.', 3.5, 'good', 2);
+      const mine = CO.players.get(CO.me); CO.players.delete('h'); CO.players.delete(CO.me);
+      const rest = new Map([['h', { ...mine, pid: 'h', ready: true }]]); for (const [k, v] of CO.players) rest.set(k, { ...v, gone: true }); CO.players = rest;
+      CO.stats.h = CO.stats[CO.me] || CO.stats.h; delete CO.stats[CO.me];
+      CO.me = 'h'; CO.role = 'host'; CO.code = newCode; CO.conns = new Map();
+      CO.uid = Math.max(CO.uid, ...[...CO.mirror.keys()].map(Number).filter((n) => n > 0), 0);
+      G.coGuest = false; G.nextBossT = G.t + 60; for (const e of G.enemies) e.cd = rand(1, 3);
+      CO.startMsg = { t: 'start', stage: G.stage, spawn: G.spawnIdx || 0, seed: G.seed, diff: G.diff };
+      Net.hostAt(newCode).catch(() => { banner('📡 COULD NOT RE-HOST', 'You continue alone.', 3, 'bad'); this.solo(); });
+    } else {
+      banner('📡 HOST LEFT', 'Reconnecting to the new host…', 3, 'bad');
+      const code = newCode; CO.code = code;
+      let tries = 0; const tryJoin = () => { if (!CO.active || CO.conn || tries++ > 6) { if (!CO.conn && CO.active) { banner('📡 COULD NOT RECONNECT', 'You continue alone.', 3, 'bad'); this.solo(); } return; } Net.rejoin(code); setTimeout(tryJoin, 3000); };
+      setTimeout(tryJoin, 2000);
+    }
+    return true;
   },
   solo() {
     CO.active = false;
@@ -171,11 +220,16 @@ const Coop = {
     for (const b of G.bullets) { if (HB.length > 50) break; if (Math.abs(b.x - p.x) < 900 && Math.abs(b.y - p.y) < 700) HB.push([b.x | 0, b.y | 0, b.vx | 0, b.vy | 0]); }
     const pl = [['h', coNick(), Save.data.char, P.x | 0, P.y | 0, P.face, P.hp | 0, P.maxhp | 0, P.ghost > 0 ? 1 : 0, P.veh ? P.veh.kind : 0, P.moving ? 1 : 0, 0]];
     for (const q of CO.players.values()) if (q.pid !== 'h' && q.pid !== p.pid && !q.gone && q.x !== undefined) pl.push([q.pid, q.name, q.char, q.x | 0, q.y | 0, q.face, q.hp | 0, q.maxhp | 0, q.ghost ? 1 : 0, q.veh || 0, q.moving ? 1 : 0, q.ping || 0]);
-    Net.sendTo(p.pid, { t: 'snap', gt: G.t, w: Env.weather, pl, e: E, eb: EB, hb: HB, k: CO.kills, ping: p.ping || 0 });
+    Net.sendTo(p.pid, { t: 'snap', lv: World.cur, gt: G.t, w: Env.weather, pl, e: E, eb: EB, hb: HB, k: CO.kills, ping: p.ping || 0 });
   },
   // ----- in game (guest) -----
   applySnap(m) {
     const now = NOW;
+    if (m.lv && m.lv !== World.cur) { // the host changed level: follow them
+      const h = m.lv === 'over' ? World.hatches.find((x) => x.exit) : World.kind === 'over' ? World.hatches.find((x) => 'lab' + x.idx === m.lv) : null;
+      if (h) { CO.mirror.clear(); CO.dead.clear(); _c7Hatch(h); }
+      return;
+    }
     G.t = lerp(G.t, m.gt, 0.5); CO.myPing = m.ping;
     if (m.w && m.w !== Env.weather && WEATHER[m.w]) Env.weather = m.w;
     const seenP = new Set();
@@ -225,6 +279,9 @@ const Coop = {
     const host = CO.role === 'host';
     // lobby pings
     if (host && CO.conns.size) { CO.pingT -= dt; if (CO.pingT <= 0) { CO.pingT = 2; Net.bcast({ t: 'ping', ts: performance.now() }); if (!CO.active) Net.bcast(coLobbyMsg()); } }
+    // heartbeat: silence for 6s counts as a disconnect (closing a tab or losing Wi-Fi may never send a goodbye)
+    if (CO.role === 'guest' && CO.conn && coClock() - (CO.lastHostMsg || coClock()) > 6) { const c = CO.conn; CO.conn = null; try { c.close(); } catch (e) { /* already closed */ } this.onClose(); }
+    if (host) for (const [pid, c] of CO.conns) { const p = CO.players.get(pid); if (p && p.heard && coClock() - p.heard > 6) { c.pid = null; try { c.close(); } catch (e) { /* already closed */ } this.dropped(pid); } }
     if (!CO.active || !G) return;
     const k = 1 - Math.exp(-dt * 12);
     for (const q of coOthers()) { if (q.tx === undefined) continue; q.x += (q.tx - q.x) * k; q.y += (q.ty - q.y) * k; q.anim = (q.anim || 0) + dt * (q.moving ? 9 : 0); q.gInv = Math.max(0, (q.gInv || 0) - dt); }
@@ -292,7 +349,7 @@ hurtPlayer = function (d, src, ig, kind) {
 const _c7UpEn = updateEnemies;
 updateEnemies = function (dt) {
   if (G.coGuest && CO.active) return Coop.guestUpdateEnemies(dt);
-  const others = G.coop && CO.active && CO.role === 'host' && World.kind === 'over' ? coOthers().filter((q) => !q.gone && !q.ghost && q.x !== undefined && NOW - (q.last || 0) < 3) : [];
+  const others = G.coop && CO.active && CO.role === 'host' ? coOthers().filter((q) => !q.gone && !q.ghost && q.x !== undefined && NOW - (q.last || 0) < 3) : [];
   if (!others.length) return _c7UpEn(dt);
   const T = (P.ghost > 0 ? [] : [{ pid: 'h', x: P.x, y: P.y }]).concat(others), groups = new Map(T.map((t) => [t.pid, []]));
   for (const e of G.enemies) {
@@ -312,8 +369,22 @@ updateEnemies = function (dt) {
   G.enemies = out;
   EG.clear(); for (const e of G.enemies) if (!e.dead) EG.add(e);
 };
+// labs in co-op: the whole living team gathers at the hatch, then the host takes everyone down (or up) together
 const _c7Hatch = useHatch;
-useHatch = function (h) { if (G.coop && CO.active) { banner('🕳️ LAB SEALED', 'Laboratories are closed in co-op.', 1.6, 'bad'); return; } _c7Hatch(h); };
+useHatch = function (h) {
+  if (!(G.coop && CO.active)) return _c7Hatch(h);
+  if (CO.role !== 'host') { if (NOW - (CO.hatchMsgT || 0) > 3) { CO.hatchMsgT = NOW; banner('🕳️ GATHER AT THE HATCH', 'The team goes down together when everyone is here.', 2, ''); } return; }
+  const team = coOthers().filter((q) => !q.gone && !q.ghost && q.x !== undefined), here = team.filter((q) => dist2(q.x, q.y, h.x, h.y) < 170 * 170);
+  if (here.length < team.length) { if (NOW - (CO.hatchMsgT || 0) > 2.5) { CO.hatchMsgT = NOW; banner('🕳️ WAITING FOR THE TEAM', (here.length + 1) + '/' + (team.length + 1) + ' at the hatch. Everyone must stand on it.', 2, ''); } return; }
+  Net.bcast({ t: 'level', exit: !!h.exit, idx: h.idx });
+  _c7Hatch(h);
+};
+function coGoLevel(m) {
+  const h = m.exit ? World.hatches.find((x) => x.exit) : World.hatches.find((x) => x.idx === m.idx);
+  if (!h) return;
+  CO.mirror.clear(); CO.dead.clear();
+  _c7Hatch(h);
+}
 const _c7New = newGame;
 newGame = function (st, ch, mode, sp, seed, diff) {
   if (CO.start) { const s = CO.start; CO.start = null; st = s.stage; sp = s.spawn; seed = s.seed; diff = s.diff; mode = 'standard'; CO.active = true; }
@@ -344,6 +415,7 @@ function drawPartner() {
     ctx.font = 'bold 12px Oswald, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = q.ghost ? '#aaa' : col;
     ctx.fillText((q.ghost ? '💀 ' : '') + (q.name || 'Teammate'), q.x, q.y - 64);
     if (q.maxhp) { ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(q.x - 21, q.y - 58, 42, 5); ctx.fillStyle = col; ctx.fillRect(q.x - 20, q.y - 57, 40 * clamp(q.hp / q.maxhp, 0, 1), 3); }
+    if (q.ghost) { const pulse = 0.5 + Math.sin(NOW * 6) * 0.3; ctx.strokeStyle = `rgba(125,255,160,${pulse})`; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(q.x, q.y, 80, 44, 0, 0, TAU); ctx.stroke(); ctx.font = 'bold 14px Oswald, sans-serif'; ctx.fillStyle = '#7dff9a'; ctx.fillText('⬇ STAND HERE TO REVIVE', q.x, q.y - 82); }
     if (P.ghost > 0 && !q.ghost) { ctx.strokeStyle = col; ctx.globalAlpha = 0.5; ctx.setLineDash([8, 8]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(P.x, P.y - 20); ctx.lineTo(q.x, q.y - 20); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1; }
   }
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(255,220,140,0.85)'; ctx.lineWidth = 2.5; ctx.beginPath();
@@ -480,7 +552,14 @@ addEventListener('DOMContentLoaded', () => {
     _er(kind, src);
   };
   const _dp = drawPlayer;
-  drawPlayer = function () { if (P.ghost > 0) { ctx.globalAlpha = 0.4; _dp(); ctx.globalAlpha = 1; ctx.font = 'bold 12px Oswald, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ddd'; ctx.fillText('DOWNED ' + Math.ceil(P.ghost) + 's', P.x, P.y - 66); } else _dp(); };
+  drawPlayer = function () {
+    if (!(P.ghost > 0)) return _dp();
+    ctx.globalAlpha = 0.4; _dp(); ctx.globalAlpha = 1;
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(P.x, P.y - 30, 34, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = '#7dff9a'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(P.x, P.y - 30, 34, -Math.PI / 2, -Math.PI / 2 + TAU * clamp(CO.reviveT / 1.5, 0, 1)); ctx.stroke();
+    ctx.strokeStyle = '#ff7a6a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(P.x, P.y - 30, 42, -Math.PI / 2, -Math.PI / 2 + TAU * clamp(P.ghost / 15, 0, 1)); ctx.stroke();
+    ctx.font = 'bold 13px Oswald, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.fillText(CO.reviveT > 0 ? 'REVIVING…' : 'DOWNED · ' + Math.ceil(P.ghost) + 's', P.x, P.y - 80);
+  };
   const _mm = drawMinimap;
   drawMinimap = function () {
     _mm(); if (!CO.active || World.kind !== 'over') return;
