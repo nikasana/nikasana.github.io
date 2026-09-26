@@ -186,8 +186,10 @@ const Suggest = {
       else { dE.push(d0 + Math.round(x * 0.6)); pE.push(p0 + Math.round(x * 0.4)); }
     }
     const med = (a) => { a = a.slice().sort((x, y) => x - y); const m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }; // one freak run can't swing it
-    const clampI = (v, c, n) => Math.max(0, Math.min(n - 1, Math.max(c - 2, Math.min(c + 2, Math.round(v))))); // at most 2 steps per click
-    const di = clampI(med(dE), dc, DIFFICULTIES.length), pi = clampI(med(pE), pc, PACES.length);
+    // one stable best answer: it depends only on your runs, never on what is selected right now
+    const last = log[log.length - 1], ld = idx(DIFFICULTIES, last.d, 'rookie'), lp = idx(PACES, last.p, 'normal');
+    const clampI = (v, c, n) => Math.max(0, Math.min(n - 1, Math.max(c - 3, Math.min(c + 3, Math.round(v))))); // within 3 steps of your last run
+    const di = clampI(med(dE), ld, DIFFICULTIES.length), pi = clampI(med(pE), lp, PACES.length);
     const dir = di + pi > dc + pc ? 'harder' : di + pi < dc + pc ? 'easier' : 'keep';
     const why = `Based on your last ${log.length} runs (typical: ${fmtTime(Math.round(log.map((r) => r.t).sort((a, b) => a - b)[log.length >> 1]))}) → ${dir}`;
     return { d: DIFFICULTIES[di], p: PACES[pi], a: 0, n: log.length, why };
