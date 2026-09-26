@@ -63,7 +63,7 @@ function cw(k, en) { const L = typeof I18n !== 'undefined' ? I18n.cur : 'en', i 
 function crewLink(c) { return location.origin + location.pathname + '?join=' + crewCode(c) + (CO_DEBUG ? '&coopdebug=1' : ''); }
 function crewCard(c, btns) {
   const st = (c.stages || []).map((id) => (STAGES.find((s) => s.id === id) || {}).icon || '').join(' ');
-  const need = Crews.xpNeed(c.level), when = new Date(c.last || c.created).toLocaleDateString([], { month: 'short', day: 'numeric' });
+  const need = Crews.xpNeed(c.level), when = zbDate(c.last || c.created);
   return `<div class="runRow crew"><div class="pi">🛡️</div><div class="runInfo"><b>${c.name} · LV ${c.level}</b><small>🗺️ ${(c.stages || []).length}/${STAGES.length} ${cw('maps', 'maps')} ${st} · ${c.runs} ${cw('runs', 'runs')} · ${c.wins} ${cw('wins', 'wins')} · ${(c.members || []).map((m) => m.name).join(', ') || cw('none', 'no runs yet')} · ${when}</small><span class="crewLink"><code>${cw('room', 'room')} ${crewCode(c)}</code><input readonly value="${crewLink(c)}"><button class="big ghost small" data-crewcopy="${c.id}">📋</button></span><i class="bar"><i style="width:${Math.min(100, (c.xp / need) * 100)}%"></i></i></div>${btns}</div>`;
 }
 

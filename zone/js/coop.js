@@ -176,7 +176,7 @@ const Coop = {
       return;
     }
     // guest
-    if (m.t === 'welcome') { CO.me = m.pid; CO.rejoinId = m.pid; try { sessionStorage.setItem('zb_rejoin_' + CO.code, m.pid); } catch (e) { /* storage blocked */ } coStatus('✅ Joined <b>' + m.host + '</b>\'s room.'); coUI(); }
+    if (m.t === 'welcome') { CO.me = m.pid; CO.rejoinId = m.pid; try { sessionStorage.setItem('zb_rejoin_' + CO.code, m.pid); } catch (e) { /* storage blocked */ } coStatus('✅ Joined the room of ' + String(m.host).replace(/[<>&]/g, '') + '.'); coUI(); }
     else if (m.t === 'deny') { CO.closeWhy = '⛔ ' + m.why; coStatus(CO.closeWhy); Net.leave(); coUI(); }
     else if (m.t === 'lobby') { CO.players = new Map(m.players.map((p) => [p.pid, { ...p, ...(CO.players.get(p.pid) || {}), name: p.name, char: p.char, ready: p.ready, ping: p.ping }])); CO.settings = m.settings; coLobbyUI(); }
     else if (m.t === 'ping') Net.send({ t: 'pong', ts: m.ts });

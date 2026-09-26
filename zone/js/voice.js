@@ -63,7 +63,9 @@ const Voice = {
   line(ev, x) {
     const L = VOICE_LINES[ev]; if (!L) return null;
     const [who, en, ru] = pick(L), ru2 = this.lang() === 'ru';
-    return { who, name: ru2 ? (SPEAKERS[who] || {}).ru || who : who, txt: (ru2 ? ru : en).replace('{x}', x || '') };
+    // spoken in the voice language, shown in the interface language
+    const uiRu = typeof I18n !== 'undefined' && I18n.cur === 'ru';
+    return { who, name: uiRu ? (SPEAKERS[who] || {}).ru || who : who, txt: (ru2 ? ru : en).replace('{x}', x || ''), show: (uiRu ? ru : en).replace('{x}', x || '') };
   },
   // show the line in the chatter box (in the chosen language) and speak it
   say(ev, opt = {}) {
@@ -72,7 +74,7 @@ const Voice = {
     if (!opt.force && this.cool[ev] !== undefined && now - this.cool[ev] < (opt.cd || 40)) return false;
     const l = opt.line || this.line(ev, opt.x); if (!l) return false;
     this.cool[ev] = now;
-    if (opt.chatter !== false) { if (Radio.q.length > 2) Radio.q.shift(); Radio.q.push({ who: l.name, txt: l.txt, whoKey: l.who }); }
+    if (opt.chatter !== false) { if (Radio.q.length > 2) Radio.q.shift(); Radio.q.push({ who: l.name, txt: l.show || l.txt, whoKey: l.who }); }
     this.speak(l.txt, l.who, opt.prio || 1);
     return true;
   },

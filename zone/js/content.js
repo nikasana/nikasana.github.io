@@ -174,8 +174,9 @@ const News = {
     this.t = rand(110, 160);
     const [who, en, ru] = pick(this.lines()), L = typeof I18n !== 'undefined' ? I18n.cur : 'en', vl = Voice.lang();
     const useRu = vl === 'ru' || (vl === 'off' && (L === 'ru' || L === 'uk')), txt = '📻 ' + (useRu ? ru : en);
-    if (vl !== 'off') Voice.say('news', { line: { who, name: useRu ? (SPEAKERS[who] || {}).ru || who : who, txt }, force: true, prio: 1 });
-    else { if (Radio.q.length > 2) Radio.q.shift(); Radio.q.push({ who: useRu ? (SPEAKERS[who] || {}).ru || who : who, txt, noTr: true }); }
+    const uiRu = L === 'ru', show = '📻 ' + (uiRu ? ru : en), name = uiRu ? (SPEAKERS[who] || {}).ru || who : who; // shown in the interface language
+    if (vl !== 'off') Voice.say('news', { line: { who, name, txt, show }, force: true, prio: 1 });
+    else { if (Radio.q.length > 2) Radio.q.shift(); Radio.q.push({ who: name, txt: show }); }
   },
 };
 

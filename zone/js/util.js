@@ -1,5 +1,5 @@
 'use strict';
-const ZB_BUILD = 54; // keep in sync with version.txt and the ?v= in index.html
+const ZB_BUILD = 58; // keep in sync with version.txt and the ?v= in index.html
 // ---------- math & random helpers ----------
 const TAU = Math.PI * 2;
 const rand = (a = 1, b) => (b === undefined ? Math.random() * a : a + Math.random() * (b - a));
@@ -38,3 +38,8 @@ const rgb = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
 const mixc = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 function fmtTime(t) { t = Math.max(0, Math.floor(t)); return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); }
 
+
+// dates follow the game language, not the browser
+function zbLocale() { const L = typeof I18n !== 'undefined' ? I18n.cur : 'en'; return { ka: 'ka-GE', ru: 'ru-RU', uk: 'uk-UA' }[L] || 'en-GB'; }
+const ZB_MONTHS = { ka: ['იან', 'თებ', 'მარ', 'აპრ', 'მაი', 'ივნ', 'ივლ', 'აგვ', 'სექ', 'ოქტ', 'ნოე', 'დეკ'], ru: ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'], uk: ['січ', 'лют', 'бер', 'кві', 'тра', 'чер', 'лип', 'сер', 'вер', 'жов', 'лис', 'гру'], en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] };
+function zbDate(ts) { const d = new Date(ts), L = typeof I18n !== 'undefined' ? I18n.cur : 'en'; const m = (ZB_MONTHS[L] || ZB_MONTHS.en)[d.getMonth()]; return L === 'en' ? m + ' ' + d.getDate() : d.getDate() + ' ' + m; }
