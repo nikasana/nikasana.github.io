@@ -7,7 +7,8 @@ function vehAuto(dt) {
   const v = nearVehicle();
   if (G.t < 2 && v) P.vehSkip = v; // don't grab the bike parked at the spawn point right away
   if (P.vehSkip && (!v || v !== P.vehSkip)) P.vehSkip = null; // walked away from the bike you just left
-  if (v && v !== P.vehSkip && P.dashT <= 0) { P.vehHold = (P.vehHold || 0) + dt; P.vehNear = v; if (P.vehHold >= VEH_HOLD) { P.vehHold = 0; toggleVehicle(); } }
+  if (v && v !== P.vehSkip && P.dashT <= 0 && P.moving) { P.vehNear = v; P.vehHold = Math.max(0, (P.vehHold || 0) - dt * 2); }
+  else if (v && v !== P.vehSkip && P.dashT <= 0) { P.vehHold = (P.vehHold || 0) + dt; P.vehNear = v; if (P.vehHold >= VEH_HOLD) { P.vehHold = 0; toggleVehicle(); } }
   else { P.vehHold = 0; P.vehNear = null; }
 }
 const _s6HzUp = Hz.update.bind(Hz);
