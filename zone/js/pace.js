@@ -16,9 +16,10 @@ const Forecast = {
   sigma: 0.5,
   // median death time: solve ∫ f(s)² ds = base (HP × damage both grow with f, so pressure grows like f²)
   median(diff, pace) {
+    const key = diff + '|' + pace; this.memo = this.memo || {}; if (this.memo[key] !== undefined) return this.memo[key];
     const base = PACE_BASE[diff] || 11, k = paceDef(pace).k; let acc = 0, t = 0;
     while (acc < base && t < 90) { acc += Math.pow(paceF(k, t), 2) * 0.05; t += 0.05; }
-    return t;
+    return (this.memo[key] = t);
   },
   personal(diff, pace) {
     const L = (Save.data.runLog || []).filter((r) => r.d === diff && r.p === pace).map((r) => r.t / 60).sort((a, b) => a - b);
@@ -65,7 +66,7 @@ addEventListener('DOMContentLoaded', () => {
   endRun = function (kind, src) {
     const was = G && G.ended, r = _er(kind, src);
     if (!was && G && !G.title && !G.tutorial && G.t > 10) { // every run end counts: death, win, quit, co-op
-      const S = Save.data; S.runLog = (S.runLog || []).concat([{ d: G.diff, p: G.pace || 'normal', t: Math.floor(G.t), dead: kind !== 'win', q: kind === 'quit', ...(G.stat && G.stat.n > 5 ? { hp: +(G.stat.hp / G.stat.n).toFixed(3), min: +G.stat.min.toFixed(3), dz: +(G.stat.danger / G.stat.n).toFixed(3), dpm: +(G.stat.dmg / Math.max(1, G.t / 60)).toFixed(3) } : {}) }]).slice(-80); Save.save();
+      const S = Save.data; S.runLog = (S.runLog || []).concat([{ d: G.diff, p: G.pace || 'normal', a: G.asc || 0, t: Math.floor(G.t), dead: kind !== 'win', q: kind === 'quit', ...(G.stat && G.stat.n > 5 ? { hp: +(G.stat.hp / G.stat.n).toFixed(3), min: +G.stat.min.toFixed(3), dz: +(G.stat.danger / G.stat.n).toFixed(3), dpm: +(G.stat.dmg / Math.max(1, G.t / 60)).toFixed(3) } : {}) }]).slice(-80); Save.save();
     }
     return r;
   };
@@ -148,28 +149,43 @@ const Suggest = {
     if (!r.dead) s = Math.min(s, 0.5); // a win is never 'too hard'
     return Math.max(0, Math.min(1, s));
   },
-  get() {
-    let log = (Save.data.runLog || []).filter((r) => !(r.q && r.t < 120)).slice(-3);
-    if (!log.length) { // no runs logged yet: fall back to your best time on record
-      const b = Math.max(0, ...Object.values(Save.data.best || {}).map(Number).filter((x) => x > 0));
-      if (!b) return null;
-      log = [{ d: Save.data.diff || 'rookie', p: Save.data.pace || 'normal', t: b, dead: true }];
-    }
-    const w = [0.2, 0.3, 0.5].slice(-log.length), ws = w.reduce((a, b) => a + b, 0);
-    const avg = log.reduce((a, r, i) => a + this.stress(r) * w[i], 0) / ws;
-    let delta = (this.TARGET - avg) * 7; if (log.length === 1) delta *= 0.6; // one run: move cautiously
-    delta = Math.max(-3, Math.min(3, Math.round(delta)));
-    const last = log[log.length - 1];
-    const L = Math.max(0, Math.min(DIFFICULTIES.length + PACES.length - 2, this.level(last.d, last.p) + delta));
-    const di = Math.min(DIFFICULTIES.length - 1, Math.ceil(L / 2)), pi = Math.max(0, Math.min(PACES.length - 1, L - di));
-    const hp = log.filter((r) => r.hp !== undefined), pct = (x) => Math.round(x * 100) + '%';
-    const why = (hp.length ? `Avg health ${pct(hp.reduce((a, r) => a + r.hp, 0) / hp.length)}, in danger ${pct(hp.reduce((a, r) => a + r.dz, 0) / hp.length)} of the time. ` : '') + `Challenge ${pct(avg)} (aim ${pct(this.TARGET)}) → ` + (delta > 0 ? 'harder' : delta < 0 ? 'easier' : 'keep');
-    return { d: DIFFICULTIES[di], p: PACES[pi], n: log.length, why };
+  SIGMA: 0.5, GOAL: 15, SURE: 0.95, // 95% chance to survive 15:00 (a typical run then lasts ~30+ min)
+  // typical player's median survival (minutes) on a setting; Ascension adds HP and damage on top
+  med(d, p, a) { return Forecast.median(d, p) / (1 + 0.17 * (a || 0)); },
+  // your skill: how long you survive compared with a typical player (recent runs weigh more)
+  skill() {
+    const log = (Save.data.runLog || []).filter((r) => !(r.q && r.t < 120)).slice(-5);
+    if (!log.length) { const b = Math.max(0, ...Object.values(Save.data.best || {}).map(Number).filter((x) => x > 0)); if (!b) return null; return { s: Math.max(0.05, (b / 60) / this.med(Save.data.diff || 'rookie', Save.data.pace || 'normal', 0)), n: 0 }; }
+    const w = [1, 1.5, 2, 3, 4].slice(-log.length); let sum = 0, ws = 0;
+    log.forEach((r, i) => {
+      let ratio = (r.t / 60) / this.med(r.d, r.p, r.a || 0);
+      if (!r.dead || r.q || r.t >= 900) ratio *= r.hp !== undefined ? 1 + Math.max(0, r.hp - 0.4) : 1.2; // survived: you could have lasted longer
+      sum += w[i] * Math.log(Math.max(0.01, ratio)); ws += w[i];
+    });
+    return { s: Math.min(5000, Math.max(0.03, Math.exp(sum / ws))), n: log.length };
   },
-  label() { const s = this.get(); return s ? `✨ Suggested: ${s.d.icon} ${s.d.name} – ${s.p.icon} ${s.p.name}` : '✨ Suggested: play a run first'; },
+  surv(medMin) { return 1 - Forecast.cdf(this.GOAL, medMin); }, // chance to survive the goal time
+  get() {
+    const k = this.skill(); if (!k) return null;
+    const need = this.GOAL * Math.exp(1.645 * this.SIGMA); // your median must be this long for 95% at 15:00
+    let best = null;
+    for (let a = 0; a <= 60; a++) { // Ascension only once even Impossible + Absolute is too easy for you
+      let hardest = Infinity;
+      for (const d of DIFFICULTIES) for (const p of PACES) {
+        const m = this.med(d.id, p.id, a) * k.s; hardest = Math.min(hardest, m);
+        if (m >= need && (!best || m < best.m)) best = { d, p, a, m };
+      }
+      if (hardest < need) break;
+    }
+    if (!best) best = { d: DIFFICULTIES[0], p: PACES[0], a: 0, m: this.med(DIFFICULTIES[0].id, PACES[0].id, 0) * k.s };
+    const pct = Math.round(this.surv(best.m) * 100);
+    const why = `Your skill ×${k.s.toFixed(2)} vs a typical stalker (${k.n || 'best time'}${k.n ? ' runs' : ''}). ${pct}% chance to survive 15:00 · typical run ~${fmtTime(Math.round(Math.min(best.m, 99) * 60))}`;
+    return { d: best.d, p: best.p, a: best.a, n: k.n, why };
+  },
+  label() { const s = this.get(); return s ? `✨ Suggested: ${s.d.icon} ${s.d.name} – ${s.p.icon} ${s.p.name}${s.a ? ' – Ascension ' + s.a : ''}` : '✨ Suggested: play a run first'; },
   apply() {
     const s = this.get(); if (!s) return;
-    Save.data.diff = s.d.id; Save.data.pace = s.p.id; Save.save(); Sfx.init(); Sfx.play('quest');
+    Save.data.diff = s.d.id; Save.data.pace = s.p.id; Save.data.asc = s.a || 0; Save.save(); const av = $('ascV'); if (av) av.textContent = Save.data.asc; Sfx.init(); Sfx.play('quest');
     if (typeof diffTitle === 'function') diffTitle();
     if ($('setup') && $('setup').classList.contains('show')) buildSetup();
     this.refresh();
