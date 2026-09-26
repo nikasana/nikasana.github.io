@@ -103,8 +103,9 @@ function text(x, y, s, c = '#fff', big = false, force = false) {
   G.texts.push({ x: x + rand(-8, 8), y, s, c, life: 0.8, big });
 }
 function decal(x, y, r, c) { if (G.decals.length > 160) G.decals.shift(); G.decals.push({ x, y, r, c, a: rand(TAU), life: 40 }); }
-function shakeK() { const s = Save.set.shake; return s === true ? 0.5 : s === false ? 0 : +s || 0; }
-function shake(v) { const k = shakeK(); if (k > 0 && G) G.shake = Math.min(9 * k, Math.max(G.shake, v * 0.55 * k)); }
+function shakeK() { const s = Save.set.shake; return s === true ? 0.3 : s === false ? 0 : Math.min(1, +s || 0); }
+// very gentle: never more than ~2.5px even at full intensity
+function shake(v) { const k = shakeK(); if (k > 0 && G) G.shake = Math.min(2.5 * k, Math.max(G.shake, v * 0.15 * k)); }
 function flash(v, c = '255,255,255') { G.flash = Math.max(G.flash, v); G.flashCol = c; }
 // banners queue up instead of stacking; priority 2 (bosses, emissions) cuts in line
 let bannerTimer = 0, bannerCur = '';
@@ -1579,7 +1580,8 @@ function update(dt) {
   }
   Music.setIntensity(G.bosses.length || (G.em && G.em.phase !== 'after') ? 2 : G.enemies.length > 50 || Env.isNight() || World.kind === 'lab' ? 1 : 0);
   const k = 1 - Math.exp(-dt * 6);
-  CAM.x = lerp(CAM.x, P.x + P.lastMx * 50, k); CAM.y = lerp(CAM.y, P.y - 20 + P.lastMy * 40, k);
+  const kl = 1 - Math.exp(-dt * 1.5); CAM.lx = lerp(CAM.lx || 0, P.moving ? P.lastMx * 28 : 0, kl); CAM.ly = lerp(CAM.ly || 0, P.moving ? P.lastMy * 22 : 0, kl);
+  CAM.x = lerp(CAM.x, P.x + CAM.lx, k); CAM.y = lerp(CAM.y, P.y - 20 + CAM.ly, k);
   if (G.pendingTal > 0 && G.state === 'play') openTalent();
   if (G.pendingLv > 0 && G.state === 'play') openLevelUp();
 }

@@ -4,7 +4,7 @@ const Save = {
   data: null,
   def() {
     return { rubles: 0, meta: {}, chars: ['rookie'], char: 'rookie', stages: ['zone'], stage: 'zone', best: {}, hints: [], runs: 0, wins: 0,
-      settings: { master: 0.8, music: 0.5, sfx: 0.8, amb: 0.7, voice: 0.8, shake: 0.4, numbers: true, quality: 'high', hints: true, fps: false } };
+      settings: { master: 0.8, music: 0.5, sfx: 0.8, amb: 0.7, voice: 0.8, shake: 0.3, numbers: true, quality: 'high', hints: true, fps: false } };
   },
   load() {
     let s = null;
@@ -12,6 +12,7 @@ const Save = {
     const d = this.def();
     this.data = Object.assign(d, s || {});
     this.data.settings = Object.assign(this.def().settings, (s && s.settings) || {});
+    if (!this.data.shakeFix2) { this.data.shakeFix2 = 1; const v = this.data.settings.shake; if (v === true || v > 0.3) this.data.settings.shake = 0.3; }
   },
   save() { try { localStorage.setItem('zonebonk_save', JSON.stringify(this.data)); } catch (e) { /* storage unavailable: progress lasts this session */ } },
   meta(id) { return this.data.meta[id] || 0; },
