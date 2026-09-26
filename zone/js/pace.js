@@ -45,7 +45,7 @@ spawnEnemy = function (id, x, y, o) {
   return e;
 };
 const _paMods = Events.mods.bind(Events);
-Events.mods = function () { const m = _paMods(); const f = paceNow(); if (f !== 1) m.spawn *= Math.min(2.2, Math.sqrt(f)); return m; };
+Events.mods = function () { const m = _paMods(); const f = paceNow(); if (f !== 1) m.spawn *= Math.min(3.5, Math.sqrt(f)); return m; };
 
 // ----- setup screen: the pace picker next to the difficulty, with the forecast -----
 addEventListener('DOMContentLoaded', () => {
@@ -69,4 +69,57 @@ addEventListener('DOMContentLoaded', () => {
     }
     return r;
   };
+});
+
+// ----- the top of the scale: 5 harder difficulties and 5 faster paces -----
+DIFFICULTIES.push(
+  { id: 'nightmare', icon: '👹', name: 'Nightmare', desc: 'Mutants hit like trucks. Your damage reduction is capped at 60%. ×2.5 rubles.', hp: 2.4, dmg: 2.4, spawn: 1.5, boss: 2.2, regen: 0, rev: 0, xp: 1, rub: 2.5, hpBonus: 0, drCap: 0.6, healMul: 0.8 },
+  { id: 'hell', icon: '🔥', name: 'Hell', desc: 'Endless hordes. Damage reduction capped at 50%, healing −30%. ×3 rubles.', hp: 3.3, dmg: 3.2, spawn: 1.75, boss: 3, regen: 0, rev: 0, xp: 1, rub: 3, hpBonus: 0, drCap: 0.5, healMul: 0.7 },
+  { id: 'apocalypse', icon: '☄️', name: 'Apocalypse', desc: 'The Zone ends here. Reduction capped at 40%, healing −45%. ×3.6 rubles.', hp: 4.5, dmg: 4.2, spawn: 2, boss: 4, regen: 0, rev: 0, xp: 1, rub: 3.6, hpBonus: 0, drCap: 0.4, healMul: 0.55 },
+  { id: 'oblivion', icon: '🕳️', name: 'Oblivion', desc: 'Almost nothing survives. Reduction capped at 30%, healing halved. ×4.3 rubles.', hp: 6, dmg: 5.5, spawn: 2.3, boss: 5.5, regen: 0, rev: 0, xp: 1, rub: 4.3, hpBonus: 0, drCap: 0.3, healMul: 0.5 },
+  { id: 'impossible', icon: '💀💀', name: 'Impossible', desc: 'The absolute maximum. Reduction capped at 20%, healing −60%, no mercy. ×5 rubles.', hp: 8, dmg: 7.5, spawn: 2.6, boss: 7.5, regen: 0, rev: 0, xp: 1, rub: 5, hpBonus: 0, drCap: 0.2, healMul: 0.4 },
+);
+PACES.push(
+  { id: 'savage', icon: '🐺', name: 'Savage', k: 0.3, desc: '+300% every 10 minutes.' },
+  { id: 'merciless', icon: '⚔️', name: 'Merciless', k: 0.45, desc: '+450% every 10 minutes.' },
+  { id: 'hellish', icon: '😈', name: 'Hellish', k: 0.65, desc: '+650% every 10 minutes.' },
+  { id: 'cataclysm', icon: '🌋', name: 'Cataclysm', k: 0.9, desc: '+900% every 10 minutes.' },
+  { id: 'absolute', icon: '♾️', name: 'Absolute', k: 1.3, desc: '+1300% every 10 minutes. The absolute maximum.' },
+);
+Object.assign(PACE_BASE, { nightmare: 10, hell: 7, apocalypse: 5, oblivion: 3.5, impossible: 2.5 });
+// upgrades can no longer make you nearly immune on the top difficulties: damage reduction is capped and healing is weaker
+const _paHurt = hurtPlayer;
+hurtPlayer = function (d, ...a) {
+  const df = G && diffDef(); if (!df || df.drCap === undefined) return _paHurt(d, ...a);
+  const sv = P.dr, sf = P.standFirm; P.dr = Math.min(P.dr, df.drCap); P.standFirm = Math.min(sf || 0, Math.max(0, df.drCap - P.dr));
+  try { return _paHurt(d, ...a); } finally { P.dr = sv; P.standFirm = sf; }
+};
+let _paHpLast = 0;
+const _paW2 = W2.update.bind(W2);
+W2.update = function (dt) { // trims every kind of healing since the last frame on the top difficulties
+  const df = G && !G.title ? diffDef() : null;
+  if (df && df.healMul !== undefined && _paHpLast > 0 && P.hp > _paHpLast && !(P.ghost > 0)) P.hp = _paHpLast + (P.hp - _paHpLast) * df.healMul;
+  _paW2(dt);
+  _paHpLast = P.hp;
+};
+const _paNew2 = newGame;
+newGame = function (...a) { _paHpLast = 0; return _paNew2(...a); };
+
+// ----- main menu: "Difficulty – Pace", both selectable right there -----
+addEventListener('DOMContentLoaded', () => {
+  const old = $('diffTitleBtn'); if (!old) return;
+  const row = document.createElement('div'); row.id = 'diffPaceRow';
+  row.innerHTML = '<label>Difficulty <select id="dtDiff"></select></label><span class="dash">–</span><label>Pace <select id="dtPace"></select></label>';
+  old.before(row); old.style.display = 'none';
+  const fill = () => {
+    const S = Save.data; if (!S) return;
+    $('dtDiff').innerHTML = DIFFICULTIES.map((d) => `<option value="${d.id}" ${d.id === (S.diff || 'rookie') ? 'selected' : ''}>${d.icon} ${d.name}</option>`).join('');
+    $('dtPace').innerHTML = PACES.map((p) => `<option value="${p.id}" ${p.id === (S.pace || 'normal') ? 'selected' : ''}>${p.icon} ${p.name}</option>`).join('');
+    if (typeof I18n !== 'undefined' && I18n.cur !== 'en') try { I18n.dom(row); } catch (e) { /* keep english */ }
+  };
+  $('dtDiff').onchange = (e) => { Save.data.diff = e.target.value; Save.save(); Sfx.init(); if (typeof buildSetup === 'function' && $('setup') && $('setup').classList.contains('show')) buildSetup(); };
+  $('dtPace').onchange = (e) => { Save.data.pace = e.target.value; Save.save(); Sfx.init(); };
+  const _dt = diffTitle; diffTitle = function (...a) { try { _dt(...a); } catch (e) { /* old button hidden */ } fill(); };
+  fill();
+  const _bs = buildSetup; buildSetup = function (...a) { const r = _bs(...a); fill(); return r; };
 });

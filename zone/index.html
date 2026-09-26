@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#15130f" />
 <title>ZONEBONK — Heart of the Zone</title>
-<link rel="icon" type="image/svg+xml" href="icon.svg?v=58" />
-<link rel="apple-touch-icon" href="icon.svg?v=58" />
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=59" />
+<link rel="apple-touch-icon" href="icon.svg?v=59" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -311,6 +311,9 @@
   #paceBox { width: min(900px, 100%); } #paceBox .sect { width: 100%; } .paceRow { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; }
   .forecast { margin: 8px 0; padding: 8px 12px; background: rgba(0,0,0,0.4); border: 1px solid #4a4636; border-radius: 8px; font-size: 13px; color: #d8d0b0; text-align: left; line-height: 1.6; }
   .paceDesc { text-align: left; margin: 6px 0; }
+  #diffPaceRow { display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap; margin: 4px 0; font: 600 14px Oswald, sans-serif; color: #e8dca8; }
+  #diffPaceRow select { margin-left: 6px; padding: 6px 8px; font: 600 14px Oswald, sans-serif; background: rgba(0,0,0,0.6); color: #f0ead0; border: 1px solid #6a6450; border-radius: 6px; }
+  #diffPaceRow .dash { font-size: 20px; opacity: 0.7; }
   .coRoleDesc { font-size: 12px; color: #b8c0a0; margin: -4px 0 10px; min-height: 16px; }
   .pick.lgd { border-color: rgba(255,207,106,0.55); box-shadow: inset 0 0 18px rgba(255,207,106,0.12); }
   #tip { position: fixed; z-index: 70; max-width: 300px; background: rgba(12,12,8,0.96); color: #f0ead0; border: 1px solid #c8a040; border-radius: 8px; padding: 7px 10px; font-size: 13px; line-height: 1.35; pointer-events: none; opacity: 0; transition: opacity 0.12s; }
@@ -484,43 +487,43 @@
       '<button onclick="location.reload()" style="' + btn + 'background:#ffcf3a;color:#111;border:2px solid #ffcf3a">🔄 RELOAD</button>';
   });
 </script>
-<script src="js/util.js?v=58"></script>
-<script src="js/audio.js?v=58"></script>
-<script src="js/radio.js?v=58"></script>
-<script src="js/ambience.js?v=58"></script>
-<script src="js/data.js?v=58"></script>
-<script src="js/artifacts.js?v=58"></script>
-<script src="js/world.js?v=58"></script>
-<script src="js/render.js?v=58"></script>
-<script src="js/render2.js?v=58"></script>
-<script src="js/lighting.js?v=58"></script>
-<script src="js/game.js?v=58"></script>
-<script src="js/systems.js?v=58"></script>
-<script src="js/weapons2.js?v=58"></script>
-<script src="js/mutants3.js?v=58"></script>
-<script src="js/events.js?v=58"></script>
-<script src="js/hazards.js?v=58"></script>
-<script src="js/world2.js?v=58"></script>
-<script src="js/vehicles.js?v=58"></script>
-<script src="js/stages3.js?v=58"></script>
-<script src="js/story.js?v=58"></script>
-<script src="js/meta.js?v=58"></script>
-<script src="js/coop.js?v=58"></script>
-<script src="js/crews.js?v=58"></script>
-<script src="js/crewhq.js?v=58"></script>
-<script src="js/content.js?v=58"></script>
-<script src="js/replay.js?v=58"></script>
-<script src="js/variety.js?v=58"></script>
-<script src="js/pace.js?v=58"></script>
-<script src="js/ux.js?v=58"></script>
-<script src="js/saves.js?v=58"></script>
-<script src="js/polish.js?v=58"></script>
-<script src="js/voice.js?v=58"></script>
-<script src="js/i18n_a.js?v=58"></script>
-<script src="js/i18n_b.js?v=58"></script>
-<script src="js/i18n_c.js?v=58"></script>
-<script src="js/i18n.js?v=58"></script>
-<script src="js/guard.js?v=58"></script>
-<script src="js/ui.js?v=58"></script>
+<script src="js/util.js?v=59"></script>
+<script src="js/audio.js?v=59"></script>
+<script src="js/radio.js?v=59"></script>
+<script src="js/ambience.js?v=59"></script>
+<script src="js/data.js?v=59"></script>
+<script src="js/artifacts.js?v=59"></script>
+<script src="js/world.js?v=59"></script>
+<script src="js/render.js?v=59"></script>
+<script src="js/render2.js?v=59"></script>
+<script src="js/lighting.js?v=59"></script>
+<script src="js/game.js?v=59"></script>
+<script src="js/systems.js?v=59"></script>
+<script src="js/weapons2.js?v=59"></script>
+<script src="js/mutants3.js?v=59"></script>
+<script src="js/events.js?v=59"></script>
+<script src="js/hazards.js?v=59"></script>
+<script src="js/world2.js?v=59"></script>
+<script src="js/vehicles.js?v=59"></script>
+<script src="js/stages3.js?v=59"></script>
+<script src="js/story.js?v=59"></script>
+<script src="js/meta.js?v=59"></script>
+<script src="js/coop.js?v=59"></script>
+<script src="js/crews.js?v=59"></script>
+<script src="js/crewhq.js?v=59"></script>
+<script src="js/content.js?v=59"></script>
+<script src="js/replay.js?v=59"></script>
+<script src="js/variety.js?v=59"></script>
+<script src="js/pace.js?v=59"></script>
+<script src="js/ux.js?v=59"></script>
+<script src="js/saves.js?v=59"></script>
+<script src="js/polish.js?v=59"></script>
+<script src="js/voice.js?v=59"></script>
+<script src="js/i18n_a.js?v=59"></script>
+<script src="js/i18n_b.js?v=59"></script>
+<script src="js/i18n_c.js?v=59"></script>
+<script src="js/i18n.js?v=59"></script>
+<script src="js/guard.js?v=59"></script>
+<script src="js/ui.js?v=59"></script>
 </body>
 </html>
