@@ -1,5 +1,7 @@
 'use strict';
 // ---------- persistent save: rubles, meta upgrades, characters, stages, settings ----------
+function slotNo() { try { return Math.min(3, Math.max(1, +localStorage.getItem('zonebonk_slot') || 1)); } catch (e) { return 1; } }
+function slotKey(base) { const s = slotNo(); return s === 1 ? base : base + '_s' + s; }
 const Save = {
   data: null,
   def() {
@@ -8,13 +10,13 @@ const Save = {
   },
   load() {
     let s = null;
-    try { s = JSON.parse(localStorage.getItem('zonebonk_save') || 'null'); } catch (e) { s = null; }
+    try { s = JSON.parse(localStorage.getItem(slotKey('zonebonk_save')) || 'null'); } catch (e) { s = null; }
     const d = this.def();
     this.data = Object.assign(d, s || {});
     this.data.settings = Object.assign(this.def().settings, (s && s.settings) || {});
     if (!this.data.shakeFix2) { this.data.shakeFix2 = 1; const v = this.data.settings.shake; if (v === true || v > 0.3) this.data.settings.shake = 0.3; }
   },
-  save() { try { localStorage.setItem('zonebonk_save', JSON.stringify(this.data)); } catch (e) { /* storage unavailable: progress lasts this session */ } },
+  save() { try { localStorage.setItem(slotKey('zonebonk_save'), JSON.stringify(this.data)); } catch (e) { /* storage unavailable: progress lasts this session */ } },
   meta(id) { return this.data.meta[id] || 0; },
   get set() { return this.data.settings; },
 };
@@ -168,7 +170,7 @@ function strike(x, y, dmg, r, hurtsPlayer) {
 
 // ---------- save & continue a run (localStorage) ----------
 const RunSave = {
-  KEY: 'zonebonk_run', t: 0,
+  get KEY() { return slotKey('zonebonk_run'); }, t: 0,
   PKEYS: ['hp', 'maxhp', 'dmgMul', 'rateMul', 'areaMul', 'spdMul', 'pickup', 'xpMul', 'dr', 'regen', 'pierce', 'crit', 'thorns', 'dashMul', 'shards', 'lightning', 'aura', 'soul',
     'luck', 'rerolls', 'revives', 'anomRes', 'psiImmune', 'detect', 'dodge', 'lvlHeal', 'execute', 'bossDmg', 'critMul', 'dropMul', 'rubMul', 'dashDmg', 'medMul', 'adren', 'berserk',
     'standFirm', 'zapChance', 'lifesteal', 'exChance', 'frostChance', 'hunter', 'actCdMul', 'actPow', 'burnMul', 'lowRegen', 'momentum', 'sprint', 'bioHp', 'actSel', 'face', 'maxWeapons', 'lastStand', 'echo', 'basePsi'],
@@ -177,8 +179,9 @@ const RunSave = {
   has() { try { return !!localStorage.getItem(this.KEY); } catch (e) { return false; } },
   peek() { try { return JSON.parse(localStorage.getItem(this.KEY)); } catch (e) { return null; } },
   clear() { try { localStorage.removeItem(this.KEY); } catch (e) { /* storage unavailable */ } },
-  save() {
-    if (!G || G.title || G.ended || G.state === 'over') return;
+  save() { const d = this.build(); if (d) try { localStorage.setItem(this.KEY, JSON.stringify(d)); } catch (e) { /* storage full or blocked */ } },
+  build() {
+    if (!G || G.title || G.ended || G.state === 'over') return null;
     const over = World.levels.over || World.snapshot();
     const crates = World.cur === 'over' ? G.crates : G.levelCrates.over || [];
     const pos = World.kind === 'lab' ? G.returnPos || World.start : { x: P.x, y: P.y };
@@ -188,11 +191,12 @@ const RunSave = {
       labs: Object.keys(World.levels).filter((k) => k.startsWith('lab') && World.levels[k].lab && World.levels[k].lab.cleared) };
     for (const k of this.GKEYS) d.g[k] = G[k];
     for (const k of this.PKEYS) d.p[k] = P[k];
-    try { localStorage.setItem(this.KEY, JSON.stringify(d)); } catch (e) { /* storage full or blocked */ }
+    d.when = Date.now();
+    return d;
   },
   tick(dt) { this.t -= dt; if (this.t <= 0) { this.t = 15; this.save(); } },
-  restore() {
-    const d = this.peek(); if (!d) return false;
+  restore(given) {
+    const d = given || this.peek(); if (!d) return false;
     newGame(d.g.stage, d.g.char, d.g.endless ? 'endless' : 'standard', d.g.spawnIdx || 0, d.g.seed, d.g.diff);
     for (const k of this.GKEYS) if (d.g[k] !== undefined) G[k] = d.g[k];
     for (const k of this.PKEYS) if (d.p[k] !== undefined) P[k] = d.p[k];
