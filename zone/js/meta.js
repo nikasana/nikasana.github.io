@@ -393,7 +393,7 @@ const BunkerUI = {
   sk(el) {
     const S = Save.data;
     let h = `<div class="sect">SKILL POINTS: ${S.sp} · earn them by surviving 5 and 10 minutes, winning and killing bosses</div><div class="grid">`;
-    for (const s of SKILLS) { const l = S.skills[s.id] || 0; h += `<button class="pick ${l >= 5 ? 'sel' : ''}" data-sk="${s.id}"><div class="pi">${s.icon}</div><div><b>${s.name}</b><small>${s.desc} per level</small><em>${'●'.repeat(l)}${'○'.repeat(5 - l)} ${l < 5 ? '· 1 point' : 'MAX'}</em></div></button>`; }
+    for (const s of SKILLS) { const l = S.skills[s.id] || 0; h += `<button class="pick ${l >= 5 ? 'sel' : ''}" data-sk="${s.id}"><div class="pi">${s.icon}</div><div><b>${s.name}</b><small>${s.desc} per level</small><em>${'●'.repeat(l)}${'○'.repeat(Math.max(0, 5 - l))} ${l < 5 ? '· 1 point' : 'MAX'}</em></div></button>`; }
     el.innerHTML = h + '</div>';
     for (const b of el.querySelectorAll('[data-sk]')) b.onclick = () => { const id = b.dataset.sk; if (S.sp < 1 || (S.skills[id] || 0) >= 5) return; S.sp--; S.skills[id] = (S.skills[id] || 0) + 1; Save.save(); buildBunker(); };
   },

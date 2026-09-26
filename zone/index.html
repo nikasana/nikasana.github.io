@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#15130f" />
 <title>ZONEBONK — Heart of the Zone</title>
-<link rel="icon" type="image/svg+xml" href="icon.svg?v=70" />
-<link rel="apple-touch-icon" href="icon.svg?v=70" />
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=72" />
+<link rel="apple-touch-icon" href="icon.svg?v=72" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -345,6 +345,20 @@
   .cyberMap > .sel, .cyberMap > .done, .cyberMap > .open { border-color: #ff2bd6 !important; box-shadow: inset 0 0 22px rgba(255,43,214,0.25), 0 0 14px rgba(255,43,214,0.35); }
   .cyberMap .pips i { background: rgba(0,229,255,0.2) !important; } .cyberMap .pips i.on { background: #00fff0 !important; box-shadow: 0 0 6px #00fff0; }
   .cyberMap .pi, .cyberMap .tic { filter: drop-shadow(0 0 6px rgba(0,229,255,0.7)); }
+  .rings { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin: 8px 0; }
+  .ring { display: flex; flex-direction: column; align-items: center; width: 74px; } .ring svg { width: 64px; height: 64px; } .ring small { font-size: 11px; color: #b8b090; text-align: center; }
+  .ring .rbg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 6; } .ring .rfg { fill: none; stroke-width: 6; stroke-linecap: round; filter: drop-shadow(0 0 4px currentColor); } .ring text { fill: #f0ead0; font: 700 13px Oswald, sans-serif; }
+  #profileCard { position: fixed; left: 12px; bottom: 12px; width: 300px; padding: 6px 8px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; z-index: 5; }
+  #profileCard .rings { gap: 4px; margin: 2px 0; } #profileCard .ring { width: 66px; } #profileCard .ring svg { width: 48px; height: 48px; } #profileCard .chart svg { height: 50px; }
+  @media (max-width: 900px), (max-height: 700px) { #profileCard { display: none; } }
+  #title:not(.show) #profileCard { display: none; }
+  #profileCard .chart { background: none; border: none; }
+  .casWrap { width: min(760px, 100%); margin: 10px auto; }
+  .casino { background: linear-gradient(135deg, rgba(40,0,50,0.8), rgba(0,30,40,0.8)); border: 1px solid #ff2bd666; border-radius: 10px; padding: 10px; margin-bottom: 10px; text-align: center; box-shadow: 0 0 16px rgba(255,43,214,0.15); }
+  .casBets { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 6px 0; } .casRes { min-height: 20px; color: #ffcf6a; font-weight: 700; }
+  #slotReels { font-size: 46px; letter-spacing: 12px; margin: 6px 0; text-shadow: 0 0 12px rgba(255,255,255,0.4); }
+  #crashM { font: 700 38px Oswald, sans-serif; color: #7ffcff; text-shadow: 0 0 12px #00e5ff; }
+  .tierBtn { background: linear-gradient(135deg, #ff2bd6, #7a2bff) !important; color: #fff !important; font-size: 12px !important; line-height: 1.2; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; box-shadow: 0 0 10px #ff2bd6; } .tierBtn.poor { opacity: 0.55; }
   .coRoleDesc { font-size: 12px; color: #b8c0a0; margin: -4px 0 10px; min-height: 16px; }
   .pick.lgd { border-color: rgba(255,207,106,0.55); box-shadow: inset 0 0 18px rgba(255,207,106,0.12); }
   #tip { position: fixed; z-index: 70; max-width: 300px; background: rgba(12,12,8,0.96); color: #f0ead0; border: 1px solid #c8a040; border-radius: 8px; padding: 7px 10px; font-size: 13px; line-height: 1.35; pointer-events: none; opacity: 0; transition: opacity 0.12s; }
@@ -518,45 +532,46 @@
       '<button onclick="location.reload()" style="' + btn + 'background:#ffcf3a;color:#111;border:2px solid #ffcf3a">🔄 RELOAD</button>';
   });
 </script>
-<script src="js/util.js?v=70"></script>
-<script src="js/audio.js?v=70"></script>
-<script src="js/radio.js?v=70"></script>
-<script src="js/ambience.js?v=70"></script>
-<script src="js/data.js?v=70"></script>
-<script src="js/artifacts.js?v=70"></script>
-<script src="js/world.js?v=70"></script>
-<script src="js/render.js?v=70"></script>
-<script src="js/render2.js?v=70"></script>
-<script src="js/lighting.js?v=70"></script>
-<script src="js/game.js?v=70"></script>
-<script src="js/systems.js?v=70"></script>
-<script src="js/weapons2.js?v=70"></script>
-<script src="js/mutants3.js?v=70"></script>
-<script src="js/events.js?v=70"></script>
-<script src="js/hazards.js?v=70"></script>
-<script src="js/world2.js?v=70"></script>
-<script src="js/vehicles.js?v=70"></script>
-<script src="js/stages3.js?v=70"></script>
-<script src="js/story.js?v=70"></script>
-<script src="js/meta.js?v=70"></script>
-<script src="js/coop.js?v=70"></script>
-<script src="js/crews.js?v=70"></script>
-<script src="js/crewhq.js?v=70"></script>
-<script src="js/content.js?v=70"></script>
-<script src="js/replay.js?v=70"></script>
-<script src="js/variety.js?v=70"></script>
-<script src="js/pace.js?v=70"></script>
-<script src="js/progress2.js?v=70"></script>
-<script src="js/cyber.js?v=70"></script>
-<script src="js/ux.js?v=70"></script>
-<script src="js/saves.js?v=70"></script>
-<script src="js/polish.js?v=70"></script>
-<script src="js/voice.js?v=70"></script>
-<script src="js/i18n_a.js?v=70"></script>
-<script src="js/i18n_b.js?v=70"></script>
-<script src="js/i18n_c.js?v=70"></script>
-<script src="js/i18n.js?v=70"></script>
-<script src="js/guard.js?v=70"></script>
-<script src="js/ui.js?v=70"></script>
+<script src="js/util.js?v=72"></script>
+<script src="js/audio.js?v=72"></script>
+<script src="js/radio.js?v=72"></script>
+<script src="js/ambience.js?v=72"></script>
+<script src="js/data.js?v=72"></script>
+<script src="js/artifacts.js?v=72"></script>
+<script src="js/world.js?v=72"></script>
+<script src="js/render.js?v=72"></script>
+<script src="js/render2.js?v=72"></script>
+<script src="js/lighting.js?v=72"></script>
+<script src="js/game.js?v=72"></script>
+<script src="js/systems.js?v=72"></script>
+<script src="js/weapons2.js?v=72"></script>
+<script src="js/mutants3.js?v=72"></script>
+<script src="js/events.js?v=72"></script>
+<script src="js/hazards.js?v=72"></script>
+<script src="js/world2.js?v=72"></script>
+<script src="js/vehicles.js?v=72"></script>
+<script src="js/stages3.js?v=72"></script>
+<script src="js/story.js?v=72"></script>
+<script src="js/meta.js?v=72"></script>
+<script src="js/coop.js?v=72"></script>
+<script src="js/crews.js?v=72"></script>
+<script src="js/crewhq.js?v=72"></script>
+<script src="js/content.js?v=72"></script>
+<script src="js/replay.js?v=72"></script>
+<script src="js/variety.js?v=72"></script>
+<script src="js/pace.js?v=72"></script>
+<script src="js/progress2.js?v=72"></script>
+<script src="js/cyber.js?v=72"></script>
+<script src="js/shop2.js?v=72"></script>
+<script src="js/ux.js?v=72"></script>
+<script src="js/saves.js?v=72"></script>
+<script src="js/polish.js?v=72"></script>
+<script src="js/voice.js?v=72"></script>
+<script src="js/i18n_a.js?v=72"></script>
+<script src="js/i18n_b.js?v=72"></script>
+<script src="js/i18n_c.js?v=72"></script>
+<script src="js/i18n.js?v=72"></script>
+<script src="js/guard.js?v=72"></script>
+<script src="js/ui.js?v=72"></script>
 </body>
 </html>

@@ -701,7 +701,7 @@ function buildBunker() {
   const S = Save.data;
   $('metaList').innerHTML = META.map((m) => {
     const lv = Save.meta(m.id), max = lv >= m.max, cost = metaCost(m, lv);
-    return `<div class="meta"><div class="pi">${m.icon}</div><div class="mi"><b>${m.name}</b><small>${m.desc}</small><div class="pips">${'<i class="on"></i>'.repeat(lv)}${'<i></i>'.repeat(m.max - lv)}</div></div><button data-meta="${m.id}" ${max || S.rubles < cost ? 'disabled' : ''}>${max ? 'MAX' : cost + ' ₽'}</button></div>`;
+    return `<div class="meta"><div class="pi">${m.icon}</div><div class="mi"><b>${m.name}</b><small>${m.desc}</small><div class="pips">${'<i class="on"></i>'.repeat(Math.min(lv, m.max))}${'<i></i>'.repeat(Math.max(0, m.max - lv))}</div></div><button data-meta="${m.id}" ${max || S.rubles < cost ? 'disabled' : ''}>${max ? 'MAX' : cost + ' ₽'}</button></div>`;
   }).join('');
   for (const b of document.querySelectorAll('[data-meta]')) b.onclick = () => {
     const m = META.find((x) => x.id === b.dataset.meta), lv = Save.meta(m.id), cost = metaCost(m, lv);
