@@ -53,7 +53,8 @@ function drawPropFast(p) {
   if (sp.c) blit(sp.c, sp.x, sp.y);
 }
 
-const ENEMY_LIVE = new Set(['mirror', 'holoclone', 'wraith', 'ghost', 'poltergeist', 'bloodsucker']);
+// these copy the player's current look: always drawn live. Fading mutants are cached opaque and faded when stamped.
+const ENEMY_LIVE = new Set(['mirror', 'holoclone']);
 function drawEnemyFast(e) {
   const fn = ENEMY_DRAW[e.id];
   if (!minGfx() || e.boss || e.mini || ENEMY_LIVE.has(e.id) || (e.alpha !== undefined && e.alpha < 0.99)) return fn(e);
@@ -112,14 +113,20 @@ addEventListener('DOMContentLoaded', () => {
 // enemies on Lowest: the render loop's size/squash transform is folded into one drawImage (no save/restore per enemy)
 function drawEnemyScaled(e, sx, sy) {
   const fn = ENEMY_DRAW[e.id];
-  if (!minGfx() || e.boss || e.mini || ENEMY_LIVE.has(e.id) || (e.alpha !== undefined && e.alpha < 0.99)) {
+  if (!minGfx() || e.boss || e.mini || ENEMY_LIVE.has(e.id)) {
     if (sx === 1 && sy === 1) return fn(e);
     ctx.save(); ctx.translate(e.x, e.y); ctx.scale(sx, sy); ctx.translate(-e.x, -e.y); fn(e); ctx.restore(); return;
   }
   const fr = FL ? 'F' : Math.floor(((((e.anim || 0) % TAU) + TAU) % TAU) / TAU * 4) % 4;
   const R = Math.max(10, e.r || 12), w = R * 7 + 60, h = R * 7 + 60;
-  const sp = SPRITES.get(e.id + '|' + fr, -w / 2, -h * 0.8, w, h, () => fn({ ...e, x: 0, y: 0, z: 0, anim: fr === 'F' ? 0 : ((fr + 0.5) / 4) * TAU, face: 1 }));
+  const a = e.alpha === undefined ? 1 : e.alpha;
+  if (a < 0.02) return;
+  const sp = SPRITES.get(e.id + '|' + fr, -w / 2, -h * 0.8, w, h, () => fn({ ...e, x: 0, y: 0, z: 0, alpha: 1, anim: fr === 'F' ? 0 : ((fr + 0.5) / 4) * TAU, face: 1 }));
   if (!sp.c) return;
+  if (a < 0.99) { ctx.globalAlpha = a; try { stampEnemy(e, sp, sx, sy); } finally { ctx.globalAlpha = 1; } return; }
+  stampEnemy(e, sp, sx, sy);
+}
+function stampEnemy(e, sp, sx, sy) {
   // unscaled (the usual case on Lowest): a straight pixel copy, mirrored copy for mutants facing left
   if (sx === 1 && sy === 1) {
     if (e.face < 0) { if (!sp.m) sp.m = mirror(sp.c); blit(sp.m, e.x - sp.x - sp.w, e.y - (e.z || 0) + sp.y); }

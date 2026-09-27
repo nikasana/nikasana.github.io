@@ -524,6 +524,11 @@ function hudBuild() {
 // ⚙ is how long the game's own code takes per frame: low ⚙ with low FPS means the phone's GPU/browser is the limit
 let fpsAcc = 0, fpsN = 0, fpsShow = 0, FRAME_MS = 16, JS_MS = 0;
 function hud(dt) {
+  if (Save.set.fps) { if (FRAME_MS < 1000) { fpsAcc += FRAME_MS / 1000; fpsN++; } if (fpsAcc > 0.5) { fpsShow = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; } }
+  bannerTick(dt);
+  // Lowest: the HUD's text, bars, minimap and detector refresh every third frame (20 times a second at 60 FPS);
+  // each change to the page makes the browser restyle and repaint it
+  if (minGfx() && (hudFrame = (hudFrame + 1) % 3) !== 0) return;
   $('hpFill').style.width = (P.hp / P.maxhp) * 100 + '%';
   setText('hpText', Math.ceil(P.hp) + ' / ' + Math.round(P.maxhp));
   $('xpFill').style.width = (G.xp / G.xpNeed) * 100 + '%';
@@ -557,9 +562,8 @@ function hud(dt) {
   const wv = `Wave ${G.wave + 1}${G.waveMut ? ' ' + MUTATIONS[G.waveMut].name : ''}${G.endless ? ' · Tier ' + G.tier : ''}`;
   $('nextEvt').style.display = G.bosses.length || G.tutorial ? 'none' : '';
   setText('nextEvt', nbT === null || nbT - G.t > 3600 ? wv : `${wv} · ☠ ${nb ? (nb.id === 'final' ? stageDef().final.name : ENEMIES[nb.id].name) : 'Boss'} in ${fmtTime(Math.max(0, nbT - G.t))}`);
-  bannerTick(dt);
-  if (Save.set.fps) { if (FRAME_MS < 1000) { fpsAcc += FRAME_MS / 1000; fpsN++; } if (fpsAcc > 0.5) { fpsShow = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; } setText('fps', fpsShow + ' FPS · ⚙' + JS_MS.toFixed(1) + 'ms'); } else setText('fps', '');
-  if (!minGfx() || (hudFrame = (hudFrame + 1) % 3) === 0) { drawDetector(); drawMinimap(); }
+  setText('fps', Save.set.fps ? fpsShow + ' FPS · ⚙' + JS_MS.toFixed(1) + 'ms' : '');
+  drawDetector(); drawMinimap();
 }
 let hudFrame = 0;
 const mm = $('minimap'), mmx = mm.getContext('2d');
