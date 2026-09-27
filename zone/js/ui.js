@@ -191,8 +191,9 @@ function render(title = false) {
   const tk = Math.max(1, 0.95 / ZOOM), fSm = `bold ${Math.round(14 * tk)}px Oswald, Impact, sans-serif`, fBig = `bold ${Math.round(20 * tk)}px Oswald, Impact, sans-serif`;
   for (const t of G.texts) {
     ctx.globalAlpha = clamp(t.life * 2, 0, 1);
+    if (minQ) { textStamp(t.s, t.c, t.big ? fBig : fSm, t.big ? 20 * tk : 14 * tk, t.x, t.y); continue; }
     ctx.font = t.big ? fBig : fSm;
-    if (!minQ) { ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillText(t.s, t.x + 1.5, t.y + 1.5); }
+    ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillText(t.s, t.x + 1.5, t.y + 1.5);
     ctx.fillStyle = t.c; ctx.fillText(t.s, t.x, t.y);
   }
   ctx.globalAlpha = 1;

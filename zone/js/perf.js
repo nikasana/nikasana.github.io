@@ -210,3 +210,19 @@ function bakeProps(g, gx, gy, sc) {
     for (const p of arr) { CAM.x = p.x; CAM.y = p.y; try { PROP_DRAW[p.kind](p); } catch (e) { /* skip this one */ } }
   } finally { ctx = main; CAM.x = cam.x; CAM.y = cam.y; }
 }
+// floating damage numbers on Lowest: each distinct (text, colour, size) is rendered once and then copied 1:1;
+// drawing glyphs is one of the slowest things a software-painted canvas does, and fights repeat the same numbers
+const TXT = new Map();
+function textStamp(str, col, font, size, x, y) {
+  const k = font + '|' + col + '|' + str;
+  let t = TXT.get(k);
+  if (!t || t.sc !== RT.sc) {
+    if (TXT.size > 400) TXT.clear();
+    const sc = RT.sc, c = document.createElement('canvas'), g = c.getContext('2d');
+    g.font = font; const w = g.measureText(String(str)).width;
+    c.width = Math.max(1, Math.ceil((w + 4) * sc)); c.height = Math.max(1, Math.ceil(size * 1.45 * sc));
+    g.setTransform(sc, 0, 0, sc, 0, 0); g.font = font; g.textAlign = 'center'; g.fillStyle = col; g.fillText(str, w / 2 + 2, size * 1.1);
+    TXT.set(k, t = { c, sc, hw: w / 2 + 2, top: size * 1.1 });
+  }
+  blit(t.c, x - t.hw, y - t.top);
+}
