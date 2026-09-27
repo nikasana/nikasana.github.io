@@ -226,3 +226,8 @@ function textStamp(str, col, font, size, x, y) {
   }
   blit(t.c, x - t.hw, y - t.top);
 }
+
+// Ultra-low: no synthesized background music (radio stations and the dynamic score); sound effects still play
+addEventListener('DOMContentLoaded', () => {
+  for (const o of [Radio, Music]) { const t = o.tick; o.tick = function () { if (ultraGfx()) return; return t.apply(this, arguments); }; }
+});

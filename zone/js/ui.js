@@ -564,8 +564,9 @@ function hud(dt) {
   $('nextEvt').style.display = G.bosses.length || G.tutorial ? 'none' : '';
   setText('nextEvt', nbT === null || nbT - G.t > 3600 ? wv : `${wv} · ☠ ${nb ? (nb.id === 'final' ? stageDef().final.name : ENEMIES[nb.id].name) : 'Boss'} in ${fmtTime(Math.max(0, nbT - G.t))}`);
   setText('fps', Save.set.fps ? fpsShow + ' FPS · ⚙' + JS_MS.toFixed(1) + 'ms' : '');
-  drawDetector(); drawMinimap();
+  if (!ultraGfx() || (hudFrame2 = (hudFrame2 + 1) % 4) === 0) { drawDetector(); drawMinimap(); }
 }
+let hudFrame2 = 0;
 let hudFrame = 0;
 const mm = $('minimap'), mmx = mm.getContext('2d');
 function drawMinimap() {
@@ -749,7 +750,7 @@ function buildSettings() {
   $('settingsBody').innerHTML = slider('master', 'Master volume') + slider('music', 'Music / radio') + slider('sfx', 'Sound effects') + slider('amb', 'Ambience') + slider('voice', 'Radio chatter & UI') +
     `<label class="set"><span>Screen shake</span><input type="range" min="0" max="1" step="0.05" value="${shakeK()}" data-set="shake"></label>` + tog('mmArrows', 'Minimap arrows') + tog('omens', 'Zone omens (a random twist each run)') + tog('numbers', 'Damage numbers') + tog('hints', 'Tutorial hints') + tog('fps', 'Show FPS') +
     `<label class="set"><span>Game zoom</span><input type="range" min="0.7" max="2" step="0.05" value="${zoomK()}" data-set="zoom"></label>` +
-    `<label class="set"><span>Graphics quality</span><select data-q><option value="auto" ${s.quality === 'auto' ? 'selected' : ''}>Auto (recommended)</option><option value="high" ${s.quality === 'high' ? 'selected' : ''}>High</option><option value="low" ${s.quality === 'low' ? 'selected' : ''}>Low (faster)</option><option value="min" ${s.quality === 'min' ? 'selected' : ''}>Lowest (smoothest)</option></select></label>` +
+    `<label class="set"><span>Graphics quality</span><select data-q><option value="auto" ${s.quality === 'auto' ? 'selected' : ''}>Auto (recommended)</option><option value="high" ${s.quality === 'high' ? 'selected' : ''}>High</option><option value="low" ${s.quality === 'low' ? 'selected' : ''}>Low (faster)</option><option value="min" ${s.quality === 'min' ? 'selected' : ''}>Lowest (smoothest)</option><option value="ultra" ${s.quality === 'ultra' ? 'selected' : ''}>Ultra-low (potato phones)</option></select></label>` +
     `<button class="big ghost small" id="resetHints">Replay tutorial hints</button>`;
   for (const i of document.querySelectorAll('[data-set]')) i.oninput = () => { s[i.dataset.set] = +i.value; applySettings(); Save.save(); };
   for (const i of document.querySelectorAll('[data-tog]')) i.onchange = () => { s[i.dataset.tog] = i.checked; applySettings(); Save.save(); };

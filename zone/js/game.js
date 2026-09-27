@@ -96,6 +96,7 @@ function spawnArtifact(f) {
 
 // ---------- fx helpers ----------
 function part(x, y, o) {
+  if (ultraGfx()) return;
   if (G.particles.length > (minGfx() ? 60 : lowGfx() ? 500 : 1400)) return;
   G.particles.push({ x, y, z: o.z || 0, vx: o.vx || 0, vy: o.vy || 0, vz: o.vz || 0, g: o.g ?? 400, life: o.life || 0.6, max: o.life || 0.6, s: o.s || 3, c: o.c || '255,255,255', add: !!o.add });
 }
@@ -103,7 +104,7 @@ function burst(x, y, n, c, spd = 160, o = {}) {
   for (let i = 0; i < n; i++) { const a = rand(TAU), s = rand(spd * 0.3, spd); part(x, y, { vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6, vz: rand(50, 220), z: o.z ?? 10, c, s: rand(1.5, o.s || 3.5), life: rand(0.3, o.life || 0.8), add: o.add, g: o.g }); }
 }
 function text(x, y, s, c = '#fff', big = false, force = false) {
-  if (!force && !Save.set.numbers) return;
+  if (!force && (!Save.set.numbers || (ultraGfx() && !big))) return;
   if (!force && !big && G.texts.length > (minGfx() ? 12 : 24)) return;
   if (G.texts.length > 70) G.texts.shift();
   G.texts.push({ x: x + rand(-8, 8), y, s, c, life: 0.8, big });
@@ -418,7 +419,7 @@ function director(dt) {
   let cap = Math.min(170 + (G.tier - 1) * 10, 18 + m * 13) * (lab ? 0.6 : 1) * (bossUp ? 0.6 : 1);
   // Lowest graphics: a late-game horde is capped at 110 mutants on screen, each one proportionally tougher and worth
   // proportionally more XP, so the fight weighs the same while phones move and draw far fewer bodies
-  const worth = minGfx() && cap > 110 ? cap / 110 : 1; if (worth > 1) cap = 110;
+  const hcap = ultraGfx() ? 60 : 110, worth = minGfx() && cap > hcap ? cap / hcap : 1; if (worth > 1) cap = hcap;
   const rate = (G.tutorial || G.coGuest ? 0 : 1) * (G.coopMul || 1) * diffDef().spawn * Events.mods().spawn * Math.min(7, 0.5 + m * 0.42) * (0.75 + reg.danger * 0.13) * (night ? 1.25 : 1) * (G.em && G.em.phase === 'blast' ? 0 : 1) * (lab ? 0.7 : 1) * (bossUp ? 0.4 : 1);
   G.spawnAcc += rate * dt;
   while (G.spawnAcc >= 1) {
@@ -549,7 +550,9 @@ function enemyShoot(e, a, spd, dmg, k, r = 6, free = false) {
   return true;
 }
 function tele(x, y, x2, y2, w, t) { G.fx.push({ k: 'tele', x, y, x2, y2, w, life: t, max: t }); }
-function updateEnemies(dt) {
+let ENF = 0;
+function updateEnemies(dt0) {
+  const dt = dt0, ultra = ultraGfx(), vx0 = VW / 2 / ZOOM + 80, vy0 = VH / 2 / ZOOM + 120; ENF++;
   EG.clear();
   for (const e of G.enemies) if (!e.dead) EG.add(e);
   const lab = World.kind === 'lab';
@@ -558,6 +561,9 @@ function updateEnemies(dt) {
   G.markT = (G.markT || 0) - dt;
   const flood = Events.mods().flood;
   for (const e of G.enemies) {
+    // Ultra-low: mutants off screen think every other frame (with the skipped time added back), bosses always
+    if (ultra && !e.boss && !e.mini && !e.dead && (Math.abs(e.x - P.x) > vx0 || Math.abs(e.y - P.y) > vy0) && ((ENF + (e.seed * 7 | 0)) & 1)) { e.skipDt = (e.skipDt || 0) + dt0; continue; }
+    const dt = dt0 + (e.skipDt || 0); e.skipDt = 0;
     if (e.dead) continue;
     if (!e.boss && !e.mini && !e.evolved && e.t > 50 && e.id !== 'phantom' && e.id !== 'holoclone' && e.id !== 'bat') {
       e.evolved = true; e.sc *= 1.2; e.r *= 1.2; e.hp *= 1.8; e.maxhp *= 1.8; e.spd *= 1.1; e.name = 'Evolved ' + e.name;

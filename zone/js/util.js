@@ -1,5 +1,5 @@
 'use strict';
-const ZB_BUILD = 100; // keep in sync with version.txt and the ?v= in index.html
+const ZB_BUILD = 101; // keep in sync with version.txt and the ?v= in index.html
 // ---------- math & random helpers ----------
 const TAU = Math.PI * 2;
 const rand = (a = 1, b) => (b === undefined ? Math.random() * a : a + Math.random() * (b - a));
@@ -28,11 +28,14 @@ const GFX = {
     }
   },
 };
-function gfxLevel() { const q = typeof Save !== 'undefined' && Save.data ? Save.set.quality : 'high'; return q === 'min' ? 2 : q === 'low' ? 1 : q === 'auto' ? GFX.auto : 0; }
+function gfxLevel() { const q = typeof Save !== 'undefined' && Save.data ? Save.set.quality : 'high'; return q === 'ultra' ? 3 : q === 'min' ? 2 : q === 'low' ? 1 : q === 'auto' ? GFX.auto : 0; }
+// Ultra-low (potato): everything Lowest does, plus 1x render resolution, a 60-mutant horde, no particles or damage
+// numbers, half-rate AI for off-screen mutants and no synthesized music
+function ultraGfx() { return gfxLevel() >= 3; }
 function lowGfx() { return gfxLevel() >= 1; }
 function minGfx() { return gfxLevel() >= 2; }
 // every quality level renders at full sharpness: they only cut effects, never resolution
-function gfxDpr() { return Math.min(2, window.devicePixelRatio || 1); }
+function gfxDpr() { return typeof Save !== 'undefined' && Save.data && Save.set.quality === 'ultra' ? 1 : Math.min(2, window.devicePixelRatio || 1); }
 // low applies everywhere: no decorative CSS loops or backdrop blur, throttled menu backgrounds and casino canvases;
 // min also drops glows, shadows and CSS animations entirely
 function applyGfx() {
