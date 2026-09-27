@@ -5,7 +5,7 @@ function render(title = false) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = '#0d0c09'; ctx.fillRect(0, 0, cv.width, cv.height);
   if (!G) return;
-  const low = Save.set.quality === 'low';
+  const low = lowGfx();
   const sc = ZOOM * DPR;
   const sx = G.shake * (Math.sin(NOW * 41) * 0.35 + Math.sin(NOW * 67) * 0.2), sy = G.shake * (Math.cos(NOW * 37) * 0.35 + Math.sin(NOW * 59) * 0.2);
   const cx = CAM.x + sx, cy = CAM.y + sy;
@@ -716,14 +716,14 @@ function buildSettings() {
   const tog = (k, label) => `<label class="set"><span>${label}</span><input type="checkbox" ${s[k] ? 'checked' : ''} data-tog="${k}"></label>`;
   $('settingsBody').innerHTML = slider('master', 'Master volume') + slider('music', 'Music / radio') + slider('sfx', 'Sound effects') + slider('amb', 'Ambience') + slider('voice', 'Radio chatter & UI') +
     `<label class="set"><span>Screen shake</span><input type="range" min="0" max="1" step="0.05" value="${shakeK()}" data-set="shake"></label>` + tog('mmArrows', 'Minimap arrows') + tog('omens', 'Zone omens (a random twist each run)') + tog('numbers', 'Damage numbers') + tog('hints', 'Tutorial hints') + tog('fps', 'Show FPS') +
-    `<label class="set"><span>Graphics quality</span><select data-q><option value="high" ${s.quality === 'high' ? 'selected' : ''}>High</option><option value="low" ${s.quality === 'low' ? 'selected' : ''}>Low (faster)</option></select></label>` +
+    `<label class="set"><span>Graphics quality</span><select data-q><option value="auto" ${s.quality === 'auto' ? 'selected' : ''}>Auto (recommended)</option><option value="high" ${s.quality === 'high' ? 'selected' : ''}>High</option><option value="low" ${s.quality === 'low' ? 'selected' : ''}>Low (faster)</option></select></label>` +
     `<button class="big ghost small" id="resetHints">Replay tutorial hints</button>`;
   for (const i of document.querySelectorAll('[data-set]')) i.oninput = () => { s[i.dataset.set] = +i.value; applySettings(); Save.save(); };
   for (const i of document.querySelectorAll('[data-tog]')) i.onchange = () => { s[i.dataset.tog] = i.checked; applySettings(); Save.save(); };
-  document.querySelector('[data-q]').onchange = (e) => { s.quality = e.target.value; Save.save(); };
+  document.querySelector('[data-q]').onchange = (e) => { s.quality = e.target.value; GFX.autoLow = false; GFX.bad = 0; Save.save(); applyGfx(); };
   $('resetHints').onclick = () => { Save.data.hints = []; Save.save(); $('resetHints').textContent = 'Hints will show again ✓'; };
 }
-function applySettings() { const s = Save.set; Sfx.vol.master = s.master; Sfx.vol.music = s.music; Sfx.vol.sfx = s.sfx; Sfx.vol.amb = s.amb; Sfx.vol.voice = s.voice; Sfx.applyVol(); }
+function applySettings() { const s = Save.set; Sfx.vol.master = s.master; Sfx.vol.music = s.music; Sfx.vol.sfx = s.sfx; Sfx.vol.amb = s.amb; Sfx.vol.voice = s.voice; Sfx.applyVol(); applyGfx(); }
 
 // ---------- input ----------
 addEventListener('keydown', (e) => {
@@ -845,12 +845,29 @@ function toMenu() {
 }
 
 // ---------- loop ----------
-let last = performance.now();
+let last = performance.now(), titleAcc = 0;
+// the world drawn behind menus: hidden completely by the opaque bunker (skip it), dimmed and blurred by the other menus (20 FPS is plenty)
+const DIM_MENUS = ['setup', 'settings', 'runs', 'profiles', 'coop', 'crewHQ', 'radioPanel'];
+function menuBg() {
+  const bk = $('bunker');
+  if (bk && bk.classList.contains('show') && bk.classList.contains('cyber')) return 2;
+  for (const id of DIM_MENUS) { const el = $(id); if (el && el.classList.contains('show')) return 1; }
+  return 0;
+}
 function frame(now) {
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const ms = now - last, dt = Math.min(0.05, ms / 1000); last = now;
   NOW += dt;
   requestAnimationFrame(frame);
-  try { if (G && !G.title) { update(dt); render(); hud(dt); } else renderTitle(dt); }
+  GFX.sample(ms);
+  try {
+    if (G && !G.title) { update(dt); render(); hud(dt); }
+    else {
+      const bg = menuBg();
+      if (bg === 2) titleAcc = 0;
+      else if (bg === 1 || lowGfx()) { titleAcc += dt; if (titleAcc >= (bg === 1 ? 1 / 20 : 1 / 30)) { renderTitle(Math.min(0.1, titleAcc)); titleAcc = 0; } }
+      else renderTitle(dt);
+    }
+  }
   catch (e) { if (typeof guardReport === 'function') guardReport('frame', e); else console.error(e); }
 }
 const titleCam = { x: 3200, y: 4200 };

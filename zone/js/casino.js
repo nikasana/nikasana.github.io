@@ -19,6 +19,7 @@ const CZ = {
   },
   // ----- effects: coin shower and the BIG WIN banner -----
   coins(n) {
+    if (lowGfx()) n = Math.min(n, 14);
     let cv = $('czFx'); if (!cv) { cv = document.createElement('canvas'); cv.id = 'czFx'; document.body.appendChild(cv); }
     cv.width = innerWidth; cv.height = innerHeight; const g = cv.getContext('2d'); this.fx = (this.fx || []).concat(Array.from({ length: Math.round(n) }, () => ({ x: rand(innerWidth), y: -20 - rand(200), vx: rand(-60, 60), vy: rand(80, 260), r: rand(6, 12), a: rand(6), s: pick(['🪙', '💰', '💎', '✨']) })));
     if (this.fxOn) return; this.fxOn = true; let last = performance.now();
@@ -53,7 +54,19 @@ const CZ = {
   },
   i18n() { if (typeof I18n !== 'undefined' && I18n.cur !== 'en' && this.el) try { I18n.dom(this.el); } catch (e) { /* keep english */ } },
   canvas(st, w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; c.className = 'czCv'; st.appendChild(c); return c; },
-  loop(cv, fn) { let last = performance.now(); const f = (t) => { if (!cv.isConnected) return; const dt = Math.min(0.05, (t - last) / 1000); last = t; fn(cv.getContext('2d'), dt, t / 1000); requestAnimationFrame(f); }; requestAnimationFrame(f); },
+  // game canvases tick at only 10 FPS while the casino is hidden (e.g. during a run — enough to finish a round
+  // that was in flight) and at 30 FPS on low graphics
+  loop(cv, fn) {
+    let last = performance.now(), acc = 0; const g = cv.getContext('2d');
+    const f = (t) => {
+      if (!cv.isConnected) return; requestAnimationFrame(f);
+      const d = Math.min(0.1, (t - last) / 1000); last = t; acc += d;
+      const vis = cv.getClientRects().length > 0;
+      if (acc < (!vis ? 0.1 : lowGfx() ? 1 / 32 : 0)) return;
+      const dt = Math.min(vis ? 0.05 : 0.1, acc); acc = 0; fn(g, dt, t / 1000);
+    };
+    requestAnimationFrame(f);
+  },
   res(st, txt, good) { let r = st.querySelector('.czRes'); if (!r) { r = document.createElement('div'); r.className = 'czRes'; st.appendChild(r); } r.textContent = txt; r.className = 'czRes ' + (good ? 'win' : good === false ? 'lose' : ''); },
 };
 const ease = (t) => 1 - Math.pow(1 - Math.min(1, t), 3);

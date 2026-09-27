@@ -436,7 +436,7 @@ Object.assign(W2, {
     this.updateAvalanche(dt);
     // leaves, snow flurries and dust near the camera
     const reg = W.region(CAM.x, CAM.y), rate = reg.snow ? 0 : reg.sand ? 3 : reg.trees > 0.3 ? 5 : reg.trees > 0.12 ? 1.5 : 0;
-    if (Save.set.quality !== 'low' && Math.random() < rate * dt && this.leaves.length < 50) {
+    if (!lowGfx() && Math.random() < rate * dt && this.leaves.length < 50) {
       const col = reg.red ? pick(['#c0602a', '#d8883a', '#9a3a1a']) : reg.sand ? '#c8b08a' : pick(['#8a9a3a', '#b0a040', '#6a7a2a', '#c0903a']);
       this.leaves.push({ x: CAM.x + rand(-700, 700), y: CAM.y + rand(-500, 400), z: rand(120, 260), vx: rand(20, 60), a: rand(TAU), s: reg.sand ? 1.5 : rand(3, 5), c: col, life: 8, dust: !!reg.sand });
     }
@@ -785,7 +785,7 @@ function nearestRailS(r) {
 }
 // screen-space: god rays, colored anomaly light, fog layers, fireflies
 function drawW2Screen(cx, cy, title) {
-  if (Save.set.quality === 'low') return;
+  if (lowGfx()) return;
   const W = World, dark = Env.darkness(), sx = (x) => (x - cx) * ZOOM + VW / 2, sy = (y) => (y - cy) * ZOOM + VH / 2;
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   if (W.kind === 'over' && (Env.weather === 'clear' || Env.weather === 'heat') && dark < 0.45) {
@@ -825,7 +825,7 @@ function drawW2Screen(cx, cy, title) {
 }
 // subtle squash & stretch animation for every mutant
 function animSquash(o) {
-  if (Save.set.quality === 'low') return 0;
+  if (lowGfx()) return 0;
   return (o.flash > 0 ? 0.08 : 0) + Math.sin(NOW * (o.boss ? 4 : 9) + o.seed) * (o.boss ? 0.018 : 0.035);
 }
 

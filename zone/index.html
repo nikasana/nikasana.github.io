@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#15130f" />
 <title>ZONEBONK — Heart of the Zone</title>
-<link rel="icon" type="image/svg+xml" href="icon.svg?v=87" />
-<link rel="apple-touch-icon" href="icon.svg?v=87" />
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=88" />
+<link rel="apple-touch-icon" href="icon.svg?v=88" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -547,6 +547,17 @@
   .czFreeBtnCompact { display: block; margin: 0 auto 8px; background: rgba(0, 0, 0, 0.45); color: var(--ink, #ddd); border: 1px solid var(--line, #4a3a5a); border-radius: 20px; padding: 8px 20px; font: 700 14px Oswald, sans-serif; cursor: pointer; }
   .czFreeBtnCompact.armed { background: linear-gradient(135deg, #7aff9a, #1f9a4a); color: #000; border: none; box-shadow: 0 0 14px #7aff9a; }
   .big.autoPick { background: linear-gradient(135deg, #ff3a3a, #c8202a) !important; color: #fff !important; border: none !important; box-shadow: 0 0 14px #ff3a3a; }
+  .czAFSlot { display: contents; }
+  .czG[data-czg] { position: relative; }
+  .czDot { position: absolute; top: -4px; right: -4px; width: 10px; height: 10px; border-radius: 50%; background: #ff3a3a; border: 2px solid #140e1c; box-shadow: 0 0 6px #ff3a3a; pointer-events: none; }
+
+  /* ---- performance ---- */
+  /* the cyber bunker background is opaque, so blurring the (no longer drawn) world behind it is pure cost */
+  #bunker.cyber { backdrop-filter: none; }
+  /* low graphics, applied everywhere: decorative loops play once, no backdrop blur, no scanline overlay */
+  body.lowfx *, body.lowfx *::before, body.lowfx *::after { animation-iteration-count: 1 !important; }
+  body.lowfx .screen, body.lowfx #levelup { backdrop-filter: none !important; }
+  body.lowfx #bunker.cyber::after { display: none; }
   #czSiren { position: fixed; inset: 0; pointer-events: none; z-index: 9998; opacity: 0; } #czSiren.on { animation: czSir .7s 6; } @keyframes czSir { 0%, 100% { opacity: 0; box-shadow: inset 0 0 0 #f00; } 50% { opacity: 1; box-shadow: inset 0 0 120px 30px #ff2a2a, inset 0 0 60px 10px #ffe070; } }
   #czChest { background: linear-gradient(135deg, #ffcf3a, #ff9a3a) !important; color: #000 !important; }
   #bTabs .msBadge { display: none !important; }
@@ -710,54 +721,54 @@
       '<button onclick="location.reload()" style="' + btn + 'background:#ffcf3a;color:#111;border:2px solid #ffcf3a">🔄 RELOAD</button>';
   });
 </script>
-<script src="js/util.js?v=87"></script>
-<script src="js/audio.js?v=87"></script>
-<script src="js/radio.js?v=87"></script>
-<script src="js/ambience.js?v=87"></script>
-<script src="js/data.js?v=87"></script>
-<script src="js/artifacts.js?v=87"></script>
-<script src="js/world.js?v=87"></script>
-<script src="js/render.js?v=87"></script>
-<script src="js/render2.js?v=87"></script>
-<script src="js/lighting.js?v=87"></script>
-<script src="js/game.js?v=87"></script>
-<script src="js/systems.js?v=87"></script>
-<script src="js/weapons2.js?v=87"></script>
-<script src="js/mutants3.js?v=87"></script>
-<script src="js/events.js?v=87"></script>
-<script src="js/hazards.js?v=87"></script>
-<script src="js/world2.js?v=87"></script>
-<script src="js/vehicles.js?v=87"></script>
-<script src="js/stages3.js?v=87"></script>
-<script src="js/story.js?v=87"></script>
-<script src="js/meta.js?v=87"></script>
-<script src="js/coop.js?v=87"></script>
-<script src="js/crews.js?v=87"></script>
-<script src="js/crewhq.js?v=87"></script>
-<script src="js/content.js?v=87"></script>
-<script src="js/replay.js?v=87"></script>
-<script src="js/variety.js?v=87"></script>
-<script src="js/pace.js?v=87"></script>
-<script src="js/progress2.js?v=87"></script>
-<script src="js/cyber.js?v=87"></script>
-<script src="js/shop2.js?v=87"></script>
-<script src="js/cyber2.js?v=87"></script>
-<script src="js/casino.js?v=87"></script>
-<script src="js/casino2.js?v=87"></script>
-<script src="js/casino3.js?v=87"></script>
-<script src="js/casino4.js?v=87"></script>
-<script src="js/missions.js?v=87"></script>
-<script src="js/extras.js?v=87"></script>
-<script src="js/badges.js?v=87"></script>
-<script src="js/ux.js?v=87"></script>
-<script src="js/saves.js?v=87"></script>
-<script src="js/polish.js?v=87"></script>
-<script src="js/voice.js?v=87"></script>
-<script src="js/i18n_a.js?v=87"></script>
-<script src="js/i18n_b.js?v=87"></script>
-<script src="js/i18n_c.js?v=87"></script>
-<script src="js/i18n.js?v=87"></script>
-<script src="js/guard.js?v=87"></script>
-<script src="js/ui.js?v=87"></script>
+<script src="js/util.js?v=88"></script>
+<script src="js/audio.js?v=88"></script>
+<script src="js/radio.js?v=88"></script>
+<script src="js/ambience.js?v=88"></script>
+<script src="js/data.js?v=88"></script>
+<script src="js/artifacts.js?v=88"></script>
+<script src="js/world.js?v=88"></script>
+<script src="js/render.js?v=88"></script>
+<script src="js/render2.js?v=88"></script>
+<script src="js/lighting.js?v=88"></script>
+<script src="js/game.js?v=88"></script>
+<script src="js/systems.js?v=88"></script>
+<script src="js/weapons2.js?v=88"></script>
+<script src="js/mutants3.js?v=88"></script>
+<script src="js/events.js?v=88"></script>
+<script src="js/hazards.js?v=88"></script>
+<script src="js/world2.js?v=88"></script>
+<script src="js/vehicles.js?v=88"></script>
+<script src="js/stages3.js?v=88"></script>
+<script src="js/story.js?v=88"></script>
+<script src="js/meta.js?v=88"></script>
+<script src="js/coop.js?v=88"></script>
+<script src="js/crews.js?v=88"></script>
+<script src="js/crewhq.js?v=88"></script>
+<script src="js/content.js?v=88"></script>
+<script src="js/replay.js?v=88"></script>
+<script src="js/variety.js?v=88"></script>
+<script src="js/pace.js?v=88"></script>
+<script src="js/progress2.js?v=88"></script>
+<script src="js/cyber.js?v=88"></script>
+<script src="js/shop2.js?v=88"></script>
+<script src="js/cyber2.js?v=88"></script>
+<script src="js/casino.js?v=88"></script>
+<script src="js/casino2.js?v=88"></script>
+<script src="js/casino3.js?v=88"></script>
+<script src="js/casino4.js?v=88"></script>
+<script src="js/missions.js?v=88"></script>
+<script src="js/extras.js?v=88"></script>
+<script src="js/badges.js?v=88"></script>
+<script src="js/ux.js?v=88"></script>
+<script src="js/saves.js?v=88"></script>
+<script src="js/polish.js?v=88"></script>
+<script src="js/voice.js?v=88"></script>
+<script src="js/i18n_a.js?v=88"></script>
+<script src="js/i18n_b.js?v=88"></script>
+<script src="js/i18n_c.js?v=88"></script>
+<script src="js/i18n.js?v=88"></script>
+<script src="js/guard.js?v=88"></script>
+<script src="js/ui.js?v=88"></script>
 </body>
 </html>

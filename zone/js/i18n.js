@@ -838,6 +838,8 @@ Object.assign(UI_TR, {
   'loyalty pts': U('ლოიალობის ქულა', 'очков лояльности', 'балів лояльності'),
   '5,000 ₽': U('5,000 ₽', '5 000 ₽', '5 000 ₽'), '30,000 ₽': U('30,000 ₽', '30 000 ₽', '30 000 ₽'), 'Free Play Token': U('უფასო თამაშის ჟეტონი', 'Жетон бесплатной игры', 'Жетон безкоштовної гри'), '+25% Vault Fill': U('+25% სეიფის შევსება', '+25% заполнения сейфа', '+25% заповнення сейфа'), '+2,000 Jackpot': U('+2,000 ჯეკპოტი', '+2 000 к джекпоту', '+2 000 до джекпоту'), 'Lucky Charm · 10 min': U('იღბლის ამულეტი · 10 წთ', 'Амулет удачи · 10 мин', 'Амулет удачі · 10 хв'),
   'Snorks': U('სნორკები', 'Снорки', 'Снорки'), 'Boar': U('ტახი', 'Кабан', 'Кабан'), 'Bloodsucker': U('სისხლისმწოველი', 'Кровосос', 'Кровосос'), 'Controller': U('კონტროლერი', 'Контролёр', 'Контролер'), 'Chimera': U('ქიმერა', 'Химера', 'Химера'), 'Poltergeist': U('პოლტერგეისტი', 'Полтергейст', 'Полтергейст'),
+  'Auto (recommended)': U('ავტო (რეკომენდებული)', 'Авто (рекомендуется)', 'Авто (рекомендовано)'),
+  '⚙ Graphics lowered for smoother FPS': U('⚙ გრაფიკა შემცირდა უფრო გლუვი FPS-ისთვის', '⚙ Графика снижена для плавного FPS', '⚙ Графіку знижено для плавного FPS'),
   'MEGA WIN': U('მეგა მოგება', 'МЕГА ВЫИГРЫШ', 'МЕГА ВИГРАШ'), 'HUGE WIN': U('უზარმაზარი მოგება', 'ОГРОМНЫЙ ВЫИГРЫШ', 'ВЕЛИЧЕЗНИЙ ВИГРАШ'), 'BIG WIN': U('დიდი მოგება', 'КРУПНЫЙ ВЫИГРЫШ', 'ВЕЛИКИЙ ВИГРАШ'),
   'GREEN': U('მწვანე', 'ЗЕЛЁНОЕ', 'ЗЕЛЕНЕ'), 'RED': U('წითელი', 'КРАСНОЕ', 'ЧЕРВОНЕ'), 'BLACK': U('შავი', 'ЧЁРНОЕ', 'ЧОРНЕ'),
 });
@@ -1165,7 +1167,12 @@ const i18nObserve = () => {
 };
 if (document.body) i18nObserve(); else addEventListener('DOMContentLoaded', i18nObserve);
 // safety sweep: catches text created before the language was known (it only fixes leftovers, so nothing flickers)
-const i18nSweep = () => { if (Save.data && I18n.cur !== 'en') try { I18n.dom(document.body); } catch (e) { /* keep going */ } };
+// during a run only the HUD is on screen, so don't walk the hidden bunker/casino every 1.5s (that caused frame hitches on phones)
+const i18nSweep = () => {
+  if (!Save.data || I18n.cur === 'en' || document.visibilityState !== 'visible') return;
+  const inRun = typeof G !== 'undefined' && G && !G.title && G.state === 'play';
+  try { I18n.dom(inRun ? $('hud') : document.body); } catch (e) { /* keep going */ }
+};
 addEventListener('DOMContentLoaded', () => setTimeout(i18nSweep, 0)); addEventListener('load', i18nSweep); setInterval(i18nSweep, 1500);
 // text drawn on the game canvas (labels, prompts, floating texts) is translated too
 {

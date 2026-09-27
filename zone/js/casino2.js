@@ -35,8 +35,11 @@ Object.assign(CZ, {
     if (v >= stake * 5 && v > 0) this.fireworks(Math.min(8, 2 + Math.floor(v / stake / 10)));
   },
   fireworks(n) {
-    for (let k = 0; k < n; k++) setTimeout(() => { const x = rand(innerWidth * 0.15, innerWidth * 0.85), y = rand(innerHeight * 0.1, innerHeight * 0.5), c = pick(['#ffe070', '#ff5ce6', '#7fe3ff', '#7aff9a', '#ff6a5a']); this.fx = (this.fx || []).concat(Array.from({ length: 40 }, (_, i) => { const a = (i / 40) * Math.PI * 2, sp = rand(120, 260); return { fw: true, x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1.2, c }; })); this.beep(200 + Math.random() * 200, 0.25, 'sawtooth', 0.05); this.coins(1); }, k * 350);
+    const low = lowGfx(), sparks = low ? 16 : 40; if (low) n = Math.min(n, 2);
+    for (let k = 0; k < n; k++) setTimeout(() => { const x = rand(innerWidth * 0.15, innerWidth * 0.85), y = rand(innerHeight * 0.1, innerHeight * 0.5), c = pick(['#ffe070', '#ff5ce6', '#7fe3ff', '#7aff9a', '#ff6a5a']); this.fx = (this.fx || []).concat(Array.from({ length: sparks }, (_, i) => { const a = (i / sparks) * Math.PI * 2, sp = rand(120, 260); return { fw: true, x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1.2, c }; })); this.beep(200 + Math.random() * 200, 0.25, 'sawtooth', 0.05); this.coins(1); }, k * 350);
   },
+  // the casino is actually on screen (not just sitting in a hidden bunker tab during a run)
+  shown() { const t = $('czTop'); return !!t && document.visibilityState === 'visible' && t.getClientRects().length > 0; },
   siren() { try { Sfx.init(); for (let i = 0; i < 6; i++) setTimeout(() => { Sfx.tone(600, 0.35, 'square', 0.06, 500); setTimeout(() => Sfx.tone(1100, 0.35, 'square', 0.06, -500), 350); }, i * 700); } catch (e) { /* audio off */ } let s = $('czSiren'); if (!s) { s = document.createElement('div'); s.id = 'czSiren'; document.body.appendChild(s); } s.classList.remove('on'); void s.offsetWidth; s.classList.add('on'); },
   // hourly chest
   chestLeft() { const c = this.st(); return Math.max(0, 3600 - Math.floor((Date.now() - (c.chest || 0)) / 1000)); },
@@ -66,10 +69,10 @@ addEventListener('DOMContentLoaded', () => {
   // one clock drives the ticker, the stay bonus and the perk strip while the casino is open
   let tick = 0;
   setInterval(() => {
-    const on = $('czTop') && document.visibilityState === 'visible'; if (!on) return;
+    if (!CZ.shown()) return;
     const s = CZ.session(); s.stay++; tick++;
     if (s.stay % 180 === 0) { s.stayN++; const v = Math.round(CZ.freeAmt() * (1 + s.stayN * 0.25)); Save.data.rubles += v; Save.save(); CZ.top(); CZ.coins(20); Sfx.play('quest'); if (typeof Missions !== 'undefined') Missions.toast('🕐 Stay bonus +' + v + ' ₽'); }
-    if (tick % 4 === 0) { const t = $('czTicker'); if (t) { const big = Math.random() < 0.15, m = big ? Math.round(rand(20, 150)) : Math.round(rand(2, 12) * 10) / 10; t.textContent = `📢 ${pick(CZ_NAMES)} won ${Math.round(m * pick([50, 100, 500, 1000]))} ₽ on ${pick(CZ_GAMES_T)} (×${m})`; t.classList.remove('in'); void t.offsetWidth; t.classList.add('in'); CZ.i18n(); } }
+    if (tick % 4 === 0) { const t = $('czTicker'); if (t) { const big = Math.random() < 0.15, m = big ? Math.round(rand(20, 150)) : Math.round(rand(2, 12) * 10) / 10; t.textContent = `📢 ${pick(CZ_NAMES)} won ${Math.round(m * pick([50, 100, 500, 1000]))} ₽ on ${pick(CZ_GAMES_T)} (×${m})`; t.classList.remove('in'); void t.offsetWidth; t.classList.add('in'); } }
     CZ.perks();
   }, 1000);
 });

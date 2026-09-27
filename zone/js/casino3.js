@@ -17,26 +17,23 @@ const CZ_SHOP = [
   { ic: '🍀', nm: 'Lucky Charm · 10 min', cost: 3000, fn: (c) => { CZ.charmUntil = Date.now() + 600000; } },
 ];
 const CZ_VAULT_TIERS = [[0.5, 5], [0.3, 15], [0.15, 40], [0.05, 150]];
+const CZ_FREE_GAMES = ['rou', 'slots', 'bj', 'plinko', 'crash', 'dice', 'coin', 'wheel', 'scratch', 'race', 'box', 'monty'];
 Object.assign(CZ, {
   vipPerk() { return CZ_VIP_PERKS[this.vip()]; },
   vault() { const c = this.st(); c.vault = c.vault || { fill: 0, ready: false }; return c.vault; },
-  // ----- free rolls: an AUTO button at the top (below the game tabs, like the old free button) that
-  // arms and fires in one click, and an ARM button next to each game's own action button — arm it,
-  // place your own bet/pick like the old flow, then press the game's own (green) button yourself -----
+  // ----- free rolls: SELECT (arm, pick yourself, press the green button) sits at the top below the
+  // game tabs; AUTO (picks and rolls in one click) sits next to each game's own green button. Both
+  // live in slots that CZ.refreshFreeBtns() fills, so they appear the moment a free roll does. -----
   freeUses(g) { const c = this.st(), dailyLeft = c.free2 && c.free2[g || this.game] === Meta.dayKey() ? 0 : 1; return dailyLeft + (c.tokens || 0); },
-  freeGameOk() { return this.game !== 'xch' && this.game !== 'vault' && this.game !== 'shop'; },
-  // autoFreeHtml sits in-row next to each game's own green button (auto-picks and rolls in one
-  // click), armFreeHtml sits alone at the top below the game tabs (arm it, then select and press
-  // the green button yourself) — so they get different button styles, not just different labels.
-  autoFreeHtml() {
-    if (!this.freeGameOk()) return ''; const n = this.freeUses(); if (n <= 0) return '';
-    return `<button class="big quickFree czAutoFree" data-qf="${this.game}">⚡ AUTO FREE ROLL (${n})</button>`;
-  },
-  armFreeHtml() {
-    if (!this.freeGameOk()) return ''; const n = this.freeUses(); if (n <= 0) return '';
-    const armed = !!this.freeArm;
+  freeGameOk(g) { return CZ_FREE_GAMES.includes(g || this.game); },
+  freeN() { return this.freeGameOk() ? this.freeUses() : 0; },
+  autoFreeBtn(n) { return n > 0 ? `<button class="big quickFree czAutoFree" data-qf="${this.game}">⚡ AUTO FREE ROLL (${n})</button>` : ''; },
+  armFreeBtn(n) {
+    if (n <= 0 && !this.freeArm) return ''; const armed = !!this.freeArm;
     return `<button class="czFreeBtnCompact pulse czArmFree ${armed ? 'armed' : ''}" data-af="${this.game}">${armed ? `🎁 ARMED — press play (${n})` : `🎁 SELECT FREE ROLL (${n})`}</button>`;
   },
+  autoFreeHtml() { return `<span class="czAFSlot">${this.autoFreeBtn(this.freeN())}</span>`; },
+  armFreeHtml() { return `<div class="czArmSlot">${this.armFreeBtn(this.freeN())}</div>`; },
   quickFree(g) {
     if (this.busy || this.freeUses(g) <= 0) return;
     this.bet = this.freeAmt(); this.freeArm = true;
@@ -155,27 +152,38 @@ CZ.take = function (v) {
   }
   return ok;
 };
-// keep the two free-roll buttons' counts live — top() runs after every take()/give(), so this is
-// what actually refreshes the "(N)" without needing a full game re-render (fixes it freezing on a
-// stale count, worst on mobile where players tend to keep tapping the same game).
+// fill the free-roll slots and the red dots on the game tabs from the current state. Runs after every
+// bet/result (via top()), after loss-streak tokens are handed out, and every second (via perks()),
+// so free rolls show up as soon as they exist — a new day, a token — without reopening the game.
 CZ.refreshFreeBtns = function () {
-  const n = this.freeGameOk() ? this.freeUses() : 0;
-  const af = document.querySelector('.czArmFree');
-  if (af) { if (n <= 0 && !this.freeArm) af.remove(); else { af.textContent = this.freeArm ? `🎁 ARMED — press play (${n})` : `🎁 SELECT FREE ROLL (${n})`; af.classList.toggle('armed', !!this.freeArm); } }
-  const qf = document.querySelector('.czAutoFree');
-  if (qf) { if (n <= 0) qf.remove(); else qf.textContent = `⚡ AUTO FREE ROLL (${n})`; }
+  if (!$('czTop')) return;
+  const n = this.freeN();
+  const fill = (sel, html) => { for (const s of document.querySelectorAll(sel)) if (s._h !== html) { s._h = html; s.innerHTML = html; } };
+  fill('.czArmSlot', this.armFreeBtn(n)); fill('.czAFSlot', this.autoFreeBtn(n));
+  for (const b of document.querySelectorAll('.czG[data-czg]')) {
+    const on = this.freeGameOk(b.dataset.czg) && this.freeUses(b.dataset.czg) > 0, d = b.querySelector('.czDot');
+    if (on && !d) b.insertAdjacentHTML('beforeend', '<i class="czDot"></i>'); else if (!on && d) d.remove();
+  }
 };
+const _afterGive3 = CZ.afterGive;
+CZ.afterGive = function (v, stake) { _afterGive3.call(this, v, stake); this.refreshFreeBtns(); };
 // loyalty points on the top panel, a daily-reset countdown and the vault on the perk strip
 const _top3 = CZ.top;
 CZ.top = function () { _top3.call(this); const el = $('czTop'); if (el) el.insertAdjacentHTML('beforeend', `<div><b>${this.st().loy || 0}</b>loyalty pts</div>`); this.refreshFreeBtns(); };
-const _perks3 = CZ.perks;
-CZ.perks = function () {
-  _perks3.call(this); const el = $('czPerks'); if (!el) return;
-  const now = new Date(), midnight = new Date(now); midnight.setHours(24, 0, 0, 0); const secs = Math.floor((midnight - now) / 1000);
-  const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), v = CZ.vault();
-  el.insertAdjacentHTML('beforeend', `<span>🔄 Free plays reset in ${h}h ${m}m</span>` + (v.ready ? '<button id="czVaultReady">🔐 VAULT READY!</button>' : `<span>🔐 Vault ${Math.floor(v.fill)}%</span>`));
-  const vb = $('czVaultReady'); if (vb) vb.onclick = () => { CZ.game = 'vault'; CZ.ui(CZ.el); };
-};
+// CZ.perks is created in casino2's DOMContentLoaded handler, so wrap it from ours (which runs after it)
+addEventListener('DOMContentLoaded', () => {
+  const _perks3 = CZ.perks;
+  CZ.perks = function () {
+    _perks3.call(this); const el = $('czPerks');
+    if (el) {
+      const now = new Date(), midnight = new Date(now); midnight.setHours(24, 0, 0, 0); const secs = Math.floor((midnight - now) / 1000);
+      const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), v = CZ.vault();
+      el.insertAdjacentHTML('beforeend', `<span>🔄 Free plays reset in ${h}h ${m}m</span>` + (v.ready ? '<button id="czVaultReady">🔐 VAULT READY!</button>' : `<span>🔐 Vault ${Math.floor(v.fill)}%</span>`));
+      const vb = $('czVaultReady'); if (vb) vb.onclick = () => { CZ.game = 'vault'; CZ.ui(CZ.el); };
+    }
+    CZ.refreshFreeBtns();
+  };
+});
 // one-time reset: everyone's daily free rolls come back once with this update (nothing else —
 // rubles, loyalty points, tokens, the vault, stats and saves are all untouched)
 const _loadFreeReset = Save.load.bind(Save);
@@ -187,7 +195,7 @@ Save.load = function () {
 // a short break reminder after every 30 minutes spent in the casino
 addEventListener('DOMContentLoaded', () => {
   setInterval(() => {
-    const on = $('czTop') && document.visibilityState === 'visible'; if (!on) return;
+    if (!CZ.shown()) return;
     const s = CZ.session(), mins = Math.floor((Date.now() - s.t0) / 60000), nextAt = (s.breakAt || 0) + 30;
     if (mins >= nextAt) { s.breakAt = nextAt; if (typeof Missions !== 'undefined') Missions.toast('🌤️ You\'ve been in the casino a while — maybe take a short break?'); CZ.beep(500, 0.3, 'sine'); }
   }, 1000);
