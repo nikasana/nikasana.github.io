@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#15130f" />
 <title>ZONEBONK — Heart of the Zone</title>
-<link rel="icon" type="image/svg+xml" href="icon.svg?v=74" />
-<link rel="apple-touch-icon" href="icon.svg?v=74" />
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=75" />
+<link rel="apple-touch-icon" href="icon.svg?v=75" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -495,14 +495,35 @@
 
   /* price spans inside bright buttons: keep the button's own dark text readable; unaffordable = dimmed */
   .big .afford, .big .poor { color: inherit !important; text-shadow: none; }
-  .big:has(.poor), .big.cant { opacity: 0.5; filter: grayscale(0.7); }
+  .big:has(.poor), .big.cant { background: #2a1010 !important; color: #ffb0a0 !important; border: 1px solid #ff6a5a !important; box-shadow: none !important; opacity: 1; filter: none; text-shadow: none; }
   .big.ghost .afford { color: var(--gold) !important; } .big.ghost .poor { color: #e77 !important; }
   .cwSteps { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 4px 0; } .cwSteps span { font-size: 12px; padding: 4px 10px; border-radius: 12px; background: #14141e; color: #888; border: 1px solid #2a2a3a; }
   .cwSteps span.on { color: #000; background: var(--c); border-color: var(--c); box-shadow: 0 0 10px var(--c); font-weight: 700; }
   .cwInfo { position: sticky; top: 0; z-index: 5; box-shadow: 0 6px 16px #000c; }
-  .cwLbl { position: absolute; transform: translateX(-50%); font: 700 11px sans-serif; color: #666; white-space: nowrap; pointer-events: none; z-index: 1; text-shadow: 0 1px 2px #000; } .cwLbl.buy { color: #ffe070; } .cwLbl.poor { color: #c77; }
+  .cwLbl { position: absolute; transform: translateX(-50%); width: 104px; text-align: center; pointer-events: none; z-index: 1; line-height: 1.2; }
+  .cwLbl b { display: block; font: 600 11px sans-serif; color: #e8e8f0; background: #000a; border-radius: 3px; padding: 1px 3px; text-shadow: 0 1px 2px #000; }
+  .cwLbl span { display: block; font: 700 11px sans-serif; color: #888; margin-top: 1px; text-shadow: 0 1px 2px #000; } .cwLbl.buy span { color: #ffe070; } .cwLbl.poor span { color: #ff8a7a; } .cwLbl.got b { color: var(--c); }
+  .cwNeed { display: block; font-style: normal; font-size: 12px; color: #ff8a7a; margin-top: 3px; }
+  .big { text-shadow: none; }
   .cwN.open:not(.own) { animation: cwPulse 1.4s infinite; } @keyframes cwPulse { 50% { box-shadow: 0 0 18px var(--c); } }
   .cwN.lock { opacity: 0.3; }
+
+  /* ---- survival heatmap ---- */
+  .hmWrap { overflow-x: auto; max-width: 100%; margin: 6px auto; } .hm { border-collapse: separate; border-spacing: 2px; margin: 0 auto; font: 600 11px sans-serif; }
+  .hm th { color: #cfc8a8; font-weight: 600; padding: 2px 4px; white-space: nowrap; } .hm th span { display: block; font-size: 16px; } .hm th small { display: block; font-size: 9px; max-width: 58px; overflow: hidden; text-overflow: ellipsis; }
+  .hm th.hmRow { text-align: left; } .hm th.hmRow small { display: inline; font-size: 11px; max-width: none; } .hmCorner { font-size: 10px; color: #888 !important; }
+  .hm td { width: 40px; height: 26px; text-align: center; color: #fff; border-radius: 4px; cursor: pointer; text-shadow: 0 1px 2px #000; transition: transform .1s; } .hm td:hover { transform: scale(1.18); outline: 2px solid #fff; position: relative; z-index: 2; }
+  .hm td.me { outline: 3px solid #ffe070; box-shadow: 0 0 12px #ffe070; }
+  .hmLegend { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: center; margin: 4px 0 10px; } .hmLegend span { padding: 2px 10px; border-radius: 4px; color: #fff; font-size: 11px; } .hmLegend small { width: 100%; color: #9a947c; font-size: 11px; }
+  #hmModal { position: fixed; inset: 0; background: #000d; z-index: 9000; display: none; overflow: auto; padding: 16px; } #hmModal.show { display: block; } .hmBox { max-width: 1100px; margin: 0 auto; }
+  .hmBtn { font-size: 13px; padding: 5px 12px; margin-left: 6px; }
+  /* ---- scratch cards ---- */
+  .scWrap { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; align-items: center; margin-top: 8px; }
+  .scCard { position: relative; width: min(360px, 86vw); aspect-ratio: 1; background: linear-gradient(135deg, #ffe070, #ff9a3a); border-radius: 14px; padding: 8px; box-shadow: 0 0 24px #ffcf3a88; }
+  .scGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; height: 100%; } .scGrid div { background: #fff8e0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: clamp(30px, 9vw, 54px); }
+  .scGrid div.hit { background: #7aff9a; box-shadow: 0 0 16px #7aff9a; animation: msGlow .6s infinite alternate; }
+  #scCoat { position: absolute; inset: 8px; width: calc(100% - 16px); height: calc(100% - 16px); border-radius: 8px; cursor: crosshair; touch-action: none; }
+  .scSide { display: flex; flex-direction: column; gap: 4px; background: #14120c; border: 1px solid #d4a640; border-radius: 10px; padding: 12px 16px; } .scSide b { color: #ffe070; } .scSide small { color: #aaa; } .scSide span { font-size: 18px; }
 </style>
 </head>
 <body>
@@ -645,49 +666,50 @@
       '<button onclick="location.reload()" style="' + btn + 'background:#ffcf3a;color:#111;border:2px solid #ffcf3a">🔄 RELOAD</button>';
   });
 </script>
-<script src="js/util.js?v=74"></script>
-<script src="js/audio.js?v=74"></script>
-<script src="js/radio.js?v=74"></script>
-<script src="js/ambience.js?v=74"></script>
-<script src="js/data.js?v=74"></script>
-<script src="js/artifacts.js?v=74"></script>
-<script src="js/world.js?v=74"></script>
-<script src="js/render.js?v=74"></script>
-<script src="js/render2.js?v=74"></script>
-<script src="js/lighting.js?v=74"></script>
-<script src="js/game.js?v=74"></script>
-<script src="js/systems.js?v=74"></script>
-<script src="js/weapons2.js?v=74"></script>
-<script src="js/mutants3.js?v=74"></script>
-<script src="js/events.js?v=74"></script>
-<script src="js/hazards.js?v=74"></script>
-<script src="js/world2.js?v=74"></script>
-<script src="js/vehicles.js?v=74"></script>
-<script src="js/stages3.js?v=74"></script>
-<script src="js/story.js?v=74"></script>
-<script src="js/meta.js?v=74"></script>
-<script src="js/coop.js?v=74"></script>
-<script src="js/crews.js?v=74"></script>
-<script src="js/crewhq.js?v=74"></script>
-<script src="js/content.js?v=74"></script>
-<script src="js/replay.js?v=74"></script>
-<script src="js/variety.js?v=74"></script>
-<script src="js/pace.js?v=74"></script>
-<script src="js/progress2.js?v=74"></script>
-<script src="js/cyber.js?v=74"></script>
-<script src="js/shop2.js?v=74"></script>
-<script src="js/cyber2.js?v=74"></script>
-<script src="js/casino.js?v=74"></script>
-<script src="js/missions.js?v=74"></script>
-<script src="js/ux.js?v=74"></script>
-<script src="js/saves.js?v=74"></script>
-<script src="js/polish.js?v=74"></script>
-<script src="js/voice.js?v=74"></script>
-<script src="js/i18n_a.js?v=74"></script>
-<script src="js/i18n_b.js?v=74"></script>
-<script src="js/i18n_c.js?v=74"></script>
-<script src="js/i18n.js?v=74"></script>
-<script src="js/guard.js?v=74"></script>
-<script src="js/ui.js?v=74"></script>
+<script src="js/util.js?v=75"></script>
+<script src="js/audio.js?v=75"></script>
+<script src="js/radio.js?v=75"></script>
+<script src="js/ambience.js?v=75"></script>
+<script src="js/data.js?v=75"></script>
+<script src="js/artifacts.js?v=75"></script>
+<script src="js/world.js?v=75"></script>
+<script src="js/render.js?v=75"></script>
+<script src="js/render2.js?v=75"></script>
+<script src="js/lighting.js?v=75"></script>
+<script src="js/game.js?v=75"></script>
+<script src="js/systems.js?v=75"></script>
+<script src="js/weapons2.js?v=75"></script>
+<script src="js/mutants3.js?v=75"></script>
+<script src="js/events.js?v=75"></script>
+<script src="js/hazards.js?v=75"></script>
+<script src="js/world2.js?v=75"></script>
+<script src="js/vehicles.js?v=75"></script>
+<script src="js/stages3.js?v=75"></script>
+<script src="js/story.js?v=75"></script>
+<script src="js/meta.js?v=75"></script>
+<script src="js/coop.js?v=75"></script>
+<script src="js/crews.js?v=75"></script>
+<script src="js/crewhq.js?v=75"></script>
+<script src="js/content.js?v=75"></script>
+<script src="js/replay.js?v=75"></script>
+<script src="js/variety.js?v=75"></script>
+<script src="js/pace.js?v=75"></script>
+<script src="js/progress2.js?v=75"></script>
+<script src="js/cyber.js?v=75"></script>
+<script src="js/shop2.js?v=75"></script>
+<script src="js/cyber2.js?v=75"></script>
+<script src="js/casino.js?v=75"></script>
+<script src="js/missions.js?v=75"></script>
+<script src="js/extras.js?v=75"></script>
+<script src="js/ux.js?v=75"></script>
+<script src="js/saves.js?v=75"></script>
+<script src="js/polish.js?v=75"></script>
+<script src="js/voice.js?v=75"></script>
+<script src="js/i18n_a.js?v=75"></script>
+<script src="js/i18n_b.js?v=75"></script>
+<script src="js/i18n_c.js?v=75"></script>
+<script src="js/i18n.js?v=75"></script>
+<script src="js/guard.js?v=75"></script>
+<script src="js/ui.js?v=75"></script>
 </body>
 </html>

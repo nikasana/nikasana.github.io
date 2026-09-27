@@ -75,7 +75,7 @@ const Cyberware = {
     const S = Save.data, d = this.d(); this.cur = this.cur || 'body';
     const A = CW_ATTRS.find((a) => a[0] === this.cur), nodes = CW[this.cur], lv = d.lv[this.cur] || 0, col = A[3];
     const tot = CW_ATTRS.reduce((t, a) => t + CW[a[0]].length, 0);
-    const H = 7 * 118 + 30;
+    const H = 7 * 130 + 40;
     let h = `<div class="sect">CYBERWARE · ${this.count()}/${tot} perks installed · ${this.spent()} ₽ invested</div><div class="cwAttrs">${CW_ATTRS.map(([id, ic, nm, c]) => `<button class="cwAt ${id === this.cur ? 'sel' : ''}" data-cwa="${id}" style="--c:${c}"><span>${ic}</span><b>${nm}</b><small>LV ${d.lv[id] || 0}</small></button>`).join('')}</div>`;
     const nxRow = Math.min(6, Math.floor(lv / 3) + 1), canLv = lv < CW_MAXLV, lvC = this.lvCost(lv);
     // pick the best next step for the player: the first perk they can install now
@@ -83,15 +83,15 @@ const Cyberware = {
     if (!this.sel || !nodes.some((x) => x.id === this.sel)) this.sel = (avail[0] || nodes[0]).id;
     const step = avail.length ? (avail.some((n) => S.rubles >= this.cost(n, d.r[n.id] || 0)) ? 2 : 0) : 1;
     h += `<div class="cwSteps" style="--c:${col}"><span class="${step === 1 ? 'on' : ''}">① ⬆ Level up ${A[2]}</span><span class="${step === 2 ? 'on' : ''}">② Tap a glowing perk</span><span class="${step === 2 ? 'on' : ''}">③ Tap INSTALL (or tap the perk again)</span></div>`;
-    h += `<div class="cwHead" style="--c:${col}"><b>${A[1]} ${A[2]} · LV ${lv}/${CW_MAXLV}</b><i class="bar"><i style="width:${(lv / CW_MAXLV) * 100}%;background:${col}"></i></i>${canLv ? `<button class="big small cwBtn ${S.rubles >= lvC ? '' : 'cant'}" id="cwLv">⬆ LEVEL UP · ${lvC} ₽</button>` : '<em>MAX</em>'}<small>${canLv && lv < 18 ? `Next row of perks opens at LV ${nxRow * 3}.` : 'All rows are open.'}</small></div>`;
+    h += `<div class="cwHead" style="--c:${col}"><b>${A[1]} ${A[2]} · LV ${lv}/${CW_MAXLV}</b><i class="bar"><i style="width:${(lv / CW_MAXLV) * 100}%;background:${col}"></i></i>${canLv ? `<button class="big small cwBtn ${S.rubles >= lvC ? '' : 'cant'}" id="cwLv">⬆ LEVEL UP · ${lvC} ₽</button>${S.rubles >= lvC ? '' : `<em class="cwNeed">need ${lvC - S.rubles} ₽ more</em>`}` : '<em>MAX</em>'}<small>${canLv && lv < 18 ? `Next row of perks opens at LV ${nxRow * 3}.` : 'All rows are open.'}</small></div>`;
     const sn = nodes.find((x) => x.id === this.sel);
     {
       const r = d.r[sn.id] || 0, c = this.cost(sn, r), ok = this.open(sn);
-      h += `<div class="cwInfo" style="--c:${col}"><span class="cwBig">${CW_STATS[sn.stat][0]}</span><div><b>${sn.name}</b><small>${this.desc(sn, Math.max(1, r))}${sn.max > 1 ? ' · rank ' + r + '/' + sn.max : ''}${r && r < sn.max ? ' · next: ' + this.desc(sn, r + 1) : ''}</small>${r >= sn.max ? '<em>✅ INSTALLED</em>' : ok ? `<button class="big small cwBtn ${S.rubles >= c ? '' : 'cant'}" id="cwBuy">INSTALL · ${c} ₽</button>` : `<em>🔒 needs ${A[2]} LV ${this.need(sn)} and a linked perk above</em>`}</div></div>`;
+      h += `<div class="cwInfo" style="--c:${col}"><span class="cwBig">${CW_STATS[sn.stat][0]}</span><div><b>${sn.name}</b><small>${this.desc(sn, Math.max(1, r))}${sn.max > 1 ? ' · rank ' + r + '/' + sn.max : ''}${r && r < sn.max ? ' · next: ' + this.desc(sn, r + 1) : ''}</small>${r >= sn.max ? '<em>✅ INSTALLED</em>' : ok ? `<button class="big small cwBtn ${S.rubles >= c ? '' : 'cant'}" id="cwBuy">INSTALL · ${c} ₽</button>${S.rubles >= c ? '' : `<em class="cwNeed">need ${c - S.rubles} ₽ more</em>`}` : `<em>🔒 needs ${A[2]} LV ${this.need(sn)} and a linked perk above</em>`}</div></div>`;
     }
     h += `<div class="cwTree" style="--c:${col};height:${H}px"><svg viewBox="0 0 500 ${H}" preserveAspectRatio="none">`;
-    const X = (n) => (n.col + 0.5) * 100, Y = (n) => n.row * 118 + 50;
-    for (let r = 1; r < 7; r++) h += `<text x="4" y="${r * 118 + 20}" class="cwReq ${lv >= r * 3 ? 'ok' : ''}">${lv >= r * 3 ? '' : '🔒 '}LV ${r * 3}</text><line x1="0" x2="500" y1="${r * 118 - 9}" y2="${r * 118 - 9}" class="cwRow"/>`;
+    const X = (n) => (n.col + 0.5) * 100, Y = (n) => n.row * 130 + 50;
+    for (let r = 1; r < 7; r++) h += `<text x="4" y="${r * 130 + 14}" class="cwReq ${lv >= r * 3 ? 'ok' : ''}">${lv >= r * 3 ? '' : '🔒 '}LV ${r * 3}</text><line x1="0" x2="500" y1="${r * 130 - 2}" y2="${r * 130 - 2}" class="cwRow"/>`;
     for (const n of nodes) for (const pid of n.par) {
       const p = nodes.find((x) => x.id === pid), on = (d.r[pid] || 0) > 0, mid = (Y(p) + Y(n)) / 2;
       h += `<polyline points="${X(p)},${Y(p) + 26} ${X(p)},${mid} ${X(n)},${mid} ${X(n)},${Y(n) - 26}" class="cwLink ${on ? 'on' : ''} ${on && (d.r[n.id] || 0) > 0 ? 'full' : ''}"/>`;
@@ -100,7 +100,7 @@ const Cyberware = {
     for (const n of nodes) {
       const r = d.r[n.id] || 0, ok = this.open(n), c = this.cost(n, r);
       h += `<button class="cwN ${r ? 'own' : ''} ${r >= n.max ? 'max' : ''} ${ok ? 'open' : 'lock'} ${n.row === 6 ? 'cap' : ''} ${this.sel === n.id ? 'sel' : ''}" data-cwn="${n.id}" style="left:${(n.col + 0.5) * 20}%;top:${Y(n)}px"><span>${CW_STATS[n.stat][0]}</span><i>${'◆'.repeat(r)}${'◇'.repeat(n.max - r)}</i></button>`;
-      h += `<div class="cwLbl ${ok && r < n.max ? (S.rubles >= c ? 'buy' : 'poor') : ''}" style="left:${(n.col + 0.5) * 20}%;top:${Y(n) + 34}px">${r >= n.max ? '✅' : ok ? c + ' ₽' : '🔒'}</div>`;
+      h += `<div class="cwLbl ${ok && r < n.max ? (S.rubles >= c ? 'buy' : 'poor') : ''} ${r ? 'got' : ''}" style="left:${(n.col + 0.5) * 20}%;top:${Y(n) + 30}px"><b>${this.desc(n, Math.min(n.max, r + 1))}</b><span>${r >= n.max ? '✅ MAX' : ok ? c + ' ₽' : '🔒 LV ' + this.need(n)}</span></div>`;
     }
     h += '</div>';
     el.innerHTML = h;

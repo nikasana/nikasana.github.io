@@ -36,7 +36,7 @@ const CZ = {
   },
   ui(el) {
     this.el = el;
-    const games = [['rou', '🎡', 'Roulette'], ['slots', '🎰', 'Slots'], ['bj', '🃏', 'Blackjack'], ['plinko', '🔴', 'Plinko'], ['crash', '🚀', 'Crash'], ['dice', '🎲', 'Dice'], ['coin', '🪙', 'Coin Ladder'], ['wheel', '🎡', 'Zone Wheel'], ['xch', '🌟', 'Exchange']];
+    const games = [['rou', '🎡', 'Roulette'], ['slots', '🎰', 'Slots'], ['bj', '🃏', 'Blackjack'], ['plinko', '🔴', 'Plinko'], ['crash', '🚀', 'Crash'], ['dice', '🎲', 'Dice'], ['coin', '🪙', 'Coin Ladder'], ['wheel', '🎡', 'Zone Wheel'], ['scratch', '🎫', 'Scratch Cards'], ['xch', '🌟', 'Exchange']];
     el.innerHTML = `<div class="czSign"><span>★ ZONE CASINO ★</span></div><div id="czTop" class="czTop"></div>
       <div class="czGames">${games.map(([id, ic, nm]) => `<button class="czG ${id === this.game ? 'sel' : ''}" data-czg="${id}"><span>${ic}</span>${nm}</button>`).join('')}</div>
       <div class="czBetRow" id="czBet"><span>BET</span><b id="czBetV"></b>${[10, 50, 100, 500, 1000, 5000, 25000, 100000, 1000000].map((v) => `<button class="czChip c${v}" data-czb="${v}">${v >= 1e6 ? v / 1e6 + 'M' : v >= 1000 ? v / 1000 + 'k' : v}</button>`).join('')}<button class="czChip" data-czp="0.5">½</button><button class="czChip" data-czp="2">×2</button><button class="czChip" data-czp="10">×10</button></div>
