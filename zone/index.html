@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#15130f" />
 <title>ZONEBONK — Heart of the Zone</title>
-<link rel="icon" type="image/svg+xml" href="icon.svg?v=105" />
-<link rel="apple-touch-icon" href="icon.svg?v=105" />
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=106" />
+<link rel="apple-touch-icon" href="icon.svg?v=106" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -797,6 +797,7 @@
     .czShopIt em { font-size: 12px; }
   }
   .hmExport { text-align: center; margin: 10px 0 4px; } .hmExport textarea { width: 100%; height: 90px; margin-top: 8px; font: 11px monospace; background: #111; color: #cfc; border: 1px solid #444; }
+  #expModal { position: fixed; inset: 0; z-index: 9001; display: none; background: rgba(0,0,0,0.85); overflow: auto; padding: 12px; } #expModal.show { display: block; }
 </style>
 </head>
 <body>
@@ -851,6 +852,7 @@
     <button class="big ghost" id="bunkerBtn">🏚 SIDOROVICH'S BUNKER</button>
     <button class="big ghost" id="radioTitleBtn">📻 RADIO</button>
     <button class="big ghost" id="settingsBtn">⚙ SETTINGS</button>
+    <button class="big ghost" id="exportBtn" style="font-size:14px;padding:8px 18px">📤 EXPORT STATS</button>
   </div>
   <div id="titleStats"></div>
   <div class="nowPlaying" style="margin-top:8px;color:#8a846c;font-size:13px"></div>
@@ -939,56 +941,56 @@
       '<button onclick="location.reload()" style="' + btn + 'background:#ffcf3a;color:#111;border:2px solid #ffcf3a">🔄 RELOAD</button>';
   });
 </script>
-<script src="js/util.js?v=105"></script>
-<script src="js/audio.js?v=105"></script>
-<script src="js/radio.js?v=105"></script>
-<script src="js/ambience.js?v=105"></script>
-<script src="js/data.js?v=105"></script>
-<script src="js/artifacts.js?v=105"></script>
-<script src="js/world.js?v=105"></script>
-<script src="js/render.js?v=105"></script>
-<script src="js/render2.js?v=105"></script>
-<script src="js/lighting.js?v=105"></script>
-<script src="js/game.js?v=105"></script>
-<script src="js/perf.js?v=105"></script>
-<script src="js/systems.js?v=105"></script>
-<script src="js/weapons2.js?v=105"></script>
-<script src="js/mutants3.js?v=105"></script>
-<script src="js/events.js?v=105"></script>
-<script src="js/hazards.js?v=105"></script>
-<script src="js/world2.js?v=105"></script>
-<script src="js/vehicles.js?v=105"></script>
-<script src="js/stages3.js?v=105"></script>
-<script src="js/story.js?v=105"></script>
-<script src="js/meta.js?v=105"></script>
-<script src="js/coop.js?v=105"></script>
-<script src="js/crews.js?v=105"></script>
-<script src="js/crewhq.js?v=105"></script>
-<script src="js/content.js?v=105"></script>
-<script src="js/replay.js?v=105"></script>
-<script src="js/variety.js?v=105"></script>
-<script src="js/pace.js?v=105"></script>
-<script src="js/progress2.js?v=105"></script>
-<script src="js/cyber.js?v=105"></script>
-<script src="js/shop2.js?v=105"></script>
-<script src="js/cyber2.js?v=105"></script>
-<script src="js/casino.js?v=105"></script>
-<script src="js/casino2.js?v=105"></script>
-<script src="js/casino3.js?v=105"></script>
-<script src="js/casino4.js?v=105"></script>
-<script src="js/missions.js?v=105"></script>
-<script src="js/extras.js?v=105"></script>
-<script src="js/badges.js?v=105"></script>
-<script src="js/ux.js?v=105"></script>
-<script src="js/saves.js?v=105"></script>
-<script src="js/polish.js?v=105"></script>
-<script src="js/voice.js?v=105"></script>
-<script src="js/i18n_a.js?v=105"></script>
-<script src="js/i18n_b.js?v=105"></script>
-<script src="js/i18n_c.js?v=105"></script>
-<script src="js/i18n.js?v=105"></script>
-<script src="js/guard.js?v=105"></script>
-<script src="js/ui.js?v=105"></script>
-<script src="js/gl.js?v=105"></script>
+<script src="js/util.js?v=106"></script>
+<script src="js/audio.js?v=106"></script>
+<script src="js/radio.js?v=106"></script>
+<script src="js/ambience.js?v=106"></script>
+<script src="js/data.js?v=106"></script>
+<script src="js/artifacts.js?v=106"></script>
+<script src="js/world.js?v=106"></script>
+<script src="js/render.js?v=106"></script>
+<script src="js/render2.js?v=106"></script>
+<script src="js/lighting.js?v=106"></script>
+<script src="js/game.js?v=106"></script>
+<script src="js/perf.js?v=106"></script>
+<script src="js/systems.js?v=106"></script>
+<script src="js/weapons2.js?v=106"></script>
+<script src="js/mutants3.js?v=106"></script>
+<script src="js/events.js?v=106"></script>
+<script src="js/hazards.js?v=106"></script>
+<script src="js/world2.js?v=106"></script>
+<script src="js/vehicles.js?v=106"></script>
+<script src="js/stages3.js?v=106"></script>
+<script src="js/story.js?v=106"></script>
+<script src="js/meta.js?v=106"></script>
+<script src="js/coop.js?v=106"></script>
+<script src="js/crews.js?v=106"></script>
+<script src="js/crewhq.js?v=106"></script>
+<script src="js/content.js?v=106"></script>
+<script src="js/replay.js?v=106"></script>
+<script src="js/variety.js?v=106"></script>
+<script src="js/pace.js?v=106"></script>
+<script src="js/progress2.js?v=106"></script>
+<script src="js/cyber.js?v=106"></script>
+<script src="js/shop2.js?v=106"></script>
+<script src="js/cyber2.js?v=106"></script>
+<script src="js/casino.js?v=106"></script>
+<script src="js/casino2.js?v=106"></script>
+<script src="js/casino3.js?v=106"></script>
+<script src="js/casino4.js?v=106"></script>
+<script src="js/missions.js?v=106"></script>
+<script src="js/extras.js?v=106"></script>
+<script src="js/badges.js?v=106"></script>
+<script src="js/ux.js?v=106"></script>
+<script src="js/saves.js?v=106"></script>
+<script src="js/polish.js?v=106"></script>
+<script src="js/voice.js?v=106"></script>
+<script src="js/i18n_a.js?v=106"></script>
+<script src="js/i18n_b.js?v=106"></script>
+<script src="js/i18n_c.js?v=106"></script>
+<script src="js/i18n.js?v=106"></script>
+<script src="js/guard.js?v=106"></script>
+<script src="js/ui.js?v=106"></script>
+<script src="js/gl.js?v=106"></script>
 </body>
 </html>

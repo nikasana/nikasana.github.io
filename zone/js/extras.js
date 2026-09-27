@@ -160,3 +160,15 @@ addEventListener('DOMContentLoaded', () => {
   b.onclick = () => { const cx = document.querySelector('[data-bt="codex"]'); if (cx) cx.click(); for (const x of bar.children) x.classList.remove('sel'); b.classList.add('sel'); body.classList.remove('cyberMap'); Records.ui(body); if (typeof I18n !== 'undefined' && I18n.cur !== 'en') try { I18n.dom(body); } catch (x) { /* keep english */ } };
   const st = bar.querySelector('[data-bt2="stats"]'); bar.insertBefore(b, st || null);
 });
+
+// main screen: 📤 EXPORT STATS saves + copies the file and shows the text too (some phone browsers block both)
+function openExport() {
+  const t = exportStats();
+  let m = $('expModal'); if (!m) { m = document.createElement('div'); m.id = 'expModal'; document.body.appendChild(m); }
+  m.innerHTML = `<div class="hmBox"><div class="hdr"><button class="back" id="expClose">← BACK</button><h2>📤 EXPORT STATS</h2><span></span></div><p class="dim">Saved as a file and copied. If neither worked, select all the text below and copy it. Send it to the developer.</p><textarea readonly id="expTxt" style="width:100%;height:50vh;font:11px monospace;background:#111;color:#cfc;border:1px solid #444"></textarea><div class="hmExport"><button class="big small" id="expCopy">📋 COPY</button></div></div>`;
+  $('expTxt').value = t; $('expClose').onclick = () => m.classList.remove('show');
+  $('expCopy').onclick = () => { const ta = $('expTxt'); ta.focus(); ta.select(); try { document.execCommand('copy'); } catch (e) { /* manual */ } try { navigator.clipboard && navigator.clipboard.writeText(t); } catch (e) { /* manual */ } $('expCopy').textContent = '✓ COPIED'; };
+  if (typeof I18n !== 'undefined' && I18n.cur !== 'en') try { I18n.dom(m); } catch (e) { /* keep english */ }
+  m.classList.add('show');
+}
+addEventListener('DOMContentLoaded', () => { const b = $('exportBtn'); if (b) b.onclick = () => { Sfx.init(); openExport(); }; });
