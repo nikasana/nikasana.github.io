@@ -1,5 +1,5 @@
 'use strict';
-const ZB_BUILD = 102; // keep in sync with version.txt and the ?v= in index.html
+const ZB_BUILD = 103; // keep in sync with version.txt and the ?v= in index.html
 // ---------- math & random helpers ----------
 const TAU = Math.PI * 2;
 const rand = (a = 1, b) => (b === undefined ? Math.random() * a : a + Math.random() * (b - a));
@@ -22,20 +22,22 @@ const GFX = {
     if (this.acc < 1000) return;
     const fps = (this.n * 1000) / this.acc; this.acc = 0; this.n = 0;
     this.bad = fps < 45 ? this.bad + 1 : 0;
-    if (this.bad >= 3 && this.auto < 2 && Save.data && Save.set.quality === 'auto') {
+    if (this.bad >= 3 && this.auto < 3 && Save.data && Save.set.quality === 'auto') {
       this.auto++; this.bad = 0; applyGfx();
       if (typeof Missions !== 'undefined') Missions.toast('⚙ Graphics lowered for smoother FPS');
     }
   },
 };
-function gfxLevel() { const q = typeof Save !== 'undefined' && Save.data ? Save.set.quality : 'high'; return q === 'ultra' ? 3 : q === 'min' ? 2 : q === 'low' ? 1 : q === 'auto' ? GFX.auto : 0; }
-// Ultra-low (potato): everything Lowest does, plus 1x render resolution, a 60-mutant horde, no particles or damage
-// numbers, half-rate AI for off-screen mutants and no synthesized music
+// phones (touch screen, small side under 900px) get the fastest setting straight away when quality is on Auto
+const IS_PHONE = (() => { try { return matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 900; } catch (e) { return false; } })();
+function gfxLevel() { const q = typeof Save !== 'undefined' && Save.data ? Save.set.quality : 'high'; return q === 'ultra' || q === 'min' ? 3 : q === 'low' ? 1 : q === 'auto' ? (IS_PHONE ? 3 : GFX.auto) : 0; }
+// Lowest (phones): cached pixel-exact drawing and the WebGL layer, plus 1x render resolution, a 60-mutant horde, no
+// particles or small damage numbers, half-rate AI for off-screen mutants and no synthesized music
 function ultraGfx() { return gfxLevel() >= 3; }
 function lowGfx() { return gfxLevel() >= 1; }
 function minGfx() { return gfxLevel() >= 2; }
 // every quality level renders at full sharpness: they only cut effects, never resolution
-function gfxDpr() { return typeof Save !== 'undefined' && Save.data && Save.set.quality === 'ultra' ? 1 : Math.min(2, window.devicePixelRatio || 1); }
+function gfxDpr() { return typeof Save !== 'undefined' && Save.data && ultraGfx() ? 1 : Math.min(2, window.devicePixelRatio || 1); }
 // low applies everywhere: no decorative CSS loops or backdrop blur, throttled menu backgrounds and casino canvases;
 // min also drops glows, shadows and CSS animations entirely
 function applyGfx() {
