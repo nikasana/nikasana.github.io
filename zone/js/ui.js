@@ -529,7 +529,7 @@ function hud(dt) {
   bannerTick(dt);
   // Lowest: the HUD's text, bars, minimap and detector refresh every third frame (20 times a second at 60 FPS);
   // each change to the page makes the browser restyle and repaint it
-  if (minGfx() && (hudFrame = (hudFrame + 1) % 3) !== 0) return;
+  if (minGfx() && (hudFrame = (hudFrame + 1) % (potatoGfx() ? 12 : 3)) !== 0) return;
   $('hpFill').style.width = (P.hp / P.maxhp) * 100 + '%';
   setText('hpText', Math.ceil(P.hp) + ' / ' + Math.round(P.maxhp));
   $('xpFill').style.width = (G.xp / G.xpNeed) * 100 + '%';
@@ -564,7 +564,7 @@ function hud(dt) {
   $('nextEvt').style.display = G.bosses.length || G.tutorial ? 'none' : '';
   setText('nextEvt', nbT === null || nbT - G.t > 3600 ? wv : `${wv} · ☠ ${nb ? (nb.id === 'final' ? stageDef().final.name : ENEMIES[nb.id].name) : 'Boss'} in ${fmtTime(Math.max(0, nbT - G.t))}`);
   setText('fps', Save.set.fps ? fpsShow + ' FPS · ⚙' + JS_MS.toFixed(1) + 'ms' : '');
-  if (!ultraGfx() || (hudFrame2 = (hudFrame2 + 1) % 4) === 0) { drawDetector(); drawMinimap(); }
+  if (!potatoGfx() && (!ultraGfx() || (hudFrame2 = (hudFrame2 + 1) % 4) === 0)) { drawDetector(); drawMinimap(); }
 }
 let hudFrame2 = 0;
 let hudFrame = 0;
@@ -750,7 +750,7 @@ function buildSettings() {
   $('settingsBody').innerHTML = slider('master', 'Master volume') + slider('music', 'Music / radio') + slider('sfx', 'Sound effects') + slider('amb', 'Ambience') + slider('voice', 'Radio chatter & UI') +
     `<label class="set"><span>Screen shake</span><input type="range" min="0" max="1" step="0.05" value="${shakeK()}" data-set="shake"></label>` + tog('mmArrows', 'Minimap arrows') + tog('omens', 'Zone omens (a random twist each run)') + tog('numbers', 'Damage numbers') + tog('hints', 'Tutorial hints') + tog('fps', 'Show FPS') +
     `<label class="set"><span>Game zoom</span><input type="range" min="0.7" max="2" step="0.05" value="${zoomK()}" data-set="zoom"></label>` +
-    `<label class="set"><span>Graphics quality</span><select data-q><option value="auto" ${s.quality === 'auto' ? 'selected' : ''}>Auto (recommended)</option><option value="high" ${s.quality === 'high' ? 'selected' : ''}>High</option><option value="low" ${s.quality === 'low' ? 'selected' : ''}>Low (faster)</option><option value="min" ${s.quality === 'min' || s.quality === 'ultra' ? 'selected' : ''}>Lowest (phones, max FPS)</option></select></label>` +
+    `<label class="set"><span>Graphics quality</span><select data-q><option value="auto" ${s.quality === 'auto' ? 'selected' : ''}>Auto (recommended)</option><option value="high" ${s.quality === 'high' ? 'selected' : ''}>High</option><option value="low" ${s.quality === 'low' ? 'selected' : ''}>Low (faster)</option><option value="min" ${s.quality === 'min' || s.quality === 'ultra' ? 'selected' : ''}>Lowest (phones, max FPS)</option><option value="potato" ${s.quality === 'potato' ? 'selected' : ''}>Potato (weakest phones)</option></select></label>` +
     `<button class="big ghost small" id="resetHints">Replay tutorial hints</button>`;
   for (const i of document.querySelectorAll('[data-set]')) i.oninput = () => { s[i.dataset.set] = +i.value; applySettings(); Save.save(); };
   for (const i of document.querySelectorAll('[data-tog]')) i.onchange = () => { s[i.dataset.tog] = i.checked; applySettings(); Save.save(); };

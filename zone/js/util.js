@@ -1,5 +1,5 @@
 'use strict';
-const ZB_BUILD = 106; // keep in sync with version.txt and the ?v= in index.html
+const ZB_BUILD = 107; // keep in sync with version.txt and the ?v= in index.html
 // ---------- math & random helpers ----------
 const TAU = Math.PI * 2;
 const rand = (a = 1, b) => (b === undefined ? Math.random() * a : a + Math.random() * (b - a));
@@ -30,18 +30,21 @@ const GFX = {
 };
 // phones (touch screen, small side under 900px) get the fastest setting straight away when quality is on Auto
 const IS_PHONE = (() => { try { return matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 900; } catch (e) { return false; } })();
-function gfxLevel() { const q = typeof Save !== 'undefined' && Save.data ? Save.set.quality : 'high'; return q === 'ultra' || q === 'min' ? 3 : q === 'low' ? 1 : q === 'auto' ? (IS_PHONE ? 3 : GFX.auto) : 0; }
+function gfxLevel() { const q = typeof Save !== 'undefined' && Save.data ? Save.set.quality : 'high'; return q === 'potato' ? 4 : q === 'ultra' || q === 'min' ? 3 : q === 'low' ? 1 : q === 'auto' ? (IS_PHONE ? 3 : GFX.auto) : 0; }
 // Lowest (phones): cached pixel-exact drawing and the WebGL layer, plus 1x render resolution, a 60-mutant horde, no
 // particles or small damage numbers, half-rate AI for off-screen mutants and no synthesized music
 function ultraGfx() { return gfxLevel() >= 3; }
+// Potato (weakest phones): Lowest plus 0.75x render resolution, a 30-mutant horde, no minimap/detector, HUD at 5 Hz
+// and no floating numbers
+function potatoGfx() { return gfxLevel() >= 4; }
 function lowGfx() { return gfxLevel() >= 1; }
 function minGfx() { return gfxLevel() >= 2; }
 // every quality level renders at full sharpness: they only cut effects, never resolution
-function gfxDpr() { return typeof Save !== 'undefined' && Save.data && ultraGfx() ? 1 : Math.min(2, window.devicePixelRatio || 1); }
+function gfxDpr() { return typeof Save !== 'undefined' && Save.data && ultraGfx() ? (potatoGfx() ? 0.75 : 1) : Math.min(2, window.devicePixelRatio || 1); }
 // low applies everywhere: no decorative CSS loops or backdrop blur, throttled menu backgrounds and casino canvases;
 // min also drops glows, shadows and CSS animations entirely
 function applyGfx() {
-  if (document.body) { document.body.classList.toggle('lowfx', lowGfx()); document.body.classList.toggle('minfx', minGfx()); }
+  if (document.body) { document.body.classList.toggle('lowfx', lowGfx()); document.body.classList.toggle('minfx', minGfx()); document.body.classList.toggle('potato', potatoGfx()); }
   if (typeof resize === 'function' && typeof DPR !== 'undefined' && DPR !== gfxDpr()) resize();
 }
 // canvas glow (shadowBlur) is the single most expensive 2D effect on phones: on min every canvas draws it as 0

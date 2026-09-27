@@ -104,7 +104,7 @@ function burst(x, y, n, c, spd = 160, o = {}) {
   for (let i = 0; i < n; i++) { const a = rand(TAU), s = rand(spd * 0.3, spd); part(x, y, { vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6, vz: rand(50, 220), z: o.z ?? 10, c, s: rand(1.5, o.s || 3.5), life: rand(0.3, o.life || 0.8), add: o.add, g: o.g }); }
 }
 function text(x, y, s, c = '#fff', big = false, force = false) {
-  if (!force && (!Save.set.numbers || (ultraGfx() && !big))) return;
+  if (!force && (!Save.set.numbers || potatoGfx() || (ultraGfx() && !big))) return;
   if (!force && !big && G.texts.length > (minGfx() ? 12 : 24)) return;
   if (G.texts.length > 70) G.texts.shift();
   G.texts.push({ x: x + rand(-8, 8), y, s, c, life: 0.8, big });
@@ -419,7 +419,7 @@ function director(dt) {
   let cap = Math.min(170 + (G.tier - 1) * 10, 18 + m * 13) * (lab ? 0.6 : 1) * (bossUp ? 0.6 : 1);
   // Lowest graphics: a late-game horde is capped at 110 mutants on screen, each one proportionally tougher and worth
   // proportionally more XP, so the fight weighs the same while phones move and draw far fewer bodies
-  const hcap = ultraGfx() ? 60 : 110, worth = minGfx() && cap > hcap ? cap / hcap : 1; if (worth > 1) cap = hcap;
+  const hcap = potatoGfx() ? 30 : ultraGfx() ? 60 : 110, worth = minGfx() && cap > hcap ? cap / hcap : 1; if (worth > 1) cap = hcap;
   const rate = (G.tutorial || G.coGuest ? 0 : 1) * (G.coopMul || 1) * diffDef().spawn * Events.mods().spawn * Math.min(7, 0.5 + m * 0.42) * (0.75 + reg.danger * 0.13) * (night ? 1.25 : 1) * (G.em && G.em.phase === 'blast' ? 0 : 1) * (lab ? 0.7 : 1) * (bossUp ? 0.4 : 1);
   G.spawnAcc += rate * dt;
   while (G.spawnAcc >= 1) {

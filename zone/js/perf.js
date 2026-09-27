@@ -98,7 +98,7 @@ const SFX_ALWAYS = new Set(['legend', 'quest', 'levelup', 'hurt', 'boss', 'hint'
 {
   const play = Sfx.play; let win = 0, n = 0;
   Sfx.play = function (name) {
-    if (minGfx() && !SFX_ALWAYS.has(name)) { const t = performance.now(); if (t - win > 250) { win = t; n = 0; } if (++n > 6) return; }
+    if (minGfx() && !SFX_ALWAYS.has(name)) { const t = performance.now(); if (t - win > 250) { win = t; n = 0; } if (++n > (potatoGfx() ? 3 : 6)) return; }
     return play.call(this, name);
   };
 }
