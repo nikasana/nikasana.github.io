@@ -1,5 +1,5 @@
 'use strict';
-const ZB_BUILD = 89; // keep in sync with version.txt and the ?v= in index.html
+const ZB_BUILD = 90; // keep in sync with version.txt and the ?v= in index.html
 // ---------- math & random helpers ----------
 const TAU = Math.PI * 2;
 const rand = (a = 1, b) => (b === undefined ? Math.random() * a : a + Math.random() * (b - a));
@@ -11,27 +11,38 @@ const dist = (ax, ay, bx, by) => Math.sqrt(dist2(ax, ay, bx, by));
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const angDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; return d; };
 
-// ---------- graphics quality: 'high', 'low', or 'auto' (high until FPS stays under 45 for 3s, then low for the session) ----------
+// ---------- graphics quality: 'high', 'low', 'min' (lowest, smoothest) or 'auto' (starts high and steps down to low,
+// then to min, for the session whenever FPS stays under 45 for 3s) ----------
 const GFX = {
-  autoLow: false, acc: 0, n: 0, bad: 0,
+  auto: 0, acc: 0, n: 0, bad: 0,
+  reset() { this.auto = 0; this.bad = 0; this.acc = 0; this.n = 0; },
   sample(ms) {
     if (ms > 250) return; // tab switch or a stall, not a real frame time
     this.acc += ms; this.n++;
     if (this.acc < 1000) return;
     const fps = (this.n * 1000) / this.acc; this.acc = 0; this.n = 0;
     this.bad = fps < 45 ? this.bad + 1 : 0;
-    if (this.bad >= 3 && !this.autoLow && Save.data && Save.set.quality === 'auto') {
-      this.autoLow = true; applyGfx();
+    if (this.bad >= 3 && this.auto < 2 && Save.data && Save.set.quality === 'auto') {
+      this.auto++; this.bad = 0; applyGfx();
       if (typeof Missions !== 'undefined') Missions.toast('⚙ Graphics lowered for smoother FPS');
     }
   },
 };
-function lowGfx() { const q = typeof Save !== 'undefined' && Save.data ? Save.set.quality : 'high'; return q === 'low' || (q === 'auto' && GFX.autoLow); }
-// low quality applies everywhere: 1× pixel ratio, no decorative CSS loops, no backdrop blur, throttled menu backgrounds and casino canvases
+function gfxLevel() { const q = typeof Save !== 'undefined' && Save.data ? Save.set.quality : 'high'; return q === 'min' ? 2 : q === 'low' ? 1 : q === 'auto' ? GFX.auto : 0; }
+function lowGfx() { return gfxLevel() >= 1; }
+function minGfx() { return gfxLevel() >= 2; }
+// low: 1× pixel ratio; min: the game renders at 75% and the browser scales it up (far less fill work on phones)
+function gfxDpr() { const d = window.devicePixelRatio || 1; return minGfx() ? Math.min(0.75, d) : Math.min(lowGfx() ? 1 : 2, d); }
+// low applies everywhere: no decorative CSS loops or backdrop blur, throttled menu backgrounds and casino canvases;
+// min also drops glows, shadows and CSS animations entirely
 function applyGfx() {
-  const low = lowGfx();
-  if (document.body) document.body.classList.toggle('lowfx', low);
-  if (typeof resize === 'function' && typeof DPR !== 'undefined' && DPR !== Math.min(low ? 1 : 2, window.devicePixelRatio || 1)) resize();
+  if (document.body) { document.body.classList.toggle('lowfx', lowGfx()); document.body.classList.toggle('minfx', minGfx()); }
+  if (typeof resize === 'function' && typeof DPR !== 'undefined' && DPR !== gfxDpr()) resize();
+}
+// canvas glow (shadowBlur) is the single most expensive 2D effect on phones: on min every canvas draws it as 0
+{
+  const d = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'shadowBlur');
+  if (d && d.set) Object.defineProperty(CanvasRenderingContext2D.prototype, 'shadowBlur', { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v && minGfx() ? 0 : v); } });
 }
 
 function mulberry32(s) {

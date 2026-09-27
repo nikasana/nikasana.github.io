@@ -5,7 +5,7 @@ function render(title = false) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = '#0d0c09'; ctx.fillRect(0, 0, cv.width, cv.height);
   if (!G) return;
-  const low = lowGfx();
+  const low = lowGfx(), minQ = minGfx();
   const sc = ZOOM * DPR;
   const sx = G.shake * (Math.sin(NOW * 41) * 0.35 + Math.sin(NOW * 67) * 0.2), sy = G.shake * (Math.cos(NOW * 37) * 0.35 + Math.sin(NOW * 59) * 0.2);
   const cx = CAM.x + sx, cy = CAM.y + sy;
@@ -209,7 +209,7 @@ function render(title = false) {
   Env.render(cx, cy);
   drawW2Screen(cx, cy, title);
   if (G.em) { const k = G.em.phase === 'warn' ? (1 - G.em.t / 30) * 0.3 : G.em.phase === 'blast' ? 0.42 + Math.sin(NOW * 12) * 0.1 : 0.3 * (G.em.t / 3); ctx.fillStyle = `rgba(160,30,20,${World.kind === 'lab' ? k * 0.3 : k})`; ctx.fillRect(0, 0, VW, VH); }
-  else { ctx.fillStyle = 'rgba(40,50,30,0.1)'; ctx.fillRect(0, 0, VW, VH); }
+  else if (!minQ) { ctx.fillStyle = 'rgba(40,50,30,0.1)'; ctx.fillRect(0, 0, VW, VH); }
   if (G.rad > 0) { ctx.fillStyle = `rgba(200,200,40,${G.rad * 0.12})`; ctx.fillRect(0, 0, VW, VH); }
   if (G.psi > 0) {
     ctx.fillStyle = `rgba(120,40,180,${G.psi * 0.18})`; ctx.fillRect(0, 0, VW, VH);
@@ -217,9 +217,11 @@ function render(title = false) {
     for (let i = 0; i < 3; i++) { const r = ((NOW * 300 + i * 200) % 600); ctx.beginPath(); ctx.arc(VW / 2, VH / 2, r, 0, TAU); ctx.stroke(); }
   }
   const lowhp = !title && P.hp / P.maxhp < 0.3;
-  const vg = ctx.createRadialGradient(VW / 2, VH / 2, Math.min(VW, VH) * 0.35, VW / 2, VH / 2, Math.max(VW, VH) * 0.75);
-  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, `rgba(0,0,0,${lowhp ? 0.75 : 0.55})`);
-  ctx.fillStyle = vg; ctx.fillRect(0, 0, VW, VH);
+  if (!minQ) { // full-screen vignette: skipped on the lowest setting
+    const vg = ctx.createRadialGradient(VW / 2, VH / 2, Math.min(VW, VH) * 0.35, VW / 2, VH / 2, Math.max(VW, VH) * 0.75);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, `rgba(0,0,0,${lowhp ? 0.75 : 0.55})`);
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, VW, VH);
+  }
   if (lowhp) { ctx.fillStyle = `rgba(200,0,0,${(0.3 - P.hp / P.maxhp) * (0.5 + Math.sin(NOW * 6) * 0.3)})`; ctx.fillRect(0, 0, VW, VH); }
   if (G.flash > 0) { ctx.fillStyle = `rgba(${G.flashCol},${G.flash * 0.6})`; ctx.fillRect(0, 0, VW, VH); }
   if (G.fade > 0) { ctx.fillStyle = `rgba(0,0,0,${G.fade})`; ctx.fillRect(0, 0, VW, VH); }
@@ -716,11 +718,11 @@ function buildSettings() {
   const tog = (k, label) => `<label class="set"><span>${label}</span><input type="checkbox" ${s[k] ? 'checked' : ''} data-tog="${k}"></label>`;
   $('settingsBody').innerHTML = slider('master', 'Master volume') + slider('music', 'Music / radio') + slider('sfx', 'Sound effects') + slider('amb', 'Ambience') + slider('voice', 'Radio chatter & UI') +
     `<label class="set"><span>Screen shake</span><input type="range" min="0" max="1" step="0.05" value="${shakeK()}" data-set="shake"></label>` + tog('mmArrows', 'Minimap arrows') + tog('omens', 'Zone omens (a random twist each run)') + tog('numbers', 'Damage numbers') + tog('hints', 'Tutorial hints') + tog('fps', 'Show FPS') +
-    `<label class="set"><span>Graphics quality</span><select data-q><option value="auto" ${s.quality === 'auto' ? 'selected' : ''}>Auto (recommended)</option><option value="high" ${s.quality === 'high' ? 'selected' : ''}>High</option><option value="low" ${s.quality === 'low' ? 'selected' : ''}>Low (faster)</option></select></label>` +
+    `<label class="set"><span>Graphics quality</span><select data-q><option value="auto" ${s.quality === 'auto' ? 'selected' : ''}>Auto (recommended)</option><option value="high" ${s.quality === 'high' ? 'selected' : ''}>High</option><option value="low" ${s.quality === 'low' ? 'selected' : ''}>Low (faster)</option><option value="min" ${s.quality === 'min' ? 'selected' : ''}>Lowest (smoothest)</option></select></label>` +
     `<button class="big ghost small" id="resetHints">Replay tutorial hints</button>`;
   for (const i of document.querySelectorAll('[data-set]')) i.oninput = () => { s[i.dataset.set] = +i.value; applySettings(); Save.save(); };
   for (const i of document.querySelectorAll('[data-tog]')) i.onchange = () => { s[i.dataset.tog] = i.checked; applySettings(); Save.save(); };
-  document.querySelector('[data-q]').onchange = (e) => { s.quality = e.target.value; GFX.autoLow = false; GFX.bad = 0; Save.save(); applyGfx(); };
+  document.querySelector('[data-q]').onchange = (e) => { s.quality = e.target.value; GFX.reset(); Save.save(); applyGfx(); };
   $('resetHints').onclick = () => { Save.data.hints = []; Save.save(); $('resetHints').textContent = 'Hints will show again ✓'; };
 }
 function applySettings() { const s = Save.set; Sfx.vol.master = s.master; Sfx.vol.music = s.music; Sfx.vol.sfx = s.sfx; Sfx.vol.amb = s.amb; Sfx.vol.voice = s.voice; Sfx.applyVol(); applyGfx(); }
@@ -863,8 +865,8 @@ function frame(now) {
     if (G && !G.title) { update(dt); render(); hud(dt); }
     else {
       const bg = menuBg();
-      if (bg === 2) titleAcc = 0;
-      else if (bg === 1 || lowGfx()) { titleAcc += dt; if (titleAcc >= (bg === 1 ? 1 / 20 : 1 / 30)) { renderTitle(Math.min(0.1, titleAcc)); titleAcc = 0; } }
+      if (bg === 2 || (bg === 1 && minGfx())) titleAcc = 0;
+      else if (bg === 1 || lowGfx()) { titleAcc += dt; if (titleAcc >= (bg === 1 ? 1 / 20 : minGfx() ? 1 / 15 : 1 / 30)) { renderTitle(Math.min(0.1, titleAcc)); titleAcc = 0; } }
       else renderTitle(dt);
     }
   }

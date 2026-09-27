@@ -19,6 +19,7 @@ const CZ = {
   },
   // ----- effects: coin shower and the BIG WIN banner -----
   coins(n) {
+    if (minGfx()) { this.beep(1300, 0.08); return; } // lowest graphics: sound only, no coin shower
     if (lowGfx()) n = Math.min(n, 14);
     let cv = $('czFx'); if (!cv) { cv = document.createElement('canvas'); cv.id = 'czFx'; document.body.appendChild(cv); }
     cv.width = innerWidth; cv.height = innerHeight; const g = cv.getContext('2d'); this.fx = (this.fx || []).concat(Array.from({ length: Math.round(n) }, () => ({ x: rand(innerWidth), y: -20 - rand(200), vx: rand(-60, 60), vy: rand(80, 260), r: rand(6, 12), a: rand(6), s: pick(['🪙', '💰', '💎', '✨']) })));
@@ -62,7 +63,7 @@ const CZ = {
       if (!cv.isConnected) return; requestAnimationFrame(f);
       const d = Math.min(0.1, (t - last) / 1000); last = t; acc += d;
       const vis = cv.getClientRects().length > 0;
-      if (acc < (!vis ? 0.1 : lowGfx() ? 1 / 32 : 0)) return;
+      if (acc < (!vis ? 0.1 : minGfx() ? 1 / 20 : lowGfx() ? 1 / 32 : 0)) return;
       const dt = Math.min(vis ? 0.05 : 0.1, acc); acc = 0; fn(g, dt, t / 1000);
     };
     requestAnimationFrame(f);

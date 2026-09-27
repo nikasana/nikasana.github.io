@@ -8,7 +8,7 @@ const keys = {};
 const $ = (id) => document.getElementById(id);
 
 function resize() {
-  DPR = Math.min(lowGfx() ? 1 : 2, window.devicePixelRatio || 1);
+  DPR = gfxDpr();
   VW = innerWidth; VH = innerHeight;
   cv.width = Math.floor(VW * DPR); cv.height = Math.floor(VH * DPR);
   ZOOM = clamp(Math.min(VW, VH) / 720, 0.55, 1.2);
@@ -93,7 +93,7 @@ function spawnArtifact(f) {
 
 // ---------- fx helpers ----------
 function part(x, y, o) {
-  if (G.particles.length > (lowGfx() ? 500 : 1400)) return;
+  if (G.particles.length > (minGfx() ? 220 : lowGfx() ? 500 : 1400)) return;
   G.particles.push({ x, y, z: o.z || 0, vx: o.vx || 0, vy: o.vy || 0, vz: o.vz || 0, g: o.g ?? 400, life: o.life || 0.6, max: o.life || 0.6, s: o.s || 3, c: o.c || '255,255,255', add: !!o.add });
 }
 function burst(x, y, n, c, spd = 160, o = {}) {

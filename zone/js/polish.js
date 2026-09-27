@@ -150,3 +150,23 @@ addEventListener('DOMContentLoaded', () => {
     for (const b of el.querySelectorAll('[data-mut2]')) b.onclick = () => { const m = MUTATIONS2.find((x) => x.id === b.dataset.mut2); if (!S.mutations.includes(m.id)) { if (S.rubles < m.cost) return; S.rubles -= m.cost; S.mutations.push(m.id); } if (S.mutEq.includes(m.id)) S.mutEq = S.mutEq.filter((x) => x !== m.id); else { S.mutEq.push(m.id); if (S.mutEq.length > 2) S.mutEq.shift(); } Save.save(); buildBunker(); };
   };
 });
+
+// ---------- bunker: the tab bar stays pinned while you scroll, with ← back and your money once the header is gone ----------
+addEventListener('DOMContentLoaded', () => {
+  const bk = $('bunker'), bar = $('bTabs'); if (!bk || !bar) return;
+  const back = document.createElement('button'); back.id = 'bBack'; back.textContent = '←'; back.title = 'Back';
+  back.onclick = () => { const b = bk.querySelector('.hdr .back'); if (b) b.click(); };
+  const money = document.createElement('span'); money.id = 'bMoney'; money.className = 'rubles';
+  const place = () => {
+    if (bar.firstElementChild !== back) bar.prepend(back);
+    if (bar.lastElementChild !== money) bar.appendChild(money);
+    if (Save.data) money.textContent = Save.data.rubles + ' ₽';
+    const sel = bar.querySelector('.tab.sel');
+    if (sel && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = sel.offsetLeft - (bar.clientWidth - sel.offsetWidth) / 2;
+  };
+  const _bb = buildBunker; buildBunker = function (...a) { const r = _bb.apply(this, a); place(); return r; };
+  bar.addEventListener('click', () => setTimeout(place, 0)); // some tabs select themselves after their own render
+  const hdr = bk.querySelector('.hdr');
+  bk.addEventListener('scroll', () => bk.classList.toggle('scrolled', bk.scrollTop > (hdr ? hdr.offsetTop + hdr.offsetHeight : 60)), { passive: true });
+  place();
+});

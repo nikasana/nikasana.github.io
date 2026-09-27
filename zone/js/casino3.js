@@ -177,7 +177,8 @@ CZ.fitPhone = function () {
   if (sel && tabs.scrollWidth > tabs.clientWidth) tabs.scrollLeft = sel.offsetLeft - (tabs.clientWidth - sel.offsetWidth) / 2;
   if (!matchMedia('(max-width: 600px)').matches) return;
   const top = $('czTop'), sc = $('bunker'); if (!top || !sc || !sc.classList.contains('show')) return;
-  sc.scrollTop += top.getBoundingClientRect().top - sc.getBoundingClientRect().top - 4;
+  const bar = $('bTabs'), barH = bar ? bar.offsetHeight : 0;
+  sc.scrollTop += top.getBoundingClientRect().top - sc.getBoundingClientRect().top - barH - 4;
 };
 // CZ.perks is created in casino2's DOMContentLoaded handler, so wrap it from ours (which runs after it)
 addEventListener('DOMContentLoaded', () => {

@@ -35,12 +35,12 @@ Object.assign(CZ, {
     if (v >= stake * 5 && v > 0) this.fireworks(Math.min(8, 2 + Math.floor(v / stake / 10)));
   },
   fireworks(n) {
-    const low = lowGfx(), sparks = low ? 16 : 40; if (low) n = Math.min(n, 2);
+    const low = lowGfx(), sparks = low ? 16 : 40; if (low) n = Math.min(n, 2); if (minGfx()) return;
     for (let k = 0; k < n; k++) setTimeout(() => { const x = rand(innerWidth * 0.15, innerWidth * 0.85), y = rand(innerHeight * 0.1, innerHeight * 0.5), c = pick(['#ffe070', '#ff5ce6', '#7fe3ff', '#7aff9a', '#ff6a5a']); this.fx = (this.fx || []).concat(Array.from({ length: sparks }, (_, i) => { const a = (i / sparks) * Math.PI * 2, sp = rand(120, 260); return { fw: true, x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1.2, c }; })); this.beep(200 + Math.random() * 200, 0.25, 'sawtooth', 0.05); this.coins(1); }, k * 350);
   },
   // the casino is actually on screen (not just sitting in a hidden bunker tab during a run)
   shown() { const t = $('czTop'); return !!t && document.visibilityState === 'visible' && t.getClientRects().length > 0; },
-  siren() { try { Sfx.init(); for (let i = 0; i < 6; i++) setTimeout(() => { Sfx.tone(600, 0.35, 'square', 0.06, 500); setTimeout(() => Sfx.tone(1100, 0.35, 'square', 0.06, -500), 350); }, i * 700); } catch (e) { /* audio off */ } let s = $('czSiren'); if (!s) { s = document.createElement('div'); s.id = 'czSiren'; document.body.appendChild(s); } s.classList.remove('on'); void s.offsetWidth; s.classList.add('on'); },
+  siren() { try { Sfx.init(); for (let i = 0; i < 6; i++) setTimeout(() => { Sfx.tone(600, 0.35, 'square', 0.06, 500); setTimeout(() => Sfx.tone(1100, 0.35, 'square', 0.06, -500), 350); }, i * 700); } catch (e) { /* audio off */ } if (minGfx()) return; let s = $('czSiren'); if (!s) { s = document.createElement('div'); s.id = 'czSiren'; document.body.appendChild(s); } s.classList.remove('on'); void s.offsetWidth; s.classList.add('on'); },
   // hourly chest
   chestLeft() { const c = this.st(); return Math.max(0, 3600 - Math.floor((Date.now() - (c.chest || 0)) / 1000)); },
   freeCount() { return ['rou', 'slots', 'bj', 'plinko', 'crash', 'dice', 'coin', 'wheel', 'scratch', 'race', 'box', 'monty'].filter((g) => this.freeReady(g)).length; },
