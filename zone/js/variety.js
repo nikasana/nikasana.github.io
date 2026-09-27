@@ -229,6 +229,23 @@ openLevelUp = function () {
   hide('levelup'); if (G.state === 'levelup') G.state = 'play';
   text(P.x, P.y - 80, '🤖 ' + r.name.toUpperCase() + ' UPGRADE', r.color || '#ffe070', false, true);
 };
+// auto-pick also covers talent points (every 5 levels) and lab artifact choices
+function autoTake(i, label) { if (G.state !== 'levelup' || !choices[i]) return; chooseCard(i); hide('levelup'); if (G.state === 'levelup') G.state = 'play'; text(P.x, P.y - 100, '🤖 ' + label, '#ffe070', false, true); }
+const _vaTal = openTalent;
+openTalent = function () {
+  _vaTal();
+  if (!Save.set.autoPick || choiceMode !== 'talent' || !choices.length || G.state !== 'levelup') return;
+  let best = 0, bs = -1; // deepen the branch you invested in most
+  choices.forEach((c, i) => { const s = (P.talents[c.id] || 0) * 10 + Math.random(); if (s > bs) { bs = s; best = i; } });
+  const T = TALENTS[choices[best].id]; autoTake(best, T.icon + ' ' + T.nodes[P.talents[choices[best].id] || 0][0].toUpperCase());
+};
+const _vaArt = openArtifactChoice;
+openArtifactChoice = function () {
+  _vaArt();
+  if (!Save.set.autoPick || choiceMode !== 'art' || !choices.length || G.state !== 'levelup') return;
+  const best = Math.max(0, choices.findIndex((c) => !P.arts[c.id]));
+  autoTake(best, ARTIFACTS[choices[best].id].name.toUpperCase());
+};
 addEventListener('DOMContentLoaded', () => {
   const b = document.createElement('button'); b.id = 'autoBtn'; b.textContent = '🤖';
   const upd = () => { b.style.opacity = Save.set.autoPick ? 1 : 0.45; b.title = 'Auto-pick upgrades: ' + (Save.set.autoPick ? 'ON' : 'OFF'); };

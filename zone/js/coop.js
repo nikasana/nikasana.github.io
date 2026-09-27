@@ -590,6 +590,15 @@ addEventListener('DOMContentLoaded', () => {
   drawMinimap = function () {
     _mm(); if (!CO.active || World.kind !== 'over') return;
     const S = mm.width, span = 2000, f = S / span;
-    for (const q of coOthers()) { if (q.gone || q.x === undefined) continue; const x = clamp((q.x - P.x + span / 2) * f, 8, S - 8), y = clamp((q.y - P.y + span / 2) * f, 8, S - 8); mmx.fillStyle = coColor(q.pid); mmx.beginPath(); mmx.arc(x, y, 6, 0, TAU); mmx.fill(); mmx.strokeStyle = '#000'; mmx.lineWidth = 2; mmx.stroke(); }
+    // teammates: a dot in their own color when on the map, a colored arrow on the edge pointing at them when off it
+    for (const q of coOthers()) {
+      if (q.gone || q.x === undefined) continue;
+      const rx = (q.x - P.x + span / 2) * f, ry = (q.y - P.y + span / 2) * f, col = coColor(q.pid), nm = (q.name || '?').slice(0, 1).toUpperCase();
+      mmx.lineWidth = 2; mmx.strokeStyle = '#000';
+      if (rx > 6 && rx < S - 6 && ry > 6 && ry < S - 6) { mmx.fillStyle = col; mmx.beginPath(); mmx.arc(rx, ry, 6, 0, TAU); mmx.fill(); mmx.stroke(); mmx.fillStyle = '#000'; mmx.font = 'bold 9px sans-serif'; mmx.textAlign = 'center'; mmx.fillText(nm, rx, ry + 3); continue; }
+      const a = Math.atan2(ry - S / 2, rx - S / 2), m = S / 2 - 12, k = m / Math.max(Math.abs(Math.cos(a)), Math.abs(Math.sin(a))), x = S / 2 + Math.cos(a) * k, y = S / 2 + Math.sin(a) * k;
+      mmx.save(); mmx.translate(x, y); mmx.rotate(a); mmx.fillStyle = col; mmx.beginPath(); mmx.moveTo(11, 0); mmx.lineTo(-7, -8); mmx.lineTo(-3, 0); mmx.lineTo(-7, 8); mmx.closePath(); mmx.fill(); mmx.stroke(); mmx.restore();
+      const d = Math.round(Math.hypot(q.x - P.x, q.y - P.y) / 10); mmx.font = 'bold 10px Oswald, sans-serif'; mmx.textAlign = 'center'; mmx.lineWidth = 3; mmx.strokeText(nm + ' ' + d + 'm', clamp(x - Math.cos(a) * 20, 18, S - 18), clamp(y - Math.sin(a) * 16, 10, S - 4)); mmx.fillStyle = col; mmx.fillText(nm + ' ' + d + 'm', clamp(x - Math.cos(a) * 20, 18, S - 18), clamp(y - Math.sin(a) * 16, 10, S - 4));
+    }
   };
 });

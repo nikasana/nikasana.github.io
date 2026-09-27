@@ -725,7 +725,7 @@ function updateEnemies(dt) {
         break;
       case 'matriarch': {
         const vis = e.state >= 3 || e.reveal > 0 || e.flash > 0 || d < 120;
-        e.alpha = lerp(e.alpha, vis ? 1 : 0.15, dt * 5);
+        e.alpha = lerp(e.alpha, vis ? 1 : 0.32, dt * 5);
         if (e.state === 0 && e.cd <= 0 && d < 650) { e.state = 4; e.st = 0.55; e.chA = Math.atan2(dy, dx); e.chain = e.enraged ? 2 : 0; tele(e.x, e.y, e.x + Math.cos(e.chA) * 560, e.y + Math.sin(e.chA) * 560, 40, 0.55); }
         if (e.state === 4) { vx = vy = 0; e.st -= dt; if (e.st <= 0) { e.state = 3; e.st = 0.6; Sfx.play('roar'); } }
         else if (e.state === 3) {

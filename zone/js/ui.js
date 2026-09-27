@@ -518,8 +518,9 @@ function hud(dt) {
   const abReady = sel && cdLeft <= 0;
   $('ability').classList.toggle('ready', !!abReady); $('abilityBtn').classList.toggle('ready', !!abReady);
   setText('abCd', !sel ? '' : abReady ? 'READY' : Math.ceil(cdLeft) + 's');
-  const b = G.bosses[0];
-  if (b) { $('boss').style.display = 'block'; setText('bossName', b.name + (G.bosses.length > 1 ? ' + ' + G.bosses[1].name : '')); $('bossFill').style.width = (b.hp / b.maxhp) * 100 + '%'; }
+  // every living boss counts: nearest one named first, the bar shows their combined health
+  const bl = G.bosses.filter((x) => !x.dead && x.hp > 0 && G.enemies.includes(x)).sort((a, c) => dist2(a.x, a.y, P.x, P.y) - dist2(c.x, c.y, P.x, P.y)), b = bl[0];
+  if (b) { let hp = 0, mx = 0; for (const x of bl) { hp += Math.min(x.hp, x.maxhp || x.hp); mx += x.maxhp || x.hp; } $('boss').style.display = 'block'; setText('bossName', b.name + (bl.length > 1 ? ' + ' + bl[1].name : '') + (bl.length > 2 ? ' +' + (bl.length - 2) : '')); $('bossFill').style.width = clamp(hp / mx, 0, 1) * 100 + '%'; }
   else $('boss').style.display = 'none';
   const em = G.em;
   if (em && em.phase !== 'after') {

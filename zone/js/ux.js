@@ -44,7 +44,9 @@ function tipShow(el, x, y) {
   tip.style.left = clamp(x + 14, 6, innerWidth - w - 6) + 'px'; tip.style.top = clamp(y + 16, 6, innerHeight - h - 6) + 'px';
 }
 function tipHide() { const t = $('tip'); if (t) t.classList.remove('show'); }
-addEventListener('mouseover', (e) => { const el = e.target.closest && e.target.closest('#hud [title], #hud [data-tip], #bunker [title], #setup [title]'); if (el) tipShow(el, e.clientX, e.clientY); else tipHide(); });
+let lastTouch = 0; addEventListener('touchstart', () => { lastTouch = Date.now(); }, { passive: true, capture: true });
+// taps fire fake mouseovers on phones: ignore them so tooltips never get stuck on screen
+addEventListener('mouseover', (e) => { if (Date.now() - lastTouch < 1000) return; const el = e.target.closest && e.target.closest('#hud [title], #hud [data-tip], #bunker [title], #setup [title]'); if (el) tipShow(el, e.clientX, e.clientY); else tipHide(); });
 addEventListener('mousemove', (e) => { const t = $('tip'); if (t && t.classList.contains('show')) { t.style.left = clamp(e.clientX + 14, 6, innerWidth - t.offsetWidth - 6) + 'px'; t.style.top = clamp(e.clientY + 16, 6, innerHeight - t.offsetHeight - 6) + 'px'; } });
 let tipTimer = null;
 addEventListener('touchstart', (e) => { const el = e.target.closest && e.target.closest('#hud [title], #hud [data-tip]'); if (!el) return; const t = e.touches[0]; clearTimeout(tipTimer); tipTimer = setTimeout(() => { tipShow(el, t.clientX, t.clientY - 60); setTimeout(tipHide, 2500); }, 450); }, { passive: true });
@@ -69,7 +71,7 @@ addEventListener('DOMContentLoaded', () => {
   let undoSnap = null;
   const snap = () => JSON.stringify(Save.data);
   document.addEventListener('click', (e) => {
-    if (!e.target.closest || !e.target.closest('#bunker, #setup') || e.target.closest('[data-bet], #undoBar')) return;
+    if (!e.target.closest || !e.target.closest('#bunker, #setup') || e.target.closest('[data-bet], #undoBar, .czStage')) return;
     const before = snap(), r0 = Save.data.rubles, sp0 = Save.data.sp || 0;
     setTimeout(() => {
       if (Save.data.rubles < r0 || (Save.data.sp || 0) < sp0) { undoSnap = before; showUndo(r0 - Save.data.rubles, sp0 - (Save.data.sp || 0)); }
@@ -119,4 +121,14 @@ addEventListener('DOMContentLoaded', () => {
   // key hint bar shows remapped keys
   const _tc = titleContinue;
   titleContinue = function () { _tc(); applyCompact(); };
+});
+
+// ----- phones: the HUD buttons fold into a small ⋯ menu so they never cover the game -----
+addEventListener('DOMContentLoaded', () => {
+  const box = $('btns'); if (!box) return;
+  const more = document.createElement('button'); more.id = 'btnsMore'; more.title = 'More'; more.textContent = '⋯';
+  box.insertBefore(more, box.firstChild);
+  let t = null; const close = () => document.body.classList.remove('btnsOpen');
+  more.onclick = (e) => { e.stopPropagation(); document.body.classList.toggle('btnsOpen'); clearTimeout(t); t = setTimeout(close, 5000); };
+  box.addEventListener('click', (e) => { if (e.target !== more && e.target.closest('button')) setTimeout(close, 300); });
 });
