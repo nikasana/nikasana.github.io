@@ -101,7 +101,7 @@ function ftCrowTick() {
     if (p._ft) continue; p._ft = 1;
     if (p.type !== 'art' || Math.random() > 0.3 || G.t < 60) continue;
     const a = rand(TAU);
-    for (let i = 0; i < 2; i++) { const c = spawnEnemy('crow', p.x + Math.cos(a) * 520 + i * 30, p.y + Math.sin(a) * 420, { noElite: true }); c.want = p; }
+    for (let i = 0; i < 2; i++) { const c = spawnEnemy('crow', p.x + Math.cos(a) * 520 + i * 30, p.y + Math.sin(a) * 420, { noElite: true, noTheme: true }); c.want = p; }
     Sfx.play('hint');
     break;
   }
@@ -150,7 +150,7 @@ function ftSniperTick(dt) {
   if (n >= cap) return;
   let x = 0, y = 0, ok = false;
   for (let k = 0; k < 10 && !ok; k++) { const a = rand(TAU); x = P.x + Math.cos(a) * 560; y = P.y + Math.sin(a) * 460; ok = World.free(x, y, 16); }
-  if (ok) { spawnEnemy('sniper', x, y, { noElite: true }); if (!G.ft.snTold) { G.ft.snTold = 1; banner('🎯 ' + ftTr('SNIPER'), ftTr('Watch for the red laser, then step off the line.'), 3, 'bad'); } }
+  if (ok) { spawnEnemy('sniper', x, y, { noElite: true, noTheme: true }); if (!G.ft.snTold) { G.ft.snTold = 1; banner('🎯 ' + ftTr('SNIPER'), ftTr('Watch for the red laser, then step off the line.'), 3, 'bad'); } }
 }
 
 // ===== 6. packs: dogs split into chasers and flankers and back off when badly hurt =====
