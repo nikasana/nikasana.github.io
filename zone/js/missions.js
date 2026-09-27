@@ -136,9 +136,9 @@ const Missions = {
       const prize = this.loot(t), items = Array.from({ length: 40 }, (_, i) => (i === 34 ? prize : this.loot(t)));
       const lab = (r) => (typeof r === 'string' && r.startsWith('t:') ? TROPHIES.find((x) => x[1] === r.slice(2))[0] : this.rwLabel(r));
       const strip = $('msStrip'); strip.innerHTML = items.map((r, i) => `<div class="msIt ${i === 34 ? 'win' : ''}">${lab(r)}</div>`).join('');
-      strip.style.transition = 'none'; strip.style.transform = 'translateX(0)'; void strip.offsetWidth;
+      strip.style.transition = 'none'; strip.style.transform = 'translateX(0)';
       const w = strip.children[0].getBoundingClientRect().width + 6, box = $('msRoll').getBoundingClientRect().width, x = 34 * w + w / 2 - box / 2 + rand(-w * 0.3, w * 0.3);
-      strip.style.transition = 'transform 4.2s cubic-bezier(.1,.7,.15,1)'; strip.style.transform = `translateX(${-x}px)`;
+      jsTween(strip, (v) => `translateX(${v}px)`, 0, -x, 4200, 4);
       for (let i = 0; i < 26; i++) setTimeout(() => { try { Sfx.init(); Sfx.tone(1500, 0.02, 'square', 0.03); } catch (e) { /* audio off */ } }, 4200 * (1 - Math.pow(1 - i / 26, 0.4)));
       setTimeout(() => {
         this.rolling = false; let got;

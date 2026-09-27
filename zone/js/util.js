@@ -1,5 +1,5 @@
 'use strict';
-const ZB_BUILD = 109; // keep in sync with version.txt and the ?v= in index.html
+const ZB_BUILD = 110; // keep in sync with version.txt and the ?v= in index.html
 // ---------- math & random helpers ----------
 const TAU = Math.PI * 2;
 const rand = (a = 1, b) => (b === undefined ? Math.random() * a : a + Math.random() * (b - a));
@@ -85,3 +85,11 @@ function fmtTime(t) { t = Math.max(0, Math.floor(t)); return String(Math.floor(t
 function zbLocale() { const L = typeof I18n !== 'undefined' ? I18n.cur : 'en'; return { ka: 'ka-GE', ru: 'ru-RU', uk: 'uk-UA' }[L] || 'en-GB'; }
 const ZB_MONTHS = { ka: ['იან', 'თებ', 'მარ', 'აპრ', 'მაი', 'ივნ', 'ივლ', 'აგვ', 'სექ', 'ოქტ', 'ნოე', 'დეკ'], ru: ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'], uk: ['січ', 'лют', 'бер', 'кві', 'тра', 'чер', 'лип', 'сер', 'вер', 'жов', 'лис', 'гру'], en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] };
 function zbDate(ts) { const d = new Date(ts), L = typeof I18n !== 'undefined' ? I18n.cur : 'en'; const m = (ZB_MONTHS[L] || ZB_MONTHS.en)[d.getMonth()]; return L === 'en' ? m + ' ' + d.getDate() : d.getDate() + ' ' + m; }
+
+// animations that carry information (box rolls, coin flips, prize wheels) run frame by frame in JS: the phone graphics
+// settings switch CSS transitions off, which used to leave them frozen until the result popped up
+function jsTween(el, fmt, from, to, ms, pw = 3) {
+  const t0 = performance.now(); el._tw = t0; el.style.transition = 'none'; el.style.transform = fmt(from);
+  const step = (now) => { if (el._tw !== t0) return; const k = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - k, pw); el.style.transform = fmt(from + (to - from) * e); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}

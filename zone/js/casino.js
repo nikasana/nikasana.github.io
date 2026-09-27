@@ -341,7 +341,7 @@ const CZG = {
       if (CZ.busy) return;
       if (!K.pot) { if (!CZ.take(CZ.bet)) return; K.pot = CZ.bet; K.stake = CZ.bet; K.step = 0; }
       const heads = CZ.rig(() => Math.random() < 0.5, (h) => h), c = $('kCoin'); CZ.busy = true;
-      c.style.transition = 'none'; c.style.transform = 'rotateY(0deg)'; void c.offsetWidth; c.style.transition = 'transform 1.2s cubic-bezier(.2,.7,.3,1)'; c.style.transform = `rotateY(${1800 + (heads ? 0 : 180)}deg)`;
+      jsTween(c, (v) => `rotateY(${v}deg)`, 0, 1800 + (heads ? 0 : 180), 1200, 3);
       for (let i = 0; i < 8; i++) setTimeout(() => CZ.beep(1600 - i * 100, 0.02, 'triangle', 0.03), i * 120);
       setTimeout(() => { CZ.busy = false; if (!$('kGo')) return; if (heads) { K.pot *= 2; K.step++; Sfx.play('coin'); show(); } else { CZ.res(st, `💀 Tails · lost ${K.pot} ₽`, false); Sfx.play('hurt'); K.pot = 0; K.step = 0; setTimeout(() => $('kGo') && show(), 1200); } }, 1250);
     };

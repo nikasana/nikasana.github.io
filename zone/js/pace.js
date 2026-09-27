@@ -295,3 +295,36 @@ addEventListener('DOMContentLoaded', () => {
   const _tp = togglePause; togglePause = function (...a) { const r = _tp(...a); if ($('dpPause')) $('dpPause')._fill(); return r; };
   const _cl = coLobbyUI; coLobbyUI = function (...a) { const r = _cl(...a); const box = $('coSetEdit') || $('coLobby'); if (box && !$('dpCoop')) box.appendChild(diffPacePicker('dpCoop')); else if ($('dpCoop')) $('dpCoop')._fill(); return r; };
 });
+
+// ----- area danger: every map's regions (rated 1-5) change how strong mutants are there and what they are worth -----
+const DANGER = [null,
+  { w: 'Calm', m: 0.75, r: 0.85, c: '#9fe8a0' },
+  { w: 'Uneasy', m: 0.9, r: 0.95, c: '#d8e08a' },
+  { w: 'Dangerous', m: 1, r: 1.1, c: '#ffcf6a' },
+  { w: 'Deadly', m: 1.3, r: 1.35, c: '#ff8a4a' },
+  { w: 'Lethal', m: 1.7, r: 1.6, c: '#ff4a3a' }];
+function dangerDef(n) { return DANGER[clamp(Math.round(n || 3), 1, 5)]; }
+{
+  const _sp = spawnEnemy;
+  spawnEnemy = function (id, x, y, o) {
+    const e = _sp(id, x, y, o);
+    if (e && G && !G.title && !G.coGuest && !e.boss && World.kind !== 'lab') {
+      const D = dangerDef(World.region(e.x, e.y).danger);
+      if (D.m !== 1) { e.hp *= D.m; e.maxhp *= D.m; e.dmg *= D.m; }
+      e.worth = (e.worth || 1) * D.r;
+    }
+    return e;
+  };
+}
+function zoneAnnounce(reg) {
+  const el = $('zoneName'); if (!el) return;
+  const D = World.kind === 'lab' ? null : dangerDef(reg.danger), tr = (s) => (typeof I18n !== 'undefined' && I18n.cur !== 'en' ? I18n.tc(s) : s);
+  const pct = (v) => (v >= 1 ? '+' : '−') + Math.round(Math.abs(v - 1) * 100) + '%';
+  el.innerHTML = '';
+  const n = document.createElement('div'); n.textContent = reg.name; el.appendChild(n);
+  if (D) {
+    const s = document.createElement('small'); s.className = 'zDanger'; s.style.color = D.c;
+    s.textContent = '☢'.repeat(clamp(Math.round(reg.danger || 3), 1, 5)) + ' ' + tr(D.w.toUpperCase()) + ' — ' + tr('mutants') + ' ' + pct(D.m) + ' · ' + tr('rewards') + ' ' + pct(D.r);
+    el.appendChild(s);
+  }
+}

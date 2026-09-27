@@ -552,6 +552,10 @@ function hud(dt) {
   $('abFill').style.transform = `scaleY(${abr})`; $('abilityFill').style.transform = `scaleY(${abr})`;
   const abReady = sel && cdLeft <= 0;
   $('ability').classList.toggle('ready', !!abReady); $('abilityBtn').classList.toggle('ready', !!abReady);
+  setText('abilityCd', sel && !abReady ? Math.ceil(cdLeft) + 's' : '');
+  // the moment an artifact power is usable again: a short flash and a ping
+  if (abReady && hud.wasCd && sel === hud.wasCd) { const b = $('abilityBtn'); b.classList.add('readyNow'); setTimeout(() => b.classList.remove('readyNow'), 450); try { Sfx.play('beep'); } catch (e) { /* audio off */ } }
+  hud.wasCd = sel && !abReady ? sel : null;
   setText('abCd', !sel ? '' : abReady ? 'READY' : Math.ceil(cdLeft) + 's');
   // every living boss counts: nearest one named first, the bar shows their combined health
   const bl = G.bosses.filter((x) => !x.dead && x.hp > 0 && G.enemies.includes(x)).sort((a, c) => dist2(a.x, a.y, P.x, P.y) - dist2(c.x, c.y, P.x, P.y)), b = bl[0];

@@ -433,7 +433,7 @@ function director(dt) {
     let r = rand(tot), id = 'dog'; for (const k in tab) { r -= tab[k]; if (r <= 0) { id = k; break; } }
     const p = ringPos(); if (!p) continue;
     const n = PACKS[id] ? randi(PACKS[id][0], PACKS[id][1]) : id === 'dog' ? randi(m < 1 ? 1 : 2, m < 3 ? 2 : 3) : id === 'rat' ? randi(3, 5) : id === 'pseudodog' ? 2 : 1;
-    for (let i = 0; i < n; i++) { const e = spawnEnemy(id, p[0] + rand(-30, 30), p[1] + rand(-30, 30), i ? { noElite: true } : Events.mods().elite ? { affix: pick(Object.keys(ELITE_AFFIX)) } : {}); if (worth > 1) { e.hp *= worth; e.maxhp *= worth; e.worth = worth; } }
+    for (let i = 0; i < n; i++) { const e = spawnEnemy(id, p[0] + rand(-30, 30), p[1] + rand(-30, 30), i ? { noElite: true } : Events.mods().elite ? { affix: pick(Object.keys(ELITE_AFFIX)) } : {}); if (worth > 1) { e.hp *= worth; e.maxhp *= worth; e.worth = (e.worth || 1) * worth; } }
   }
   G.rushT -= dt;
   if (G.rushT <= 0 && !lab && !bossUp && !(G.em && G.em.phase !== 'after')) {
@@ -1489,7 +1489,7 @@ function updatePlayer(dt) {
   }
   G.rad = rad;
   const reg = World.region(P.x, P.y);
-  if (reg.name !== G.zone) { G.zone = reg.name; $('zoneName').textContent = reg.name; $('zoneName').className = 'show'; G.regionT = 3; $('dangerLvl').textContent = '☢'.repeat(reg.danger); $('zoneName2').textContent = reg.name; }
+  if (reg.name !== G.zone) { G.zone = reg.name; zoneAnnounce(reg); $('zoneName').className = 'show'; G.regionT = 3.5; $('dangerLvl').textContent = '☢'.repeat(reg.danger); $('zoneName2').textContent = reg.name; }
   if (G.regionT > 0) { G.regionT -= dt; if (G.regionT <= 0) $('zoneName').className = ''; }
 }
 function lerpAngle(a, b, t) { return a + angDiff(a, b) * clamp(t, 0, 1); }

@@ -411,7 +411,7 @@ const BunkerUI = {
       Sfx.init(); BunkerUI.spinning = true; S.rubles -= bet; menuRubles();
       let tot = 0; for (const s of SEG) tot += s[1]; let r = rand(tot), i = 0; for (; i < SEG.length - 1; i++) { r -= SEG[i][1]; if (r <= 0) break; }
       const w = $('wheel'), deg = 360 * 5 + (360 - (i + 0.5) * (360 / SEG.length));
-      w.style.transition = 'none'; w.style.transform = 'rotate(0deg)'; void w.offsetWidth; w.style.transition = 'transform 2.6s cubic-bezier(.15,.8,.2,1)'; w.style.transform = `rotate(${deg}deg)`;
+      jsTween(w, (v) => `rotate(${v}deg)`, 0, deg, 2600, 4);
       for (let k = 0; k < 12; k++) setTimeout(() => Sfx.play('hint'), k * k * 18);
       setTimeout(() => { const win = Math.floor(bet * SEG[i][0]); S.rubles += win; Save.save(); menuRubles(); BunkerUI.spinning = false; if (!$('rouRes')) return; $('rouRes').textContent = win > bet ? `🎉 ×${SEG[i][0]}! You won ${win} ₽` : win ? `×${SEG[i][0]} · you get ${win} ₽ back` : '💀 ×0 · the Zone takes it all'; Sfx.play(win > bet ? 'quest' : 'hurt'); }, 2700);
     };
