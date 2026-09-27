@@ -26,7 +26,7 @@ Object.assign(CZ, {
   freeAmt() { return 100 * (this.vip() + 1); },
   freeReady(g) { const c = this.st(); return !(c.free2 && c.free2[g] === Meta.dayKey()) || (c.tokens || 0) > 0; },
   // the jackpot grows faster the longer this session lasts (2% → up to 6% of each bet)
-  jpRate() { const m = (Date.now() - this.session().t0) / 60000; return Math.min(0.06, 0.02 + Math.floor(m / 5) * 0.005); },
+  jpRate() { const m = (Date.now() - this.session().t0) / 60000; return Math.min(0.1, 0.02 + Math.floor(m / 5) * 0.005 + (this.vipPerk ? this.vipPerk().jp : 0)); },
   // after every result: loss streaks earn a free play, a loss opens a short 'one more try' discount
   afterGive(v, stake) {
     const c = this.st();
@@ -41,11 +41,13 @@ Object.assign(CZ, {
   // hourly chest
   chestLeft() { const c = this.st(); return Math.max(0, 3600 - Math.floor((Date.now() - (c.chest || 0)) / 1000)); },
   freeBtn() {
-    const b = $('czFree'); if (!b) return; const ok = this.freeReady(this.game) && this.game !== 'xch';
+    const b = $('czFree'); if (!b) return; const c = this.st();
+    const dailyLeft = c.free2 && c.free2[this.game] === Meta.dayKey() ? 0 : 1, uses = dailyLeft + (c.tokens || 0);
+    const ok = uses > 0 && this.game !== 'xch';
     b.style.display = ok ? '' : 'none'; b.classList.toggle('armed', !!this.freeArm);
-    b.textContent = this.freeArm ? `🎁 FREE PLAY ARMED · ${this.freeAmt()} ₽ — press play!` : `🎁 FREE DAILY PLAY · ${this.freeAmt()} ₽`;
+    b.textContent = this.freeArm ? `🎁 FREE PLAY ARMED · ${this.freeAmt()} ₽ — press play!` : `🎁 FREE DAILY PLAY · ${this.freeAmt()} ₽ ×${uses}`;
   },
-  freeCount() { return ['rou', 'slots', 'bj', 'plinko', 'crash', 'dice', 'coin', 'wheel', 'scratch'].filter((g) => this.freeReady(g)).length; },
+  freeCount() { return ['rou', 'slots', 'bj', 'plinko', 'crash', 'dice', 'coin', 'wheel', 'scratch', 'race', 'box', 'monty'].filter((g) => this.freeReady(g)).length; },
 });
 const CZ_NAMES = ['Strelok', 'Degtyarev', 'Sidorovich', 'Beard', 'Nimble', 'Wolf', 'Fanatic', 'Ghost', 'Lucky', 'Tolik', 'Petrenko', 'Owl', 'Garik', 'Mitay', 'Kruglov', 'Hog'];
 const CZ_GAMES_T = ['🎡 Roulette', '🎰 Slots', '🃏 Blackjack', '🔴 Plinko', '🚀 Crash', '🎲 Dice', '🎫 Scratch'];
@@ -64,9 +66,10 @@ addEventListener('DOMContentLoaded', () => {
   CZ.perks = function () {
     const el = $('czPerks'); if (!el) return; const s = CZ.session(), lh = CZ.luckyHour(), cb = CZ.cb(), next = 180 - (s.stay % 180);
     const cl = CZ.chestLeft(), c2 = CZ.st(), om = CZ.omt && Date.now() < CZ.omt ? Math.ceil((CZ.omt - Date.now()) / 1000) : 0;
-    el.innerHTML = (cl ? `<span>⏰ Free chest in ${Math.floor(cl / 60)}:${String(cl % 60).padStart(2, '0')}</span>` : '<button id="czChest">⏰ OPEN FREE CHEST</button>') + (c2.firstDay !== Meta.dayKey() ? '<span class="lh">🎊 First bet today pays ×2</span>' : '') + (om ? `<span class="lh">🎲 One more try −20% · ${om}s</span>` : '') + ((c2.tokens || 0) > 0 ? `<span class="lh">🎰 ${c2.tokens} free play tokens</span>` : '') + `<span>☢️ Jackpot grows ${(CZ.jpRate() * 100).toFixed(1)}% of each bet</span>` + (lh ? `<span class="lh">🍀 LUCKY HOUR · ${lh} min left</span>` : '') + `<span>🕐 Stay bonus in ${Math.floor(next / 60)}:${String(next % 60).padStart(2, '0')}</span>` + `<span>🎁 ${CZ.freeCount()} free plays today</span>` + (cb.net >= 20 ? `<button id="czCash">💸 CASHBACK ${Math.floor(cb.net * 0.1)} ₽</button>` : '<span>💸 Cashback: 10% of today\'s losses</span>');
+    const cbR = CZ.vipPerk ? CZ.vipPerk().cb : 0.1;
+    el.innerHTML = (cl ? `<span>⏰ Free chest in ${Math.floor(cl / 60)}:${String(cl % 60).padStart(2, '0')}</span>` : '<button id="czChest">⏰ OPEN FREE CHEST</button>') + (c2.firstDay !== Meta.dayKey() ? '<span class="lh">🎊 First bet today pays ×2</span>' : '') + (om ? `<span class="lh">🎲 One more try −20% · ${om}s</span>` : '') + ((c2.tokens || 0) > 0 ? `<span class="lh">🎰 ${c2.tokens} free play tokens</span>` : '') + `<span>☢️ Jackpot grows ${(CZ.jpRate() * 100).toFixed(1)}% of each bet</span>` + (lh ? `<span class="lh">🍀 LUCKY HOUR · ${lh} min left</span>` : '') + `<span>🕐 Stay bonus in ${Math.floor(next / 60)}:${String(next % 60).padStart(2, '0')}</span>` + `<span>🎁 ${CZ.freeCount()} free plays today</span>` + (cb.net >= 20 ? `<button id="czCash">💸 CASHBACK ${Math.floor(cb.net * cbR)} ₽</button>` : `<span>💸 Cashback: ${Math.round(cbR * 100)}% of today's losses</span>`);
     const ch = $('czChest'); if (ch) ch.onclick = () => { const c = CZ.st(); if (CZ.chestLeft()) return; c.chest = Date.now(); const v = Math.round(CZ.freeAmt() * rand(0.8, 3.5)); Save.data.rubles += v; Save.save(); CZ.top(); CZ.coins(30); CZ.fireworks(2); Sfx.play('legend'); if (typeof Missions !== 'undefined') Missions.toast('⏰ Free chest +' + v + ' ₽'); CZ.perks(); };
-    const c = $('czCash'); if (c) c.onclick = () => { const v = Math.floor(CZ.cb().net * 0.1); if (v <= 0) return; Save.data.rubles += v; CZ.cb().net = 0; Save.save(); CZ.top(); CZ.coins(16); Sfx.play('stash'); CZ.perks(); CZ.i18n(); };
+    const c = $('czCash'); if (c) c.onclick = () => { const v = Math.floor(CZ.cb().net * cbR); if (v <= 0) return; Save.data.rubles += v; CZ.cb().net = 0; Save.save(); CZ.top(); CZ.coins(16); Sfx.play('stash'); CZ.perks(); CZ.i18n(); };
   };
   // one clock drives the ticker, the stay bonus and the perk strip while the casino is open
   let tick = 0;
