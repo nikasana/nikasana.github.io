@@ -51,6 +51,7 @@ addEventListener('DOMContentLoaded', () => {
     CZ.session(); CZ.freeArm = false; _ui(el);
     const sign = el.querySelector('.czSign');
     if (sign) sign.insertAdjacentHTML('afterend', '<div class="czTicker" id="czTicker"></div><div class="czPerks" id="czPerks"></div>');
+    const row = $('czBet'); if (row && CZ.autoFreeHtml) row.insertAdjacentHTML('beforebegin', CZ.autoFreeHtml());
     CZ.perks(); CZ.i18n();
   };
   // the strip of perks under the sign: lucky hour, stay bonus countdown, cashback, free plays left

@@ -85,7 +85,7 @@ const CZG = {
     let t = '<div class="rTable"><div class="rZero">' + num(0) + '</div><div class="rNums">';
     for (let row = 3; row >= 1; row--) { for (let c = 0; c < 12; c++) t += num(c * 3 + row); t += `<button class="rn out" data-rs="c${row}">2:1</button>`; }
     t += '</div></div><div class="rOut">' + [['d1', '1st 12'], ['d2', '2nd 12'], ['d3', '3rd 12'], ['low', '1-18'], ['even', 'EVEN'], ['red', '🔴 RED'], ['black', '⚫ BLACK'], ['odd', 'ODD'], ['high', '19-36']].map(([k, n]) => `<button class="rn out" data-rs="${k}">${n}</button>`).join('') + '</div>';
-    st.insertAdjacentHTML('beforeend', t + `<div class="czAct"><button class="big" id="rSpin">🎡 SPIN</button>${CZ.quickFreeHtml()}<button class="big ghost small" id="rClear">CLEAR BETS</button><button class="big ghost small" id="rRe">↺ REBET</button></div><div class="rHist" id="rHist"></div>`);
+    st.insertAdjacentHTML('beforeend', t + `<div class="czAct"><button class="big" id="rSpin">🎡 SPIN</button>${CZ.armFreeHtml()}<button class="big ghost small" id="rClear">CLEAR BETS</button><button class="big ghost small" id="rRe">↺ REBET</button></div><div class="rHist" id="rHist"></div>`);
     const paint = () => {
       for (const b of st.querySelectorAll('[data-rs]')) { const v = R.bets[b.dataset.rs]; let c = b.querySelector('i'); if (v) { if (!c) { c = document.createElement('i'); b.appendChild(c); } c.textContent = v >= 1000 ? Math.round(v / 100) / 10 + 'k' : v; } else if (c) c.remove(); }
       $('rHist').innerHTML = R.hist.map((n) => `<span style="background:${rouCol(n)}">${n}</span>`).join('');
@@ -148,7 +148,7 @@ const CZG = {
     st.insertAdjacentHTML('beforeend', `<div class="slThemes">${SLOT_THEMES.map((t, i) => `<button class="czG ${i === (S.theme || 0) ? 'sel' : ''}" data-slt="${i}" style="--c:${t.lamp[0]}"><span>${t.icon}</span>${t.name}</button>`).join('')}</div>`);
     for (const b of st.querySelectorAll('[data-slt]')) b.onclick = () => { if (S.spin) return; S.theme = +b.dataset.slt; S.win = []; CZ.beep(TH.tone * 2, 0.05); st.innerHTML = ''; CZG.slots(st); CZ.i18n(); };
     const cv = CZ.canvas(st, 520, 300);
-    st.insertAdjacentHTML('beforeend', `<div class="czAct"><button class="big" id="slSpin">🎰 SPIN</button>${CZ.quickFreeHtml()}<button class="big ghost small" id="slAuto">AUTO ×10</button></div><div class="czPay">${SYM.map((s, i) => `<span>${s.repeat(3)} ×${PAY[i][0]} · ×4 ${PAY[i][1]} · ×5 ${PAY[i][2] || 'JACKPOT'}</span>`).join('')}</div>`);
+    st.insertAdjacentHTML('beforeend', `<div class="czAct"><button class="big" id="slSpin">🎰 SPIN</button>${CZ.armFreeHtml()}<button class="big ghost small" id="slAuto">AUTO ×10</button></div><div class="czPay">${SYM.map((s, i) => `<span>${s.repeat(3)} ×${PAY[i][0]} · ×4 ${PAY[i][1]} · ×5 ${PAY[i][2] || 'JACKPOT'}</span>`).join('')}</div>`);
     const go = () => {
       if (S.spin) return; const bet = CZ.bet; if (!CZ.take(bet)) { S.auto = 0; return; }
       S.spin = true; CZ.busy = true; S.win = []; S.bet = bet; const gen = () => [0, 1, 2, 3, 4].map(() => [rs(), rs(), rs()]), pays = (G5) => LINES.some((L) => { let n = 1; while (n < 5 && G5[n][L[n]] === G5[0][L[0]]) n++; return n >= 3; });
@@ -208,7 +208,7 @@ const CZG = {
     const show = () => {
       $('bjD').innerHTML = B.d.map((c, i) => card(c, i, i === 1 && B.hide)).join(''); $('bjP').innerHTML = B.p.map((c, i) => card(c, i)).join('');
       $('bjDv').textContent = 'DEALER' + (B.d.length ? ' · ' + (B.hide ? val([B.d[0]]) + ' + ?' : val(B.d)) : ''); $('bjPv').textContent = 'YOU' + (B.p.length ? ' · ' + val(B.p) : '');
-      $('bjAct').innerHTML = B.on ? '<button class="big" id="bjHit">HIT</button><button class="big" id="bjStand">STAND</button>' + (B.p.length === 2 && Save.data.rubles >= B.bet ? '<button class="big ghost" id="bjDbl">DOUBLE</button>' : '') : `<button class="big" id="bjDeal">🃏 DEAL</button>${CZ.quickFreeHtml()}`;
+      $('bjAct').innerHTML = B.on ? '<button class="big" id="bjHit">HIT</button><button class="big" id="bjStand">STAND</button>' + (B.p.length === 2 && Save.data.rubles >= B.bet ? '<button class="big ghost" id="bjDbl">DOUBLE</button>' : '') : `<button class="big" id="bjDeal">🃏 DEAL</button>${CZ.armFreeHtml()}`;
       const h = $('bjHit'), s = $('bjStand'), d = $('bjDbl'), dl = $('bjDeal');
       if (dl) dl.onclick = () => { if (!CZ.take(CZ.bet)) return; B.bet = CZ.bet; B.p = [draw(), draw()]; B.d = [draw(), draw()]; B.hide = true; B.on = true; CZ.busy = true; CZ.res(st, ''); if (val(B.p) === 21) end(); else show(); CZ.i18n(); };
       if (h) h.onclick = () => { B.p.push(draw()); if (val(B.p) >= 21) end(); else show(); CZ.i18n(); };
@@ -234,7 +234,7 @@ const CZG = {
     const M = [18, 7, 3, 1.6, 1.1, 0.8, 0.4, 0.8, 1.1, 1.6, 3, 7, 18], ROWS = 12;
     const Pk = CZG.pkS = CZG.pkS || { balls: [], hits: [] };
     const cv = CZ.canvas(st, 520, 360);
-    st.insertAdjacentHTML('beforeend', `<div class="czAct"><button class="big" id="pkDrop">🔴 DROP</button>${CZ.quickFreeHtml()}<button class="big ghost small" id="pkTen">DROP ×10</button></div>`);
+    st.insertAdjacentHTML('beforeend', `<div class="czAct"><button class="big" id="pkDrop">🔴 DROP</button>${CZ.armFreeHtml()}<button class="big ghost small" id="pkTen">DROP ×10</button></div>`);
     const drop = () => { if (!CZ.take(CZ.bet)) return false; const gp = () => { const path = []; let k = 0; for (let i = 0; i < ROWS; i++) { const r = Math.random() < 0.5 ? 1 : 0; path.push(r); k += r; } return { path, k }; }, pk = CZ.rig(gp, (o) => M[o.k] > 1), path = pk.path, k = pk.k; Pk.balls.push({ path, k, t: 0, bet: CZ.bet, hue: rand(360) }); return true; };
     $('pkDrop').onclick = drop; $('pkTen').onclick = () => { let i = 0; const iv = setInterval(() => { if (++i > 10 || !cv.isConnected || !drop()) clearInterval(iv); }, 160); };
     CZ.loop(cv, (g, dt, T) => {
@@ -261,7 +261,7 @@ const CZG = {
   crash(st) {
     const C = CZG.crS = CZG.crS || { run: null, hist: [], auto: 0 };
     const cv = CZ.canvas(st, 520, 300);
-    st.insertAdjacentHTML('beforeend', `<div class="czAct"><button class="big" id="crGo">🚀 LAUNCH</button>${CZ.quickFreeHtml()}<button class="big" id="crCash" disabled>💰 CASH OUT</button><label class="czAuto">auto cash-out ×<input id="crAuto" type="number" min="0" step="0.1" value="${C.auto || ''}" placeholder="off"></label></div><div class="rHist" id="crHist"></div>`);
+    st.insertAdjacentHTML('beforeend', `<div class="czAct"><button class="big" id="crGo">🚀 LAUNCH</button>${CZ.armFreeHtml()}<button class="big" id="crCash" disabled>💰 CASH OUT</button><label class="czAuto">auto cash-out ×<input id="crAuto" type="number" min="0" step="0.1" value="${C.auto || ''}" placeholder="off"></label></div><div class="rHist" id="crHist"></div>`);
     const hist = () => { $('crHist').innerHTML = C.hist.map((m) => `<span style="background:${m >= 2 ? '#1f9a4a' : '#8a2a2a'}">×${m.toFixed(2)}</span>`).join(''); };
     const cash = () => { const r = C.run; if (!r || r.out || r.boom) return; r.out = r.m; CZ.busy = false; const win = Math.floor(r.bet * r.m); CZ.give(win, r.bet); $('crCash').disabled = true; CZ.res(st, `Cashed out at ×${r.m.toFixed(2)} · +${win} ₽`, true); Sfx.play('stash'); };
     $('crAuto').onchange = (e) => { C.auto = +e.target.value || 0; };
@@ -297,7 +297,7 @@ const CZG = {
   dice(st) {
     const D = CZG.dS = CZG.dS || { tgt: 50, roll: null, anim: 0, hist: [] };
     const cv = CZ.canvas(st, 520, 180);
-    st.insertAdjacentHTML('beforeend', `<div class="czAct dice"><label>Roll under <b id="dT"></b><input type="range" id="dR" min="2" max="95" value="${D.tgt}"></label><span id="dP"></span><button class="big" id="dGo">🎲 ROLL</button>${CZ.quickFreeHtml()}</div><div class="rHist" id="dHist"></div>`);
+    st.insertAdjacentHTML('beforeend', `<div class="czAct dice"><label>Roll under <b id="dT"></b><input type="range" id="dR" min="2" max="95" value="${D.tgt}"></label><span id="dP"></span><button class="big" id="dGo">🎲 ROLL</button>${CZ.armFreeHtml()}</div><div class="rHist" id="dHist"></div>`);
     const mult = () => Math.floor((97 / D.tgt) * 100) / 100;
     const upd = () => { $('dT').textContent = D.tgt; $('dP').textContent = `win chance ${D.tgt}% · pays ×${mult()}`; $('dHist').innerHTML = D.hist.map(([n, w]) => `<span style="background:${w ? '#1f9a4a' : '#8a2a2a'}">${n}</span>`).join(''); };
     $('dR').oninput = (e) => { D.tgt = +e.target.value; upd(); };
@@ -322,7 +322,7 @@ const CZG = {
   coin(st) {
     const K = CZG.kS = CZG.kS || { pot: 0, step: 0 };
     st.insertAdjacentHTML('beforeend', '<div class="coinStage"><div class="coin3d" id="kCoin"><div class="cf h">☢️</div><div class="cf t">💀</div></div><div class="ladder" id="kLad"></div></div><div class="czAct"><button class="big" id="kGo"></button><span id="kQF"></span><button class="big ghost" id="kCash">💰 CASH OUT</button></div>');
-    const show = () => { $('kLad').innerHTML = Array.from({ length: 10 }, (_, i) => `<span class="${i < K.step ? 'on' : ''}">×${Math.pow(2, 10 - i >= 0 ? i + 1 : 0)}</span>`).reverse().join(''); $('kGo').textContent = K.pot ? `🪙 FLIP · ${K.pot * 2} ₽` : `🪙 START · ${CZ.bet} ₽`; $('kQF').innerHTML = K.pot ? '' : CZ.quickFreeHtml(); $('kCash').disabled = !K.pot; CZ.res(st, K.pot ? `On the table: ${K.pot} ₽` : 'Heads ☢️ doubles it, tails 💀 loses it all.'); };
+    const show = () => { $('kLad').innerHTML = Array.from({ length: 10 }, (_, i) => `<span class="${i < K.step ? 'on' : ''}">×${Math.pow(2, 10 - i >= 0 ? i + 1 : 0)}</span>`).reverse().join(''); $('kGo').textContent = K.pot ? `🪙 FLIP · ${K.pot * 2} ₽` : `🪙 START · ${CZ.bet} ₽`; $('kQF').innerHTML = K.pot ? '' : CZ.armFreeHtml(); $('kCash').disabled = !K.pot; CZ.res(st, K.pot ? `On the table: ${K.pot} ₽` : 'Heads ☢️ doubles it, tails 💀 loses it all.'); };
     $('kGo').onclick = () => {
       if (CZ.busy) return;
       if (!K.pot) { if (!CZ.take(CZ.bet)) return; K.pot = CZ.bet; K.stake = CZ.bet; K.step = 0; }
@@ -340,7 +340,7 @@ const CZG = {
     const SEG = [[0, '#3a2a28'], [1.5, '#2a4a5a'], [0.5, '#4a3a2a'], [2, '#5a4a2a'], [0, '#3a2a28'], [1.2, '#2a5a3a'], [0.5, '#4a3a2a'], [3, '#6a3a6a'], [0, '#3a2a28'], [1.5, '#2a4a5a'], [0.5, '#4a3a2a'], [5, '#8a6a1a'], [0, '#3a2a28'], [1.2, '#2a5a3a'], [2, '#5a4a2a'], [10, '#aa2a4a'], [0.5, '#4a3a2a'], [1.5, '#2a4a5a'], [0, '#3a2a28'], [2, '#5a4a2a']];
     const Wh = CZG.whS = CZG.whS || { a: 0, spin: null, last: -1 };
     const cv = CZ.canvas(st, 520, 320);
-    st.insertAdjacentHTML('beforeend', `<div class="czAct"><button class="big" id="whGo">🎡 SPIN · bet</button>${CZ.quickFreeHtml()}</div>`);
+    st.insertAdjacentHTML('beforeend', `<div class="czAct"><button class="big" id="whGo">🎡 SPIN · bet</button>${CZ.armFreeHtml()}</div>`);
     const spin = (bet, isFree) => {
       if (Wh.spin) return; if (!isFree && !CZ.take(bet)) return;
       const i = CZ.rig(() => Math.floor(Math.random() * SEG.length), (x) => SEG[x][0] > 1), seg = (Math.PI * 2) / SEG.length;

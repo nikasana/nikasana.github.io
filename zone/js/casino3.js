@@ -20,12 +20,19 @@ const CZ_VAULT_TIERS = [[0.5, 5], [0.3, 15], [0.15, 40], [0.05, 150]];
 Object.assign(CZ, {
   vipPerk() { return CZ_VIP_PERKS[this.vip()]; },
   vault() { const c = this.st(); c.vault = c.vault || { fill: 0, ready: false }; return c.vault; },
-  // ----- one-click free roll: a quick button placed right next to each game's own action button -----
+  // ----- free rolls: an AUTO button at the top (below the game tabs, like the old free button) that
+  // arms and fires in one click, and an ARM button next to each game's own action button — arm it,
+  // place your own bet/pick like the old flow, then press the game's own (green) button yourself -----
   freeUses(g) { const c = this.st(), dailyLeft = c.free2 && c.free2[g || this.game] === Meta.dayKey() ? 0 : 1; return dailyLeft + (c.tokens || 0); },
-  quickFreeHtml() {
-    if (this.game === 'xch' || this.game === 'vault' || this.game === 'shop') return '';
-    const n = this.freeUses(); if (n <= 0) return '';
-    return `<button class="big quickFree pulse czQuickFree" data-qf="${this.game}">🎁 FREE ROLL (${n})</button>`;
+  freeGameOk() { return this.game !== 'xch' && this.game !== 'vault' && this.game !== 'shop'; },
+  autoFreeHtml() {
+    if (!this.freeGameOk()) return ''; const n = this.freeUses(); if (n <= 0) return '';
+    return `<button class="big quickFree pulse czAutoFree" data-qf="${this.game}">⚡ AUTO FREE ROLL (${n})</button>`;
+  },
+  armFreeHtml() {
+    if (!this.freeGameOk()) return ''; const n = this.freeUses(); if (n <= 0) return '';
+    const armed = !!this.freeArm;
+    return `<button class="big ghost czArmFree ${armed ? 'armed' : ''}" data-af="${this.game}">${armed ? `🎁 ARMED — press play (${n})` : `🎁 SELECT FREE ROLL (${n})`}</button>`;
   },
   quickFree(g) {
     if (this.busy || this.freeUses(g) <= 0) return;
@@ -50,8 +57,14 @@ Object.assign(CZ, {
 });
 addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', (e) => {
-    const b = e.target.closest('.czQuickFree'); if (!b) return;
-    if (b.dataset.qf === CZ.game) CZ.quickFree(b.dataset.qf);
+    const qf = e.target.closest('.czAutoFree');
+    if (qf) { if (qf.dataset.qf === CZ.game) CZ.quickFree(qf.dataset.qf); return; }
+    const af = e.target.closest('.czArmFree');
+    if (af && af.dataset.af === CZ.game && !CZ.busy) {
+      if (!CZ.freeArm && CZ.freeUses() <= 0) return;
+      CZ.freeArm = !CZ.freeArm; if (CZ.freeArm) CZ.bet = CZ.freeAmt();
+      CZ.beep(1500, 0.08); CZ.top();
+    }
   });
 });
 Object.assign(CZG, {
@@ -98,9 +111,19 @@ CZ.take = function (v) {
   }
   return ok;
 };
+// keep the two free-roll buttons' counts live — top() runs after every take()/give(), so this is
+// what actually refreshes the "(N)" without needing a full game re-render (fixes it freezing on a
+// stale count, worst on mobile where players tend to keep tapping the same game).
+CZ.refreshFreeBtns = function () {
+  const n = this.freeGameOk() ? this.freeUses() : 0;
+  const af = document.querySelector('.czArmFree');
+  if (af) { if (n <= 0 && !this.freeArm) af.remove(); else { af.textContent = this.freeArm ? `🎁 ARMED — press play (${n})` : `🎁 SELECT FREE ROLL (${n})`; af.classList.toggle('armed', !!this.freeArm); } }
+  const qf = document.querySelector('.czAutoFree');
+  if (qf) { if (n <= 0) qf.remove(); else qf.textContent = `⚡ AUTO FREE ROLL (${n})`; }
+};
 // loyalty points on the top panel, a daily-reset countdown and the vault on the perk strip
 const _top3 = CZ.top;
-CZ.top = function () { _top3.call(this); const el = $('czTop'); if (el) el.insertAdjacentHTML('beforeend', `<div><b>${this.st().loy || 0}</b>loyalty pts</div>`); };
+CZ.top = function () { _top3.call(this); const el = $('czTop'); if (el) el.insertAdjacentHTML('beforeend', `<div><b>${this.st().loy || 0}</b>loyalty pts</div>`); this.refreshFreeBtns(); };
 const _perks3 = CZ.perks;
 CZ.perks = function () {
   _perks3.call(this); const el = $('czPerks'); if (!el) return;
