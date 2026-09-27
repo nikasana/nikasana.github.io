@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#15130f" />
 <title>ZONEBONK — Heart of the Zone</title>
-<link rel="icon" type="image/svg+xml" href="icon.svg?v=75" />
-<link rel="apple-touch-icon" href="icon.svg?v=75" />
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=76" />
+<link rel="apple-touch-icon" href="icon.svg?v=76" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -516,7 +516,7 @@
   .hm td.me { outline: 3px solid #ffe070; box-shadow: 0 0 12px #ffe070; }
   .hmLegend { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: center; margin: 4px 0 10px; } .hmLegend span { padding: 2px 10px; border-radius: 4px; color: #fff; font-size: 11px; } .hmLegend small { width: 100%; color: #9a947c; font-size: 11px; }
   #hmModal { position: fixed; inset: 0; background: #000d; z-index: 9000; display: none; overflow: auto; padding: 16px; } #hmModal.show { display: block; } .hmBox { max-width: 1100px; margin: 0 auto; }
-  .hmBtn { font-size: 13px; padding: 5px 12px; margin-left: 6px; }
+  .hmBtn { font: 600 13px Oswald, sans-serif; padding: 6px 12px; margin-left: 6px; background: #1a0e06 !important; color: #ffd27a !important; border: 1px solid #ff8a3a !important; border-radius: 6px; cursor: pointer; box-shadow: 0 0 8px #ff8a3a55; } .hmBtn:hover { background: #3a1a08 !important; color: #fff !important; }
   /* ---- scratch cards ---- */
   .scWrap { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; align-items: center; margin-top: 8px; }
   .scCard { position: relative; width: min(360px, 86vw); aspect-ratio: 1; background: linear-gradient(135deg, #ffe070, #ff9a3a); border-radius: 14px; padding: 8px; box-shadow: 0 0 24px #ffcf3a88; }
@@ -524,6 +524,14 @@
   .scGrid div.hit { background: #7aff9a; box-shadow: 0 0 16px #7aff9a; animation: msGlow .6s infinite alternate; }
   #scCoat { position: absolute; inset: 8px; width: calc(100% - 16px); height: calc(100% - 16px); border-radius: 8px; cursor: crosshair; touch-action: none; }
   .scSide { display: flex; flex-direction: column; gap: 4px; background: #14120c; border: 1px solid #d4a640; border-radius: 10px; padding: 12px 16px; } .scSide b { color: #ffe070; } .scSide small { color: #aaa; } .scSide span { font-size: 18px; }
+
+  /* ---- records board and slot themes ---- */
+  .recGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; max-width: 900px; margin: 0 auto; }
+  .recCard { background: linear-gradient(160deg, #22200f, #0e0d08); border: 1px solid #6a5a2a; border-radius: 10px; padding: 10px 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .recCard span { font-size: 28px; } .recCard b { font: 700 22px Oswald, sans-serif; color: #ffe070; text-shadow: 0 0 10px #ffcf3a66; } .recCard small { color: #cfc8a8; font-size: 12px; text-align: center; } .recCard em { color: #8a846c; font-size: 10px; font-style: normal; } .recCard.none { opacity: .5; }
+  .recTab { margin: 6px auto; border-collapse: collapse; min-width: min(560px, 100%); font-size: 13px; } .recTab th { color: #ffe070; text-align: left; padding: 5px 10px; border-bottom: 1px solid #6a5a2a; } .recTab td { padding: 5px 10px; border-bottom: 1px solid #2a2618; color: #e8e0c0; } .recTab tr.dim td { color: #6a6450; }
+  .recNew { margin-top: 8px; } .recNew div { color: #ffe070; font: 600 15px Oswald, sans-serif; text-shadow: 0 0 10px #ffcf3a; animation: msGlow .8s infinite alternate; } .recNew small { color: #aaa; }
+  .slThemes { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-bottom: 8px; } .slThemes .czG.sel { background: var(--c); color: #000; box-shadow: 0 0 12px var(--c); }
 </style>
 </head>
 <body>
@@ -666,50 +674,50 @@
       '<button onclick="location.reload()" style="' + btn + 'background:#ffcf3a;color:#111;border:2px solid #ffcf3a">🔄 RELOAD</button>';
   });
 </script>
-<script src="js/util.js?v=75"></script>
-<script src="js/audio.js?v=75"></script>
-<script src="js/radio.js?v=75"></script>
-<script src="js/ambience.js?v=75"></script>
-<script src="js/data.js?v=75"></script>
-<script src="js/artifacts.js?v=75"></script>
-<script src="js/world.js?v=75"></script>
-<script src="js/render.js?v=75"></script>
-<script src="js/render2.js?v=75"></script>
-<script src="js/lighting.js?v=75"></script>
-<script src="js/game.js?v=75"></script>
-<script src="js/systems.js?v=75"></script>
-<script src="js/weapons2.js?v=75"></script>
-<script src="js/mutants3.js?v=75"></script>
-<script src="js/events.js?v=75"></script>
-<script src="js/hazards.js?v=75"></script>
-<script src="js/world2.js?v=75"></script>
-<script src="js/vehicles.js?v=75"></script>
-<script src="js/stages3.js?v=75"></script>
-<script src="js/story.js?v=75"></script>
-<script src="js/meta.js?v=75"></script>
-<script src="js/coop.js?v=75"></script>
-<script src="js/crews.js?v=75"></script>
-<script src="js/crewhq.js?v=75"></script>
-<script src="js/content.js?v=75"></script>
-<script src="js/replay.js?v=75"></script>
-<script src="js/variety.js?v=75"></script>
-<script src="js/pace.js?v=75"></script>
-<script src="js/progress2.js?v=75"></script>
-<script src="js/cyber.js?v=75"></script>
-<script src="js/shop2.js?v=75"></script>
-<script src="js/cyber2.js?v=75"></script>
-<script src="js/casino.js?v=75"></script>
-<script src="js/missions.js?v=75"></script>
-<script src="js/extras.js?v=75"></script>
-<script src="js/ux.js?v=75"></script>
-<script src="js/saves.js?v=75"></script>
-<script src="js/polish.js?v=75"></script>
-<script src="js/voice.js?v=75"></script>
-<script src="js/i18n_a.js?v=75"></script>
-<script src="js/i18n_b.js?v=75"></script>
-<script src="js/i18n_c.js?v=75"></script>
-<script src="js/i18n.js?v=75"></script>
-<script src="js/guard.js?v=75"></script>
-<script src="js/ui.js?v=75"></script>
+<script src="js/util.js?v=76"></script>
+<script src="js/audio.js?v=76"></script>
+<script src="js/radio.js?v=76"></script>
+<script src="js/ambience.js?v=76"></script>
+<script src="js/data.js?v=76"></script>
+<script src="js/artifacts.js?v=76"></script>
+<script src="js/world.js?v=76"></script>
+<script src="js/render.js?v=76"></script>
+<script src="js/render2.js?v=76"></script>
+<script src="js/lighting.js?v=76"></script>
+<script src="js/game.js?v=76"></script>
+<script src="js/systems.js?v=76"></script>
+<script src="js/weapons2.js?v=76"></script>
+<script src="js/mutants3.js?v=76"></script>
+<script src="js/events.js?v=76"></script>
+<script src="js/hazards.js?v=76"></script>
+<script src="js/world2.js?v=76"></script>
+<script src="js/vehicles.js?v=76"></script>
+<script src="js/stages3.js?v=76"></script>
+<script src="js/story.js?v=76"></script>
+<script src="js/meta.js?v=76"></script>
+<script src="js/coop.js?v=76"></script>
+<script src="js/crews.js?v=76"></script>
+<script src="js/crewhq.js?v=76"></script>
+<script src="js/content.js?v=76"></script>
+<script src="js/replay.js?v=76"></script>
+<script src="js/variety.js?v=76"></script>
+<script src="js/pace.js?v=76"></script>
+<script src="js/progress2.js?v=76"></script>
+<script src="js/cyber.js?v=76"></script>
+<script src="js/shop2.js?v=76"></script>
+<script src="js/cyber2.js?v=76"></script>
+<script src="js/casino.js?v=76"></script>
+<script src="js/missions.js?v=76"></script>
+<script src="js/extras.js?v=76"></script>
+<script src="js/ux.js?v=76"></script>
+<script src="js/saves.js?v=76"></script>
+<script src="js/polish.js?v=76"></script>
+<script src="js/voice.js?v=76"></script>
+<script src="js/i18n_a.js?v=76"></script>
+<script src="js/i18n_b.js?v=76"></script>
+<script src="js/i18n_c.js?v=76"></script>
+<script src="js/i18n.js?v=76"></script>
+<script src="js/guard.js?v=76"></script>
+<script src="js/ui.js?v=76"></script>
 </body>
 </html>

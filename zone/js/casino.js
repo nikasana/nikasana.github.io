@@ -66,6 +66,14 @@ const rouWins = (spot, n) => {
   return ({ red: REDS.includes(n), black: !REDS.includes(n), odd: n % 2 === 1, even: n % 2 === 0, low: n <= 18, high: n >= 19 })[spot] ? 2
     : spot[0] === 'd' ? (Math.ceil(n / 12) === +spot[1] ? 3 : 0) : spot[0] === 'c' ? (((n - 1) % 3) + 1 === +spot[1] ? 3 : 0) : 0;
 };
+// themed slot machines: same odds and pays, their own symbols, colors and sounds
+const SLOT_THEMES = [
+  { id: 'zone', icon: '☢️', name: 'Zone Classic', sym: ['🍒', '🍋', '🍇', '🔔', '💎', '7️⃣', '☢️'], bg: ['#2a0a3a', '#0a0418'], lamp: ['#ffe070', '#5a3a6a'], reel: '#f4ecd8', tone: 300 },
+  { id: 'mono', icon: '🗿', name: 'Monolith', sym: ['💠', '🔮', '🌀', '⚡', '👁️', '🗿', '☢️'], bg: ['#0a1440', '#02040e'], lamp: ['#7fe3ff', '#1a2a5a'], reel: '#dfe8ff', tone: 180 },
+  { id: 'free', icon: '🍃', name: 'Freedom', sym: ['🍃', '🌻', '🍺', '🎸', '🌈', '🕊️', '☢️'], bg: ['#0a3a14', '#021006'], lamp: ['#7aff9a', '#1a4a22'], reel: '#eaffea', tone: 420 },
+  { id: 'duty', icon: '🎖️', name: 'Duty', sym: ['🪖', '🔫', '🛡️', '⭐', '🎖️', '🚩', '☢️'], bg: ['#3a0a0a', '#100202'], lamp: ['#ff6a5a', '#5a1a1a'], reel: '#fff0ea', tone: 240 },
+  { id: 'band', icon: '🃏', name: 'Bandit Den', sym: ['🥃', '🔪', '🃏', '💰', '💍', '👑', '☢️'], bg: ['#2a2008', '#0c0802'], lamp: ['#ffcf3a', '#4a3a10'], reel: '#fff6d8', tone: 360 },
+];
 const CZG = {
   // ----- European roulette: place chips on the table, then spin -----
   rou(st) {
@@ -130,10 +138,13 @@ const CZG = {
 
   // ----- 5-reel slots with 5 paylines and the progressive jackpot on ☢️☢️☢️☢️☢️ -----
   slots(st) {
-    const SYM = ['🍒', '🍋', '🍇', '🔔', '💎', '7️⃣', '☢️'], WT = [30, 26, 20, 12, 7, 4, 2], PAY = [[1.4, 5, 14], [1.6, 7, 16], [2, 8, 22], [4, 14, 40], [8, 27, 100], [14, 70, 270], [27, 135, 0]];
+    const WT = [30, 26, 20, 12, 7, 4, 2], PAY = [[1.4, 5, 14], [1.6, 7, 16], [2, 8, 22], [4, 14, 40], [8, 27, 100], [14, 70, 270], [27, 135, 0]];
     const LINES = [[1, 1, 1, 1, 1], [0, 0, 0, 0, 0], [2, 2, 2, 2, 2], [0, 1, 2, 1, 0], [2, 1, 0, 1, 2]], LC = ['#ffe070', '#ff5ce6', '#7fe3ff', '#7aff9a', '#ff9a4a'];
     const rs = () => { let r = Math.random() * 101; for (let i = 0; i < 7; i++) { r -= WT[i]; if (r <= 0) return i; } return 0; };
-    const S = CZG.slS = CZG.slS || { grid: [0, 1, 2, 3, 4].map(() => [rs(), rs(), rs()]), off: [0, 0, 0, 0, 0], spin: false, stop: [], win: [], auto: 0 };
+    const S = CZG.slS = CZG.slS || { grid: [0, 1, 2, 3, 4].map(() => [rs(), rs(), rs()]), off: [0, 0, 0, 0, 0], spin: false, stop: [], win: [], auto: 0, theme: 0 };
+    const TH = SLOT_THEMES[S.theme || 0], SYM = TH.sym;
+    st.insertAdjacentHTML('beforeend', `<div class="slThemes">${SLOT_THEMES.map((t, i) => `<button class="czG ${i === (S.theme || 0) ? 'sel' : ''}" data-slt="${i}" style="--c:${t.lamp[0]}"><span>${t.icon}</span>${t.name}</button>`).join('')}</div>`);
+    for (const b of st.querySelectorAll('[data-slt]')) b.onclick = () => { if (S.spin) return; S.theme = +b.dataset.slt; S.win = []; CZ.beep(TH.tone * 2, 0.05); st.innerHTML = ''; CZG.slots(st); CZ.i18n(); };
     const cv = CZ.canvas(st, 520, 300);
     st.insertAdjacentHTML('beforeend', `<div class="czAct"><button class="big" id="slSpin">🎰 SPIN</button><button class="big ghost small" id="slAuto">AUTO ×10</button></div><div class="czPay">${SYM.map((s, i) => `<span>${s.repeat(3)} ×${PAY[i][0]} · ×4 ${PAY[i][1]} · ×5 ${PAY[i][2] || 'JACKPOT'}</span>`).join('')}</div>`);
     const go = () => {
@@ -160,15 +171,15 @@ const CZG = {
         S.t += dt; let all = true;
         for (let i = 0; i < 5; i++) {
           if (S.t < S.stop[i]) { all = false; S.off[i] = (S.off[i] + dt * 14) % 1; if (Math.random() < dt * 14) S.grid[i] = [rs(), S.grid[i][0], S.grid[i][1]]; }
-          else if (S.grid[i] !== S.final[i]) { S.grid[i] = S.final[i]; S.off[i] = 0; CZ.beep(300 + i * 90, 0.07, 'square', 0.05); }
+          else if (S.grid[i] !== S.final[i]) { S.grid[i] = S.final[i]; S.off[i] = 0; CZ.beep(TH.tone + i * 90, 0.07, 'square', 0.05); }
         }
         if (all) settle();
       }
       g.clearRect(0, 0, W, H);
-      const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2a0a3a'); bg.addColorStop(1, '#0a0418'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
-      for (let i = 0; i < 26; i++) { const on = (i + Math.floor(T * 6)) % 4 === 0; g.fillStyle = on ? '#ffe070' : '#5a3a6a'; g.beginPath(); g.arc(14 + i * 19.5, 12, 4, 0, Math.PI * 2); g.fill(); g.beginPath(); g.arc(14 + i * 19.5, H - 12, 4, 0, Math.PI * 2); g.fill(); }
+      const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, TH.bg[0]); bg.addColorStop(1, TH.bg[1]); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+      for (let i = 0; i < 26; i++) { const on = (i + Math.floor(T * 6)) % 4 === 0; g.fillStyle = on ? TH.lamp[0] : TH.lamp[1]; g.beginPath(); g.arc(14 + i * 19.5, 12, 4, 0, Math.PI * 2); g.fill(); g.beginPath(); g.arc(14 + i * 19.5, H - 12, 4, 0, Math.PI * 2); g.fill(); }
       for (let i = 0; i < 5; i++) {
-        const x = x0 + i * rw; g.fillStyle = '#f4ecd8'; g.fillRect(x + 3, y0, rw - 6, rh * 3);
+        const x = x0 + i * rw; g.fillStyle = TH.reel; g.fillRect(x + 3, y0, rw - 6, rh * 3);
         g.save(); g.beginPath(); g.rect(x + 3, y0, rw - 6, rh * 3); g.clip();
         for (let j = -1; j < 3; j++) { const s = j < 0 ? S.grid[i][0] : S.grid[i][j], y = y0 + (j + S.off[i]) * rh; if (j < 0 && !S.off[i]) continue; g.font = (S.spin && S.t < S.stop[i] ? '40px' : '46px') + ' serif'; g.textAlign = 'center'; g.globalAlpha = S.spin && S.t < S.stop[i] ? 0.7 : 1; g.fillText(SYM[s], x + rw / 2, y + rh / 2 + 16); }
         g.globalAlpha = 1; const sh = g.createLinearGradient(0, y0, 0, y0 + rh * 3); sh.addColorStop(0, 'rgba(0,0,0,.45)'); sh.addColorStop(0.2, 'rgba(0,0,0,0)'); sh.addColorStop(0.8, 'rgba(0,0,0,0)'); sh.addColorStop(1, 'rgba(0,0,0,.45)'); g.fillStyle = sh; g.fillRect(x, y0, rw, rh * 3); g.restore();

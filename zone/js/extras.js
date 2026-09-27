@@ -80,3 +80,48 @@ addEventListener('DOMContentLoaded', () => {
   const sb = document.querySelector('[data-bt2="stats"]');
   if (sb) { const o = sb.onclick; sb.onclick = () => { o(); const body = $('bunker2'); if (!body) return; body.insertAdjacentHTML('beforeend', '<div class="sect">🔥 SURVIVAL HEATMAP · every difficulty × pace</div>' + heatmapHTML()); bindHeatmap(body, () => sb.onclick()); if (typeof I18n !== 'undefined' && I18n.cur !== 'en') try { I18n.dom(body); } catch (e) { /* keep english */ } }; }
 });
+
+// ----- 🏁 personal records board: best-ever run stats, per-stage bests and a "NEW RECORD" callout after runs -----
+const REC_DEFS = [
+  ['time', '⏱️', 'Longest survival', (v) => fmtMin(v)], ['kills', '☠️', 'Most kills in a run', (v) => v], ['level', '⭐', 'Highest level', (v) => 'LV ' + v],
+  ['rub', '💰', 'Most rubles in a run', (v) => v + ' ₽'], ['arts', '💎', 'Most artifacts in a run', (v) => v], ['diff', '🔥', 'Hardest difficulty beaten (15:00)', (v) => (DIFFICULTIES[v] ? DIFFICULTIES[v].icon + ' ' + DIFFICULTIES[v].name : '—')],
+  ['pace', '⚡', 'Fastest pace beaten (15:00)', (v) => (PACES[v] ? PACES[v].icon + ' ' + PACES[v].name : '—')], ['kpm', '🎯', 'Kills per minute', (v) => v],
+];
+const Records = {
+  d() { const S = Save.data; S.rec = S.rec || { best: {}, stage: {} }; return S.rec; },
+  fmtMin(t) { return typeof fmtMin === 'function' ? fmtMin(t) : Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0'); },
+  onEnd(kind) {
+    if (!G || G.title || G.tutorial) return [];
+    const R = this.d(), t = Math.floor(G.t), got = [], when = Date.now(), di = DIFFICULTIES.findIndex((x) => x.id === G.diff), pi = PACES.findIndex((x) => x.id === (G.pace || 'normal'));
+    const vals = { time: t, kills: G.kills || 0, level: G.level || 1, rub: Math.floor(G.rubles || 0), arts: Object.keys(P.arts || {}).length, kpm: t >= 60 ? Math.round((G.kills || 0) / (t / 60)) : 0 };
+    if (t >= 900 && kind !== 'quit') { vals.diff = di; vals.pace = pi; }
+    for (const k in vals) { const old = R.best[k]; if (vals[k] > 0 && (!old || vals[k] > old.v)) { if (old) got.push([k, old.v, vals[k]]); R.best[k] = { v: vals[k], at: when, stage: G.stage, d: G.diff, p: G.pace || 'normal' }; } }
+    const st = R.stage[G.stage] = R.stage[G.stage] || { t: 0, kills: 0, runs: 0 }; st.runs++; if (t > st.t) st.t = t; if ((G.kills || 0) > st.kills) st.kills = G.kills;
+    Save.save(); return got;
+  },
+  ui(el) {
+    const R = this.d(), S = Save.data;
+    let h = '<div class="sect">🏁 PERSONAL RECORDS · beat them to see NEW RECORD after a run</div><div class="recGrid">';
+    for (const [k, ic, nm, f] of REC_DEFS) { const b = R.best[k]; h += `<div class="recCard ${b ? '' : 'none'}"><span>${ic}</span><b>${b ? f(b.v) : '—'}</b><small>${nm}</small>${b ? `<em>${zbDate ? zbDate(b.at) : new Date(b.at).toLocaleDateString()} · ${(STAGES.find((x) => x.id === b.stage) || {}).name || ''}</em>` : ''}</div>`; }
+    const extra = [['🏆', S.wins || 0, 'Wins'], ['🏃', (S.runLog || []).length, 'Runs played'], ['🎰', (S.casino && S.casino.big) || 0, 'Biggest casino win'], ['🧬', typeof Cyberware !== 'undefined' ? Cyberware.count() : 0, 'Cyberware perks'], ['🌟', Mastery.d().lvl, 'Mastery level'], ['🏅', (S.ach || []).length, 'Achievements']];
+    h += extra.map(([ic, v, nm]) => `<div class="recCard"><span>${ic}</span><b>${v}</b><small>${nm}</small></div>`).join('') + '</div>';
+    h += '<div class="sect">BEST PER STAGE</div><table class="recTab"><tr><th>Stage</th><th>⏱️ Best time</th><th>☠️ Best kills</th><th>🏃 Runs</th></tr>';
+    for (const s of STAGES) { const r = R.stage[s.id]; h += `<tr class="${r ? '' : 'dim'}"><td>${s.icon} ${s.name}</td><td>${r ? this.fmtMin(r.t) : '—'}</td><td>${r ? r.kills : '—'}</td><td>${r ? r.runs : 0}</td></tr>`; }
+    el.innerHTML = h + '</table>';
+  },
+};
+addEventListener('DOMContentLoaded', () => {
+  const _er = endRun;
+  endRun = function (kind, src) {
+    const was = G && G.ended, r = _er(kind, src);
+    if (!was && G && !G.title && !G.tutorial) {
+      const got = Records.onEnd(kind), e = $('earned');
+      if (got.length && e) { const def = (k) => REC_DEFS.find((x) => x[0] === k); e.insertAdjacentHTML('beforeend', '<div class="recNew">' + got.map(([k, o, n]) => { const d = def(k); return `<div>🏁 NEW RECORD · ${d[1]} ${d[2]}: <b>${d[3](n)}</b> <small>(was ${d[3](o)})</small></div>`; }).join('') + '</div>'); if (typeof I18n !== 'undefined' && I18n.cur !== 'en') try { I18n.dom(e); } catch (x) { /* keep english */ } }
+    }
+    return r;
+  };
+  const bar = $('bTabs'), body = $('bunker2'); if (!bar || !body) return;
+  const b = document.createElement('button'); b.className = 'tab'; b.dataset.bt2 = 'rec'; b.textContent = '🏁 Records';
+  b.onclick = () => { const cx = document.querySelector('[data-bt="codex"]'); if (cx) cx.click(); for (const x of bar.children) x.classList.remove('sel'); b.classList.add('sel'); body.classList.remove('cyberMap'); Records.ui(body); if (typeof I18n !== 'undefined' && I18n.cur !== 'en') try { I18n.dom(body); } catch (x) { /* keep english */ } };
+  const st = bar.querySelector('[data-bt2="stats"]'); bar.insertBefore(b, st || null);
+});
