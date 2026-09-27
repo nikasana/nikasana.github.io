@@ -434,6 +434,11 @@ function drawFx() {
   ctx.restore();
 }
 function drawCrate(c) {
+  if (minGfx() && !c.open && ctx === GLR.main) { // Lowest: a closed crate is one cached picture (bobbing kept)
+    const sp = SPRITES.get('crate', -26, -44, 52, 56, () => drawCrate({ x: 0, y: 0, open: 0, _raw: 1 }));
+    if (sp.c) blit(sp.c, c.x + sp.x, c.y + sp.y + Math.sin(NOW * 3 + c.x));
+    return;
+  }
   const a = c.open ? clamp(1 - c.open / 1.5, 0, 1) : 1;
   ctx.globalAlpha = a;
   shadow(c.x + 4, c.y + 2, 18, 6, 0.3);

@@ -29,7 +29,8 @@ const _poRegenUpd = updatePlayer;
 updatePlayer = function (dt) { const r = P.regen; if (P.doseSlow) P.regen = r * 0.5; try { _poRegenUpd(dt); } finally { P.regen = r; } poUpdate(dt); };
 
 // ----- main objective: one gold arrow for the next main-quest step -----
-function poObjective() {
+function poObjective() { if (minGfx()) { const c = poObjective.c; if (c && NOW - c.t < 0.25) return c.v; const v = poObjective0(); poObjective.c = { t: NOW, v }; return v; } return poObjective0(); }
+function poObjective0() {
   if (!G || G.title || G.tutorial || !Story.main) return null;
   const i = Story.main.i, W = World, over = W.kind === 'over';
   const near = (list) => { let b = null, bd = 1e18; for (const o of list) { const d = dist2(o.x, o.y, P.x, P.y); if (d < bd) { bd = d; b = o; } } return b; };

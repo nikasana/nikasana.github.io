@@ -40,7 +40,7 @@ const SPRITES = {
 };
 
 // props that never change once placed (time-based sway or flicker simply freezes on Lowest)
-const PROP_STATIC = new Set(['tree', 'deadtree', 'rock', 'bush', 'grass', 'reeds', 'building', 'bunker', 'tower', 'tank', 'wreck', 'heap', 'barrel', 'pylon', 'fence', 'sandbag', 'heli', 'tent', 'bones', 'wheel', 'chimney', 'pillar']);
+const PROP_STATIC = new Set(['guide', 'tree', 'deadtree', 'rock', 'bush', 'grass', 'reeds', 'building', 'bunker', 'tower', 'tank', 'wreck', 'heap', 'barrel', 'pylon', 'fence', 'sandbag', 'heli', 'tent', 'bones', 'wheel', 'chimney', 'pillar']);
 function drawPropFast(p) {
   const fn = PROP_DRAW[p.kind];
   if (!minGfx() || !PROP_STATIC.has(p.kind) || !(p.bx1 > p.bx0 && p.by1 > p.by0)) return fn(p);
