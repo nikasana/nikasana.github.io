@@ -6,8 +6,10 @@ const CZ = {
   st() { const S = Save.data; S.casino = S.casino || { wag: 0, won: 0, big: 0, jp: 5000, free: '', games: 0 }; return S.casino; },
   vip() { const w = this.st().wag; let i = 0; while (i + 1 < CZ_VIP.length && w >= CZ_VIP[i + 1][0]) i++; return i; },
   // take a stake; every stake grows the progressive jackpot a little
-  take(v) { v = Math.floor(v); const S = Save.data, c = this.st(); if (v <= 0 || S.rubles < v) { this.shake(); return false; } S.rubles -= v; c.wag += v; c.games++; c.jp += Math.max(1, Math.round(v * 0.02)); Save.save(); this.top(); return true; },
-  give(v, stake) { v = Math.floor(v); const S = Save.data, c = this.st(); if (v > 0) { S.rubles += v; c.won += v; if (v - stake > c.big) c.big = v - stake; } Save.save(); this.top(); if (v >= stake * 5 && v > 0) this.bigWin(v, v / stake); else if (v > stake) this.coins(Math.min(40, 8 + v / stake * 4)); return v; },
+  take(v) { v = Math.floor(v); const S = Save.data, c = this.st();
+    if (this.freeArm) { this.freeArm = false; c.free2 = c.free2 || {}; if (this.freeReady && !this.freeReady(this.game) && c.tokens > 0) c.tokens--; else c.free2[this.game] = Meta.dayKey(); c.games++; this.freeStake = v; Save.save(); this.top(); this.freeBtn(); return true; } // today's free play on this game
+    if (v <= 0 || S.rubles < v) { this.shake(); return false; } const disc = this.omt && Date.now() < this.omt ? Math.floor(v * 0.2) : 0; this.omt = 0; S.rubles -= v - disc; c.wag += v; c.games++; if (c.firstDay !== Meta.dayKey()) { c.firstDay = Meta.dayKey(); this.firstX2 = true; } c.jp += Math.max(1, Math.round(v * (this.jpRate ? this.jpRate() : 0.02))); Save.save(); this.top(); return true; },
+  give(v, stake) { v = Math.floor(v); const S = Save.data, c = this.st(); if (this.firstX2) { this.firstX2 = false; if (v > 0) { v *= 2; if (typeof Missions !== 'undefined') Missions.toast('🎊 First bet of the day · WIN ×2!'); } } this.streak = v > stake ? 0 : (this.streak || 0) + 1; const cb = this.cb(); cb.net += (this.freeStake ? 0 : stake) - v; this.freeStake = 0; if (v > 0) { S.rubles += v; c.won += v; if (v - stake > c.big) c.big = v - stake; } Save.save(); this.top(); if (this.afterGive) this.afterGive(v, stake); if (v >= stake * 5 && v > 0) this.bigWin(v, v / stake); else if (v > stake) this.coins(Math.min(40, 8 + v / stake * 4)); return v; },
   shake() { const b = $('czBet'); if (b) { b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); } Sfx.init(); Sfx.play('hurt'); },
   beep(f, d, t, v) { try { Sfx.init(); Sfx.tone(f, d || 0.06, t || 'square', v || 0.04); } catch (e) { /* audio off */ } },
   top() {
@@ -22,7 +24,7 @@ const CZ = {
     if (this.fxOn) return; this.fxOn = true; let last = performance.now();
     const step = (t) => {
       const dt = Math.min(0.05, (t - last) / 1000); last = t; g.clearRect(0, 0, cv.width, cv.height);
-      for (const p of this.fx) { p.vy += 500 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.a += dt * 6; g.save(); g.translate(p.x, p.y); g.scale(Math.cos(p.a), 1); g.font = p.r * 2 + 'px serif'; g.textAlign = 'center'; g.fillText(p.s, 0, 0); g.restore(); }
+      for (const p of this.fx) { if (p.fw) { p.vx *= 0.97; p.vy = p.vy * 0.97 + 60 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; g.globalAlpha = Math.max(0, p.life); g.fillStyle = p.c; g.beginPath(); g.arc(p.x, p.y, 3, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; if (p.life <= 0) p.y = 1e9; continue; } p.vy += 500 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.a += dt * 6; g.save(); g.translate(p.x, p.y); g.scale(Math.cos(p.a), 1); g.font = p.r * 2 + 'px serif'; g.textAlign = 'center'; g.fillText(p.s, 0, 0); g.restore(); }
       this.fx = this.fx.filter((p) => p.y < cv.height + 40);
       if (this.fx.length) requestAnimationFrame(step); else { this.fxOn = false; g.clearRect(0, 0, cv.width, cv.height); }
     };
@@ -94,7 +96,7 @@ const CZG = {
     $('rRe').onclick = () => { if (R.spin || !R.prev) return; const tot = Object.values(R.prev).reduce((a, b) => a + b, 0); if (!CZ.take(tot)) return; for (const k in R.prev) R.bets[k] = (R.bets[k] || 0) + R.prev[k]; paint(); };
     $('rSpin').onclick = () => {
       if (R.spin || !Object.keys(R.bets).length) { CZ.shake(); return; }
-      const n = RW[Math.floor(Math.random() * 37)], idx = RW.indexOf(n), seg = (Math.PI * 2) / 37;
+      const stakeR = Object.values(R.bets).reduce((a, b) => a + b, 0), n = CZ.rig(() => RW[Math.floor(Math.random() * 37)], (x) => Object.keys(R.bets).reduce((a, k) => a + R.bets[k] * rouWins(k, x), 0) > stakeR), idx = RW.indexOf(n), seg = (Math.PI * 2) / 37;
       const wEnd = R.wa + Math.PI * 2 * 3 + rand(Math.PI * 2);
       const TA = wEnd + idx * seg + seg / 2, TW = Math.PI * 2, gap = (((R.ba - TA) % TW) + TW) % TW; // ball runs the other way and stops on the pocket
       R.spin = { t: 0, T: 5.2, w0: R.wa, w1: wEnd, b0: R.ba, b1: R.ba - TW * 6 - gap, n, tick: 0 };
@@ -149,7 +151,9 @@ const CZG = {
     st.insertAdjacentHTML('beforeend', `<div class="czAct"><button class="big" id="slSpin">🎰 SPIN</button><button class="big ghost small" id="slAuto">AUTO ×10</button></div><div class="czPay">${SYM.map((s, i) => `<span>${s.repeat(3)} ×${PAY[i][0]} · ×4 ${PAY[i][1]} · ×5 ${PAY[i][2] || 'JACKPOT'}</span>`).join('')}</div>`);
     const go = () => {
       if (S.spin) return; const bet = CZ.bet; if (!CZ.take(bet)) { S.auto = 0; return; }
-      S.spin = true; CZ.busy = true; S.win = []; S.bet = bet; S.final = [0, 1, 2, 3, 4].map(() => [rs(), rs(), rs()]); S.stop = [0, 1, 2, 3, 4].map((i) => 0.8 + i * 0.35); S.t = 0; CZ.res(st, 'Spinning…');
+      S.spin = true; CZ.busy = true; S.win = []; S.bet = bet; const gen = () => [0, 1, 2, 3, 4].map(() => [rs(), rs(), rs()]), pays = (G5) => LINES.some((L) => { let n = 1; while (n < 5 && G5[n][L[n]] === G5[0][L[0]]) n++; return n >= 3; });
+      S.final = CZ.rig(gen, pays);
+      if (!pays(S.final) && Math.random() < 0.35) { const f = S.final.map((r) => r.slice()), hi = Math.random() < 0.5 ? 6 : 5; f[0][1] = f[1][1] = hi; f[2][1] = (hi + 1 + Math.floor(Math.random() * 4)) % 7; if (!pays(f)) { S.final = f; S.near = true; } } // so close… S.stop = [0, 1, 2, 3, 4].map((i) => 0.8 + i * 0.35); S.t = 0; CZ.res(st, 'Spinning…');
     };
     const settle = () => {
       let win = 0, jp = false; S.win = [];
@@ -159,8 +163,8 @@ const CZG = {
       });
       win = Math.floor(win);
       if (jp) { const c = CZ.st(); win += c.jp; c.jp = 5000; }
-      S.spin = false; CZ.busy = false; CZ.give(win, S.bet);
-      CZ.res(st, jp ? '☢️☢️☢️☢️☢️ JACKPOT! +' + win + ' ₽' : win ? `WIN ${win} ₽ on ${S.win.length} line${S.win.length > 1 ? 's' : ''}` : 'No luck this time.', win > S.bet ? true : win ? null : false);
+      S.spin = false; CZ.busy = false; CZ.give(win, S.bet); const wasNear = S.near; S.near = false; if (wasNear && !win) S.near = true;
+      CZ.res(st, jp ? '☢️☢️☢️☢️☢️ JACKPOT! +' + win + ' ₽' : !win && S.near ? '😱 SO CLOSE! One more symbol…' : win ? `WIN ${win} ₽ on ${S.win.length} line${S.win.length > 1 ? 's' : ''}` : 'No luck this time.', win > S.bet ? true : win ? null : false);
       if (!win) Sfx.play('hit');
       if (S.auto > 0) { S.auto--; setTimeout(() => { if (cv.isConnected) go(); }, win ? 900 : 350); }
     };
@@ -231,7 +235,7 @@ const CZG = {
     const Pk = CZG.pkS = CZG.pkS || { balls: [], hits: [] };
     const cv = CZ.canvas(st, 520, 360);
     st.insertAdjacentHTML('beforeend', '<div class="czAct"><button class="big" id="pkDrop">🔴 DROP</button><button class="big ghost small" id="pkTen">DROP ×10</button></div>');
-    const drop = () => { if (!CZ.take(CZ.bet)) return false; const path = []; let k = 0; for (let i = 0; i < ROWS; i++) { const r = Math.random() < 0.5 ? 1 : 0; path.push(r); k += r; } Pk.balls.push({ path, k, t: 0, bet: CZ.bet, hue: rand(360) }); return true; };
+    const drop = () => { if (!CZ.take(CZ.bet)) return false; const gp = () => { const path = []; let k = 0; for (let i = 0; i < ROWS; i++) { const r = Math.random() < 0.5 ? 1 : 0; path.push(r); k += r; } return { path, k }; }, pk = CZ.rig(gp, (o) => M[o.k] > 1), path = pk.path, k = pk.k; Pk.balls.push({ path, k, t: 0, bet: CZ.bet, hue: rand(360) }); return true; };
     $('pkDrop').onclick = drop; $('pkTen').onclick = () => { let i = 0; const iv = setInterval(() => { if (++i > 10 || !cv.isConnected || !drop()) clearInterval(iv); }, 160); };
     CZ.loop(cv, (g, dt, T) => {
       const W = 520, H = 360, gap = 34, top = 30;
@@ -261,7 +265,7 @@ const CZG = {
     const hist = () => { $('crHist').innerHTML = C.hist.map((m) => `<span style="background:${m >= 2 ? '#1f9a4a' : '#8a2a2a'}">×${m.toFixed(2)}</span>`).join(''); };
     const cash = () => { const r = C.run; if (!r || r.out || r.boom) return; r.out = r.m; CZ.busy = false; const win = Math.floor(r.bet * r.m); CZ.give(win, r.bet); $('crCash').disabled = true; CZ.res(st, `Cashed out at ×${r.m.toFixed(2)} · +${win} ₽`, true); Sfx.play('stash'); };
     $('crAuto').onchange = (e) => { C.auto = +e.target.value || 0; };
-    $('crGo').onclick = () => { if (C.run && !C.run.done) return; if (!CZ.take(CZ.bet)) return; C.run = { t: 0, m: 1, at: Math.max(1, 0.97 / (1 - Math.random())), bet: CZ.bet, pts: [] }; CZ.busy = true; $('crCash').disabled = false; $('crGo').disabled = true; CZ.res(st, 'Climbing…'); };
+    $('crGo').onclick = () => { if (C.run && !C.run.done) return; if (!CZ.take(CZ.bet)) return; C.run = { t: 0, m: 1, at: CZ.rig(() => Math.max(1, 0.97 / (1 - Math.random())), (a) => a >= (C.auto > 1 ? C.auto : 2)), bet: CZ.bet, pts: [] }; CZ.busy = true; $('crCash').disabled = false; $('crGo').disabled = true; CZ.res(st, 'Climbing…'); };
     $('crCash').onclick = cash;
     CZ.loop(cv, (g, dt, T) => {
       const W = 520, H = 300, r = C.run;
@@ -297,7 +301,7 @@ const CZG = {
     const mult = () => Math.floor((97 / D.tgt) * 100) / 100;
     const upd = () => { $('dT').textContent = D.tgt; $('dP').textContent = `win chance ${D.tgt}% · pays ×${mult()}`; $('dHist').innerHTML = D.hist.map(([n, w]) => `<span style="background:${w ? '#1f9a4a' : '#8a2a2a'}">${n}</span>`).join(''); };
     $('dR').oninput = (e) => { D.tgt = +e.target.value; upd(); };
-    $('dGo').onclick = () => { if (D.anim > 0) return; if (!CZ.take(CZ.bet)) return; D.bet = CZ.bet; D.final = Math.floor(Math.random() * 100) + 1; D.anim = 1; };
+    $('dGo').onclick = () => { if (D.anim > 0) return; if (!CZ.take(CZ.bet)) return; D.bet = CZ.bet; D.final = CZ.rig(() => Math.floor(Math.random() * 100) + 1, (f) => f < D.tgt); D.anim = 1; };
     CZ.loop(cv, (g, dt, T) => {
       const W = 520, H = 180;
       if (D.anim > 0) { D.anim -= dt * 1.1; D.roll = D.anim > 0 ? Math.floor(Math.random() * 100) + 1 : D.final; if (Math.random() < 0.5) CZ.beep(900 + Math.random() * 600, 0.015, 'square', 0.02);
@@ -322,7 +326,7 @@ const CZG = {
     $('kGo').onclick = () => {
       if (CZ.busy) return;
       if (!K.pot) { if (!CZ.take(CZ.bet)) return; K.pot = CZ.bet; K.stake = CZ.bet; K.step = 0; }
-      const heads = Math.random() < 0.5, c = $('kCoin'); CZ.busy = true;
+      const heads = CZ.rig(() => Math.random() < 0.5, (h) => h), c = $('kCoin'); CZ.busy = true;
       c.style.transition = 'none'; c.style.transform = 'rotateY(0deg)'; void c.offsetWidth; c.style.transition = 'transform 1.2s cubic-bezier(.2,.7,.3,1)'; c.style.transform = `rotateY(${1800 + (heads ? 0 : 180)}deg)`;
       for (let i = 0; i < 8; i++) setTimeout(() => CZ.beep(1600 - i * 100, 0.02, 'triangle', 0.03), i * 120);
       setTimeout(() => { CZ.busy = false; if (!$('kGo')) return; if (heads) { K.pot *= 2; K.step++; Sfx.play('coin'); show(); } else { CZ.res(st, `💀 Tails · lost ${K.pot} ₽`, false); Sfx.play('hurt'); K.pot = 0; K.step = 0; setTimeout(() => $('kGo') && show(), 1200); } }, 1250);
@@ -340,7 +344,7 @@ const CZG = {
     st.insertAdjacentHTML('beforeend', `<div class="czAct"><button class="big" id="whGo">🎡 SPIN · bet</button>${free ? `<button class="big pulse" id="whFree">🎁 FREE DAILY SPIN · ${100 * (CZ.vip() + 1)} ₽</button>` : ''}</div>`);
     const spin = (bet, isFree) => {
       if (Wh.spin) return; if (!isFree && !CZ.take(bet)) return;
-      const i = Math.floor(Math.random() * SEG.length), seg = (Math.PI * 2) / SEG.length;
+      const i = CZ.rig(() => Math.floor(Math.random() * SEG.length), (x) => SEG[x][0] > 1), seg = (Math.PI * 2) / SEG.length;
       const target = -(i * seg + seg / 2), end = Wh.a - ((Wh.a - target) % (Math.PI * 2)) - Math.PI * 2 * 6 + (Math.random() - 0.5) * seg * 0.6;
       Wh.spin = { t: 0, T: 4.5, a0: Wh.a, a1: end, i, bet, free: isFree, lastSeg: -1 }; CZ.busy = true;
     };

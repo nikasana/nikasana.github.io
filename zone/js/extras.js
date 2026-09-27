@@ -77,7 +77,7 @@ CZG.scratch = function (st) {
   };
   const up = () => { if (!down) return; down = false; last = null; if (K.card && !K.card.done && scratched() > 0.6) finish(); };
   cv.addEventListener('pointerdown', (e) => { down = true; draw(e); }); cv.addEventListener('pointermove', draw); cv.addEventListener('pointerup', up); cv.addEventListener('pointerleave', up);
-  $('scBuy').onclick = () => { if (K.card && !K.card.done) { CZ.shake(); return; } if (!CZ.take(CZ.bet)) return; K.card = Object.assign(scratchCard(), { bet: CZ.bet, done: false }); coat(); show(); CZ.res(st, 'Scratch the card! (or REVEAL ALL)'); Sfx.play('stash'); };
+  $('scBuy').onclick = () => { if (K.card && !K.card.done) { CZ.shake(); return; } if (!CZ.take(CZ.bet)) return; K.card = Object.assign(CZ.rig(scratchCard, (c) => !!c.win), { bet: CZ.bet, done: false }); coat(); show(); CZ.res(st, 'Scratch the card! (or REVEAL ALL)'); Sfx.play('stash'); };
   $('scAll').onclick = () => { if (K.card && !K.card.done) finish(); };
   if (K.card && !K.card.done) coat(); show();
 };
