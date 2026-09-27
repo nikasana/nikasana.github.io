@@ -2,18 +2,33 @@
 // ---------- extras: survival heatmap for every difficulty × pace, and scratch cards in the casino ----------
 
 // ----- 🔥 heatmap: chance to survive 15:00 for each difficulty (rows) and pace (columns); tap a cell to pick it -----
-// your skill: how long you really last compared with the model, across all your runs (any difficulty and pace)
+// your skill: one factor f (how many times longer than the model's typical stalker you last), fitted to your runs by
+// maximum likelihood on the same log-normal survival model. A death is a death at that minute; a win or a quit only
+// says you were still alive then (no bonus). Recent runs weigh more, and a gentle prior keeps a few runs from swinging it.
 function heatSkill() {
-  const log = (Save.data.runLog || []).filter((r) => !(r.q && r.t < 120) && !(r.dead && !r.q && r.t < 45) && DIFFICULTIES.some((x) => x.id === r.d)).slice(-30);
-  if (heatSkill.n === log.length && heatSkill.last === (log[log.length - 1] || {}).t) return heatSkill.v;
-  const ratios = log.map((r) => { const med = Forecast.median(r.d, r.p || 'normal'), got = r.t / 60 * (r.dead && !r.q ? 1 : 1.25); return Math.log(Math.max(0.2, got) / med); }).sort((a, b) => a - b);
-  const v = ratios.length ? { f: Math.max(0.15, Math.min(6, Math.exp(ratios[Math.floor(ratios.length / 2)]))), n: ratios.length } : null;
-  heatSkill.n = log.length; heatSkill.last = (log[log.length - 1] || {}).t; heatSkill.v = v; return v;
+  const all = (Save.data.runLog || []).filter((r) => DIFFICULTIES.some((x) => x.id === r.d) && !(r.q && r.t < 60) && r.t >= 10);
+  const log = all.slice(-40), last = log[log.length - 1] || {};
+  if (heatSkill.n === log.length && heatSkill.last === last.t && heatSkill.ld === last.d) return heatSkill.v;
+  let v = null;
+  if (log.length) {
+    const sg = Forecast.sigma, rows = log.map((r, i) => {
+      const w = Math.pow(0.93, log.length - 1 - i), mu = Math.log(Forecast.median(r.d, r.p || 'normal', r.a || 0));
+      const died = r.dead && !r.q, t = Math.max(0.2, (died || r.q ? r.t : Math.max(r.t, 900)) / 60);
+      return { w, x: Math.log(t) - mu, died };
+    });
+    let best = 0, bl = -1e18;
+    for (let lf = Math.log(0.08); lf <= Math.log(8); lf += 0.02) {
+      let ll = -(lf * lf) / (2 * 0.7 * 0.7);
+      for (const q of rows) { const z = (q.x - lf) / sg; ll += q.w * (q.died ? -0.5 * z * z : Math.log(Math.max(1e-9, 1 - 0.5 * (1 + erf(z / Math.SQRT2))))); }
+      if (ll > bl) { bl = ll; best = lf; }
+    }
+    v = { f: Math.exp(best), n: log.length };
+  }
+  heatSkill.n = log.length; heatSkill.last = last.t; heatSkill.ld = last.d; heatSkill.v = v; return v;
 }
+function curAsc() { try { return typeof ascLevel === 'function' ? ascLevel() || 0 : 0; } catch (e) { return 0; } }
 function survivalPct(d, p) {
-  const sk = heatSkill(); let med = Forecast.median(d, p) * (sk ? sk.f : 1);
-  const own = (Save.data.runLog || []).filter((r) => r.d === d && (r.p || 'normal') === p && !(r.q && r.t < 120)).map((r) => r.t / 60 * (r.dead && !r.q ? 1 : 1.25)).sort((a, b) => a - b);
-  if (own.length) { const om = own[Math.floor(own.length / 2)], w = Math.min(own.length, 6); med = Math.exp((Math.log(om) * w + Math.log(med) * 2) / (w + 2)); }
+  const sk = heatSkill(), med = Forecast.median(d, p, curAsc()) * (sk ? sk.f : 1);
   return Math.max(0, Math.min(1, 1 - Forecast.cdf(15, med)));
 }
 function heatColor(v) { const h = Math.round(v * 120); return `hsl(${h},75%,${28 + v * 14}%)`; }
