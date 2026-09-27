@@ -77,31 +77,39 @@ const Cyberware = {
     const tot = CW_ATTRS.reduce((t, a) => t + CW[a[0]].length, 0);
     const H = 7 * 118 + 30;
     let h = `<div class="sect">CYBERWARE · ${this.count()}/${tot} perks installed · ${this.spent()} ₽ invested</div><div class="cwAttrs">${CW_ATTRS.map(([id, ic, nm, c]) => `<button class="cwAt ${id === this.cur ? 'sel' : ''}" data-cwa="${id}" style="--c:${c}"><span>${ic}</span><b>${nm}</b><small>LV ${d.lv[id] || 0}</small></button>`).join('')}</div>`;
-    h += `<div class="cwHead" style="--c:${col}"><b>${A[1]} ${A[2]} · LV ${lv}/${CW_MAXLV}</b><i class="bar"><i style="width:${(lv / CW_MAXLV) * 100}%;background:${col}"></i></i>${lv < CW_MAXLV ? `<button class="big small" id="cwLv"><span class="${S.rubles >= this.lvCost(lv) ? 'afford' : 'poor'}">⬆ LEVEL UP · ${this.lvCost(lv)} ₽</span></button>` : '<em>MAX</em>'}<small>Each row of perks needs a higher attribute level (3 per row).</small></div>`;
+    const nxRow = Math.min(6, Math.floor(lv / 3) + 1), canLv = lv < CW_MAXLV, lvC = this.lvCost(lv);
+    // pick the best next step for the player: the first perk they can install now
+    const avail = nodes.filter((n) => this.open(n) && (d.r[n.id] || 0) < n.max);
+    if (!this.sel || !nodes.some((x) => x.id === this.sel)) this.sel = (avail[0] || nodes[0]).id;
+    const step = avail.length ? (avail.some((n) => S.rubles >= this.cost(n, d.r[n.id] || 0)) ? 2 : 0) : 1;
+    h += `<div class="cwSteps" style="--c:${col}"><span class="${step === 1 ? 'on' : ''}">① ⬆ Level up ${A[2]}</span><span class="${step === 2 ? 'on' : ''}">② Tap a glowing perk</span><span class="${step === 2 ? 'on' : ''}">③ Tap INSTALL (or tap the perk again)</span></div>`;
+    h += `<div class="cwHead" style="--c:${col}"><b>${A[1]} ${A[2]} · LV ${lv}/${CW_MAXLV}</b><i class="bar"><i style="width:${(lv / CW_MAXLV) * 100}%;background:${col}"></i></i>${canLv ? `<button class="big small cwBtn ${S.rubles >= lvC ? '' : 'cant'}" id="cwLv">⬆ LEVEL UP · ${lvC} ₽</button>` : '<em>MAX</em>'}<small>${canLv && lv < 18 ? `Next row of perks opens at LV ${nxRow * 3}.` : 'All rows are open.'}</small></div>`;
+    const sn = nodes.find((x) => x.id === this.sel);
+    {
+      const r = d.r[sn.id] || 0, c = this.cost(sn, r), ok = this.open(sn);
+      h += `<div class="cwInfo" style="--c:${col}"><span class="cwBig">${CW_STATS[sn.stat][0]}</span><div><b>${sn.name}</b><small>${this.desc(sn, Math.max(1, r))}${sn.max > 1 ? ' · rank ' + r + '/' + sn.max : ''}${r && r < sn.max ? ' · next: ' + this.desc(sn, r + 1) : ''}</small>${r >= sn.max ? '<em>✅ INSTALLED</em>' : ok ? `<button class="big small cwBtn ${S.rubles >= c ? '' : 'cant'}" id="cwBuy">INSTALL · ${c} ₽</button>` : `<em>🔒 needs ${A[2]} LV ${this.need(sn)} and a linked perk above</em>`}</div></div>`;
+    }
     h += `<div class="cwTree" style="--c:${col};height:${H}px"><svg viewBox="0 0 500 ${H}" preserveAspectRatio="none">`;
     const X = (n) => (n.col + 0.5) * 100, Y = (n) => n.row * 118 + 50;
-    for (let r = 1; r < 7; r++) h += `<text x="4" y="${r * 118 + 20}" class="cwReq ${lv >= r * 3 ? 'ok' : ''}">LV ${r * 3}</text><line x1="0" x2="500" y1="${r * 118 - 9}" y2="${r * 118 - 9}" class="cwRow"/>`;
+    for (let r = 1; r < 7; r++) h += `<text x="4" y="${r * 118 + 20}" class="cwReq ${lv >= r * 3 ? 'ok' : ''}">${lv >= r * 3 ? '' : '🔒 '}LV ${r * 3}</text><line x1="0" x2="500" y1="${r * 118 - 9}" y2="${r * 118 - 9}" class="cwRow"/>`;
     for (const n of nodes) for (const pid of n.par) {
       const p = nodes.find((x) => x.id === pid), on = (d.r[pid] || 0) > 0, mid = (Y(p) + Y(n)) / 2;
       h += `<polyline points="${X(p)},${Y(p) + 26} ${X(p)},${mid} ${X(n)},${mid} ${X(n)},${Y(n) - 26}" class="cwLink ${on ? 'on' : ''} ${on && (d.r[n.id] || 0) > 0 ? 'full' : ''}"/>`;
     }
     h += '</svg>';
     for (const n of nodes) {
-      const r = d.r[n.id] || 0, ok = this.open(n);
+      const r = d.r[n.id] || 0, ok = this.open(n), c = this.cost(n, r);
       h += `<button class="cwN ${r ? 'own' : ''} ${r >= n.max ? 'max' : ''} ${ok ? 'open' : 'lock'} ${n.row === 6 ? 'cap' : ''} ${this.sel === n.id ? 'sel' : ''}" data-cwn="${n.id}" style="left:${(n.col + 0.5) * 20}%;top:${Y(n)}px"><span>${CW_STATS[n.stat][0]}</span><i>${'◆'.repeat(r)}${'◇'.repeat(n.max - r)}</i></button>`;
+      h += `<div class="cwLbl ${ok && r < n.max ? (S.rubles >= c ? 'buy' : 'poor') : ''}" style="left:${(n.col + 0.5) * 20}%;top:${Y(n) + 34}px">${r >= n.max ? '✅' : ok ? c + ' ₽' : '🔒'}</div>`;
     }
     h += '</div>';
-    const sn = this.sel && nodes.find((x) => x.id === this.sel);
-    if (sn) {
-      const r = d.r[sn.id] || 0, c = this.cost(sn, r), ok = this.open(sn);
-      h += `<div class="cwInfo" style="--c:${col}"><span class="cwBig">${CW_STATS[sn.stat][0]}</span><div><b>${sn.name}</b><small>${this.desc(sn, Math.max(1, r))}${sn.max > 1 ? ' · rank ' + r + '/' + sn.max : ''}${r && r < sn.max ? ' · next: ' + this.desc(sn, r + 1) : ''}</small>${r >= sn.max ? '<em>INSTALLED</em>' : ok ? `<button class="big small" id="cwBuy"><span class="${S.rubles >= c ? 'afford' : 'poor'}">INSTALL · ${c} ₽</span></button>` : `<em>🔒 needs ${A[2]} LV ${this.need(sn)} and a linked perk above</em>`}</div></div>`;
-    } else h += '<div class="cwInfo dim"><small>Tap a perk to see it. Glowing links show which perks feed which.</small></div>';
     el.innerHTML = h;
     const re = () => { this.ui(el); if (typeof I18n !== 'undefined' && I18n.cur !== 'en') try { I18n.dom(el); } catch (e) { /* keep english */ } };
     for (const b of el.querySelectorAll('[data-cwa]')) b.onclick = () => { this.cur = b.dataset.cwa; this.sel = null; Sfx.init(); Sfx.play('beep'); re(); };
-    for (const b of el.querySelectorAll('[data-cwn]')) b.onclick = () => { this.sel = b.dataset.cwn; Sfx.init(); Sfx.play('hint'); re(); };
-    const lb = $('cwLv'); if (lb) lb.onclick = () => { const c = this.lvCost(lv); if (S.rubles < c) return; S.rubles -= c; d.lv[this.cur] = lv + 1; Save.save(); menuRubles(); Sfx.init(); Sfx.play('level'); re(); };
-    const bb = $('cwBuy'); if (bb) bb.onclick = () => { const r = d.r[sn.id] || 0, c = this.cost(sn, r); if (S.rubles < c || !this.open(sn)) return; S.rubles -= c; d.r[sn.id] = r + 1; Save.save(); menuRubles(); Sfx.init(); Sfx.play(sn.row === 6 ? 'legend' : 'quest'); re(); };
+    // first tap selects a perk, a second tap on the same perk installs it
+    for (const b of el.querySelectorAll('[data-cwn]')) b.onclick = () => { if (this.sel === b.dataset.cwn && $('cwBuy')) { $('cwBuy').click(); return; } this.sel = b.dataset.cwn; Sfx.init(); Sfx.play('hint'); re(); };
+    const lb = $('cwLv'); if (lb) lb.onclick = () => { const c = this.lvCost(lv); if (S.rubles < c) { lb.classList.add('shake'); setTimeout(() => lb.classList.remove('shake'), 400); return; } S.rubles -= c; d.lv[this.cur] = lv + 1; this.sel = null; Save.save(); menuRubles(); Sfx.init(); Sfx.play('level'); re(); };
+    const bb = $('cwBuy'); if (bb) bb.onclick = () => { const r = d.r[sn.id] || 0, c = this.cost(sn, r); if (S.rubles < c || !this.open(sn)) { bb.classList.add('shake'); setTimeout(() => bb.classList.remove('shake'), 400); return; } S.rubles -= c; d.r[sn.id] = r + 1; if (r + 1 >= sn.max) this.sel = null; Save.save(); menuRubles(); Sfx.init(); Sfx.play(sn.row === 6 ? 'legend' : 'quest'); re(); };
   },
 };
 
