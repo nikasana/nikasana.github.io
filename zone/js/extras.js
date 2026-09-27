@@ -54,7 +54,7 @@ function scratchCard() {
 }
 CZG.scratch = function (st) {
   const K = CZG.scS = CZG.scS || { card: null };
-  st.insertAdjacentHTML('beforeend', `<div class="scWrap"><div class="scCard" id="scCard"><div class="scGrid" id="scGrid"></div><canvas id="scCoat" width="360" height="360"></canvas></div><div class="scSide"><b>🎫 ZONE SCRATCH</b><small>Match 3 symbols to win</small>${SC_PAY.map((s) => `<span>${s[0].repeat(3)} ×${s[1]}</span>`).join('')}</div></div><div class="czAct"><button class="big" id="scBuy">🎫 BUY CARD</button><button class="big ghost small" id="scAll">✨ REVEAL ALL</button></div>`);
+  st.insertAdjacentHTML('beforeend', `<div class="scWrap"><div class="scCard" id="scCard"><div class="scGrid" id="scGrid"></div><canvas id="scCoat" width="360" height="360"></canvas></div><div class="scSide"><b>🎫 ZONE SCRATCH</b><small>Match 3 symbols to win</small>${SC_PAY.map((s) => `<span>${s[0].repeat(3)} ×${s[1]}</span>`).join('')}</div></div><div class="czAct"><button class="big" id="scBuy">🎫 BUY CARD</button>${CZ.quickFreeHtml()}<button class="big ghost small" id="scAll">✨ REVEAL ALL</button></div>`);
   const cv = $('scCoat'), g = cv.getContext('2d');
   const coat = () => {
     g.globalCompositeOperation = 'source-over'; const gr = g.createLinearGradient(0, 0, 360, 360); gr.addColorStop(0, '#9aa0a8'); gr.addColorStop(0.5, '#e8ecf0'); gr.addColorStop(1, '#8a9098'); g.fillStyle = gr; g.fillRect(0, 0, 360, 360);

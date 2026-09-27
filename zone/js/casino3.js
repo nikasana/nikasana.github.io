@@ -20,6 +20,39 @@ const CZ_VAULT_TIERS = [[0.5, 5], [0.3, 15], [0.15, 40], [0.05, 150]];
 Object.assign(CZ, {
   vipPerk() { return CZ_VIP_PERKS[this.vip()]; },
   vault() { const c = this.st(); c.vault = c.vault || { fill: 0, ready: false }; return c.vault; },
+  // ----- one-click free roll: a quick button placed right next to each game's own action button -----
+  freeUses(g) { const c = this.st(), dailyLeft = c.free2 && c.free2[g || this.game] === Meta.dayKey() ? 0 : 1; return dailyLeft + (c.tokens || 0); },
+  quickFreeHtml() {
+    if (this.game === 'xch' || this.game === 'vault' || this.game === 'shop') return '';
+    const n = this.freeUses(); if (n <= 0) return '';
+    return `<button class="big quickFree pulse czQuickFree" data-qf="${this.game}">🎁 FREE ROLL (${n})</button>`;
+  },
+  quickFree(g) {
+    if (this.busy || this.freeUses(g) <= 0) return;
+    this.bet = this.freeAmt(); this.freeArm = true;
+    const click = (id) => { const el = $(id); if (el && !el.disabled) el.click(); else this.freeArm = false; };
+    switch (g) {
+      case 'rou': { const spot = document.querySelector('[data-rs="red"]'); if (spot) spot.click(); else this.freeArm = false; click('rSpin'); break; }
+      case 'monty': { const d0 = document.querySelector('[data-d="0"]'); if (d0 && !d0.disabled) d0.click(); else this.freeArm = false; break; }
+      case 'slots': click('slSpin'); break;
+      case 'bj': click('bjDeal'); break;
+      case 'plinko': click('pkDrop'); break;
+      case 'crash': click('crGo'); break;
+      case 'dice': click('dGo'); break;
+      case 'coin': click('kGo'); break;
+      case 'wheel': click('whGo'); break;
+      case 'scratch': click('scBuy'); break;
+      case 'race': click('raceGo'); break;
+      case 'box': click('boxGo'); break;
+      default: this.freeArm = false;
+    }
+  },
+});
+addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.czQuickFree'); if (!b) return;
+    if (b.dataset.qf === CZ.game) CZ.quickFree(b.dataset.qf);
+  });
 });
 Object.assign(CZG, {
   vault(st) {

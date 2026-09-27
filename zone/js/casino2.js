@@ -40,13 +40,6 @@ Object.assign(CZ, {
   siren() { try { Sfx.init(); for (let i = 0; i < 6; i++) setTimeout(() => { Sfx.tone(600, 0.35, 'square', 0.06, 500); setTimeout(() => Sfx.tone(1100, 0.35, 'square', 0.06, -500), 350); }, i * 700); } catch (e) { /* audio off */ } let s = $('czSiren'); if (!s) { s = document.createElement('div'); s.id = 'czSiren'; document.body.appendChild(s); } s.classList.remove('on'); void s.offsetWidth; s.classList.add('on'); },
   // hourly chest
   chestLeft() { const c = this.st(); return Math.max(0, 3600 - Math.floor((Date.now() - (c.chest || 0)) / 1000)); },
-  freeBtn() {
-    const b = $('czFree'); if (!b) return; const c = this.st();
-    const dailyLeft = c.free2 && c.free2[this.game] === Meta.dayKey() ? 0 : 1, uses = dailyLeft + (c.tokens || 0);
-    const ok = uses > 0 && this.game !== 'xch';
-    b.style.display = ok ? '' : 'none'; b.classList.toggle('armed', !!this.freeArm);
-    b.textContent = this.freeArm ? `🎁 FREE PLAY ARMED · ${this.freeAmt()} ₽ — press play!` : `🎁 FREE DAILY PLAY · ${this.freeAmt()} ₽ ×${uses}`;
-  },
   freeCount() { return ['rou', 'slots', 'bj', 'plinko', 'crash', 'dice', 'coin', 'wheel', 'scratch', 'race', 'box', 'monty'].filter((g) => this.freeReady(g)).length; },
 });
 const CZ_NAMES = ['Strelok', 'Degtyarev', 'Sidorovich', 'Beard', 'Nimble', 'Wolf', 'Fanatic', 'Ghost', 'Lucky', 'Tolik', 'Petrenko', 'Owl', 'Garik', 'Mitay', 'Kruglov', 'Hog'];
@@ -58,9 +51,7 @@ addEventListener('DOMContentLoaded', () => {
     CZ.session(); CZ.freeArm = false; _ui(el);
     const sign = el.querySelector('.czSign');
     if (sign) sign.insertAdjacentHTML('afterend', '<div class="czTicker" id="czTicker"></div><div class="czPerks" id="czPerks"></div>');
-    const row = $('czBet'); if (row) row.insertAdjacentHTML('beforebegin', '<button class="czFreeBtn" id="czFree"></button>');
-    const fb = $('czFree'); if (fb) fb.onclick = () => { if (!CZ.freeReady(CZ.game)) return; CZ.freeArm = !CZ.freeArm; if (CZ.freeArm) CZ.bet = CZ.freeAmt(); CZ.beep(1500, 0.08); CZ.top(); CZ.freeBtn(); };
-    CZ.freeBtn(); CZ.perks(); CZ.i18n();
+    CZ.perks(); CZ.i18n();
   };
   // the strip of perks under the sign: lucky hour, stay bonus countdown, cashback, free plays left
   CZ.perks = function () {
@@ -80,6 +71,4 @@ addEventListener('DOMContentLoaded', () => {
     if (tick % 4 === 0) { const t = $('czTicker'); if (t) { const big = Math.random() < 0.15, m = big ? Math.round(rand(20, 150)) : Math.round(rand(2, 12) * 10) / 10; t.textContent = `📢 ${pick(CZ_NAMES)} won ${Math.round(m * pick([50, 100, 500, 1000]))} ₽ on ${pick(CZ_GAMES_T)} (×${m})`; t.classList.remove('in'); void t.offsetWidth; t.classList.add('in'); CZ.i18n(); } }
     CZ.perks();
   }, 1000);
-  // after each game switch keep the free button in sync
-  const _top = CZ.top.bind(CZ); CZ.top = function () { _top(); CZ.freeBtn(); };
 });
