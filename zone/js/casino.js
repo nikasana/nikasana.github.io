@@ -85,7 +85,7 @@ const CZG = {
     let t = '<div class="rTable"><div class="rZero">' + num(0) + '</div><div class="rNums">';
     for (let row = 3; row >= 1; row--) { for (let c = 0; c < 12; c++) t += num(c * 3 + row); t += `<button class="rn out" data-rs="c${row}">2:1</button>`; }
     t += '</div></div><div class="rOut">' + [['d1', '1st 12'], ['d2', '2nd 12'], ['d3', '3rd 12'], ['low', '1-18'], ['even', 'EVEN'], ['red', '🔴 RED'], ['black', '⚫ BLACK'], ['odd', 'ODD'], ['high', '19-36']].map(([k, n]) => `<button class="rn out" data-rs="${k}">${n}</button>`).join('') + '</div>';
-    st.insertAdjacentHTML('beforeend', t + `<div class="czAct"><button class="big" id="rSpin">🎡 SPIN</button>${CZ.armFreeHtml()}<button class="big ghost small" id="rClear">CLEAR BETS</button><button class="big ghost small" id="rRe">↺ REBET</button></div><div class="rHist" id="rHist"></div>`);
+    st.insertAdjacentHTML('beforeend', t + `<div class="czAct"><button class="big" id="rSpin">🎡 SPIN</button>${CZ.autoPickHtml()}${CZ.armFreeHtml()}<button class="big ghost small" id="rClear">CLEAR BETS</button><button class="big ghost small" id="rRe">↺ REBET</button></div><div class="rHist" id="rHist"></div>`);
     const paint = () => {
       for (const b of st.querySelectorAll('[data-rs]')) { const v = R.bets[b.dataset.rs]; let c = b.querySelector('i'); if (v) { if (!c) { c = document.createElement('i'); b.appendChild(c); } c.textContent = v >= 1000 ? Math.round(v / 100) / 10 + 'k' : v; } else if (c) c.remove(); }
       $('rHist').innerHTML = R.hist.map((n) => `<span style="background:${rouCol(n)}">${n}</span>`).join('');
@@ -297,7 +297,7 @@ const CZG = {
   dice(st) {
     const D = CZG.dS = CZG.dS || { tgt: 50, roll: null, anim: 0, hist: [] };
     const cv = CZ.canvas(st, 520, 180);
-    st.insertAdjacentHTML('beforeend', `<div class="czAct dice"><label>Roll under <b id="dT"></b><input type="range" id="dR" min="2" max="95" value="${D.tgt}"></label><span id="dP"></span><button class="big" id="dGo">🎲 ROLL</button>${CZ.armFreeHtml()}</div><div class="rHist" id="dHist"></div>`);
+    st.insertAdjacentHTML('beforeend', `<div class="czAct dice"><label>Roll under <b id="dT"></b><input type="range" id="dR" min="2" max="95" value="${D.tgt}"></label><span id="dP"></span><button class="big" id="dGo">🎲 ROLL</button>${CZ.autoPickHtml()}${CZ.armFreeHtml()}</div><div class="rHist" id="dHist"></div>`);
     const mult = () => Math.floor((97 / D.tgt) * 100) / 100;
     const upd = () => { $('dT').textContent = D.tgt; $('dP').textContent = `win chance ${D.tgt}% · pays ×${mult()}`; $('dHist').innerHTML = D.hist.map(([n, w]) => `<span style="background:${w ? '#1f9a4a' : '#8a2a2a'}">${n}</span>`).join(''); };
     $('dR').oninput = (e) => { D.tgt = +e.target.value; upd(); };

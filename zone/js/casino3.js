@@ -27,7 +27,7 @@ Object.assign(CZ, {
   freeGameOk() { return this.game !== 'xch' && this.game !== 'vault' && this.game !== 'shop'; },
   autoFreeHtml() {
     if (!this.freeGameOk()) return ''; const n = this.freeUses(); if (n <= 0) return '';
-    return `<button class="big quickFree pulse czAutoFree" data-qf="${this.game}">⚡ AUTO FREE ROLL (${n})</button>`;
+    return `<button class="czAutoFreeBtn pulse czAutoFree" data-qf="${this.game}">⚡ AUTO FREE ROLL (${n})</button>`;
   },
   armFreeHtml() {
     if (!this.freeGameOk()) return ''; const n = this.freeUses(); if (n <= 0) return '';
@@ -54,6 +54,44 @@ Object.assign(CZ, {
       default: this.freeArm = false;
     }
   },
+  // ----- auto-pick: for games with a real choice beyond the bet size (a table spot, a mutant, a
+  // box), a red button next to the game's own green button that randomly makes that choice and
+  // rolls right away, using whatever bet you already have selected -----
+  autoPickGames: ['rou', 'dice', 'race', 'box'],
+  autoPickHtml() {
+    if (!this.autoPickGames.includes(this.game)) return '';
+    return `<button class="big autoPick czAutoPick" data-ap="${this.game}">🎲 AUTO-PICK & ROLL</button>`;
+  },
+  autoPick(g) {
+    if (this.busy) return;
+    switch (g) {
+      case 'rou': {
+        const R = CZG.rouS; if (!R || R.spin) return;
+        const spot = pick(['red', 'black', 'even', 'odd', 'low', 'high', 'd1', 'd2', 'd3']);
+        const b = document.querySelector(`[data-rs="${spot}"]`); if (b) b.click();
+        const sp = $('rSpin'); if (sp) sp.click();
+        break;
+      }
+      case 'dice': {
+        const D = CZG.dS; if (D && D.anim > 0) return;
+        const input = $('dR'); if (input) { input.value = Math.floor(rand(10, 90)); input.dispatchEvent(new Event('input')); }
+        const go = $('dGo'); if (go) go.click();
+        break;
+      }
+      case 'race': {
+        const R = CZG.raceS; if (R && R.run) return;
+        const b = document.querySelector(`[data-rp="${Math.floor(Math.random() * RACE_MUTANTS.length)}"]`); if (b) b.click();
+        const go = $('raceGo'); if (go) go.click();
+        break;
+      }
+      case 'box': {
+        const B = CZG.boxS; if (B && B.active) return;
+        const go = $('boxGo'); if (go) go.click();
+        const b = document.querySelector(`[data-bx="${Math.floor(Math.random() * 5)}"]`); if (b) b.click();
+        break;
+      }
+    }
+  },
 });
 addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', (e) => {
@@ -64,7 +102,10 @@ addEventListener('DOMContentLoaded', () => {
       if (!CZ.freeArm && CZ.freeUses() <= 0) return;
       CZ.freeArm = !CZ.freeArm; if (CZ.freeArm) CZ.bet = CZ.freeAmt();
       CZ.beep(1500, 0.08); CZ.top();
+      return;
     }
+    const ap = e.target.closest('.czAutoPick');
+    if (ap && ap.dataset.ap === CZ.game) CZ.autoPick(ap.dataset.ap);
   });
 });
 Object.assign(CZG, {
@@ -131,6 +172,14 @@ CZ.perks = function () {
   const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), v = CZ.vault();
   el.insertAdjacentHTML('beforeend', `<span>🔄 Free plays reset in ${h}h ${m}m</span>` + (v.ready ? '<button id="czVaultReady">🔐 VAULT READY!</button>' : `<span>🔐 Vault ${Math.floor(v.fill)}%</span>`));
   const vb = $('czVaultReady'); if (vb) vb.onclick = () => { CZ.game = 'vault'; CZ.ui(CZ.el); };
+};
+// one-time reset: everyone's daily free rolls come back once with this update (nothing else —
+// rubles, loyalty points, tokens, the vault, stats and saves are all untouched)
+const _loadFreeReset = Save.load.bind(Save);
+Save.load = function () {
+  _loadFreeReset();
+  const d = this.data;
+  if (!d.freeRollReset1) { d.freeRollReset1 = 1; if (d.casino) d.casino.free2 = {}; this.save(); }
 };
 // a short break reminder after every 30 minutes spent in the casino
 addEventListener('DOMContentLoaded', () => {

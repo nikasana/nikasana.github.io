@@ -10,7 +10,7 @@ Object.assign(CZG, {
   race(st) {
     const R = CZG.raceS = CZG.raceS || { pick: 0, run: null };
     const cv = CZ.canvas(st, 520, 260);
-    st.insertAdjacentHTML('beforeend', `<div class="czGames">${RACE_MUTANTS.map(([ic, nm, , mult], i) => `<button class="czG ${i === R.pick ? 'sel' : ''}" data-rp="${i}"><span>${ic}</span>${nm} ×${mult}</button>`).join('')}</div><div class="czAct"><button class="big" id="raceGo">🐎 RACE</button>${CZ.armFreeHtml()}</div>`);
+    st.insertAdjacentHTML('beforeend', `<div class="czGames">${RACE_MUTANTS.map(([ic, nm, , mult], i) => `<button class="czG ${i === R.pick ? 'sel' : ''}" data-rp="${i}"><span>${ic}</span>${nm} ×${mult}</button>`).join('')}</div><div class="czAct"><button class="big" id="raceGo">🐎 RACE</button>${CZ.autoPickHtml()}${CZ.armFreeHtml()}</div>`);
     for (const b of st.querySelectorAll('[data-rp]')) b.onclick = () => { if (R.run) return; R.pick = +b.dataset.rp; st.innerHTML = ''; CZG.race(st); CZ.i18n(); };
     $('raceGo').onclick = () => {
       if (R.run || !CZ.take(CZ.bet)) return;
@@ -47,7 +47,7 @@ Object.assign(CZG, {
   // ----- pick-a-box: buy a round, then open one box — the value is decided the moment you open it -----
   box(st) {
     const B = CZG.boxS = CZG.boxS || { active: false, opened: -1 };
-    st.insertAdjacentHTML('beforeend', `<p class="dim">Pick a box — one holds a ×10 jackpot, most hold small prizes, one is empty.</p><div class="czBoxes">${[0, 1, 2, 3, 4].map((i) => `<button class="czBox" data-bx="${i}">🗝️</button>`).join('')}</div><div class="czAct"><button class="big" id="boxGo">🗝️ NEW ROUND</button>${CZ.armFreeHtml()}</div>`);
+    st.insertAdjacentHTML('beforeend', `<p class="dim">Pick a box — one holds a ×10 jackpot, most hold small prizes, one is empty.</p><div class="czBoxes">${[0, 1, 2, 3, 4].map((i) => `<button class="czBox" data-bx="${i}">🗝️</button>`).join('')}</div><div class="czAct"><button class="big" id="boxGo">🗝️ NEW ROUND</button>${CZ.autoPickHtml()}${CZ.armFreeHtml()}</div>`);
     const paint = () => { for (const b of st.querySelectorAll('[data-bx]')) b.disabled = !B.active || B.opened !== -1; $('boxGo').disabled = B.active; };
     $('boxGo').onclick = () => { if (B.active || !CZ.take(CZ.bet)) return; B.active = true; B.opened = -1; B.bet = CZ.bet; CZ.res(st, 'Pick a box!'); paint(); };
     for (const b of st.querySelectorAll('[data-bx]')) b.onclick = () => {
