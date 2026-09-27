@@ -61,8 +61,8 @@ const Missions = {
 
   ui(el) {
     const M = this.d(), pages = [['daily', '📋', 'Daily Missions'], ['weekly', '📅', 'Weekly Missions'], ['bonus', '🎁', 'Daily Bonus'], ['pass', '⭐', 'Zone Pass'], ['boxes', '📦', 'Containers'], ['hours', '⏰', 'Happy Hours']];
-    const dot = (id) => ({ daily: M.daily.some((m) => m.done && !m.got), weekly: M.weekly.some((m) => m.done && !m.got), bonus: this.bonusReady(), pass: this.passReady() > 0, boxes: Object.values(M.boxes).some((n) => n > 0) })[id];
-    el.innerHTML = `<div class="msTabs">${pages.map(([id, ic, nm]) => `<button class="msTab ${id === this.page ? 'sel' : ''}" data-msp="${id}"><span>${ic}</span>${nm}${dot(id) ? '<i class="msDot"></i>' : ''}</button>`).join('')}</div><div class="msBody" id="msBody"></div>`;
+    const dot = (id) => ({ daily: M.daily.filter((m) => m.done && !m.got).length, weekly: M.weekly.filter((m) => m.done && !m.got).length, bonus: this.bonusReady() ? 1 : 0, pass: this.passReady(), boxes: Object.values(M.boxes).reduce((a, n) => a + (n || 0), 0) })[id] || 0;
+    el.innerHTML = `<div class="msTabs">${pages.map(([id, ic, nm]) => `<button class="msTab ${id === this.page ? 'sel' : ''}" data-msp="${id}"><span>${ic}</span>${nm}${dot(id) ? `<i class="msDot">${dot(id)}</i>` : ''}</button>`).join('')}</div><div class="msBody" id="msBody"></div>`;
     for (const b of el.querySelectorAll('[data-msp]')) b.onclick = () => { this.page = b.dataset.msp; Sfx.init(); Sfx.play('beep'); this.ui(el); this.tr(el); };
     this.el = el; this['p_' + this.page]($('msBody')); this.badge();
   },
