@@ -516,7 +516,9 @@ function hudBuild() {
   const many = ownedArts().length > 1;
   for (const id of ['abPrev', 'abNext', 'tPrev', 'tNext']) $(id).style.visibility = many ? 'visible' : 'hidden';
 }
-let fpsAcc = 0, fpsN = 0, fpsShow = 0;
+// the counter uses real frame times (the simulation step is capped at 50ms, which used to make it read 20 at worst);
+// ⚙ is how long the game's own code takes per frame: low ⚙ with low FPS means the phone's GPU/browser is the limit
+let fpsAcc = 0, fpsN = 0, fpsShow = 0, FRAME_MS = 16, JS_MS = 0;
 function hud(dt) {
   $('hpFill').style.width = (P.hp / P.maxhp) * 100 + '%';
   setText('hpText', Math.ceil(P.hp) + ' / ' + Math.round(P.maxhp));
@@ -552,7 +554,7 @@ function hud(dt) {
   $('nextEvt').style.display = G.bosses.length || G.tutorial ? 'none' : '';
   setText('nextEvt', nbT === null || nbT - G.t > 3600 ? wv : `${wv} · ☠ ${nb ? (nb.id === 'final' ? stageDef().final.name : ENEMIES[nb.id].name) : 'Boss'} in ${fmtTime(Math.max(0, nbT - G.t))}`);
   bannerTick(dt);
-  if (Save.set.fps) { fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { fpsShow = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; } setText('fps', fpsShow + ' FPS'); } else setText('fps', '');
+  if (Save.set.fps) { if (FRAME_MS < 1000) { fpsAcc += FRAME_MS / 1000; fpsN++; } if (fpsAcc > 0.5) { fpsShow = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; } setText('fps', fpsShow + ' FPS · ⚙' + JS_MS.toFixed(1) + 'ms'); } else setText('fps', '');
   if (!minGfx() || (hudFrame = (hudFrame + 1) % 3) === 0) { drawDetector(); drawMinimap(); }
 }
 let hudFrame = 0;
@@ -882,7 +884,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   GFX.sample(ms);
   try {
-    if (G && !G.title) { update(dt); render(); hud(dt); }
+    if (G && !G.title) { FRAME_MS = ms; const t0 = performance.now(); update(dt); render(); hud(dt); JS_MS = JS_MS * 0.9 + (performance.now() - t0) * 0.1; }
     else {
       const bg = menuBg();
       if (bg === 2 || (bg === 1 && minGfx())) titleAcc = 0;
