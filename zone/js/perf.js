@@ -152,6 +152,7 @@ function stampEnemy(e, sp, sx, sy) {
 // paints the canvas in software. Same resolution, same picture.
 const RT = { sc: 1, tx: 0, ty: 0 }; // the world→screen transform of the current frame (set by render)
 function blit(c, wx, wy) {
+  if (GLR.active && ctx === GLR.main) { GLR.quad(c, Math.round(wx * RT.sc + RT.tx), Math.round(wy * RT.sc + RT.ty), ctx.globalAlpha); return; }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.drawImage(c, Math.round(wx * RT.sc + RT.tx), Math.round(wy * RT.sc + RT.ty));
   ctx.setTransform(RT.sc, 0, 0, RT.sc, RT.tx, RT.ty);
@@ -189,7 +190,8 @@ function drawGroundFast(gx0, gx1, gy0, gy1) {
       c.getContext('2d').putImageData(w.getImageData(0, 0, n, n), 0, 0);
       GROUND.map.set(k, t = { src, c });
     }
-    ctx.drawImage(t.c, Math.round(gx * CHUNK * sc + RT.tx), Math.round(gy * CHUNK * sc + RT.ty));
+    const X = Math.round(gx * CHUNK * sc + RT.tx), Y = Math.round(gy * CHUNK * sc + RT.ty);
+    if (GLR.active) GLR.tile(t.c, X, Y); else ctx.drawImage(t.c, X, Y);
   }
   ctx.setTransform(sc, 0, 0, sc, RT.tx, RT.ty);
 }

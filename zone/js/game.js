@@ -1,7 +1,7 @@
 'use strict';
 // ---------- core simulation ----------
 const cv = document.getElementById('game');
-let ctx = cv.getContext('2d', { alpha: false }); // let: perf.js briefly points it at an offscreen canvas to cache sprites
+let ctx = cv.getContext('2d'); // let: perf.js briefly points it at an offscreen canvas to cache sprites
 let VW = 0, VH = 0, DPR = 1, ZOOM = 1, NOW = 0;
 const CAM = { x: START.x, y: START.y };
 let G = null, P = null;

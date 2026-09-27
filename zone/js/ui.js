@@ -751,9 +751,11 @@ function buildSettings() {
     `<label class="set"><span>Screen shake</span><input type="range" min="0" max="1" step="0.05" value="${shakeK()}" data-set="shake"></label>` + tog('mmArrows', 'Minimap arrows') + tog('omens', 'Zone omens (a random twist each run)') + tog('numbers', 'Damage numbers') + tog('hints', 'Tutorial hints') + tog('fps', 'Show FPS') +
     `<label class="set"><span>Game zoom</span><input type="range" min="0.7" max="2" step="0.05" value="${zoomK()}" data-set="zoom"></label>` +
     `<label class="set"><span>Graphics quality</span><select data-q><option value="auto" ${s.quality === 'auto' ? 'selected' : ''}>Auto (recommended)</option><option value="high" ${s.quality === 'high' ? 'selected' : ''}>High</option><option value="low" ${s.quality === 'low' ? 'selected' : ''}>Low (faster)</option><option value="min" ${s.quality === 'min' ? 'selected' : ''}>Lowest (smoothest)</option><option value="ultra" ${s.quality === 'ultra' ? 'selected' : ''}>Ultra-low (potato phones)</option></select></label>` +
+    `<label class="set"><span>GPU renderer on Lowest / Ultra-low</span><input type="checkbox" ${s.gpuDraw !== false ? 'checked' : ''} data-gpu></label>` +
     `<button class="big ghost small" id="resetHints">Replay tutorial hints</button>`;
   for (const i of document.querySelectorAll('[data-set]')) i.oninput = () => { s[i.dataset.set] = +i.value; applySettings(); Save.save(); };
   for (const i of document.querySelectorAll('[data-tog]')) i.onchange = () => { s[i.dataset.tog] = i.checked; applySettings(); Save.save(); };
+  document.querySelector('[data-gpu]').onchange = (e) => { s.gpuDraw = e.target.checked; Save.save(); };
   document.querySelector('[data-q]').onchange = (e) => { s.quality = e.target.value; GFX.reset(); Save.save(); applyGfx(); };
   $('resetHints').onclick = () => { Save.data.hints = []; Save.save(); $('resetHints').textContent = 'Hints will show again ✓'; };
 }
