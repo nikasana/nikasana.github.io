@@ -35,7 +35,7 @@ const Missions = {
     const M = this.d(); let hit = null;
     for (const m of M.daily.concat(M.weekly)) if (m.k === k && !m.done) { m.p = Math.min(m.n, m.p + v); if (m.p >= m.n) { m.done = true; hit = m; } }
     Save.save(); if (hit && G && !G.title) banner('📋 MISSION COMPLETE', hit.text + ' · claim it in Missions', 3, 'good');
-    this.badge();
+    if (hit) this.badge(); // the badge counts claimable missions, which only changes when one completes (this runs on every kill)
   },
   ready() { const M = this.d(); return M.daily.concat(M.weekly).filter((m) => m.done && !m.got).length + (this.bonusReady() ? 1 : 0) + this.passReady(); },
   badge() { const n = this.ready(); for (const b of document.querySelectorAll('.msBadge')) { b.textContent = n || ''; b.style.display = n ? '' : 'none'; } },

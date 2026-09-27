@@ -17,10 +17,19 @@ const Save = {
     if (!this.data.shakeFix2) { this.data.shakeFix2 = 1; const v = this.data.settings.shake; if (v === true || v > 0.3) this.data.settings.shake = 0.3; }
     if (!this.data.gfxAuto1) { this.data.gfxAuto1 = 1; if (this.data.settings.quality === 'high') this.data.settings.quality = 'auto'; }
   },
-  save() { try { localStorage.setItem(slotKey('zonebonk_save'), JSON.stringify(this.data)); } catch (e) { /* storage unavailable: progress lasts this session */ } },
+  // during a run many things save per second (every kill bumps mission progress): write at most every 2s then,
+  // and immediately otherwise, when the run ends, when the app goes to the background and when the page closes
+  save() {
+    if (typeof G !== 'undefined' && G && !G.title && !G.ended) { if (!this._t) this._t = setTimeout(() => this.write(), 2000); return; }
+    this.write();
+  },
+  write() { clearTimeout(this._t); this._t = 0; try { localStorage.setItem(slotKey('zonebonk_save'), JSON.stringify(this.data)); } catch (e) { /* storage unavailable: progress lasts this session */ } },
   meta(id) { return this.data.meta[id] || 0; },
+  flush() { if (this._t) this.write(); },
   get set() { return this.data.settings; },
 };
+addEventListener('pagehide', () => Save.flush());
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') Save.flush(); });
 
 // ---------- radio chatter ----------
 const Radio = {

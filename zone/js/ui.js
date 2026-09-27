@@ -1,6 +1,7 @@
 'use strict';
 // ---------- rendering ----------
-const DRAW = [];
+const DRAW = [], DPOOL = []; let DN = 0;
+const dq = (y, t, o, d) => { let it = DPOOL[DN]; if (!it) it = DPOOL[DN] = { y: 0, t: 0, o: null, d: 0 }; it.y = y; it.t = t; it.o = o; it.d = d; DRAW[DN++] = it; };
 function render(title = false) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = '#0d0c09'; ctx.fillRect(0, 0, cv.width, cv.height);
@@ -21,7 +22,7 @@ function render(title = false) {
   if (y0 < 0) ctx.fillRect(x0 - 10, y0 - 10, x1 - x0 + 20, -y0 + 10);
   if (x1 > WORLD) ctx.fillRect(WORLD, y0 - 10, x1 - WORLD + 10, y1 - y0 + 20);
   if (y1 > WORLD) ctx.fillRect(x0 - 10, WORLD, x1 - x0 + 20, y1 - WORLD + 10);
-  for (const d of G.decals) {
+  if (!minQ) for (const d of G.decals) {
     if (d.x < x0 - 60 || d.x > x1 + 60 || d.y < y0 - 60 || d.y > y1 + 60) continue;
     ctx.fillStyle = `rgba(${d.c},${Math.min(0.55, d.life / 10)})`;
     ctx.beginPath(); ctx.ellipse(d.x, d.y, d.r, d.r * 0.55, d.a, 0, TAU); ctx.fill();
@@ -54,12 +55,13 @@ function render(title = false) {
     if (g.x < x0 || g.x > x1 || g.y < y0 || g.y > y1) continue;
     const big = g.v >= 20, mid = g.v >= 5, s = big ? 7 : mid ? 5.5 : 4, c = big ? '#ff6ad5' : mid ? '#6ad0ff' : '#7dff8a';
     const y = g.y - g.z - 5 - Math.sin(NOW * 4 + g.x) * 2;
+    if (minQ) { ctx.fillStyle = c; ctx.fillRect(g.x - s * 0.5, y - s * 0.8, s, s * 1.6); continue; }
     ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(g.x - s * 0.6, g.y - 1, s * 1.2, 2);
     ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(g.x, y - s); ctx.lineTo(g.x + s * 0.7, y); ctx.lineTo(g.x, y + s); ctx.lineTo(g.x - s * 0.7, y); ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.fillRect(g.x - 1, y - s * 0.6, 2, s * 0.5);
   }
   // sortable things
-  DRAW.length = 0;
+  DN = 0;
   const PC = WORLD / PCELL, st = ++World.stamp;
   for (let gy = Math.max(0, Math.floor((y0 - 60) / PCELL)); gy <= Math.min(PC - 1, Math.floor((y1 + 700) / PCELL)); gy++)
     for (let gx = Math.max(0, Math.floor((x0 - 400) / PCELL)); gx <= Math.min(PC - 1, Math.floor((x1 + 400) / PCELL)); gx++)
@@ -67,19 +69,19 @@ function render(title = false) {
         if (p._s === st) continue; p._s = st;
         if (p.bx1 < x0 || p.bx0 > x1 || p.by1 < y0 || p.by0 > y1) continue;
         if (low && p.kind === 'grass') continue;
-        DRAW.push({ y: p.sy, t: 0, o: p });
+        dq(p.sy, 0, p);
       }
-  for (const e of G.enemies) if (e.x > x0 - 80 && e.x < x1 + 80 && e.y > y0 - 40 && e.y < y1 + 160) DRAW.push({ y: e.y, t: 1, o: e });
-  if (!title) DRAW.push({ y: P.y, t: 2, o: P });
-  for (const c of G.crates) if (c.open < 1.5 && c.x > x0 && c.x < x1 && c.y > y0 && c.y < y1 + 40) DRAW.push({ y: c.y, t: 3, o: c });
-  for (const p of G.pickups) if (p.x > x0 && p.x < x1 && p.y > y0 && p.y < y1 + 40) DRAW.push({ y: p.y, t: 4, o: p });
+  for (const e of G.enemies) if (e.x > x0 - 80 && e.x < x1 + 80 && e.y > y0 - 40 && e.y < y1 + 160) dq(e.y, 1, e);
+  if (!title) dq(P.y, 2, P);
+  for (const c of G.crates) if (c.open < 1.5 && c.x > x0 && c.x < x1 && c.y > y0 && c.y < y1 + 40) dq(c.y, 3, c);
+  for (const p of G.pickups) if (p.x > x0 && p.x < x1 && p.y > y0 && p.y < y1 + 40) dq(p.y, 4, p);
   const detR = 330 * (P.detect || 1);
-  for (const f of World.fields) if (f.art) { const a = f.art, d = dist(a.x, a.y, P.x, P.y); if (d < detR && a.x > x0 && a.x < x1 && a.y > y0 && a.y < y1) DRAW.push({ y: a.y, t: 5, o: a, d }); }
-  for (const p of World.pois) if (p.state < 2 && p.x > x0 - 50 && p.x < x1 + 50 && p.y > y0 && p.y < y1 + 50) DRAW.push({ y: p.y, t: 6, o: p });
-  DRAW.sort((a, b) => a.y - b.y);
+  for (const f of World.fields) if (f.art) { const a = f.art, d = dist(a.x, a.y, P.x, P.y); if (d < detR && a.x > x0 && a.x < x1 && a.y > y0 && a.y < y1) dq(a.y, 5, a, d); }
+  for (const p of World.pois) if (p.state < 2 && p.x > x0 - 50 && p.x < x1 + 50 && p.y > y0 && p.y < y1 + 50) dq(p.y, 6, p);
+  DRAW.length = DN; DRAW.sort((a, b) => a.y - b.y);
   for (const it of DRAW) if (it.t === 1) {
     const e = it.o, s = e.sc || 1;
-    shadow(e.x, e.y, e.r * 1.1 * (1 - Math.min(0.5, e.z / 200)), e.r * 0.4, e.id === 'poltergeist' ? 0.15 : 0.3 * (e.alpha ?? 1));
+    if (!minQ) shadow(e.x, e.y, e.r * 1.1 * (1 - Math.min(0.5, e.z / 200)), e.r * 0.4, e.id === 'poltergeist' ? 0.15 : 0.3 * (e.alpha ?? 1));
     if (e.mut) {
       const M = MUTATIONS[e.mut], R = e.r * (e.boss ? 2 : 1.6) * (e.d.vsc || 1);
       const g = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, R);
@@ -96,12 +98,11 @@ function render(title = false) {
   if (!title) shadow(P.x, P.y, 14, 5, 0.35);
   for (const it of DRAW) {
     const o = it.o;
-    if (it.t === 0) PROP_DRAW[o.kind](o);
+    if (it.t === 0) drawPropFast(o);
     else if (it.t === 1) {
       FL = o.flash > 0;
       const vs = (o.sc || 1) * (o.d.vsc || 1), an = animSquash(o);
-      if (vs !== 1 || an) { ctx.save(); ctx.translate(o.x, o.y); ctx.scale(vs * (1 + an), vs * (1 - an)); ctx.translate(-o.x, -o.y); ENEMY_DRAW[o.id](o); ctx.restore(); }
-      else ENEMY_DRAW[o.id](o);
+      drawEnemyScaled(o, vs * (1 + an), vs * (1 - an));
       FL = false;
       if (o.frozen && o.stun > 0) { ctx.fillStyle = 'rgba(170,225,255,0.45)'; ctx.beginPath(); ctx.ellipse(o.x, o.y - o.r * 1.2, o.r * 1.3, o.r * 1.5, 0, 0, TAU); ctx.fill(); } else if (o.frozen) o.frozen = 0;
       if (o.burnT > 0 && Math.random() < 0.2) part(o.x + rand(-8, 8), o.y - o.z - 16, { z: 0, vz: 40, g: -20, c: '255,120,30', add: true, s: 3, life: 0.4 });
@@ -146,9 +147,10 @@ function render(title = false) {
   for (const p of G.particles) {
     if (p.x < x0 || p.x > x1 || p.y < y0 || p.y > y1 + 50) continue;
     const a = clamp(p.life / p.max, 0, 1);
-    if (p.add) ctx.globalCompositeOperation = 'lighter';
+    if (p.add && !minQ) ctx.globalCompositeOperation = 'lighter';
     ctx.fillStyle = `rgba(${p.c},${a})`;
-    ctx.beginPath(); ctx.arc(p.x, p.y - p.z, p.s * (p.add ? 1 : 0.6 + a * 0.4), 0, TAU); ctx.fill();
+    if (minQ) { const r = p.s * (p.add ? 1 : 0.6 + a * 0.4); ctx.fillRect(p.x - r, p.y - p.z - r, r * 2, r * 2); }
+    else { ctx.beginPath(); ctx.arc(p.x, p.y - p.z, p.s * (p.add ? 1 : 0.6 + a * 0.4), 0, TAU); ctx.fill(); }
     ctx.globalCompositeOperation = 'source-over';
   }
   // health bars for elites / alphas, stun stars
@@ -172,7 +174,7 @@ function render(title = false) {
   for (const t of G.texts) {
     ctx.globalAlpha = clamp(t.life * 2, 0, 1);
     ctx.font = `bold ${t.big ? 20 : 14}px Oswald, Impact, sans-serif`;
-    ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillText(t.s, t.x + 1.5, t.y + 1.5);
+    if (!minQ) { ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillText(t.s, t.x + 1.5, t.y + 1.5); }
     ctx.fillStyle = t.c; ctx.fillText(t.s, t.x, t.y);
   }
   ctx.globalAlpha = 1;
@@ -537,8 +539,9 @@ function hud(dt) {
   setText('nextEvt', nbT === null || nbT - G.t > 3600 ? wv : `${wv} · ☠ ${nb ? (nb.id === 'final' ? stageDef().final.name : ENEMIES[nb.id].name) : 'Boss'} in ${fmtTime(Math.max(0, nbT - G.t))}`);
   bannerTick(dt);
   if (Save.set.fps) { fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { fpsShow = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; } setText('fps', fpsShow + ' FPS'); } else setText('fps', '');
-  drawDetector(); drawMinimap();
+  if (!minGfx() || (hudFrame = (hudFrame + 1) % 3) === 0) { drawDetector(); drawMinimap(); }
 }
+let hudFrame = 0;
 const mm = $('minimap'), mmx = mm.getContext('2d');
 function drawMinimap() {
   const S = mm.width, span = World.kind === 'lab' ? 1600 : 2000, k = WORLD / World.mapImg.width;

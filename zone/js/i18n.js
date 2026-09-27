@@ -1186,7 +1186,9 @@ addEventListener('DOMContentLoaded', () => setTimeout(i18nSweep, 0)); addEventLi
 // HUD lines rewritten every second are translated as they are written (no English flicker)
 addEventListener('DOMContentLoaded', () => {
   const _st = setText;
-  setText = function (id, v) { if (I18n.cur !== 'en' && typeof v === 'string' && /\p{L}/u.test(v)) { try { v = I18n.t(v); } catch (e) { /* keep english */ } } return _st(id, v); };
+  // translate only when the English text actually changed, and through the cache: the HUD writes ~10 fields every frame
+  const raw = {};
+  setText = function (id, v) { const k = I18n.cur + '\u0001' + v; if (raw[id] === k) return; raw[id] = k; if (I18n.cur !== 'en' && typeof v === 'string' && /\p{L}/u.test(v)) { try { v = I18n.tc(v); } catch (e) { /* keep english */ } } return _st(id, v); };
 });
 
 // the co-op lobby redraws itself every second: translate right after each redraw

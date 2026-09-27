@@ -1,6 +1,7 @@
 'use strict';
 // ---------- core simulation ----------
-const cv = document.getElementById('game'), ctx = cv.getContext('2d');
+const cv = document.getElementById('game');
+let ctx = cv.getContext('2d'); // let: perf.js briefly points it at an offscreen canvas to cache sprites
 let VW = 0, VH = 0, DPR = 1, ZOOM = 1, NOW = 0;
 const CAM = { x: START.x, y: START.y };
 let G = null, P = null;
@@ -93,7 +94,7 @@ function spawnArtifact(f) {
 
 // ---------- fx helpers ----------
 function part(x, y, o) {
-  if (G.particles.length > (minGfx() ? 220 : lowGfx() ? 500 : 1400)) return;
+  if (G.particles.length > (minGfx() ? 120 : lowGfx() ? 500 : 1400)) return;
   G.particles.push({ x, y, z: o.z || 0, vx: o.vx || 0, vy: o.vy || 0, vz: o.vz || 0, g: o.g ?? 400, life: o.life || 0.6, max: o.life || 0.6, s: o.s || 3, c: o.c || '255,255,255', add: !!o.add });
 }
 function burst(x, y, n, c, spd = 160, o = {}) {
@@ -101,7 +102,7 @@ function burst(x, y, n, c, spd = 160, o = {}) {
 }
 function text(x, y, s, c = '#fff', big = false, force = false) {
   if (!force && !Save.set.numbers) return;
-  if (!force && !big && G.texts.length > 24) return;
+  if (!force && !big && G.texts.length > (minGfx() ? 12 : 24)) return;
   if (G.texts.length > 70) G.texts.shift();
   G.texts.push({ x: x + rand(-8, 8), y, s, c, life: 0.8, big });
 }
@@ -280,7 +281,7 @@ function psiWave(x, y) {
   for (const e of TMP3) if (dist2(x, y, e.x, e.y) < 130 * 130) hurtEnemy(e, 25, 0, 0, true);
 }
 function dropGem(x, y, v) {
-  if (G.gems.length > 450) { const g = G.gems[(Math.random() * G.gems.length) | 0]; g.v += v; return; }
+  if (G.gems.length > (minGfx() ? 150 : 450)) { const g = G.gems[(Math.random() * G.gems.length) | 0]; g.v += v; return; } // extra XP merges into an existing gem
   G.gems.push({ x, y, v, z: 8, vz: rand(120, 200), vx: rand(-40, 40), vy: rand(-30, 30), mag: false });
 }
 function hurtPlayer(d, src, ignoreInv = false, kind = '') {
