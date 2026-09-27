@@ -2,8 +2,18 @@
 // ---------- extras: survival heatmap for every difficulty × pace, and scratch cards in the casino ----------
 
 // ----- 🔥 heatmap: chance to survive 15:00 for each difficulty (rows) and pace (columns); tap a cell to pick it -----
+// your skill: how long you really last compared with the model, across all your runs (any difficulty and pace)
+function heatSkill() {
+  const log = (Save.data.runLog || []).filter((r) => !(r.q && r.t < 120) && !(r.dead && !r.q && r.t < 45) && DIFFICULTIES.some((x) => x.id === r.d)).slice(-30);
+  if (heatSkill.n === log.length && heatSkill.last === (log[log.length - 1] || {}).t) return heatSkill.v;
+  const ratios = log.map((r) => { const med = Forecast.median(r.d, r.p || 'normal'), got = r.t / 60 * (r.dead && !r.q ? 1 : 1.25); return Math.log(Math.max(0.2, got) / med); }).sort((a, b) => a - b);
+  const v = ratios.length ? { f: Math.max(0.15, Math.min(6, Math.exp(ratios[Math.floor(ratios.length / 2)]))), n: ratios.length } : null;
+  heatSkill.n = log.length; heatSkill.last = (log[log.length - 1] || {}).t; heatSkill.v = v; return v;
+}
 function survivalPct(d, p) {
-  const own = Forecast.personal(d, p), med = own ? own.med : Forecast.median(d, p);
+  const sk = heatSkill(); let med = Forecast.median(d, p) * (sk ? sk.f : 1);
+  const own = (Save.data.runLog || []).filter((r) => r.d === d && (r.p || 'normal') === p && !(r.q && r.t < 120)).map((r) => r.t / 60 * (r.dead && !r.q ? 1 : 1.25)).sort((a, b) => a - b);
+  if (own.length) { const om = own[Math.floor(own.length / 2)], w = Math.min(own.length, 6); med = Math.exp((Math.log(om) * w + Math.log(med) * 2) / (w + 2)); }
   return Math.max(0, Math.min(1, 1 - Forecast.cdf(15, med)));
 }
 function heatColor(v) { const h = Math.round(v * 120); return `hsl(${h},75%,${28 + v * 14}%)`; }
@@ -15,7 +25,7 @@ function heatmapHTML() {
     for (const p of PACES) { const v = survivalPct(d.id, p.id), me = d.id === cd && p.id === cp; h += `<td class="${me ? 'me' : ''}" data-hm="${d.id}|${p.id}" style="background:${heatColor(v)}" title="${d.name} – ${p.name}: ${Math.round(v * 100)}%">${Math.round(v * 100)}</td>`; }
     h += '</tr>';
   }
-  return h + '</table></div><div class="hmLegend"><span style="background:' + heatColor(0) + '">0%</span><span style="background:' + heatColor(0.5) + '">50%</span><span style="background:' + heatColor(1) + '">100%</span><small>Chance to survive 15:00 · uses your own runs when you have 5+ on a combo · tap a cell to pick it</small></div>';
+  return h + '</table></div><div class="hmLegend"><span style="background:' + heatColor(0) + '">0%</span><span style="background:' + heatColor(0.5) + '">50%</span><span style="background:' + heatColor(1) + '">100%</span><small>' + (heatSkill() ? `Based on your last ${heatSkill().n} runs · you last ×${heatSkill().f.toFixed(2)} as long as an average stalker` : 'No runs yet · showing an average stalker') + '</small><small>Chance to survive 15:00 · tap a cell to pick it</small></div>';
 }
 function bindHeatmap(el, after) {
   for (const c of el.querySelectorAll('[data-hm]')) c.onclick = () => {
