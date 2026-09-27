@@ -14,10 +14,12 @@ function render(title = false) {
   const sx = G.shake * (Math.sin(NOW * 41) * 0.35 + Math.sin(NOW * 67) * 0.2), sy = G.shake * (Math.cos(NOW * 37) * 0.35 + Math.sin(NOW * 59) * 0.2);
   const cx = CAM.x + sx, cy = CAM.y + sy;
   ctx.setTransform(sc, 0, 0, sc, cv.width / 2 - cx * sc, cv.height / 2 - cy * sc);
+  RT.sc = sc; RT.tx = cv.width / 2 - cx * sc; RT.ty = cv.height / 2 - cy * sc;
   const hw = VW / 2 / ZOOM, hh = VH / 2 / ZOOM;
   const x0 = cx - hw - 20, x1 = cx + hw + 20, y0 = cy - hh - 20, y1 = cy + hh + 20;
   const NC = Math.ceil(WORLD / CHUNK) - 1;
-  for (let gy = Math.max(0, Math.floor(y0 / CHUNK)); gy <= Math.min(NC, Math.floor(y1 / CHUNK)); gy++)
+  if (minQ) drawGroundFast(Math.max(0, Math.floor(x0 / CHUNK)), Math.min(NC, Math.floor(x1 / CHUNK)), Math.max(0, Math.floor(y0 / CHUNK)), Math.min(NC, Math.floor(y1 / CHUNK)));
+  else for (let gy = Math.max(0, Math.floor(y0 / CHUNK)); gy <= Math.min(NC, Math.floor(y1 / CHUNK)); gy++)
     for (let gx = Math.max(0, Math.floor(x0 / CHUNK)); gx <= Math.min(NC, Math.floor(x1 / CHUNK)); gx++)
       ctx.drawImage(World.chunk(gx, gy), gx * CHUNK, gy * CHUNK, CHUNK + 1, CHUNK + 1);
   ctx.fillStyle = '#0d0c09';

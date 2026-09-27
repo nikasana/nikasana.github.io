@@ -50,7 +50,7 @@ function drawPropFast(p) {
   const pad = 30, x = p.bx0 - pad, y = p.by0 - pad, w = p.bx1 - p.bx0 + pad * 2, h = p.by1 - p.by0 + pad * 2;
   if (w * h > 1.5e6) return fn(p);
   const sp = SPRITES.get(p, x, y, w, h, () => fn(p));
-  if (sp.c) ctx.drawImage(sp.c, sp.x, sp.y, sp.w, sp.h);
+  if (sp.c) blit(sp.c, sp.x, sp.y);
 }
 
 const ENEMY_LIVE = new Set(['mirror', 'holoclone', 'wraith', 'ghost', 'poltergeist', 'bloodsucker']);
@@ -120,6 +120,12 @@ function drawEnemyScaled(e, sx, sy) {
   const R = Math.max(10, e.r || 12), w = R * 7 + 60, h = R * 7 + 60;
   const sp = SPRITES.get(e.id + '|' + fr, -w / 2, -h * 0.8, w, h, () => fn({ ...e, x: 0, y: 0, z: 0, anim: fr === 'F' ? 0 : ((fr + 0.5) / 4) * TAU, face: 1 }));
   if (!sp.c) return;
+  // unscaled (the usual case on Lowest): a straight pixel copy, mirrored copy for mutants facing left
+  if (sx === 1 && sy === 1) {
+    if (e.face < 0) { if (!sp.m) sp.m = mirror(sp.c); blit(sp.m, e.x - sp.x - sp.w, e.y - (e.z || 0) + sp.y); }
+    else blit(sp.c, e.x + sp.x, e.y - (e.z || 0) + sp.y);
+    return;
+  }
   // the sprite hangs from (x, y - z); the scale is applied around the feet (x, y) like the live path
   const top = e.y + (-(e.z || 0) + sp.y) * sy, hgt = sp.h * sy, wid = sp.w * sx;
   if (e.face < 0) { ctx.scale(-1, 1); ctx.drawImage(sp.c, -e.x + sp.x * sx, top, wid, hgt); ctx.scale(-1, 1); }
@@ -131,4 +137,40 @@ function drawEnemyScaled(e, sx, sy) {
 {
   const MAIN = cv.getContext('2d'), d = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'globalCompositeOperation');
   if (d && d.set) Object.defineProperty(MAIN, 'globalCompositeOperation', { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v === 'lighter' && minGfx() ? 'source-over' : v); } });
+}
+
+// ---------- pixel-exact drawing on Lowest ----------
+// Cached images are made at exactly the screen scale, so they can be copied 1:1 at whole-pixel positions. A copy like
+// that skips the per-pixel filtering a scaled or sub-pixel draw needs, which is most of a frame on phones whose browser
+// paints the canvas in software. Same resolution, same picture.
+const RT = { sc: 1, tx: 0, ty: 0 }; // the world→screen transform of the current frame (set by render)
+function blit(c, wx, wy) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(c, Math.round(wx * RT.sc + RT.tx), Math.round(wy * RT.sc + RT.ty));
+  ctx.setTransform(RT.sc, 0, 0, RT.sc, RT.tx, RT.ty);
+}
+function mirror(c) {
+  const m = document.createElement('canvas'); m.width = c.width; m.height = c.height;
+  const g = m.getContext('2d'); g.scale(-1, 1); g.drawImage(c, -c.width, 0); return m;
+}
+// the ground: each 512-unit tile is pre-scaled once to screen size and then copied 1:1 every frame
+const GROUND = { map: new Map(), sc: 0, max: 20 };
+function drawGroundFast(gx0, gx1, gy0, gy1) {
+  const sc = RT.sc;
+  if (sc !== GROUND.sc) { GROUND.map.clear(); GROUND.sc = sc; }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  for (let gy = gy0; gy <= gy1; gy++) for (let gx = gx0; gx <= gx1; gx++) {
+    const src = World.chunk(gx, gy), k = gy * 1000 + gx;
+    let t = GROUND.map.get(k);
+    if (t && t.src === src) { GROUND.map.delete(k); GROUND.map.set(k, t); } // most recently used last
+    else {
+      if (t) GROUND.map.delete(k);
+      while (GROUND.map.size >= GROUND.max) GROUND.map.delete(GROUND.map.keys().next().value);
+      const n = Math.ceil((CHUNK + 1) * sc), c = document.createElement('canvas'); c.width = c.height = n;
+      c.getContext('2d').drawImage(src, 0, 0, (CHUNK + 1) * sc, (CHUNK + 1) * sc);
+      GROUND.map.set(k, t = { src, c });
+    }
+    ctx.drawImage(t.c, Math.round(gx * CHUNK * sc + RT.tx), Math.round(gy * CHUNK * sc + RT.ty));
+  }
+  ctx.setTransform(sc, 0, 0, sc, RT.tx, RT.ty);
 }
