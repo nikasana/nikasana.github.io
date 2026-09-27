@@ -7,28 +7,28 @@
 // says you were still alive then (no bonus). Recent runs weigh more, and a gentle prior keeps a few runs from swinging it.
 function heatSkill() {
   const all = (Save.data.runLog || []).filter((r) => DIFFICULTIES.some((x) => x.id === r.d) && !(r.q && r.t < 60) && r.t >= 10);
-  const log = all.slice(-40), last = log[log.length - 1] || {};
+  const log = all.slice(-60), last = log[log.length - 1] || {};
   if (heatSkill.n === log.length && heatSkill.last === last.t && heatSkill.ld === last.d) return heatSkill.v;
   let v = null;
   if (log.length) {
-    const sg = Forecast.sigma, rows = log.map((r, i) => {
-      const w = Math.pow(0.93, log.length - 1 - i), mu = Math.log(Forecast.median(r.d, r.p || 'normal', r.a || 0));
-      const died = r.dead && !r.q, t = Math.max(0.2, (died || r.q ? r.t : Math.max(r.t, 900)) / 60);
-      return { w, x: Math.log(t) - mu, died };
-    });
-    let best = 0, bl = -1e18;
-    for (let lf = Math.log(0.08); lf <= Math.log(8); lf += 0.02) {
-      let ll = -(lf * lf) / (2 * 0.7 * 0.7);
-      for (const q of rows) { const z = (q.x - lf) / sg; ll += q.w * (q.died ? -0.5 * z * z : Math.log(Math.max(1e-9, 1 - 0.5 * (1 + erf(z / Math.SQRT2))))); }
-      if (ll > bl) { bl = ll; best = lf; }
+    // two numbers are fitted together: f (how long you last) and g (how hard the higher tiers really bite for you)
+    const sg = Forecast.sigma, rows = log.map((r, i) => ({ r, w: Math.pow(0.95, log.length - 1 - i), died: r.dead && !r.q, lt: Math.log(Math.max(0.2, (r.dead || r.q ? r.t : Math.max(r.t, 900)) / 60)) }));
+    let best = { lf: 0, g: 0.35 }, bl = -1e18;
+    for (let g = 0.05; g <= 1.001; g += 0.05) {
+      const mus = rows.map((q) => Math.log(Forecast.median(q.r.d, q.r.p || 'normal', q.r.a || 0, g)));
+      for (let lf = Math.log(0.08); lf <= Math.log(12); lf += 0.03) {
+        let ll = -(lf * lf) / (2 * 0.8 * 0.8) - ((g - 0.35) * (g - 0.35)) / (2 * 0.3 * 0.3);
+        for (let i = 0; i < rows.length; i++) { const q = rows[i], z = (q.lt - mus[i] - lf) / sg; ll += q.w * (q.died ? -0.5 * z * z : Math.log(Math.max(1e-12, 1 - 0.5 * (1 + erf(z / Math.SQRT2))))); }
+        if (ll > bl) { bl = ll; best = { lf, g }; }
+      }
     }
-    v = { f: Math.exp(best), n: log.length };
+    v = { f: Math.exp(best.lf), g: best.g, n: log.length };
   }
   heatSkill.n = log.length; heatSkill.last = last.t; heatSkill.ld = last.d; heatSkill.v = v; return v;
 }
 function curAsc() { try { return typeof ascLevel === 'function' ? ascLevel() || 0 : 0; } catch (e) { return 0; } }
 function survivalPct(d, p) {
-  const sk = heatSkill(), med = Forecast.median(d, p, curAsc()) * (sk ? sk.f : 1);
+  const sk = heatSkill(), med = Forecast.median(d, p, curAsc(), sk ? sk.g : 0.35) * (sk ? sk.f : 1);
   return Math.max(0, Math.min(1, 1 - Forecast.cdf(15, med)));
 }
 function heatColor(v) { const h = Math.round(v * 120); return `hsl(${h},75%,${28 + v * 14}%)`; }
@@ -51,8 +51,18 @@ function bindHeatmap(el, after) {
 }
 function openHeatmap() {
   let m = $('hmModal'); if (!m) { m = document.createElement('div'); m.id = 'hmModal'; document.body.appendChild(m); }
-  const fill = () => { m.innerHTML = `<div class="hmBox"><div class="hdr"><button class="back" id="hmClose">← BACK</button><h2>🔥 SURVIVAL HEATMAP</h2><span></span></div>${heatmapHTML()}</div>`; $('hmClose').onclick = () => m.classList.remove('show'); bindHeatmap(m, () => { fill(); if (typeof titleContinue === 'function') titleContinue(); }); if (typeof I18n !== 'undefined' && I18n.cur !== 'en') try { I18n.dom(m); } catch (e) { /* keep english */ } };
+  const fill = () => { m.innerHTML = `<div class="hmBox"><div class="hdr"><button class="back" id="hmClose">← BACK</button><h2>🔥 SURVIVAL HEATMAP</h2><span></span></div>${heatmapHTML()}<div class="hmExport"><button class="big ghost small" id="hmExport">📤 Export my stats</button><textarea id="hmExportTxt" readonly style="display:none"></textarea></div></div>`; $('hmExport').onclick = () => { const t = exportStats(), ta = $('hmExportTxt'); ta.value = t; ta.style.display = 'block'; ta.select(); $('hmExport').textContent = '✓ Copied & saved — send the file or text to the developer'; }; $('hmClose').onclick = () => m.classList.remove('show'); bindHeatmap(m, () => { fill(); if (typeof titleContinue === 'function') titleContinue(); }); if (typeof I18n !== 'undefined' && I18n.cur !== 'en') try { I18n.dom(m); } catch (e) { /* keep english */ } };
   fill(); m.classList.add('show');
+}
+// 📤 everything needed to check the model against how you really play: every logged run plus your permanent upgrades
+function exportStats() {
+  const S = Save.data, sk = heatSkill();
+  const out = { game: 'ZONEBONK', build: ZB_BUILD, when: new Date().toISOString(), runs: S.runs, wins: S.wins, diff: S.diff, pace: S.pace,
+    skill: sk, meta: S.meta, skills: S.skills, research: S.research, cyber: S.cyber, chars: S.chars, runLog: S.runLog || [] };
+  const txt = JSON.stringify(out);
+  try { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type: 'application/json' })); a.download = 'zonebonk-stats-' + Date.now() + '.json'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); } catch (e) { /* download blocked */ }
+  try { navigator.clipboard && navigator.clipboard.writeText(txt); } catch (e) { /* no clipboard */ }
+  return txt;
 }
 
 // ----- 🎫 scratch cards: scratch the silver coat; three matching symbols win -----

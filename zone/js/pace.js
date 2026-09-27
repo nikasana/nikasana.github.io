@@ -13,10 +13,10 @@ const PACES = [
 const PACE_BASE = { tourist: 33, rookie: 23, stalker: 16, veteran: 12, legend: 8 };
 // every difficulty's budget comes from its real numbers: mutant HP × damage × spawn rate (pressure), weaker healing,
 // and extra revives, calibrated so an average new stalker on Stalker/Classic lasts ~20 min
-function diffBase(id) {
+function diffBase(id, g = 0.35) {
   const d = DIFFICULTIES.find((x) => x.id === id); if (!d) return PACE_BASE[id] || 11;
   const P = (d.hp || 1) * (d.dmg || 1) * (d.spawn || 1);
-  return 20 * Math.pow(P, -0.45) * Math.pow(d.healMul || 1, 0.3) * (1 + 0.08 * (d.rev || 0));
+  return 20 * Math.pow(P, -0.45 * 2 * g) * Math.pow(d.healMul || 1, 0.3 * 2 * g) * (1 + 0.08 * (d.rev || 0));
 }
 function paceDef(id) { return PACES.find((p) => p.id === id) || PACES[1]; }
 function paceF(k, min) { return Math.max(0.7, 1 + k * min); }
@@ -24,10 +24,13 @@ const Forecast = {
   sigma: 0.6,
   // median death time: solve ∫ f(s)² ds = base (HP × damage both grow with f, so pressure grows like f²);
   // each Ascension level adds +20% mutant HP and +15% damage, which shrinks the budget the same way
-  median(diff, pace, asc = 0) {
-    const key = diff + '|' + pace + '|' + asc; this.memo = this.memo || {}; if (this.memo[key] !== undefined) return this.memo[key];
-    const base = diffBase(diff) / ((1 + 0.2 * asc) * (1 + 0.15 * asc)), k = paceDef(pace).k; let acc = 0, t = 0;
-    while (acc < base && t < 90) { acc += Math.pow(paceF(k, t), 2) * 0.05; t += 0.05; }
+  // g: how hard difficulty and pace really bite for this player (1 = the raw multipliers; learned from your runs,
+  // because a strong build soaks up much of the extra HP/damage)
+  median(diff, pace, asc = 0, g = 0.35) {
+    g = Math.round(g * 20) / 20;
+    const key = diff + '|' + pace + '|' + asc + '|' + g; this.memo = this.memo || {}; if (this.memo[key] !== undefined) return this.memo[key];
+    const base = diffBase(diff, g) / Math.pow((1 + 0.2 * asc) * (1 + 0.15 * asc), g), k = paceDef(pace).k, e = 2 * g; let acc = 0, t = 0, dt = 0.05;
+    while (acc < base && t < 240) { acc += Math.pow(paceF(k, t), e) * dt; t += dt; if (t > 60) dt = 0.25; }
     return (this.memo[key] = t);
   },
   personal(diff, pace) {
@@ -37,7 +40,7 @@ const Forecast = {
   cdf(t, med) { const z = (Math.log(t) - Math.log(med)) / this.sigma; return 0.5 * (1 + erf(z / Math.SQRT2)); },
   html(diff, pace) {
     const sk = typeof heatSkill === 'function' ? heatSkill() : null, me = sk ? { n: sk.n } : null;
-    const med = this.median(diff, pace, typeof curAsc === 'function' ? curAsc() : 0) * (sk ? sk.f : 1);
+    const med = this.median(diff, pace, typeof curAsc === 'function' ? curAsc() : 0, sk ? sk.g : 0.35) * (sk ? sk.f : 1);
     const pct = (m) => Math.round(Math.min(99, Math.max(1, this.cdf(m, med) * 100))) + '%';
     return `<div class="forecast"><b>📈 Survival forecast</b> · typical run ends around <b>${fmtTime(Math.round(med * 60))}</b> ${me ? `(from your last ${me.n} runs)` : '(estimate)'}<br>Chance to fall before <b>5:00</b> ${pct(5)} · <b>10:00</b> ${pct(10)} · <b>15:00</b> ${pct(15)} · <b>20:00</b> ${pct(20)}</div>`;
   },
@@ -76,7 +79,7 @@ addEventListener('DOMContentLoaded', () => {
   endRun = function (kind, src) {
     const was = G && G.ended, r = _er(kind, src);
     if (!was && G && !G.title && !G.tutorial && G.t > 10) { // every run end counts: death, win, quit, co-op
-      const S = Save.data; S.runLog = (S.runLog || []).concat([{ d: G.diff, p: G.pace || 'normal', a: G.asc || 0, t: Math.floor(G.t), dead: kind !== 'win', q: kind === 'quit', ...(G.stat && G.stat.n > 5 ? { hp: +(G.stat.hp / G.stat.n).toFixed(3), min: +G.stat.min.toFixed(3), dz: +(G.stat.danger / G.stat.n).toFixed(3), dpm: +(G.stat.dmg / Math.max(1, G.t / 60)).toFixed(3) } : {}) }]).slice(-80); Save.save();
+      const S = Save.data; S.runLog = (S.runLog || []).concat([{ d: G.diff, p: G.pace || 'normal', a: G.asc || 0, t: Math.floor(G.t), dead: kind !== 'win', q: kind === 'quit', lv: G.level, k: G.kills, bk: G.bossKills || 0, ch: G.char, st: G.stage, m: G.mode2 || G.mode || '', w: (P.weapons || []).map((x) => x.id + ':' + x.lv).join(' '), at: Date.now(), ...(G.stat && G.stat.n > 5 ? { hp: +(G.stat.hp / G.stat.n).toFixed(3), min: +G.stat.min.toFixed(3), dz: +(G.stat.danger / G.stat.n).toFixed(3), dpm: +(G.stat.dmg / Math.max(1, G.t / 60)).toFixed(3) } : {}) }]).slice(-80); Save.save();
     }
     return r;
   };
@@ -222,13 +225,20 @@ const Suggest = {
     const cells = []; DIFFICULTIES.forEach((d, i) => PACES.forEach((p, j) => cells.push({ d, p, i, j, v: survivalPct(d.id, p.id) })));
     // closest chance to the target, staying near what you played last (pace changes count a bit more than difficulty
     // changes), and three different picks even when nothing reaches the target
-    const used = new Set();
-    return this.OPTS.map(([id, ic, nm, tg]) => {
+    // (when nothing on the map is that hard for you, the chance itself decides and you get sent up to the top tiers)
+    const minV = Math.min(...cells.map((c) => c.v)), maxV = Math.max(...cells.map((c) => c.v));
+    const used = new Set(), picks = this.OPTS.map(([, , , tg]) => {
       let best = null, bs = 1e9;
-      for (const c of cells) { if (used.has(c)) continue; const sc = Math.abs(c.v - tg) + 0.025 * Math.abs(c.i - ad) + 0.06 * Math.abs(c.j - ap); if (sc < bs) { bs = sc; best = c; } }
-      used.add(best);
-      return { id, ic, nm, tg, d: best.d, p: best.p, v: best.v };
-    });
+      const tooEasy = minV > tg + 0.12, tooHard = maxV < tg - 0.12; // nothing on the map comes close: go to the hardest / easiest
+      for (const c of cells) {
+        if (used.has(c)) continue;
+        const near = 0.012 * Math.abs(c.i - ad) + 0.03 * Math.abs(c.j - ap);
+        const sc = tooEasy ? c.v * 20 - (c.i + c.j) * 0.01 : tooHard ? -c.v * 20 + near : Math.abs(c.v - tg) + near;
+        if (sc < bs) { bs = sc; best = c; }
+      }
+      used.add(best); return best;
+    }).sort((a, b) => b.v - a.v || a.i + a.j - (b.i + b.j)); // easiest first, so the labels always match
+    return this.OPTS.map(([id, ic, nm, tg], k) => ({ id, ic, nm, tg, d: picks[k].d, p: picks[k].p, v: picks[k].v }));
   },
   pick(o) {
     Save.data.diff = o.d.id; Save.data.pace = o.p.id; Save.data.asc = 0; Save.save(); Sfx.init(); Sfx.play('quest');
