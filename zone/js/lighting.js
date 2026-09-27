@@ -70,7 +70,7 @@ const Env = {
   },
   // lights: world-space soft holes punched into a darkness mask
   render(cx, cy) {
-    const dark = this.darkness(), q = minGfx() ? 0.22 : lowGfx() ? 0.33 : 0.5;
+    const dark = this.darkness(), q = lowGfx() ? 0.33 : 0.5;
     const tint = this.sunset();
     if (tint > 0.01 && World.kind !== 'lab') { ctx.fillStyle = `rgba(255,120,40,${tint})`; ctx.fillRect(0, 0, VW, VH); }
     if (dark > 0.02) {
