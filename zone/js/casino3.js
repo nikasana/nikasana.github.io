@@ -25,14 +25,17 @@ Object.assign(CZ, {
   // place your own bet/pick like the old flow, then press the game's own (green) button yourself -----
   freeUses(g) { const c = this.st(), dailyLeft = c.free2 && c.free2[g || this.game] === Meta.dayKey() ? 0 : 1; return dailyLeft + (c.tokens || 0); },
   freeGameOk() { return this.game !== 'xch' && this.game !== 'vault' && this.game !== 'shop'; },
+  // autoFreeHtml sits in-row next to each game's own green button (auto-picks and rolls in one
+  // click), armFreeHtml sits alone at the top below the game tabs (arm it, then select and press
+  // the green button yourself) — so they get different button styles, not just different labels.
   autoFreeHtml() {
     if (!this.freeGameOk()) return ''; const n = this.freeUses(); if (n <= 0) return '';
-    return `<button class="czAutoFreeBtn pulse czAutoFree" data-qf="${this.game}">⚡ AUTO FREE ROLL (${n})</button>`;
+    return `<button class="big quickFree czAutoFree" data-qf="${this.game}">⚡ AUTO FREE ROLL (${n})</button>`;
   },
   armFreeHtml() {
     if (!this.freeGameOk()) return ''; const n = this.freeUses(); if (n <= 0) return '';
     const armed = !!this.freeArm;
-    return `<button class="big ghost czArmFree ${armed ? 'armed' : ''}" data-af="${this.game}">${armed ? `🎁 ARMED — press play (${n})` : `🎁 SELECT FREE ROLL (${n})`}</button>`;
+    return `<button class="czFreeBtnCompact pulse czArmFree ${armed ? 'armed' : ''}" data-af="${this.game}">${armed ? `🎁 ARMED — press play (${n})` : `🎁 SELECT FREE ROLL (${n})`}</button>`;
   },
   quickFree(g) {
     if (this.busy || this.freeUses(g) <= 0) return;
