@@ -202,8 +202,44 @@ const Suggest = {
     if ($('setup') && $('setup').classList.contains('show')) buildSetup();
     this.refresh();
   },
-  refresh() { const g = this.get(); for (const b of document.querySelectorAll('.suggestBtn')) { b.innerHTML = ''; b.append(this.label()); if (g) { const sm = document.createElement('small'); sm.textContent = g.why; b.append(sm); } b.disabled = !g; } },
-  button() { const b = document.createElement('button'); b.className = 'big ghost small suggestBtn'; b.onclick = () => this.apply(); b.textContent = this.label(); return b; },
+  // three options side by side, from the same model as the survival heatmap (it learns from your runs)
+  OPTS: [['comfy', '🟢', 'Comfortable', 0.75], ['bal', '🟡', 'Balanced', 0.5], ['chal', '🔴', 'Challenge', 0.25]],
+  options() {
+    if (typeof survivalPct !== 'function') return null;
+    const S = Save.data, idx = (arr, id, def) => Math.max(0, arr.findIndex((x) => x.id === (id || def)));
+    const log = (S.runLog || []).filter((r) => !(r.q && r.t < 120)), last = log[log.length - 1];
+    const ad = idx(DIFFICULTIES, last ? last.d : S.diff, 'rookie'), ap = idx(PACES, last ? last.p : S.pace, 'normal'); // anchor: your last run, so the picks stay stable
+    const cells = []; DIFFICULTIES.forEach((d, i) => PACES.forEach((p, j) => cells.push({ d, p, i, j, v: survivalPct(d.id, p.id) })));
+    return this.OPTS.map(([id, ic, nm, tg]) => {
+      let best = null, bs = 1e9;
+      for (const c of cells) { const sc = Math.abs(c.v - tg) + 0.012 * (Math.abs(c.i - ad) + Math.abs(c.j - ap)); if (sc < bs) { bs = sc; best = c; } }
+      return { id, ic, nm, tg, d: best.d, p: best.p, v: best.v };
+    });
+  },
+  pick(o) {
+    Save.data.diff = o.d.id; Save.data.pace = o.p.id; Save.data.asc = 0; Save.save(); Sfx.init(); Sfx.play('quest');
+    if ($('dtDiff')) $('dtDiff').value = o.d.id; if ($('dtPace')) $('dtPace').value = o.p.id;
+    if (typeof diffTitle === 'function') diffTitle();
+    if ($('setup') && $('setup').classList.contains('show')) buildSetup();
+    this.refresh();
+  },
+  refresh() {
+    const os = this.options(), S = Save.data, sk = typeof heatSkill === 'function' ? heatSkill() : null;
+    for (const box of document.querySelectorAll('.suggestBtn')) {
+      box.innerHTML = '';
+      if (!os) continue;
+      const row = document.createElement('div'); row.className = 'sug3';
+      for (const o of os) {
+        const b = document.createElement('button'); b.className = 'sugOpt ' + o.id + (S.diff === o.d.id && (S.pace || 'normal') === o.p.id ? ' on' : '');
+        b.innerHTML = `<b>${o.ic} ${o.nm}</b><span>${o.d.icon} ${o.d.name}</span><span>${o.p.icon} ${o.p.name}</span><em>${Math.round(o.v * 100)}% to reach 15:00</em>`;
+        b.onclick = (e) => { e.stopPropagation(); this.pick(o); };
+        row.appendChild(b);
+      }
+      const sm = document.createElement('small'); sm.textContent = sk ? `✨ Suggested from your last ${sk.n} runs` : '✨ Suggested for a new stalker · play runs to personalize';
+      box.append(sm, row);
+    }
+  },
+  button() { const b = document.createElement('div'); b.className = 'suggestBtn'; return b; },
 };
 addEventListener('DOMContentLoaded', () => {
   const add = (where, how) => { const el = typeof where === 'string' ? $(where) : where; if (el) { const b = Suggest.button(); how(el, b); } };
