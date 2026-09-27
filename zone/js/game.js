@@ -12,8 +12,10 @@ function resize() {
   DPR = gfxDpr();
   VW = innerWidth; VH = innerHeight;
   cv.width = Math.floor(VW * DPR); cv.height = Math.floor(VH * DPR);
-  ZOOM = clamp(Math.min(VW, VH) / 720, 0.55, 1.2);
+  ZOOM = clamp(Math.min(VW, VH) / 720, 0.55, 1.2) * zoomK();
 }
+// "Game zoom" setting; left on auto, phones get a closer camera so mutants and text are big enough to read
+function zoomK() { const z = typeof Save !== 'undefined' && Save.set && +Save.set.zoom; return z > 0 ? z : Math.min(innerWidth, innerHeight) < 600 ? (innerHeight > innerWidth ? 1.5 : 1.3) : 1; }
 addEventListener('resize', resize);
 
 // spatial hash for enemies
@@ -186,7 +188,7 @@ function killEnemy(e) {
     if (e.final) winGame();
     else { banner(e.name + ' SLAIN', 'It dropped a stash. Grab it!', 4, 'good'); Radio.say('bossdead', true); }
   } else {
-    let xp = e.d.xp * 1.35 * Events.mods().xp;
+    let xp = e.d.xp * 1.35 * Events.mods().xp * (e.worth || 1);
     if (e.affix || e.mini) {
       xp *= e.mini ? 14 : 6; G.rubles += e.mini ? 40 : 10; G.elites++;
       Quests.prog('elite');
@@ -205,7 +207,7 @@ function killEnemy(e) {
       else if (Math.random() < 0.005 * P.dropMul) G.pickups.push({ type: 'item', id: pick(Object.keys(ITEMS)), x: e.x, y: e.y, t: 0 });
       else if (Math.random() < 0.003 * P.dropMul) G.pickups.push({ type: 'magnet', x: e.x, y: e.y, t: 0 });
     }
-    G.rubles += 0.5;
+    G.rubles += 0.5 * (e.worth || 1);
     if (e.mut) mutDeath(e);
     onKill3(e);
     const bc = e.id === 'poltergeist' ? '255,170,70' : e.id === 'controller' || e.id === 'psydog' ? '170,120,200' : '140,20,20';
@@ -413,7 +415,10 @@ function spawnBoss(id, o = {}) {
 function director(dt) {
   const m = G.t / 60, reg = World.region(P.x, P.y), lab = World.kind === 'lab', night = Env.isNight();
   const bossUp = G.bosses.length > 0;
-  const cap = Math.min(170 + (G.tier - 1) * 10, 18 + m * 13) * (lab ? 0.6 : 1) * (bossUp ? 0.6 : 1);
+  let cap = Math.min(170 + (G.tier - 1) * 10, 18 + m * 13) * (lab ? 0.6 : 1) * (bossUp ? 0.6 : 1);
+  // Lowest graphics: a late-game horde is capped at 110 mutants on screen, each one proportionally tougher and worth
+  // proportionally more XP, so the fight weighs the same while phones move and draw far fewer bodies
+  const worth = minGfx() && cap > 110 ? cap / 110 : 1; if (worth > 1) cap = 110;
   const rate = (G.tutorial || G.coGuest ? 0 : 1) * (G.coopMul || 1) * diffDef().spawn * Events.mods().spawn * Math.min(7, 0.5 + m * 0.42) * (0.75 + reg.danger * 0.13) * (night ? 1.25 : 1) * (G.em && G.em.phase === 'blast' ? 0 : 1) * (lab ? 0.7 : 1) * (bossUp ? 0.4 : 1);
   G.spawnAcc += rate * dt;
   while (G.spawnAcc >= 1) {
@@ -427,7 +432,7 @@ function director(dt) {
     let r = rand(tot), id = 'dog'; for (const k in tab) { r -= tab[k]; if (r <= 0) { id = k; break; } }
     const p = ringPos(); if (!p) continue;
     const n = PACKS[id] ? randi(PACKS[id][0], PACKS[id][1]) : id === 'dog' ? randi(m < 1 ? 1 : 2, m < 3 ? 2 : 3) : id === 'rat' ? randi(3, 5) : id === 'pseudodog' ? 2 : 1;
-    for (let i = 0; i < n; i++) spawnEnemy(id, p[0] + rand(-30, 30), p[1] + rand(-30, 30), i ? { noElite: true } : Events.mods().elite ? { affix: pick(Object.keys(ELITE_AFFIX)) } : {});
+    for (let i = 0; i < n; i++) { const e = spawnEnemy(id, p[0] + rand(-30, 30), p[1] + rand(-30, 30), i ? { noElite: true } : Events.mods().elite ? { affix: pick(Object.keys(ELITE_AFFIX)) } : {}); if (worth > 1) { e.hp *= worth; e.maxhp *= worth; e.worth = worth; } }
   }
   G.rushT -= dt;
   if (G.rushT <= 0 && !lab && !bossUp && !(G.em && G.em.phase !== 'after')) {

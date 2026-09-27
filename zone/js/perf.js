@@ -123,3 +123,10 @@ function drawEnemyScaled(e, sx, sy) {
   if (e.face < 0) { ctx.scale(-1, 1); ctx.drawImage(sp.c, -e.x + sp.x * sx, top, wid, hgt); ctx.scale(-1, 1); }
   else ctx.drawImage(sp.c, e.x + sp.x * sx, top, wid, hgt);
 }
+
+// additive blending on the main canvas becomes normal blending on Lowest: switching blend modes between draws breaks
+// the GPU's batching, and hundreds of bullets, sparks and glows switch it constantly
+{
+  const MAIN = cv.getContext('2d'), d = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'globalCompositeOperation');
+  if (d && d.set) Object.defineProperty(MAIN, 'globalCompositeOperation', { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v === 'lighter' && minGfx() ? 'source-over' : v); } });
+}

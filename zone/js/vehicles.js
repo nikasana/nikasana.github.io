@@ -20,9 +20,10 @@ tryDash = function () {
   if (G && G.state === 'play' && P.veh) { const v = P.veh; toggleVehicle(); P.vehSkip = v; P.dashCd = 0; _s6Dash(); return; }
   _s6Dash();
 };
+const VEH_TOUCH = matchMedia('(pointer: coarse)');
 function drawVehPrompt() {
   if (World.kind !== 'over' || G.state !== 'play') return;
-  const touch = matchMedia('(pointer: coarse)').matches;
+  const touch = VEH_TOUCH.matches;
   const v = !P.veh && P.vehNear && P.vehHold > 0 ? P.vehNear : null;
   if (v) {
     const k = P.vehHold / VEH_HOLD, x = v.x, y = v.y - 16;

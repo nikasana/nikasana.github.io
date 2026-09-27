@@ -2,6 +2,9 @@
 // ---------- rendering ----------
 const DRAW = [], DPOOL = []; let DN = 0;
 const dq = (y, t, o, d) => { let it = DPOOL[DN]; if (!it) it = DPOOL[DN] = { y: 0, t: 0, o: null, d: 0 }; it.y = y; it.t = t; it.o = o; it.d = d; DRAW[DN++] = it; };
+// Lowest: particle colours with alpha rounded to tenths come from a cache instead of a new string per particle per frame
+const PCOL = new Map();
+function pcol(c, a) { const k = c + (a * 10 | 0); let v = PCOL.get(k); if (!v) { if (PCOL.size > 4000) PCOL.clear(); PCOL.set(k, v = `rgba(${c},${(a * 10 | 0) / 10 + 0.05})`); } return v; }
 function render(title = false) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = '#0d0c09'; ctx.fillRect(0, 0, cv.width, cv.height);
@@ -116,13 +119,22 @@ function render(title = false) {
   for (const a of World.anomalies) if (a.x > x0 - a.r && a.x < x1 + a.r && a.y > y0 - 150 && a.y < y1 + a.r) drawAnomalyTop(a);
   if (!title) { drawHazardsTop(x0, y0, x1, y1); drawW2Top(x0, y0, x1, y1); drawStory(x0, y0, x1, y1); drawPartner(); drawVehPrompt(); drawPlayerFx(); }
   // bullets
-  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = minQ ? 'butt' : 'round';
+  const BB = minQ ? new Map() : null;
   for (const b of G.bullets) {
     if (b.k === 'bolt') continue;
     if (drawBullet2(b)) continue;
     if (b.rocket) { ctx.fillStyle = '#ffb040'; ctx.beginPath(); ctx.arc(b.x, b.y, 6, 0, TAU); ctx.fill(); continue; }
-    ctx.strokeStyle = b.ignite ? 'rgba(255,140,40,0.95)' : b.big ? 'rgba(255,240,180,1)' : 'rgba(255,220,140,0.9)'; ctx.lineWidth = b.r * 0.9;
+    const bc = b.ignite ? 'rgba(255,140,40,0.95)' : b.big ? 'rgba(255,240,180,1)' : 'rgba(255,220,140,0.9)';
+    if (BB) { const k = bc + '|' + b.r; let a = BB.get(k); if (!a) BB.set(k, a = []); a.push(b.x, b.y, b.x - b.vx * 0.022, b.y - b.vy * 0.022); continue; }
+    ctx.strokeStyle = bc; ctx.lineWidth = b.r * 0.9;
     ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - b.vx * 0.022, b.y - b.vy * 0.022); ctx.stroke();
+  }
+  // Lowest: tracers of the same look go out as one path each instead of one stroke per bullet
+  if (BB) for (const [k, a] of BB) {
+    const i = k.lastIndexOf('|'); ctx.strokeStyle = k.slice(0, i); ctx.lineWidth = +k.slice(i + 1) * 0.9; ctx.beginPath();
+    for (let j = 0; j < a.length; j += 4) { ctx.moveTo(a[j], a[j + 1]); ctx.lineTo(a[j + 2], a[j + 3]); }
+    ctx.stroke();
   }
   for (const b of G.ebullets) {
     if (b.k === 'fake') { ctx.fillStyle = `rgba(140,220,255,${0.3 + Math.sin(NOW * 30 + b.x) * 0.2})`; ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 1.6, 0, TAU); ctx.fill(); continue; }
@@ -148,7 +160,7 @@ function render(title = false) {
     if (p.x < x0 || p.x > x1 || p.y < y0 || p.y > y1 + 50) continue;
     const a = clamp(p.life / p.max, 0, 1);
     if (p.add && !minQ) ctx.globalCompositeOperation = 'lighter';
-    ctx.fillStyle = `rgba(${p.c},${a})`;
+    ctx.fillStyle = minQ ? pcol(p.c, a) : `rgba(${p.c},${a})`;
     if (minQ) { const r = p.s * (p.add ? 1 : 0.6 + a * 0.4); ctx.fillRect(p.x - r, p.y - p.z - r, r * 2, r * 2); }
     else { ctx.beginPath(); ctx.arc(p.x, p.y - p.z, p.s * (p.add ? 1 : 0.6 + a * 0.4), 0, TAU); ctx.fill(); }
     ctx.globalCompositeOperation = 'source-over';
@@ -171,9 +183,11 @@ function render(title = false) {
     ctx.fillStyle = '#b8e040'; ctx.fillRect(L.x - 40, L.y - 95, 80 * clamp(L.ob.hp / L.maxhp, 0, 1), 5);
   }
   ctx.textAlign = 'center';
+  // floating numbers stay at least ~13px on screen however far the camera is zoomed out
+  const tk = Math.max(1, 0.95 / ZOOM), fSm = `bold ${Math.round(14 * tk)}px Oswald, Impact, sans-serif`, fBig = `bold ${Math.round(20 * tk)}px Oswald, Impact, sans-serif`;
   for (const t of G.texts) {
     ctx.globalAlpha = clamp(t.life * 2, 0, 1);
-    ctx.font = `bold ${t.big ? 20 : 14}px Oswald, Impact, sans-serif`;
+    ctx.font = t.big ? fBig : fSm;
     if (!minQ) { ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillText(t.s, t.x + 1.5, t.y + 1.5); }
     ctx.fillStyle = t.c; ctx.fillText(t.s, t.x, t.y);
   }
@@ -723,6 +737,7 @@ function buildSettings() {
   const tog = (k, label) => `<label class="set"><span>${label}</span><input type="checkbox" ${s[k] ? 'checked' : ''} data-tog="${k}"></label>`;
   $('settingsBody').innerHTML = slider('master', 'Master volume') + slider('music', 'Music / radio') + slider('sfx', 'Sound effects') + slider('amb', 'Ambience') + slider('voice', 'Radio chatter & UI') +
     `<label class="set"><span>Screen shake</span><input type="range" min="0" max="1" step="0.05" value="${shakeK()}" data-set="shake"></label>` + tog('mmArrows', 'Minimap arrows') + tog('omens', 'Zone omens (a random twist each run)') + tog('numbers', 'Damage numbers') + tog('hints', 'Tutorial hints') + tog('fps', 'Show FPS') +
+    `<label class="set"><span>Game zoom</span><input type="range" min="0.7" max="2" step="0.05" value="${zoomK()}" data-set="zoom"></label>` +
     `<label class="set"><span>Graphics quality</span><select data-q><option value="auto" ${s.quality === 'auto' ? 'selected' : ''}>Auto (recommended)</option><option value="high" ${s.quality === 'high' ? 'selected' : ''}>High</option><option value="low" ${s.quality === 'low' ? 'selected' : ''}>Low (faster)</option><option value="min" ${s.quality === 'min' ? 'selected' : ''}>Lowest (smoothest)</option></select></label>` +
     `<button class="big ghost small" id="resetHints">Replay tutorial hints</button>`;
   for (const i of document.querySelectorAll('[data-set]')) i.oninput = () => { s[i.dataset.set] = +i.value; applySettings(); Save.save(); };
@@ -730,7 +745,7 @@ function buildSettings() {
   document.querySelector('[data-q]').onchange = (e) => { s.quality = e.target.value; GFX.reset(); Save.save(); applyGfx(); };
   $('resetHints').onclick = () => { Save.data.hints = []; Save.save(); $('resetHints').textContent = 'Hints will show again ✓'; };
 }
-function applySettings() { const s = Save.set; Sfx.vol.master = s.master; Sfx.vol.music = s.music; Sfx.vol.sfx = s.sfx; Sfx.vol.amb = s.amb; Sfx.vol.voice = s.voice; Sfx.applyVol(); applyGfx(); }
+function applySettings() { const s = Save.set; Sfx.vol.master = s.master; Sfx.vol.music = s.music; Sfx.vol.sfx = s.sfx; Sfx.vol.amb = s.amb; Sfx.vol.voice = s.voice; Sfx.applyVol(); applyGfx(); if (typeof resize === 'function') resize(); }
 
 // ---------- input ----------
 addEventListener('keydown', (e) => {
