@@ -157,6 +157,13 @@ function mirror(c) {
 const GROUND = { map: new Map(), sc: 0, max: 20 };
 function drawGroundFast(gx0, gx1, gy0, gy1) {
   const sc = RT.sc;
+  // a removed prop (a destroyed fence, a new stage) redraws the tiles
+  if (GROUND.np !== World.props.length || GROUND.ps !== World.props) {
+    GROUND.np = World.props.length;
+    let nb = 0; for (const p of World.props) if (PROP_BAKE.has(p.kind)) nb++;
+    if (GROUND.ps !== World.props || nb !== GROUND.nb) GROUND.map.clear(); // only when baked scenery itself changed
+    GROUND.ps = World.props; GROUND.nb = nb;
+  }
   if (sc !== GROUND.sc) { GROUND.map.clear(); GROUND.sc = sc; }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   for (let gy = gy0; gy <= gy1; gy++) for (let gx = gx0; gx <= gx1; gx++) {
@@ -166,11 +173,33 @@ function drawGroundFast(gx0, gx1, gy0, gy1) {
     else {
       if (t) GROUND.map.delete(k);
       while (GROUND.map.size >= GROUND.max) GROUND.map.delete(GROUND.map.keys().next().value);
-      const n = Math.ceil((CHUNK + 1) * sc), c = document.createElement('canvas'); c.width = c.height = n;
-      c.getContext('2d').drawImage(src, 0, 0, (CHUNK + 1) * sc, (CHUNK + 1) * sc);
+      // painted on a CPU-side work canvas, then copied into the tile as finished pixels: a canvas holding hundreds of
+      // vector commands can get replayed every time it is drawn
+      const n = Math.ceil((CHUNK + 1) * sc), w = GROUND.work && GROUND.work.canvas.width === n ? GROUND.work : (GROUND.work = mkWork(n));
+      w.setTransform(1, 0, 0, 1, 0, 0); w.drawImage(src, 0, 0, (CHUNK + 1) * sc, (CHUNK + 1) * sc);
+      bakeProps(w, gx, gy, sc);
+      const c = document.createElement('canvas'); c.width = c.height = n;
+      c.getContext('2d').putImageData(w.getImageData(0, 0, n, n), 0, 0);
       GROUND.map.set(k, t = { src, c });
     }
     ctx.drawImage(t.c, Math.round(gx * CHUNK * sc + RT.tx), Math.round(gy * CHUNK * sc + RT.ty));
   }
   ctx.setTransform(sc, 0, 0, sc, RT.tx, RT.ty);
+}
+function mkWork(n) { const c = document.createElement('canvas'); c.width = c.height = n; return c.getContext('2d', { willReadFrequently: true }); }
+// scenery that never changes (trees, bushes, rocks…) is painted into the ground tiles themselves, so on Lowest it costs
+// nothing per frame. Mutants and the player then always draw on top of it, which also keeps them visible in woods.
+const PROP_BAKE = new Set(['tree', 'deadtree', 'bush', 'rock', 'grass', 'reeds', 'bones', 'wheel']);
+function bakeProps(g, gx, gy, sc) {
+  const X0 = gx * CHUNK, Y0 = gy * CHUNK, X1 = X0 + CHUNK + 1, Y1 = Y0 + CHUNK + 1, PC = WORLD / PCELL, list = new Set();
+  for (let cy = Math.max(0, Math.floor(Y0 / PCELL)); cy <= Math.min(PC - 1, Math.floor(Y1 / PCELL)); cy++)
+    for (let cx = Math.max(0, Math.floor(X0 / PCELL)); cx <= Math.min(PC - 1, Math.floor(X1 / PCELL)); cx++)
+      for (const p of World.propGrid[cy * PC + cx]) if (PROP_BAKE.has(p.kind) && PROP_DRAW[p.kind] && p.bx1 > X0 && p.bx0 < X1 && p.by1 > Y0 && p.by0 < Y1) list.add(p);
+  if (!list.size) return;
+  const arr = [...list].sort((a, b) => a.sy - b.sy), main = ctx, cam = { x: CAM.x, y: CAM.y };
+  g.setTransform(sc, 0, 0, sc, -X0 * sc, -Y0 * sc); ctx = g;
+  try {
+    // each prop drawn as if the camera were right above it: no lean, so a tree split across two tiles lines up
+    for (const p of arr) { CAM.x = p.x; CAM.y = p.y; try { PROP_DRAW[p.kind](p); } catch (e) { /* skip this one */ } }
+  } finally { ctx = main; CAM.x = cam.x; CAM.y = cam.y; }
 }

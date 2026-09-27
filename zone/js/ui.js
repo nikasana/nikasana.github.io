@@ -7,9 +7,10 @@ const PCOL = new Map();
 function pcol(c, a) { const k = c + (a * 10 | 0); let v = PCOL.get(k); if (!v) { if (PCOL.size > 4000) PCOL.clear(); PCOL.set(k, v = `rgba(${c},${(a * 10 | 0) / 10 + 0.05})`); } return v; }
 function render(title = false) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = '#0d0c09'; ctx.fillRect(0, 0, cv.width, cv.height);
-  if (!G) return;
   const low = lowGfx(), minQ = minGfx();
+  // on Lowest the ground tiles (and the dark fill past the world's edge) cover every pixel: no separate clear pass
+  if (!minQ || !G) { ctx.fillStyle = '#0d0c09'; ctx.fillRect(0, 0, cv.width, cv.height); }
+  if (!G) return;
   const sc = ZOOM * DPR;
   const sx = G.shake * (Math.sin(NOW * 41) * 0.35 + Math.sin(NOW * 67) * 0.2), sy = G.shake * (Math.cos(NOW * 37) * 0.35 + Math.sin(NOW * 59) * 0.2);
   const cx = CAM.x + sx, cy = CAM.y + sy;
@@ -74,6 +75,7 @@ function render(title = false) {
         if (p._s === st) continue; p._s = st;
         if (p.bx1 < x0 || p.bx0 > x1 || p.by1 < y0 || p.by0 > y1) continue;
         if (low && p.kind === 'grass') continue;
+        if (minQ && PROP_BAKE.has(p.kind)) continue; // already painted into the ground
         dq(p.sy, 0, p);
       }
   for (const e of G.enemies) if (e.x > x0 - 80 && e.x < x1 + 80 && e.y > y0 - 40 && e.y < y1 + 160) dq(e.y, 1, e);
