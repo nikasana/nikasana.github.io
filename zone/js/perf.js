@@ -6,12 +6,14 @@
 // cached facing right and mirrored for left (their draw functions mirror the same way); things that fade, depend on
 // the player or are one of a kind (bosses) still draw live.
 const SPRITES = {
-  map: new Map(), px: 0, max: 12e6, scale: 0,
+  map: new Map(), px: 0, max: 16e6, scale: 0, tick: 0,
   // (ox, oy, w, h): the world-space box draw() may paint into. Returns { c, x, y, w, h } trimmed to what was painted.
   get(key, ox, oy, w, h, draw) {
     const s = ZOOM * DPR;
     if (s !== this.scale) { this.clear(); this.scale = s; }
-    let sp = this.map.get(key); if (sp) return sp;
+    let sp = this.map.get(key);
+    // keep the map in least-recently-used order (cheaply: refresh an entry on every 8th hit) so eviction drops what is far away
+    if (sp) { if (++this.tick % 8 === 0) { this.map.delete(key); this.map.set(key, sp); } return sp; }
     const W = Math.max(1, Math.ceil(w * s)), H = Math.max(1, Math.ceil(h * s));
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const g = c.getContext('2d', { willReadFrequently: true }); g.setTransform(s, 0, 0, s, -ox * s, -oy * s);
