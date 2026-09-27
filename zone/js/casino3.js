@@ -170,8 +170,19 @@ CZ.afterGive = function (v, stake) { _afterGive3.call(this, v, stake); this.refr
 // loyalty points on the top panel, a daily-reset countdown and the vault on the perk strip
 const _top3 = CZ.top;
 CZ.top = function () { _top3.call(this); const el = $('czTop'); if (el) el.insertAdjacentHTML('beforeend', `<div><b>${this.st().loy || 0}</b>loyalty pts</div>`); this.refreshFreeBtns(); };
+// phones: keep the selected game tab in view and scroll the bunker so the money row sits at the top,
+// which puts money + game tabs + the whole game on one screen (the CSS moves perks/ticker below the game)
+CZ.fitPhone = function () {
+  const tabs = document.querySelector('.czRoot > .czGames'), sel = tabs && tabs.querySelector('.czG.sel');
+  if (sel && tabs.scrollWidth > tabs.clientWidth) tabs.scrollLeft = sel.offsetLeft - (tabs.clientWidth - sel.offsetWidth) / 2;
+  if (!matchMedia('(max-width: 600px)').matches) return;
+  const top = $('czTop'), sc = $('bunker'); if (!top || !sc || !sc.classList.contains('show')) return;
+  sc.scrollTop += top.getBoundingClientRect().top - sc.getBoundingClientRect().top - 4;
+};
 // CZ.perks is created in casino2's DOMContentLoaded handler, so wrap it from ours (which runs after it)
 addEventListener('DOMContentLoaded', () => {
+  const _ui3 = CZ.ui;
+  CZ.ui = function (el) { _ui3.call(this, el); requestAnimationFrame(() => CZ.fitPhone()); };
   const _perks3 = CZ.perks;
   CZ.perks = function () {
     _perks3.call(this); const el = $('czPerks');

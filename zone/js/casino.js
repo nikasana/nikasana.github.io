@@ -40,11 +40,11 @@ const CZ = {
   ui(el) {
     this.el = el;
     const games = [['rou', '🎡', 'Roulette'], ['slots', '🎰', 'Slots'], ['bj', '🃏', 'Blackjack'], ['plinko', '🔴', 'Plinko'], ['crash', '🚀', 'Crash'], ['dice', '🎲', 'Dice'], ['coin', '🪙', 'Coin Ladder'], ['wheel', '🎡', 'Zone Wheel'], ['scratch', '🎫', 'Scratch Cards'], ['race', '🐎', 'Mutant Racing'], ['box', '🗝️', 'Pick-a-Box'], ['monty', '🚪', 'Monty Hall'], ['vault', '🔐', 'Vault'], ['shop', '🏆', 'Points Shop'], ['xch', '🌟', 'Exchange']];
-    el.innerHTML = `<div class="czSign"><span>★ ZONE CASINO ★</span></div><div id="czTop" class="czTop"></div>
+    el.innerHTML = `<div class="czRoot"><div class="czSign"><span>★ ZONE CASINO ★</span></div><div id="czTop" class="czTop"></div>
       <div class="czGames">${games.map(([id, ic, nm]) => `<button class="czG ${id === this.game ? 'sel' : ''}" data-czg="${id}"><span>${ic}</span>${nm}</button>`).join('')}</div>
       <div class="czBetRow" id="czBet"><span>BET</span><b id="czBetV"></b>${[10, 50, 100, 500, 1000, 5000, 25000, 100000, 1000000].map((v) => `<button class="czChip c${v}" data-czb="${v}">${v >= 1e6 ? v / 1e6 + 'M' : v >= 1000 ? v / 1000 + 'k' : v}</button>`).join('')}<button class="czChip" data-czp="0.5">½</button><button class="czChip" data-czp="2">×2</button><button class="czChip" data-czp="10">×10</button></div>
       <div class="czBetRow">${[['0.1', '10%'], ['0.25', '25%'], ['0.3333', '33%'], ['0.5', '50%'], ['1', 'ALL IN']].map(([f, n]) => `<button class="czChip pct ${f === '1' ? 'allin' : ''}" data-czf="${f}">${n}</button>`).join('')}</div>
-      <div id="czStage" class="czStage"></div>`;
+      <div id="czStage" class="czStage"></div></div>`;
     for (const b of el.querySelectorAll('[data-czg]')) b.onclick = () => { if (this.busy) return; this.game = b.dataset.czg; this.beep(900); this.ui(el); this.i18n(); };
     for (const b of el.querySelectorAll('[data-czb]')) b.onclick = () => { this.bet = +b.dataset.czb; this.beep(1200, 0.04); this.top(); };
     for (const b of el.querySelectorAll('[data-czp]')) b.onclick = () => { this.bet = Math.max(1, Math.floor(this.bet * +b.dataset.czp)); this.beep(1200, 0.04); this.top(); };
