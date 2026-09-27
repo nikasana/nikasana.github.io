@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#15130f" />
 <title>ZONEBONK — Heart of the Zone</title>
-<link rel="icon" type="image/svg+xml" href="icon.svg?v=110" />
-<link rel="apple-touch-icon" href="icon.svg?v=110" />
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=111" />
+<link rel="apple-touch-icon" href="icon.svg?v=111" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -820,6 +820,8 @@
   #abilityBtn.ready, body.minfx #abilityBtn.ready { border: 3px solid #c8ff5a !important; background: rgba(200, 255, 90, 0.28) !important; }
   #abilityBtn.readyNow { outline: 4px solid #fff; }
   #zoneName .zDanger { display: block; font-size: 0.5em; letter-spacing: 0.12em; margin-top: 4px; white-space: normal; }
+  #hpRow { display: flex; align-items: center; gap: 6px; } #hpRow #hpBar { flex: 1; min-width: 0; }
+  #hpDanger { font-size: 13px; white-space: nowrap; letter-spacing: -1px; text-shadow: 0 1px 2px #000, 0 0 4px #000; }
 </style>
 </head>
 <body>
@@ -829,7 +831,7 @@
   <div id="xpBar"><div id="xpFill"></div></div>
   <div id="lvl">LV 1</div>
   <div id="hpBox">
-    <div id="hpBar"><div id="hpFill"></div><div id="hpText">100 / 100</div></div>
+    <div id="hpRow"><div id="hpBar"><div id="hpFill"></div><div id="hpText">100 / 100</div></div><span id="hpDanger"></span></div>
     <div id="weapons"></div>
     <div id="artbelt"></div>
     <div id="syn"></div>
@@ -963,56 +965,56 @@
       '<button onclick="location.reload()" style="' + btn + 'background:#ffcf3a;color:#111;border:2px solid #ffcf3a">🔄 RELOAD</button>';
   });
 </script>
-<script src="js/util.js?v=110"></script>
-<script src="js/audio.js?v=110"></script>
-<script src="js/radio.js?v=110"></script>
-<script src="js/ambience.js?v=110"></script>
-<script src="js/data.js?v=110"></script>
-<script src="js/artifacts.js?v=110"></script>
-<script src="js/world.js?v=110"></script>
-<script src="js/render.js?v=110"></script>
-<script src="js/render2.js?v=110"></script>
-<script src="js/lighting.js?v=110"></script>
-<script src="js/game.js?v=110"></script>
-<script src="js/perf.js?v=110"></script>
-<script src="js/systems.js?v=110"></script>
-<script src="js/weapons2.js?v=110"></script>
-<script src="js/mutants3.js?v=110"></script>
-<script src="js/events.js?v=110"></script>
-<script src="js/hazards.js?v=110"></script>
-<script src="js/world2.js?v=110"></script>
-<script src="js/vehicles.js?v=110"></script>
-<script src="js/stages3.js?v=110"></script>
-<script src="js/story.js?v=110"></script>
-<script src="js/meta.js?v=110"></script>
-<script src="js/coop.js?v=110"></script>
-<script src="js/crews.js?v=110"></script>
-<script src="js/crewhq.js?v=110"></script>
-<script src="js/content.js?v=110"></script>
-<script src="js/replay.js?v=110"></script>
-<script src="js/variety.js?v=110"></script>
-<script src="js/pace.js?v=110"></script>
-<script src="js/progress2.js?v=110"></script>
-<script src="js/cyber.js?v=110"></script>
-<script src="js/shop2.js?v=110"></script>
-<script src="js/cyber2.js?v=110"></script>
-<script src="js/casino.js?v=110"></script>
-<script src="js/casino2.js?v=110"></script>
-<script src="js/casino3.js?v=110"></script>
-<script src="js/casino4.js?v=110"></script>
-<script src="js/missions.js?v=110"></script>
-<script src="js/extras.js?v=110"></script>
-<script src="js/badges.js?v=110"></script>
-<script src="js/ux.js?v=110"></script>
-<script src="js/saves.js?v=110"></script>
-<script src="js/polish.js?v=110"></script>
-<script src="js/voice.js?v=110"></script>
-<script src="js/i18n_a.js?v=110"></script>
-<script src="js/i18n_b.js?v=110"></script>
-<script src="js/i18n_c.js?v=110"></script>
-<script src="js/i18n.js?v=110"></script>
-<script src="js/guard.js?v=110"></script>
-<script src="js/ui.js?v=110"></script>
-<script src="js/gl.js?v=110"></script>
+<script src="js/util.js?v=111"></script>
+<script src="js/audio.js?v=111"></script>
+<script src="js/radio.js?v=111"></script>
+<script src="js/ambience.js?v=111"></script>
+<script src="js/data.js?v=111"></script>
+<script src="js/artifacts.js?v=111"></script>
+<script src="js/world.js?v=111"></script>
+<script src="js/render.js?v=111"></script>
+<script src="js/render2.js?v=111"></script>
+<script src="js/lighting.js?v=111"></script>
+<script src="js/game.js?v=111"></script>
+<script src="js/perf.js?v=111"></script>
+<script src="js/systems.js?v=111"></script>
+<script src="js/weapons2.js?v=111"></script>
+<script src="js/mutants3.js?v=111"></script>
+<script src="js/events.js?v=111"></script>
+<script src="js/hazards.js?v=111"></script>
+<script src="js/world2.js?v=111"></script>
+<script src="js/vehicles.js?v=111"></script>
+<script src="js/stages3.js?v=111"></script>
+<script src="js/story.js?v=111"></script>
+<script src="js/meta.js?v=111"></script>
+<script src="js/coop.js?v=111"></script>
+<script src="js/crews.js?v=111"></script>
+<script src="js/crewhq.js?v=111"></script>
+<script src="js/content.js?v=111"></script>
+<script src="js/replay.js?v=111"></script>
+<script src="js/variety.js?v=111"></script>
+<script src="js/pace.js?v=111"></script>
+<script src="js/progress2.js?v=111"></script>
+<script src="js/cyber.js?v=111"></script>
+<script src="js/shop2.js?v=111"></script>
+<script src="js/cyber2.js?v=111"></script>
+<script src="js/casino.js?v=111"></script>
+<script src="js/casino2.js?v=111"></script>
+<script src="js/casino3.js?v=111"></script>
+<script src="js/casino4.js?v=111"></script>
+<script src="js/missions.js?v=111"></script>
+<script src="js/extras.js?v=111"></script>
+<script src="js/badges.js?v=111"></script>
+<script src="js/ux.js?v=111"></script>
+<script src="js/saves.js?v=111"></script>
+<script src="js/polish.js?v=111"></script>
+<script src="js/voice.js?v=111"></script>
+<script src="js/i18n_a.js?v=111"></script>
+<script src="js/i18n_b.js?v=111"></script>
+<script src="js/i18n_c.js?v=111"></script>
+<script src="js/i18n.js?v=111"></script>
+<script src="js/guard.js?v=111"></script>
+<script src="js/ui.js?v=111"></script>
+<script src="js/gl.js?v=111"></script>
 </body>
 </html>

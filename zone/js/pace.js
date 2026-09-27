@@ -321,6 +321,7 @@ function zoneAnnounce(reg) {
   const D = World.kind === 'lab' ? null : dangerDef(reg.danger), tr = (s) => (typeof I18n !== 'undefined' && I18n.cur !== 'en' ? I18n.tc(s) : s);
   const pct = (v) => (v >= 1 ? '+' : '−') + Math.round(Math.abs(v - 1) * 100) + '%';
   el.innerHTML = '';
+  const hd = $('hpDanger'); if (hd) { hd.textContent = D ? '☢'.repeat(clamp(Math.round(reg.danger || 3), 1, 5)) : ''; hd.style.color = D ? D.c : ''; hd.title = D ? tr(D.w.toUpperCase()) : ''; }
   const n = document.createElement('div'); n.textContent = reg.name; el.appendChild(n);
   if (D) {
     const s = document.createElement('small'); s.className = 'zDanger'; s.style.color = D.c;

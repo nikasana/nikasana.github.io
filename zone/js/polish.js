@@ -120,7 +120,7 @@ addEventListener('DOMContentLoaded', () => {
   const _poMap = toggleMap;
   toggleMap = function () { _poMap(); if (G && G.tutorial && G.state === 'map') Tutorial.mapped = true; };
   // radiation bar under the health bar
-  $('hpBar').insertAdjacentHTML('afterend', '<div id="radBar" title="Radiation dose: builds up in hot spots and radiation storms. Above 60% healing is halved, at 100% you get sick. Anti-rad clears it."><div id="radFill"></div><span>☢</span></div>');
+  ($('hpRow') || $('hpBar')).insertAdjacentHTML('afterend', '<div id="radBar" title="Radiation dose: builds up in hot spots and radiation storms. Above 60% healing is halved, at 100% you get sick. Anti-rad clears it."><div id="radFill"></div><span>☢</span></div>');
   // pause + settings: bug report; settings: brightness and objective arrow
   $('abandonBtn').insertAdjacentHTML('afterend', '<button class="big ghost" id="bugBtn">🐞 REPORT BUG</button>');
   $('bugBtn').onclick = bugReport;
