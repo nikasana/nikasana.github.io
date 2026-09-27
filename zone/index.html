@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#15130f" />
 <title>ZONEBONK — Heart of the Zone</title>
-<link rel="icon" type="image/svg+xml" href="icon.svg?v=91" />
-<link rel="apple-touch-icon" href="icon.svg?v=91" />
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=92" />
+<link rel="apple-touch-icon" href="icon.svg?v=92" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -17,6 +17,12 @@
   button { font-family: inherit; cursor: pointer; color: inherit; }
   .screen { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 20; padding: 16px; text-align: center; }
   .screen.show { display: flex; }
+  /* every overlay scrolls when its content is taller than the display; the auto margins keep it centered when it fits
+     (plain justify-content: center pushes overflow off the top, where it can't be scrolled to) */
+  .screen { overflow-y: auto; }
+  .screen:not(.scroll) { justify-content: flex-start; }
+  .screen:not(.scroll)::before, .screen:not(.scroll)::after { content: ''; flex: 0 0 0px; }
+  .screen:not(.scroll)::before { margin-top: auto; } .screen:not(.scroll)::after { margin-bottom: auto; }
   .scroll { overflow-y: auto; justify-content: flex-start; padding-top: max(16px, 4vh); touch-action: pan-y; }
   .rubles { color: var(--gold); font-size: 20px; letter-spacing: 0.08em; }
 
@@ -183,8 +189,22 @@
     #hpBox { width: 34vw; left: 8px; } #hpText { font-size: 11px; } #lvl { top: 10px; font-size: 12px; }
     #timer { font-size: 24px; } #topStack { top: 22px; width: 50vw; } #nextEvt { font-size: 10px; max-width: 30vw; }
     #omenTag { display: none !important; } #eventBox { font-size: 11px; padding: 2px 8px; white-space: normal; max-width: 46vw; text-align: center; line-height: 1.25; }
-    #emission { font-size: 13px; white-space: normal; } #hint { bottom: 200px; font-size: 13px; }
+    #emission { font-size: 13px; white-space: normal; } #hint { bottom: 200px; font-size: 13px; width: auto; max-width: 70vw; }
+    #radio { bottom: 142px; width: 76vw; }
     #quests { top: 200px; right: 8px; width: 42vw; } .q { font-size: 11px; padding: 3px 5px; } .q small { display: none; }
+  }
+  /* phones in landscape (short screens): minimap, pause buttons, quests and touch buttons each get their own space */
+  @media (max-height: 500px) {
+    #minimap { width: 92px; height: 92px; } #mmWrap { right: 8px; top: 10px; } #zoneLbl { font-size: 10px; }
+    body #btns { top: 128px !important; bottom: auto !important; right: 8px !important; } body #btns button { width: 32px !important; height: 32px !important; font-size: 14px !important; }
+    #hpBox { width: min(220px, 30vw); left: 8px; top: 12px; } #hpText { font-size: 11px; } #lvl { top: 8px; font-size: 12px; }
+    #topStack { top: 18px; width: min(360px, 38vw); gap: 3px; } #timer { font-size: 26px; } #nextEvt { font-size: 10px; }
+    #omenTag { display: none !important; } #eventBox { font-size: 11px; padding: 2px 8px; white-space: normal; text-align: center; }
+    #quests { top: 126px; right: 48px; width: min(220px, 30vw); gap: 3px; } .q { font-size: 11px; padding: 3px 6px; } .q small { display: none; } #quests .q:nth-child(n+3) { display: none; }
+    #detWrap { transform: scale(0.72); transform-origin: bottom left; }
+    #radio, #hint { left: calc(50% - 70px); width: auto; max-width: min(360px, 46vw); font-size: 12px; }
+    #radio { bottom: 8px; } #hint { bottom: 92px; }
+    #bTitle { font-size: 26px; } #zoneName { font-size: 18px; bottom: 30%; }
   }
 
   /* ---- level up cards ---- */
@@ -595,6 +615,46 @@
     .czAct.dice input { width: 110px; }
     .czShopIt { width: 96px; padding: 6px 4px; } .czShopIt span { font-size: 22px; }
   }
+  /* ---- PLAY setup: ENTER THE ZONE stays pinned to the bottom, so a run can start without scrolling past every option ---- */
+  #setup > .actions { position: sticky; bottom: -16px; z-index: 5; flex-shrink: 0; margin: 12px -16px -16px; padding: 10px 16px 14px; background: linear-gradient(rgba(8, 8, 5, 0), rgba(8, 8, 5, 0.92) 30%); align-self: stretch; }
+  @media (max-width: 600px) {
+    #setup .grid:not(.chips) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+    #setup .pick { gap: 6px; padding: 7px 8px; min-width: 0; }
+    #setup .pick .pi { font-size: 24px; width: 28px; }
+    #setup .pick b { font-size: 14px; overflow-wrap: anywhere; } #setup .pick small { font-size: 11px; overflow-wrap: anywhere; }
+    #setup .pick > div { min-width: 0; }
+    #setup > .actions { padding: 8px 16px 12px; } #setup > .actions .big { font-size: 18px; letter-spacing: 0.08em; padding: 10px 22px; min-width: 0; white-space: nowrap; }
+  }
+  /* ---- title, level-up and map on phones and in landscape ---- */
+  @media (max-width: 600px) {
+    #title { padding-top: 50px; }
+    #title .menu { gap: 7px; }
+    #title .menu .big { font-size: 17px; letter-spacing: 0.06em; padding: 9px 18px; min-width: 250px; }
+  }
+  @media (max-height: 500px) {
+    #title { padding-top: 48px; }
+    #title h1 { font-size: 34px; } #title h2 { display: none; } #title > .rubles { font-size: 15px; margin: 0 0 4px; }
+    #diffPaceRow { flex-wrap: nowrap; gap: 6px; font-size: 13px; margin: 0; }
+    #diffPaceRow select { font-size: 13px; padding: 2px 4px; max-width: 150px; }
+    .suggestBtn { font-size: 11px; margin: 0; } .sug3 { gap: 6px; margin-top: 2px; } .sugOpt { padding: 3px 6px; } .sugOpt b { font-size: 12px; } .sugOpt span { font-size: 10px; }
+    #title .menu { display: grid; grid-template-columns: repeat(2, minmax(0, 250px)); gap: 6px 10px; justify-content: center; }
+    #title .menu > :not(.big), #title .menu > #playBtn { grid-column: 1 / -1; }
+    #title .menu > #playBtn { justify-self: center; min-width: 260px; }
+    #title .menu .big { font-size: 15px; letter-spacing: 0.06em; padding: 7px 14px; min-width: 0; }
+    #lvTitle { font-size: 26px; } #lvSub { margin-bottom: 6px; font-size: 12px; }
+    #cards { flex-wrap: nowrap; gap: 8px; }
+    .card { width: min(230px, 31vw); min-height: 0; padding: 8px 10px; }
+    .cicon { font-size: 30px; } .cname { font-size: 16px; } .cdesc { font-size: 12px; }
+    #rerollBtn { margin-top: 8px; } #autoLvBtn { margin-top: 6px; }
+  }
+  /* landscape map: map on the left, info and legend beside it */
+  @media (max-height: 500px) and (min-aspect-ratio: 4/3) {
+    #mapScreen.show { display: grid; grid-template-columns: auto minmax(0, 260px); align-content: center; justify-content: center; align-items: center; column-gap: 14px; }
+    #mapScreen::before, #mapScreen::after { display: none; }
+    #mapScreen #bigmap { grid-row: 1 / span 3; }
+    #mapScreen > :not(#bigmap) { grid-column: 2; text-align: left; }
+  }
+
   /* ---- bunker: pinned tab bar; ← back and money appear in it once the header scrolls away ---- */
   /* the bunker is a fixed-height flex column: don't let it squash the bar, and stick flush to the top edge past its own padding */
   #bTabs { position: sticky; top: calc(-1 * max(16px, 4vh)); flex-shrink: 0; z-index: 6; background: rgba(5, 6, 13, 0.92); padding: 6px 4px; border-radius: 8px; }
@@ -811,54 +871,54 @@
       '<button onclick="location.reload()" style="' + btn + 'background:#ffcf3a;color:#111;border:2px solid #ffcf3a">🔄 RELOAD</button>';
   });
 </script>
-<script src="js/util.js?v=91"></script>
-<script src="js/audio.js?v=91"></script>
-<script src="js/radio.js?v=91"></script>
-<script src="js/ambience.js?v=91"></script>
-<script src="js/data.js?v=91"></script>
-<script src="js/artifacts.js?v=91"></script>
-<script src="js/world.js?v=91"></script>
-<script src="js/render.js?v=91"></script>
-<script src="js/render2.js?v=91"></script>
-<script src="js/lighting.js?v=91"></script>
-<script src="js/game.js?v=91"></script>
-<script src="js/systems.js?v=91"></script>
-<script src="js/weapons2.js?v=91"></script>
-<script src="js/mutants3.js?v=91"></script>
-<script src="js/events.js?v=91"></script>
-<script src="js/hazards.js?v=91"></script>
-<script src="js/world2.js?v=91"></script>
-<script src="js/vehicles.js?v=91"></script>
-<script src="js/stages3.js?v=91"></script>
-<script src="js/story.js?v=91"></script>
-<script src="js/meta.js?v=91"></script>
-<script src="js/coop.js?v=91"></script>
-<script src="js/crews.js?v=91"></script>
-<script src="js/crewhq.js?v=91"></script>
-<script src="js/content.js?v=91"></script>
-<script src="js/replay.js?v=91"></script>
-<script src="js/variety.js?v=91"></script>
-<script src="js/pace.js?v=91"></script>
-<script src="js/progress2.js?v=91"></script>
-<script src="js/cyber.js?v=91"></script>
-<script src="js/shop2.js?v=91"></script>
-<script src="js/cyber2.js?v=91"></script>
-<script src="js/casino.js?v=91"></script>
-<script src="js/casino2.js?v=91"></script>
-<script src="js/casino3.js?v=91"></script>
-<script src="js/casino4.js?v=91"></script>
-<script src="js/missions.js?v=91"></script>
-<script src="js/extras.js?v=91"></script>
-<script src="js/badges.js?v=91"></script>
-<script src="js/ux.js?v=91"></script>
-<script src="js/saves.js?v=91"></script>
-<script src="js/polish.js?v=91"></script>
-<script src="js/voice.js?v=91"></script>
-<script src="js/i18n_a.js?v=91"></script>
-<script src="js/i18n_b.js?v=91"></script>
-<script src="js/i18n_c.js?v=91"></script>
-<script src="js/i18n.js?v=91"></script>
-<script src="js/guard.js?v=91"></script>
-<script src="js/ui.js?v=91"></script>
+<script src="js/util.js?v=92"></script>
+<script src="js/audio.js?v=92"></script>
+<script src="js/radio.js?v=92"></script>
+<script src="js/ambience.js?v=92"></script>
+<script src="js/data.js?v=92"></script>
+<script src="js/artifacts.js?v=92"></script>
+<script src="js/world.js?v=92"></script>
+<script src="js/render.js?v=92"></script>
+<script src="js/render2.js?v=92"></script>
+<script src="js/lighting.js?v=92"></script>
+<script src="js/game.js?v=92"></script>
+<script src="js/systems.js?v=92"></script>
+<script src="js/weapons2.js?v=92"></script>
+<script src="js/mutants3.js?v=92"></script>
+<script src="js/events.js?v=92"></script>
+<script src="js/hazards.js?v=92"></script>
+<script src="js/world2.js?v=92"></script>
+<script src="js/vehicles.js?v=92"></script>
+<script src="js/stages3.js?v=92"></script>
+<script src="js/story.js?v=92"></script>
+<script src="js/meta.js?v=92"></script>
+<script src="js/coop.js?v=92"></script>
+<script src="js/crews.js?v=92"></script>
+<script src="js/crewhq.js?v=92"></script>
+<script src="js/content.js?v=92"></script>
+<script src="js/replay.js?v=92"></script>
+<script src="js/variety.js?v=92"></script>
+<script src="js/pace.js?v=92"></script>
+<script src="js/progress2.js?v=92"></script>
+<script src="js/cyber.js?v=92"></script>
+<script src="js/shop2.js?v=92"></script>
+<script src="js/cyber2.js?v=92"></script>
+<script src="js/casino.js?v=92"></script>
+<script src="js/casino2.js?v=92"></script>
+<script src="js/casino3.js?v=92"></script>
+<script src="js/casino4.js?v=92"></script>
+<script src="js/missions.js?v=92"></script>
+<script src="js/extras.js?v=92"></script>
+<script src="js/badges.js?v=92"></script>
+<script src="js/ux.js?v=92"></script>
+<script src="js/saves.js?v=92"></script>
+<script src="js/polish.js?v=92"></script>
+<script src="js/voice.js?v=92"></script>
+<script src="js/i18n_a.js?v=92"></script>
+<script src="js/i18n_b.js?v=92"></script>
+<script src="js/i18n_c.js?v=92"></script>
+<script src="js/i18n.js?v=92"></script>
+<script src="js/guard.js?v=92"></script>
+<script src="js/ui.js?v=92"></script>
 </body>
 </html>

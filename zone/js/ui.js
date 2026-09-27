@@ -638,7 +638,9 @@ function toggleMap() {
   else { G.state = 'play'; hide('mapScreen'); }
 }
 function drawBigMap() {
-  const c = $('bigmap'), S = Math.min(innerWidth, innerHeight - 90) * 0.9;
+  // landscape phones put the legend beside the map, so the map can use the full height
+  const land = innerHeight <= 500 && innerWidth >= innerHeight * 4 / 3;
+  const c = $('bigmap'), S = land ? Math.min(innerWidth - 300, innerHeight - 24) : Math.min(innerWidth, innerHeight - 90) * 0.9;
   c.width = S * DPR; c.height = S * DPR; c.style.width = S + 'px'; c.style.height = S + 'px';
   const g = c.getContext('2d'); g.setTransform(DPR, 0, 0, DPR, 0, 0);
   const span = World.kind === 'lab' ? LAB_N * LAB_T : WORLD, f = S / span, mk = World.mapImg.width / WORLD;
