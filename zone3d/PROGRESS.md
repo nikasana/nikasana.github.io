@@ -53,6 +53,12 @@ look is stylised low-poly, not photoreal.
   cat, tushkano, rat queen, boar, flesh); teammates, quest people and the companion dog too. Walk/run
   cycles, guns raised, zombies reaching out, attacks when close, flinch when hit, elite colour tint, soft
   ground shadows, bodies fall over and sink away. A whole horde is 3 draw calls.
+- **v2-C: done.** Every enemy and boss is now a 3D model: bloodsuckers (shimmer see-through when cloaked),
+  izlom (long arm), phantoms/wraiths/holograms (see-through, wraiths float), gorilla, shrieker, mimic,
+  psy-deer (antlers), wolf, spider, rat king, larva/snake/serpent (segmented, follow their path), sparks
+  and poltergeists (glowing orbs with circling debris), the watching eye, bats and crows (flapping
+  wings); bosses: pseudogiant, chimera (two heads, horns), behemoth (tusks, spikes), matriarch, controller
+  prime, izlom lord, poltergeist king, the gunship (spinning rotor) and the Monolith (glowing crystal).
 
 ## How to play
 
