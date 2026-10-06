@@ -50,6 +50,18 @@ const Z3C = { gl: null, ov: null, og: null, hint: null };
   Z3.ovMesh.frustumCulled = false; Z3.scene.add(Z3.ovMesh);
   Z3.chunkGeo = new THREE.PlaneGeometry(CHUNK, CHUNK); Z3.chunkGeo.rotateX(-Math.PI / 2);
   Z3.solid = new THREE.Group(); Z3.scene.add(Z3.solid);
+  // sky: a dome that follows you, lighter at the horizon; stars come out at night
+  {
+    const g = new THREE.SphereGeometry(3200, 24, 12), n = g.attributes.position.count, col = new Float32Array(n * 3);
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    Z3.skyGeo = g; Z3.sky = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false }));
+    Z3.sky.renderOrder = -1; Z3.sky.frustumCulled = false; Z3.scene.add(Z3.sky);
+    const sp = new Float32Array(600 * 3);
+    for (let i = 0; i < 600; i++) { const a = Math.random() * TAU, e = 0.15 + Math.random() * 1.3, r = 3000; sp[i * 3] = Math.cos(a) * Math.cos(e) * r; sp[i * 3 + 1] = Math.sin(e) * r; sp[i * 3 + 2] = Math.sin(a) * Math.cos(e) * r; }
+    const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
+    Z3.stars = new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xdde6ff, size: 2.2, sizeAttenuation: false, fog: false, transparent: true, depthWrite: false }));
+    Z3.stars.renderOrder = -1; Z3.stars.frustumCulled = false; Z3.scene.add(Z3.stars);
+  }
   Z3.ok = true;
   // desktop: a short hint until the mouse is captured
   const h = document.createElement('div'); h.id = 'z3hint';
@@ -179,7 +191,7 @@ class PT3 {
     Z3.scene.add(this.mesh);
   }
   push(x, h, y, size, r, g, b, a) {
-    if (this.n >= this.cap) return;
+    if (this.n >= this.cap || this.n >= (Z3.ptCap || this.cap)) return;
     const i = this.n * 3, j = this.n * 4;
     this.pos[i] = x; this.pos[i + 1] = h; this.pos[i + 2] = y;
     this.c[j] = r; this.c[j + 1] = g; this.c[j + 2] = b; this.c[j + 3] = a; this.s[this.n] = size; this.n++;
@@ -191,6 +203,7 @@ class PT3 {
     this.mat.uniforms.k.value = Z3.ptK; this.mat.uniforms.fogFar.value = Z3.fog.far;
   }
 }
+const Z3_BC = { bolt: [0.75, 0.75, 0.7], flame: [1, 0.5, 0.12], arrow: [0.86, 0.7, 0.47], laser: [1, 0.3, 0.25], radball: [0.6, 1, 0.3], swarm: [1, 0.85, 0.3], gorb: [0.7, 0.45, 1], boom: [1, 0.6, 0.2], saw: [0.85, 0.88, 0.92], rivet: [0.7, 0.72, 0.75], acid: [0.55, 1, 0.35] };
 const RGB3 = new Map();
 function z3rgb(s) { // "r,g,b" → [r, g, b] in 0..1
   let v = RGB3.get(s); if (v) return v;
@@ -396,12 +409,12 @@ function z3Stand() {
   const PC = WORLD / PCELL, st = ++World.stamp;
   const cx0 = Math.max(0, Math.floor((px - V) / PCELL)), cx1 = Math.min(PC - 1, Math.floor((px + V) / PCELL));
   const cy0 = Math.max(0, Math.floor((py - V) / PCELL)), cy1 = Math.min(PC - 1, Math.floor((py + V) / PCELL));
-  let made = 0;
+  let made = 0; const lowQ = lowGfx(), potQ = potatoGfx();
   for (let gy = cy0; gy <= cy1; gy++) for (let gx = cx0; gx <= cx1; gx++) {
     const cell = World.propGrid[gy * PC + gx]; if (!cell) continue;
     for (const p of cell) {
       if (p._s === st) continue; p._s = st;
-      if (Z3_BLOCK.has(p.kind)) continue;
+      if (Z3_BLOCK.has(p.kind) || (lowQ && p.kind === 'grass') || (potQ && p.kind === 'reeds')) continue;
       const dx = p.x - px, dy = p.y - py; if (dx * dx + dy * dy > V2 || !ahead(p.x, p.y, 260)) continue;
       if (!SPR3.map.has(z3PropKey(p)) && ++made > 24) continue; // new sprites are spread over a few frames
       const d2 = dx * dx + dy * dy, near = d2 < 110 * 110 ? clamp((Math.sqrt(d2) - 35) / 75, 0.12, 1) : 1; // see through scenery you stand in
@@ -487,8 +500,8 @@ function z3Points() {
   const V2 = Z3.view * Z3.view, px = P.x, py = P.y;
   for (const b of G.bullets) {
     const dx = b.x - px, dy = b.y - py; if (dx * dx + dy * dy > V2) continue;
-    const r = b.r || 4, col = b.k === 'bolt' ? [0.75, 0.75, 0.7] : b.ignite ? [1, 0.55, 0.15] : b.rocket ? [1, 0.7, 0.25] : b.big ? [1, 0.95, 0.7] : [1, 0.86, 0.55];
-    const sz = (b.rocket ? 22 : 8 + r * 2.2);
+    const r = b.r || 4, col = Z3_BC[b.k] || (b.ignite ? [1, 0.55, 0.15] : b.rocket ? [1, 0.7, 0.25] : b.big ? [1, 0.95, 0.7] : [1, 0.86, 0.55]);
+    const sz = b.k === 'flame' ? 30 : b.rocket || b.k === 'boom' ? 22 : 8 + r * 2.2;
     A.push(b.x, 24, b.y, sz, col[0], col[1], col[2], 1);
     A.push(b.x - b.vx * 0.012, 24, b.y - b.vy * 0.012, sz * 0.75, col[0], col[1], col[2], 0.55);
     A.push(b.x - b.vx * 0.024, 24, b.y - b.vy * 0.024, sz * 0.5, col[0], col[1], col[2], 0.3);
@@ -586,18 +599,44 @@ function z3Camera() {
   Z3.ptK = H * Z3.pr * 0.5 / Math.tan(cam.fov * Math.PI / 360);
   // light and air: daylight, night, fog weather and labs
   const dark = clamp(Env.darkness ? Env.darkness() : 0, 0, 1), lab = World.kind === 'lab';
-  Z3.bright = lab ? 0.55 + (1 - dark) * 0.35 : 1 - dark * 0.72;
+  Z3.bright = lab ? 0.6 + (1 - dark) * 0.3 : 1 - dark * 0.6;
   const fogK = clamp(Env.fogA || 0, 0, 1);
-  const far = (Z3_PHONE || minGfx() ? 1150 : 1500) * (1 - fogK * 0.55) * (lab ? 0.6 : 1);
+  const Q = z3Q(); Z3.ovN = Q.ovN; Z3.ptCap = Q.pts;
+  const far = Q.far * (1 - fogK * 0.55) * (lab ? 0.6 : 1);
   Z3.view = far + 80;
   const base = lab ? [0.04, 0.045, 0.05] : [0.54, 0.565, 0.53];
   const night = lab ? [0.02, 0.02, 0.025] : [0.035, 0.045, 0.1];
   const k = lab ? 0.5 : dark, col = [lerp(base[0], night[0], k), lerp(base[1], night[1], k), lerp(base[2], night[2], k)];
   Z3.fog.color.setRGB(col[0], col[1], col[2]); Z3.scene.background.setRGB(col[0], col[1], col[2]);
   Z3.fog.near = far * 0.18; Z3.fog.far = far;
+  // the dome: fog colour at the horizon, deeper above; red in an emission blast, none underground
+  Z3.sky.visible = !lab; Z3.sky.position.copy(cam.position); Z3.stars.position.copy(cam.position);
+  if (!lab) {
+    const em = G.em && G.em.phase === 'blast' ? 0.6 : G.em && G.em.phase === 'warn' ? (1 - G.em.t / 30) * 0.4 : 0, ss = Env.sunset ? Env.sunset() : 0;
+    const top = [lerp(0.36, 0.01, dark), lerp(0.42, 0.015, dark), lerp(0.5, 0.05, dark)], P2 = Z3.skyGeo.attributes.position, C = Z3.skyGeo.attributes.color;
+    const key = Math.round(dark * 50) + '|' + Math.round(em * 30) + '|' + Math.round(ss * 50) + '|' + Math.round(fogK * 20);
+    if (Z3.skyKey !== key) {
+      Z3.skyKey = key;
+      for (let i = 0; i < P2.count; i++) {
+        const h = clamp(P2.getY(i) / 3200, 0, 1), k = Math.pow(h, 0.6) * (1 - fogK * 0.8);
+        let r = lerp(col[0], top[0], k), gg = lerp(col[1], top[1], k), b = lerp(col[2], top[2], k);
+        const glow = ss * (1 - h) * 1.6; r += glow * 0.9; gg += glow * 0.45; b += glow * 0.15;
+        r = lerp(r, 0.55, em * (1 - h * 0.5)); gg = lerp(gg, 0.08, em * (1 - h * 0.5)); b = lerp(b, 0.05, em * (1 - h * 0.5));
+        C.setXYZ(i, r, gg, b);
+      }
+      C.needsUpdate = true;
+    }
+  }
+  Z3.stars.visible = !lab && dark > 0.35 && fogK < 0.5; Z3.stars.material.opacity = clamp((dark - 0.35) * 2.5, 0, 1);
   if (Z3.flatMat) Z3.flatMat.color.setScalar(Z3.bright);
   if (Z3.wallMats) for (const m of Z3.wallMats.values()) m.color.setScalar(Z3.bright);
 }
+// picture quality follows the game's own graphics setting (phones start on the lighter ones)
+const Z3_Q = [
+  { far: 1700, ovN: 1024, pts: 6000 }, { far: 1500, ovN: 1024, pts: 5000 }, { far: 1250, ovN: 768, pts: 3000 },
+  { far: 1050, ovN: 640, pts: 2000 }, { far: 850, ovN: 512, pts: 1200 },
+];
+const z3Q = () => Z3_Q[clamp(typeof gfxLevel === 'function' ? gfxLevel() : 0, 0, 4)];
 Z3.pixelRatio = () => { const d = devicePixelRatio || 1, q = typeof gfxLevel === 'function' ? gfxLevel() : 0; return q >= 4 ? 0.6 : q >= 2 || Z3_PHONE ? Math.min(d, 1) : q >= 1 ? Math.min(d, 1.25) : Math.min(d, 1.75); };
 function z3Project(x, h, y) {
   const v = Z3.pv || (Z3.pv = new THREE.Vector3());
@@ -681,7 +720,8 @@ function z3Overlay() {
   }
   if (lowhp) { g.fillStyle = `rgba(200,0,0,${(0.3 - P.hp / P.maxhp) * (0.5 + Math.sin(NOW * 6) * 0.3)})`; g.fillRect(0, 0, W, H); }
   if (typeof Events !== 'undefined') { const EM = Events.mods(); if (EM.red) { g.fillStyle = `rgba(160,0,0,${0.16 + Math.sin(NOW * 2) * 0.04})`; g.fillRect(0, 0, W, H); } if (EM.flood) { g.fillStyle = 'rgba(30,70,110,0.18)'; g.fillRect(0, 0, W, H); } }
-  z3Gun(g, W, H);
+  z3Weather(g, W, H);
+  if (P.veh) z3Ride(g, W, H); else z3Gun(g, W, H);
   // crosshair: brackets the mutant your weapons will shoot at
   const t = Z3.target;
   const cc = t ? '#ff6a4a' : 'rgba(255,240,200,0.85)';
@@ -696,9 +736,67 @@ function z3Overlay() {
   if (G.flash > 0) { g.fillStyle = `rgba(${G.flashCol},${G.flash * 0.6})`; g.fillRect(0, 0, W, H); }
   if (G.fade > 0) { g.fillStyle = `rgba(0,0,0,${G.fade})`; g.fillRect(0, 0, W, H); }
 }
+// weather and darkness on the screen: rain streaks, snowflakes, heat/radiation/psi tints, and at night (or in a
+// lab) a flashlight: the view darkens towards the edges and stays lit in the middle
+const Z3W = { drops: [], flakes: [] };
+function z3Weather(g, W, H) {
+  const lab = World.kind === 'lab', dark = clamp(Env.darkness ? Env.darkness() : 0, 0, 1);
+  if (!lab && Env.rainA > 0.02) {
+    if (Z3W.drops.length < 200) for (let i = 0; i < 200; i++) Z3W.drops.push({ x: Math.random() * W, y: Math.random() * H, s: 0.6 + Math.random() * 0.4 });
+    g.strokeStyle = `rgba(190,205,225,${0.35 * Env.rainA})`; g.lineWidth = 1.2; g.beginPath();
+    const n = Math.floor(Z3W.drops.length * Env.rainA), side = Math.sin(Z3.yaw * 3) * 4;
+    for (let i = 0; i < n; i++) { const d = Z3W.drops[i]; d.y += 24 * d.s; d.x += side * d.s * 0.3; if (d.y > H) { d.y = -20; d.x = Math.random() * (W + 100) - 50; } g.moveTo(d.x, d.y); g.lineTo(d.x - side * d.s, d.y + 18 * d.s); }
+    g.stroke(); g.fillStyle = `rgba(20,30,50,${0.12 * Env.rainA})`; g.fillRect(0, 0, W, H);
+  }
+  if (!lab && Env.weather === 'snow') {
+    if (!Z3W.flakes.length) for (let i = 0; i < 150; i++) Z3W.flakes.push({ x: Math.random() * W, y: Math.random() * H, s: 1 + Math.random() * 2.5, v: 30 + Math.random() * 40 });
+    g.fillStyle = 'rgba(240,245,255,0.85)';
+    for (const f of Z3W.flakes) { f.y += f.v / 60; f.x += Math.sin(NOW + f.s * 3) * 0.5; if (f.y > H) { f.y = -5; f.x = Math.random() * W; } g.fillRect(f.x, f.y, f.s, f.s); }
+    g.fillStyle = 'rgba(220,230,245,0.1)'; g.fillRect(0, 0, W, H);
+  }
+  if (!lab && Env.weather === 'heat') { g.fillStyle = `rgba(255,150,40,${0.1 + Math.sin(NOW * 1.5) * 0.03})`; g.fillRect(0, 0, W, H); }
+  if (!lab && Env.weather === 'radstorm') { g.fillStyle = `rgba(180,210,40,${0.14 + Math.sin(NOW * 4) * 0.04})`; g.fillRect(0, 0, W, H); }
+  if (!lab && Env.weather === 'psi') { g.fillStyle = `rgba(120,40,180,${0.1 + Math.sin(NOW * 2) * 0.04})`; g.fillRect(0, 0, W, H); }
+  const k = lab ? 0.55 : clamp((dark - 0.25) * 1.1, 0, 0.7);
+  if (k > 0.02) {
+    const cx = W / 2, cy = H * 0.55, r0 = Math.min(W, H) * 0.22, r1 = Math.max(W, H) * 0.7;
+    const fl = g.createRadialGradient(cx, cy, r0, cx, cy, r1); fl.addColorStop(0, 'rgba(0,0,0,0)'); fl.addColorStop(1, lab ? `rgba(2,3,4,${k})` : `rgba(3,5,14,${k})`);
+    g.fillStyle = fl; g.fillRect(0, 0, W, H);
+    const warm = g.createRadialGradient(cx, cy, 0, cx, cy, r0 * 1.3); warm.addColorStop(0, `rgba(255,240,200,${k * 0.12})`); warm.addColorStop(1, 'rgba(255,240,200,0)');
+    g.fillStyle = warm; g.fillRect(0, 0, W, H);
+  }
+}
+// riding: handlebars of the bike or the jeep's hood instead of the gun
+function z3Ride(g, W, H) {
+  const sc = clamp(Math.min(W, H) / 700, 0.6, 1.3), sh = Math.sin(NOW * 22) * (P.moving ? 1.5 : 0.4);
+  g.save(); g.translate(W / 2, H + sh); g.scale(sc, sc);
+  if (P.veh.kind === 'bike') {
+    g.strokeStyle = '#1d1c19'; g.lineWidth = 16; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(-260, -150); g.quadraticCurveTo(0, -200, 260, -150); g.stroke();
+    g.fillStyle = '#b8342a'; g.beginPath(); g.moveTo(-90, 0); g.lineTo(-60, -130); g.lineTo(60, -130); g.lineTo(90, 0); g.fill();
+    g.fillStyle = '#2b2a25'; g.fillRect(-40, -175, 80, 40); g.fillStyle = '#ffe9a0'; g.fillRect(-22, -165, 44, 18);
+    g.fillStyle = '#56603f'; for (const sx of [-1, 1]) { g.beginPath(); g.ellipse(sx * 270, -150, 34, 22, 0, 0, TAU); g.fill(); }
+  } else {
+    g.fillStyle = '#4e5a3a'; g.beginPath(); g.moveTo(-W, 0); g.lineTo(-W, -70); g.quadraticCurveTo(0, -150, W, -70); g.lineTo(W, 0); g.fill();
+    g.fillStyle = '#3e482e'; g.fillRect(-W, -40, W * 2, 40);
+    g.strokeStyle = '#1d1c19'; g.lineWidth = 18; g.beginPath(); g.arc(-160, 40, 120, Math.PI * 1.15, Math.PI * 1.85); g.stroke();
+  }
+  g.restore();
+  if (P.veh.fuel !== undefined && VEH[P.veh.kind] && VEH[P.veh.kind].fuel) { g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(W / 2 - 50, H - 18, 100, 6); g.fillStyle = '#ffcf6a'; g.fillRect(W / 2 - 50, H - 18, P.veh.fuel, 6); }
+}
+// which kind of gun you hold: your first weapon decides
+function z3GunKind() {
+  const w = P.weapons && P.weapons[0], id = w ? w.id : 'pistol', nm = (WEAPONS[id] && WEAPONS[id].name || '').toLowerCase() + ' ' + id;
+  if (/pistol|dual|revolver|deagle|makarov|pm\b/.test(nm)) return 'pistol';
+  if (/shotgun|sawn|toz/.test(nm)) return 'shotgun';
+  if (/launcher|rocket|rpg|acid|flame|c4|grenade|mortar|saw|stasis|mine/.test(nm)) return 'tube';
+  if (/tesla|laser|grav|psi|weld|beam|electr|fence|coil|gauss/.test(nm)) return 'energy';
+  return 'rifle';
+}
 // the gun in your hands: kicks back and flashes when your weapons fire, sways while you walk
 function z3Gun(g, W, H) {
-  if (P.veh) return;
+  const kind = z3GunKind();
+  if (kind !== 'rifle') return z3Gun2(g, W, H, kind);
   const fire = P.muzzle > 0 ? 1 : 0, sc = clamp(Math.min(W, H) / 700, 0.6, 1.3);
   const sway = P.moving ? Math.sin((P.anim || 0) * 0.5) * 6 : Math.sin(NOW * 1.6) * 1.5, bob = P.moving ? Math.abs(Math.cos((P.anim || 0) * 0.5)) * 5 : 0;
   const kick = fire * 10;
@@ -714,6 +812,36 @@ function z3Gun(g, W, H) {
   g.fillStyle = '#3a3830'; g.beginPath(); g.moveTo(-58, -146); g.lineTo(-6, -146); g.lineTo(-2, -120); g.lineTo(-62, -120); g.closePath(); g.fill();
   g.fillStyle = '#4a3a26'; g.beginPath(); g.moveTo(-10, -60); g.lineTo(26, -60); g.lineTo(60, 30); g.lineTo(14, 30); g.closePath(); g.fill(); // grip
   g.fillStyle = '#56603f'; g.beginPath(); g.moveTo(10, -40); g.quadraticCurveTo(80, -60, 120, 40); g.lineTo(30, 40); g.closePath(); g.fill(); // sleeve
+  g.restore();
+}
+
+function z3Gun2(g, W, H, kind) {
+  const fire = P.muzzle > 0 ? 1 : 0, sc = clamp(Math.min(W, H) / 700, 0.6, 1.3);
+  const sway = P.moving ? Math.sin((P.anim || 0) * 0.5) * 6 : Math.sin(NOW * 1.6) * 1.5, bob = P.moving ? Math.abs(Math.cos((P.anim || 0) * 0.5)) * 5 : 0;
+  g.save(); g.translate(W * 0.68 + sway * sc, H + (bob + fire * 12) * sc); g.scale(sc, sc); g.rotate(-0.1);
+  const flash = (fx, fy, r, c1, c2) => { if (!fire) return; const gr = g.createRadialGradient(fx, fy, 0, fx, fy, r); gr.addColorStop(0, c1); gr.addColorStop(0.45, c2); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.beginPath(); g.arc(fx, fy, r, 0, TAU); g.fill(); };
+  if (kind === 'pistol') {
+    flash(-30, -175, 38, 'rgba(255,250,210,0.95)', 'rgba(255,170,60,0.7)');
+    g.fillStyle = '#1d1c19'; g.fillRect(-48, -170, 34, 90); g.fillStyle = '#2b2a25'; g.fillRect(-56, -110, 50, 40);
+    g.fillStyle = '#3a2e22'; g.beginPath(); g.moveTo(-50, -72); g.lineTo(-10, -72); g.lineTo(10, 30); g.lineTo(-36, 30); g.fill();
+    g.fillStyle = '#56603f'; g.beginPath(); g.moveTo(-20, -30); g.quadraticCurveTo(60, -50, 100, 40); g.lineTo(-10, 40); g.fill();
+  } else if (kind === 'shotgun') {
+    flash(-34, -240, 56, 'rgba(255,250,210,0.95)', 'rgba(255,150,50,0.75)');
+    g.fillStyle = '#1d1c19'; g.fillRect(-56, -240, 20, 180); g.fillRect(-32, -240, 20, 180);
+    g.fillStyle = '#4a3a26'; g.beginPath(); g.moveTo(-70, -90); g.lineTo(6, -90); g.lineTo(40, 30); g.lineTo(-90, 30); g.fill();
+    g.fillStyle = '#56603f'; g.beginPath(); g.moveTo(10, -40); g.quadraticCurveTo(80, -60, 120, 40); g.lineTo(30, 40); g.fill();
+  } else if (kind === 'tube') {
+    flash(-30, -230, 50, 'rgba(255,240,200,0.9)', 'rgba(255,120,40,0.6)');
+    g.fillStyle = '#3e462e'; g.beginPath(); g.moveTo(-70, -230); g.lineTo(10, -230); g.lineTo(30, 20); g.lineTo(-100, 20); g.fill();
+    g.fillStyle = '#1d1c19'; g.beginPath(); g.ellipse(-30, -230, 40, 12, 0, 0, TAU); g.fill();
+    g.fillStyle = '#56603f'; g.beginPath(); g.moveTo(10, -40); g.quadraticCurveTo(80, -60, 120, 40); g.lineTo(30, 40); g.fill();
+  } else {
+    flash(-34, -232, 44, 'rgba(220,240,255,0.95)', 'rgba(90,170,255,0.7)');
+    g.fillStyle = '#2b2f36'; g.beginPath(); g.moveTo(-60, -220); g.lineTo(-8, -220); g.lineTo(20, 20); g.lineTo(-90, 20); g.fill();
+    g.strokeStyle = `rgba(110,200,255,${0.6 + Math.sin(NOW * 9) * 0.3})`; g.lineWidth = 5;
+    for (let i = 0; i < 4; i++) { g.beginPath(); g.ellipse(-34, -190 + i * 34, 30 - i * 1, 8, 0, 0, TAU); g.stroke(); }
+    g.fillStyle = '#56603f'; g.beginPath(); g.moveTo(10, -40); g.quadraticCurveTo(80, -60, 120, 40); g.lineTo(30, 40); g.fill();
+  }
   g.restore();
 }
 

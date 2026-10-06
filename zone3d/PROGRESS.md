@@ -56,6 +56,15 @@ Open `/zone3d/` on the same site as the game (https://nikasana.github.io/zone3d/
 - Co-op tested with two tabs (offline test mode): lobby, start, both players in 3D, the guest moves where
   they look and the host sees them standing with their name.
 
-Known gaps: the vehicle you drive is not drawn (camera rides higher); smoke columns, story bodies and some
-event objects are still flat on the ground; enemies use side-view pictures; no sky details; the automatic
-"graphics lowered" from the flat game also applies (settings are shared).
+### Batch 3: done
+- Picture quality follows the game's graphics setting: view distance, flat-effects resolution, render
+  resolution, particle budget, grass/reeds hidden on the lighter settings (phones start on Ultra-low).
+- Sky dome (overcast by day, sunset glow, dark with stars at night, red in an emission blast).
+- Weather on screen: rain streaks, snowflakes, heat / radiation storm / psi tints; fog shortens the view.
+- Night and labs: flashlight look (edges dark, middle lit).
+- Riding: bike handlebars or jeep hood instead of the gun, with the fuel gauge.
+- The gun in your hands matches your first weapon (pistol, rifle, shotgun, launcher, energy weapon);
+  bullets keep their colours by type (flames, arrows, lasers, acid, saws…).
+
+Known gaps: smoke columns, story bodies and some event objects are still flat on the ground; enemies use
+side-view pictures.
