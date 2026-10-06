@@ -47,6 +47,12 @@ look is stylised low-poly, not photoreal.
   double tap, heavy rounds, drum magazine) with a 3D model whose attachments follow its level, tracers,
   muzzle flash; left mouse = fire, right mouse = focus fire, FIRE button on touch screens, optional
   auto-fire (on by default on phones); sun and sky light on buildings.
+- **v2-B: done.** 3D animated, lit models instead of pictures for every enemy the game draws as a
+  person (detected automatically: zombie, bandit, soldier, sniper, Monolith, exoskeleton, ghost, mirror)
+  plus snork, controller, karlik, burer, and the four-legged mutants (dog, pseudodog, psy-dog, pack alpha,
+  cat, tushkano, rat queen, boar, flesh); teammates, quest people and the companion dog too. Walk/run
+  cycles, guns raised, zombies reaching out, attacks when close, flinch when hit, elite colour tint, soft
+  ground shadows, bodies fall over and sink away. A whole horde is 3 draw calls.
 
 ## How to play
 

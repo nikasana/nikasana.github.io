@@ -10,7 +10,7 @@
 //  - movement keys and the joystick are turned by where you look; weapons aim where you look (or 360° like before)
 const Z3 = {
   ok: false, on: false, yaw: -Math.PI / 2, pitch: 0, locked: false, wasLocked: false,
-  eye: 44, fov: 75, A: 0.42, farK: 1, // aim cone half-angle (radians); view distance factor (adapts to FPS)
+  eye: 50, fov: 75, A: 0.42, farK: 1, // aim cone half-angle (radians); view distance factor (adapts to FPS)
   ovN: 1024, ovR: 760, view: 1500,
   chunks: new Map(), chunkSrc: null, propsRef: null, propsLen: -1, stamp: 1,
   target: null, prof: { flat: 0, build: 0, gl: 0, ov: 0 },
@@ -435,8 +435,10 @@ function z3Stand() {
   }
   // mutants
   const rxw = -s;
+  const hasM = typeof MDL !== 'undefined' && MDL.ready;
   for (const e of G.enemies) {
     if (e.dead && !(e.deadT > 0)) continue;
+    if (hasM && MDL.kindOf(e.id)) continue; // drawn as a 3D model
     const dx = e.x - px, dy = e.y - py; if (dx * dx + dy * dy > V2 || !ahead(e.x, e.y, 120)) continue;
     let a = e.alpha === undefined ? 1 : e.alpha;
     if (!e._z3t) e._z3t = NOW; a *= Math.min(1, (NOW - e._z3t) / 0.5); // fade in where they appear
@@ -468,14 +470,14 @@ function z3Stand() {
     z3Push(SPR3.get('poi|' + p.icon + p.name, -140, -100, 280, 110, () => drawPoiChest({ ...p, x: 0, y: 0 })), p.x, p.y, 0, 1, 1, false, 1);
   }
   // quest people (the scientist you escort or guard)
-  if (typeof Quests !== 'undefined') for (const q of Quests.list) {
+  if (typeof Quests !== 'undefined' && !hasM) for (const q of Quests.list) {
     const n = q.npc; if (!n || n.dead || n.x === undefined) continue; const dx = n.x - px, dy = n.y - py; if (dx * dx + dy * dy > V2) continue;
     const mv = q.type === 'escort' || (n.vx || n.vy), fr = mv ? Math.floor((NOW * 8 / TAU * 4)) % 4 : 0;
     const sp = SPR3.get('npc|sci|' + fr, -70, -110, 140, 130, () => drawStalker({ x: 0, y: 0, z: 0, anim: ((fr + 0.5) / 4) * TAU, face: 1, aim: 0, moving: !!mv }, typeof SCI_PAL !== 'undefined' ? SCI_PAL : PAL_PLAYER, false));
     z3Push(sp, n.x, n.y, 0, 1, 1, (P.x > n.x ? 1 : -1) * rxw < 0, 1);
   }
   // the companion dog
-  if (G.pet && !G.pet.dead) z3Push(z3EnemySprite(G.pet), G.pet.x, G.pet.y, G.pet.z || 0, 1, 1, (G.pet.face || 1) * rxw < 0, 1);
+  if (G.pet && !G.pet.dead && !hasM) z3Push(z3EnemySprite(G.pet), G.pet.x, G.pet.y, G.pet.z || 0, 1, 1, (G.pet.face || 1) * rxw < 0, 1);
   // the tall part of anomalies: a few animation frames each, cached
   for (const a of World.anomalies) {
     if (a.hidden) continue; const dx = a.x - px, dy = a.y - py; if (dx * dx + dy * dy > V2 || !ahead(a.x, a.y, a.r + 80)) continue;
@@ -500,7 +502,7 @@ function z3Stand() {
   }
   if (typeof Hz !== 'undefined' && Hz.watcher && typeof drawEye === 'function') { const w = Hz.watcher; z3Push(SPR3.get('eye', -60, -100, 120, 120, () => drawEye({ x: 0, y: 0, z: 0 })), w.x, w.y, 40 + Math.sin(NOW * 2) * 8, 1, 1, false, 0.8); }
   // teammates
-  if (typeof CO !== 'undefined' && CO.active && typeof coOthers === 'function') for (const q of coOthers()) {
+  if (typeof CO !== 'undefined' && CO.active && typeof coOthers === 'function' && !hasM) for (const q of coOthers()) {
     if (q.gone || q.x === undefined) continue;
     const fr = q.moving ? Math.floor((((q.anim || 0) % TAU) + TAU) % TAU / TAU * 4) % 4 : 0;
     const sp = SPR3.get('co|' + (q.char || '') + '|' + fr, -70, -110, 140, 130, () => drawStalker({ x: 0, y: 0, z: 0, anim: ((fr + 0.5) / 4) * TAU, face: 1, aim: 0, moving: !!q.moving }, coPal(q.char), true));
@@ -654,7 +656,7 @@ function z3Camera() {
   }
   Z3.stars.visible = !lab && dark > 0.35 && fogK < 0.5; Z3.stars.material.opacity = clamp((dark - 0.35) * 2.5, 0, 1);
   // daylight: sky light from above and a low sun; at night mostly a dim blue sky light
-  Z3.hemi.intensity = 0.25 + Z3.bright * 0.55; Z3.sun.intensity = lab ? 0.15 : Math.max(0, Z3.bright - 0.35) * 1.4;
+  Z3.hemi.intensity = (0.45 + Z3.bright * 0.75) * Math.PI * 0.62; Z3.sun.intensity = (lab ? 0.2 : Math.max(0, Z3.bright - 0.3) * 1.1) * Math.PI * 0.62;
   Z3.hemi.color.setRGB(lerp(0.6, 0.87, Z3.bright), lerp(0.66, 0.9, Z3.bright), lerp(0.85, 0.94, Z3.bright));
 }
 // picture quality follows the game's own graphics setting (phones start on the lighter ones)
@@ -920,6 +922,7 @@ function z3Leave() {
     if (World.props !== Z3.propsRef || World.props.length !== Z3.propsLen) { Z3.propsRef = World.props; Z3.propsLen = World.props.length; z3Solids(); }
     z3Stand(); z3Points();
     Z3.target = G.state === 'play' || G.state === 'pause' ? z3Target(1200) : null;
+    if (typeof mdlFrame === 'function') mdlFrame();
     const t2 = performance.now();
     Z3.R.render(Z3.scene, Z3.cam);
     if (typeof z3GunDraw === 'function') z3GunDraw();
