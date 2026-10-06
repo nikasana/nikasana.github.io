@@ -10,9 +10,9 @@ const W3_ANOM = new Set(['electro', 'tesla', 'burner', 'comet', 'vortex', 'magne
   if (!MDL.ready) return;
   const m = new THREE.InstancedMesh(new THREE.ConeGeometry(0.5, 1, Z3_PHONE ? 6 : 9), new THREE.MeshLambertMaterial({ color: 0xffffff }), 5000);
   m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(5000 * 3), 3); m.instanceColor.setUsage(THREE.DynamicDrawUsage);
-  m.count = 0; m.cap = 5000; m.frustumCulled = false; Z3.scene.add(m); MDL.cone = m;
+  m.count = 0; m.cap = 5000; m.frustumCulled = false; m.castShadow = true; Z3.scene.add(m); MDL.cone = m;
   // scenery never moves: it goes into its own lower-detail instance buffers, rebuilt only after you walk a bit
-  const mk = (geo, cap, mat) => { const t = new THREE.InstancedMesh(geo, mat || new THREE.MeshLambertMaterial({ color: 0xffffff }), cap); t.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3); t.count = 0; t.cap = cap; t.frustumCulled = false; Z3.scene.add(t); return t; };
+  const mk = (geo, cap, mat) => { const t = new THREE.InstancedMesh(geo, mat || new THREE.MeshLambertMaterial({ color: 0xffffff }), cap); t.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3); t.count = 0; t.cap = cap; t.frustumCulled = false; t.castShadow = true; Z3.scene.add(t); return t; };
   W3S.box = mk(new THREE.BoxGeometry(1, 1, 1), 3000); W3S.sph = mk(new THREE.SphereGeometry(0.5, 8, 6), 9000); W3S.cyl = mk(new THREE.CylinderGeometry(0.5, 0.5, 1, 7), 9000);
   W3S.cone = mk(new THREE.ConeGeometry(0.5, 1, 7), 6000); W3S.tsph = mk(W3S.sph.geometry, 600, new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.42, depthWrite: false }));
   W3S.tsph.renderOrder = 2;

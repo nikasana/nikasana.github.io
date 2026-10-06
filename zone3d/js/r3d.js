@@ -36,6 +36,7 @@ const Z3C = { gl: null, ov: null, og: null, hint: null };
   let R;
   try { R = new THREE.WebGLRenderer({ canvas: gl, antialias: !Z3_PHONE, powerPreference: 'high-performance' }); } catch (e) { return; }
   R.outputColorSpace = THREE.LinearSRGBColorSpace;
+  R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap;
   R.autoClear = true;
   Z3.R = R; Z3C.gl = gl; Z3C.ov = ov; Z3C.og = ov.getContext('2d');
   Z3.scene = new THREE.Scene();
@@ -50,9 +51,17 @@ const Z3C = { gl: null, ov: null, og: null, hint: null };
   Z3.ovMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), Z3.ovMat); Z3.ovMesh.rotation.x = -Math.PI / 2; Z3.ovMesh.renderOrder = 1;
   Z3.ovMesh.frustumCulled = false; Z3.scene.add(Z3.ovMesh);
   Z3.chunkGeo = new THREE.PlaneGeometry(CHUNK, CHUNK); Z3.chunkGeo.rotateX(-Math.PI / 2);
+  {
+    const N = 256, c = document.createElement('canvas'); c.width = c.height = N; const g = c.getContext('2d');
+    g.fillStyle = 'rgb(128,128,128)'; g.fillRect(0, 0, N, N);
+    for (let i = 0; i < 2600; i++) { const v = 90 + Math.random() * 80; g.fillStyle = `rgb(${v},${v},${v})`; const s = 1 + Math.random() * 3; g.fillRect(Math.random() * N, Math.random() * N, s, s); }
+    g.lineWidth = 1.2; for (let i = 0; i < 900; i++) { const x = Math.random() * N, y = Math.random() * N, v = 100 + Math.random() * 70; g.strokeStyle = `rgb(${v},${v},${v})`; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (Math.random() - 0.5) * 4, y - 3 - Math.random() * 5); g.stroke(); }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = Z3.aniso; Z3.detailTex = t;
+  }
   Z3.solid = new THREE.Group(); Z3.scene.add(Z3.solid);
   Z3.hemi = new THREE.HemisphereLight(0xdfe6ef, 0x4a4434, 0.7); Z3.scene.add(Z3.hemi);
-  Z3.sun = new THREE.DirectionalLight(0xfff0d8, 1.0); Z3.sun.position.set(-0.55, 1, 0.35); Z3.scene.add(Z3.sun);
+  Z3.sun = new THREE.DirectionalLight(0xfff0d8, 1.0); Z3.sun.position.set(-0.55, 1, 0.35); Z3.scene.add(Z3.sun); Z3.scene.add(Z3.sun.target);
+  { const sc = Z3.sun.shadow.camera; sc.left = -650; sc.right = 650; sc.top = 650; sc.bottom = -650; sc.near = 10; sc.far = 3200; Z3.sun.shadow.mapSize.set(2048, 2048); Z3.sun.shadow.bias = -0.0008; Z3.sun.shadow.normalBias = 1.5; }
   // sky: a dome that follows you, lighter at the horizon; stars come out at night
   {
     const g = new THREE.SphereGeometry(3200, 24, 12), n = g.attributes.position.count, col = new Float32Array(n * 3);
@@ -289,13 +298,13 @@ function z3Solids() {
     if (!mat) { mat = new THREE.MeshLambertMaterial({ map: z3WallTex(W.style, W.alt), vertexColors: true, side: THREE.DoubleSide }); Z3.wallMats.set(k, mat); }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(W.p, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(W.u, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(W.c, 3));
-    g.computeVertexNormals(); grp.add(new THREE.Mesh(g, mat));
+    g.computeVertexNormals(); { const mm = new THREE.Mesh(g, mat); mm.castShadow = true; mm.receiveShadow = true; grp.add(mm); }
   }
   if (flat.p.length) {
     if (!Z3.flatMat) Z3.flatMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(flat.p, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(flat.c, 3)); g.computeVertexNormals();
-    grp.add(new THREE.Mesh(g, Z3.flatMat));
+    { const mm = new THREE.Mesh(g, Z3.flatMat); mm.castShadow = true; mm.receiveShadow = true; grp.add(mm); }
   }
 }
 const Z3_BLOCK = new Set(['building', 'fence', 'wreck']);
@@ -321,7 +330,12 @@ function z3Ground() {
     const src = World.chunk(gx, gy), tex = new THREE.CanvasTexture(src);
     tex.anisotropy = Z3.aniso; tex.minFilter = THREE.LinearMipmapLinearFilter;
     if (!Z3.chunkMat) Z3.chunkMat = new Map();
-    const m = new THREE.Mesh(Z3.chunkGeo, new THREE.MeshBasicMaterial({ map: tex, fog: true }));
+    const mat = new THREE.MeshLambertMaterial({ map: tex, fog: true });
+    if (Z3.detailTex && gfxLevel() < 4) {
+      mat.onBeforeCompile = (sh) => { sh.uniforms.detailMap = { value: Z3.detailTex }; sh.fragmentShader = 'uniform sampler2D detailMap;\n' + sh.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\n  diffuseColor.rgb *= texture2D(detailMap, vMapUv * 64.0).r * 0.9 + 0.55;'); };
+      mat.customProgramCacheKey = () => 'z3detail';
+    }
+    const m = new THREE.Mesh(Z3.chunkGeo, mat); m.receiveShadow = true;
     m.position.set(gx * CHUNK + CHUNK / 2, 0, gy * CHUNK + CHUNK / 2); m.renderOrder = 0;
     Z3.scene.add(m); Z3.chunks.set(k, { m, tex, s: st }); made++;
   }
@@ -329,7 +343,7 @@ function z3Ground() {
     const gx = k % 1000, gy = Math.floor(k / 1000), d = Math.hypot(gx * CHUNK + CHUNK / 2 - P.x, gy * CHUNK + CHUNK / 2 - P.y);
     if (d > R + CHUNK * 1.2) { Z3.scene.remove(t.m); t.m.material.dispose(); t.tex.dispose(); Z3.chunks.delete(k); }
   }
-  for (const t of Z3.chunks.values()) t.m.material.color.setScalar(Z3.bright);
+  for (const t of Z3.chunks.values()) t.m.material.color.setScalar(0.74);
 }
 
 // the original renderer, top-down around a point ahead of you, into the game canvas: everything it paints flat on the
@@ -658,6 +672,10 @@ function z3Camera() {
   Z3.stars.visible = !lab && dark > 0.35 && fogK < 0.5; Z3.stars.material.opacity = clamp((dark - 0.35) * 2.5, 0, 1);
   // daylight: sky light from above and a low sun; at night mostly a dim blue sky light
   Z3.hemi.intensity = (0.45 + Z3.bright * 0.75) * Math.PI * 0.62; Z3.sun.intensity = (lab ? 0.2 : Math.max(0, Z3.bright - 0.3) * 1.1) * Math.PI * 0.62;
+  const shOn = gfxLevel() === 0 && !lab && Z3.bright > 0.45;
+  if (Z3.sun.castShadow !== shOn) Z3.sun.castShadow = shOn;
+  if (shOn) { Z3.sun.target.position.set(P.x + Math.cos(Z3.yaw) * 350, 0, P.y + Math.sin(Z3.yaw) * 350); Z3.sun.position.set(Z3.sun.target.position.x - 900, 1600, Z3.sun.target.position.z + 550); }
+  else Z3.sun.position.set(-0.55, 1, 0.35);
   Z3.hemi.color.setRGB(lerp(0.6, 0.87, Z3.bright), lerp(0.66, 0.9, Z3.bright), lerp(0.85, 0.94, Z3.bright));
 }
 // picture quality follows the game's own graphics setting (phones start on the lighter ones)
@@ -758,7 +776,7 @@ function z3Overlay() {
   if (lowhp) { g.fillStyle = `rgba(200,0,0,${(0.3 - P.hp / P.maxhp) * (0.5 + Math.sin(NOW * 6) * 0.3)})`; g.fillRect(0, 0, W, H); }
   if (typeof Events !== 'undefined') { const EM = Events.mods(); if (EM.red) { g.fillStyle = `rgba(160,0,0,${0.16 + Math.sin(NOW * 2) * 0.04})`; g.fillRect(0, 0, W, H); } if (EM.flood) { g.fillStyle = 'rgba(30,70,110,0.18)'; g.fillRect(0, 0, W, H); } }
   z3Weather(g, W, H);
-  if (P.veh) z3Ride(g, W, H); else if (!(typeof VM !== 'undefined' && VM.gun && P.weapons.some((w) => w.id === 'z3gun'))) z3Gun(g, W, H);
+  if (P.veh) z3Ride(g, W, H); else if (!(typeof VM !== 'undefined' && VM.gun)) z3Gun(g, W, H);
   // crosshair: brackets the mutant your weapons will shoot at
   const t = Z3.target;
   const cc = t ? '#ff6a4a' : 'rgba(255,240,200,0.85)';

@@ -139,7 +139,8 @@ function z3GunDraw() {
   if (!VM.gun) return;
   const w = P.weapons.find((x) => x.id === 'z3gun');
   const show = !!w && !P.veh && G.state !== 'over';
-  VM.gun.visible = show; if (!show) return;
+  VM.gun.visible = show;
+  if (!show) { if (typeof z3GunDraw2 === 'function' && !P.veh && G.state !== 'over') { z3GunDraw2(1 / 60); Z3.R.autoClear = false; Z3.R.clearDepth(); Z3.R.render(VM.scene, VM.cam); Z3.R.autoClear = true; } return; }
   const lv = w.lv;
   VM.sight.visible = lv >= 4; VM.drum.visible = lv >= 8; VM.mag.visible = lv < 8; VM.brake.visible = lv >= 6; VM.heavy.visible = lv >= 7;
   const W = innerWidth, H = innerHeight; VM.cam.aspect = W / H; VM.cam.updateProjectionMatrix();
@@ -153,6 +154,7 @@ function z3GunDraw() {
   VM.flashMat.opacity = f ? 0.95 : 0; VM.flash.rotation.z = Math.random() * 3; VM.flash.scale.setScalar(f ? 0.8 + Math.random() * 0.5 : 1);
   VM.flashL.intensity = f ? 4 : 0; VM.flashL.position.set(VM.gun.position.x, VM.gun.position.y + 0.05, VM.gun.position.z - 1);
   const b = Z3.bright; VM.hemi.intensity = 0.35 + b * 0.9; VM.sun.intensity = 0.2 + b * 1.3;
+  if (typeof z3GunDraw2 === 'function') z3GunDraw2(1 / 60);
   Z3.R.autoClear = false; Z3.R.clearDepth(); Z3.R.render(VM.scene, VM.cam); Z3.R.autoClear = true;
 }
 // tracers of your shots: a fast fading line of light from the muzzle
@@ -163,4 +165,69 @@ function z3GunTracers(A) {
     const k = 1 - age / 0.09, L = Math.hypot(t.x1 - gx, t.y1 - gy), n = Math.min(60, Math.max(3, Math.ceil(L / 14)));
     for (let i = 0; i <= n; i++) { const u = i / n; A.push(lerp(gx, t.x1, u), lerp(gh, t.h1, u), lerp(gy, t.y1, u), 5, 1, 0.85, 0.5, k * (0.4 + u * 0.6)); }
   }
+}
+
+// ---------- the second weapon in your left hand, shell casings, and the muzzle lighting the world ----------
+(function vm2Init() {
+  if (!VM.scene) return;
+  const M = (c, r = 0.7, m = 0.2) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m });
+  const box = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); return m; };
+  const cyl = (r, l, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, l, 12), mat); m.rotation.x = Math.PI / 2; m.position.set(x, y, z); return m; };
+  const metal = M(0x55585c, 0.5, 0.3), dark = M(0x2e3034, 0.6, 0.2), wood = M(0x7a4e2c, 0.8, 0), olive = M(0x4e5836, 0.85, 0), skin = M(0x8f6f58, 0.9, 0);
+  const glowM = new THREE.MeshBasicMaterial({ color: 0x6cc4ff });
+  const mk = {
+    pistol: () => { const g = new THREE.Group(); g.add(box(0.06, 0.08, 0.26, dark, 0, 0, -0.1)); g.add(box(0.05, 0.16, 0.07, wood, 0, -0.1, 0.02).rotateX(0.2)); return g; },
+    shotgun: () => { const g = new THREE.Group(); g.add(cyl(0.025, 0.7, dark, -0.02, 0.02, -0.4)); g.add(cyl(0.025, 0.7, dark, 0.03, 0.02, -0.4)); g.add(box(0.08, 0.09, 0.4, wood, 0, -0.04, 0.05)); return g; },
+    tube: () => { const g = new THREE.Group(); g.add(cyl(0.07, 0.75, olive, 0, 0.02, -0.3)); g.add(box(0.05, 0.14, 0.06, dark, 0, -0.1, -0.15)); return g; },
+    energy: () => { const g = new THREE.Group(); g.add(box(0.08, 0.1, 0.5, M(0x2b2f36, 0.4, 0.5), 0, 0, -0.2)); for (let i = 0; i < 4; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.012, 6, 14), glowM); r.position.set(0, 0, -0.1 - i * 0.1); g.add(r); } g.userData.glow = true; return g; },
+    rifle: () => { const g = new THREE.Group(); g.add(box(0.07, 0.09, 0.5, dark, 0, 0, -0.15)); g.add(cyl(0.018, 0.4, metal, 0, 0.02, -0.55)); g.add(box(0.06, 0.08, 0.28, wood, 0, -0.03, 0.2)); return g; },
+  };
+  VM.left = {}; VM.leftRoot = new THREE.Group(); VM.scene.add(VM.leftRoot);
+  for (const k in mk) { const g = mk[k](); const hand = new THREE.Group(); hand.add(box(0.09, 0.08, 0.11, skin, 0, -0.06, 0.02)); hand.add(box(0.12, 0.12, 0.42, olive, 0, -0.08, 0.28)); g.add(hand); g.visible = false; VM.leftRoot.add(g); VM.left[k] = g; }
+  const fm = new THREE.MeshBasicMaterial({ color: 0xffc070, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.14), fm); VM.leftRoot.add(fl); VM.lflash = fl; VM.lflashM = fm;
+  VM.glowM = glowM;
+  // shell casings flying out to the right
+  VM.cases = []; const cg = new THREE.CylinderGeometry(0.009, 0.009, 0.035, 6), cm = M(0xc8a040, 0.4, 0.8);
+  for (let i = 0; i < 14; i++) { const c = new THREE.Mesh(cg, cm); c.visible = false; VM.scene.add(c); VM.cases.push({ m: c, t: 9, v: new THREE.Vector3() }); }
+  // the world lights up around you when you fire
+  VM.worldFlash = new THREE.PointLight(0xffb060, 0, 360, 2); Z3.scene.add(VM.worldFlash);
+})();
+const VM2 = { last: new Map(), shotsSeen: 0, lflashT: 0, ci: 0 };
+function z3GunKindOf(id) {
+  const nm = ((WEAPONS[id] && WEAPONS[id].name) || '').toLowerCase() + ' ' + id;
+  if (/pistol|dual|revolver/.test(nm)) return 'pistol';
+  if (/shotgun|sawn/.test(nm)) return 'shotgun';
+  if (/launcher|rocket|rpg|acid|flame|c4|grenade|saw|stasis|mine|swarm/.test(nm)) return 'tube';
+  if (/tesla|laser|grav|psi|weld|beam|electr|fence|coil|gauss|bell/.test(nm)) return 'energy';
+  return 'rifle';
+}
+function z3GunDraw2(dt) {
+  if (!VM.leftRoot) return;
+  const second = P.weapons.find((w) => w.id !== 'z3gun');
+  const kind = second ? z3GunKindOf(second.id) : null;
+  for (const k in VM.left) VM.left[k].visible = !P.veh && k === kind && G.state !== 'over';
+  if (kind && !P.veh) {
+    // did it fire? its cooldown jumped back up
+    const prev = VM2.last.get(second); VM2.last.set(second, second.cd);
+    if (prev !== undefined && second.cd > prev + 0.04) VM2.lflashT = 0.06;
+    VM2.lflashT -= dt;
+    const W = innerWidth, H = innerHeight, left = W < H ? -0.17 : -0.25, mv = P.moving ? 1 : 0, ph = (P.anim || 0) * 0.5;
+    const kick = VM2.lflashT > 0 ? 1 : 0;
+    VM.leftRoot.position.set(left - (mv ? Math.sin(ph) * 0.015 : 0), -0.27 - (mv ? Math.abs(Math.cos(ph)) * 0.012 : 0), -0.62 + kick * 0.04);
+    VM.leftRoot.rotation.set(kick * 0.05, 0.05, 0);
+    VM.lflash.position.set(0, 0.02, kind === 'shotgun' ? -0.78 : kind === 'tube' ? -0.7 : kind === 'pistol' ? -0.25 : -0.5);
+    VM.lflashM.opacity = kick ? 0.9 : 0; VM.lflashM.color.set(kind === 'energy' ? 0x80c8ff : 0xffc070); VM.lflash.rotation.z = Math.random() * 3;
+    if (kind === 'energy') { const lv = second.lv || 1; VM.glowM.color.setRGB(0.3 + lv * 0.08, 0.6 + lv * 0.05, 1).multiplyScalar(0.7 + Math.sin(NOW * 9) * 0.3); }
+  }
+  // casings from the rifle
+  if (GUN.shots !== VM2.shotsSeen) {
+    VM2.shotsSeen = GUN.shots; const c = VM.cases[VM2.ci++ % VM.cases.length];
+    c.t = 0; c.m.visible = true; c.m.position.set(VM.gun.position.x + 0.03, VM.gun.position.y + 0.06, VM.gun.position.z - 0.12); c.v.set(0.9 + Math.random() * 0.4, 1.1 + Math.random() * 0.4, 0.2);
+  }
+  for (const c of VM.cases) { if (c.t > 0.7) { c.m.visible = false; continue; } c.t += dt; c.v.y -= 4.5 * dt; c.m.position.addScaledVector(c.v, dt); c.m.rotation.x += dt * 14; c.m.rotation.z += dt * 9; }
+  // flash of light in the world at the muzzle
+  const f = GUN.flashT > 0 || VM2.lflashT > 0;
+  VM.worldFlash.intensity = f ? 2200 : 0;
+  if (f) VM.worldFlash.position.set(P.x + Math.cos(Z3.yaw) * 40, Z3.cam.position.y - 6, P.y + Math.sin(Z3.yaw) * 40);
 }

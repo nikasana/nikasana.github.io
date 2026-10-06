@@ -65,6 +65,11 @@ look is stylised low-poly, not photoreal.
   burnt-fuzz strands, psi/sound waves. 3D trees (leafy and pines), dead trees, bushes, rocks, barrels
   (red = explosive), tanks, crates (lid flies off), glowing artifacts, the guide, parked bikes and jeeps.
   Scenery is cached and rebuilt only after you walk ~60 units (cheap per frame).
+- **v2-E: done.** Your second weapon is a 3D model in your left hand (pistol, shotgun, launcher, energy
+  coil gun, rifle) and flashes when it fires; energy guns glow brighter with level; brass casings fly
+  out of the rifle; firing lights up the world around you; real sun shadows on the High setting
+  (buildings, trees, people and mutants); a fine detail texture on the ground so it stays crisp at
+  your feet; on Potato, people and mutants drop their small parts.
 
 ## How to play
 

@@ -12,7 +12,7 @@ const MDL = { ready: false, corpses: [], human: {}, quad: {} };
     const m = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ color: 0xffffff }), cap);
     m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3); m.instanceColor.setUsage(THREE.DynamicDrawUsage);
-    m.count = 0; m.frustumCulled = false; m.cap = cap; Z3.scene.add(m); return m;
+    m.count = 0; m.frustumCulled = false; m.cap = cap; m.castShadow = true; Z3.scene.add(m); return m;
   };
   MDL.box = mk(new THREE.BoxGeometry(1, 1, 1), 7000);
   MDL.sph = mk(new THREE.SphereGeometry(0.5, Z3_PHONE ? 8 : 12, Z3_PHONE ? 6 : 9), 4000);
@@ -144,7 +144,7 @@ function mdlRig(rig, root, pose, colour, size, hidden) {
     const sk = size(i);
     _v.set(at[0] * sk[3], at[1] * sk[4], at[2] * sk[5]);
     _mJ[i].compose(_v, _q, _one).premultiply(par < 0 ? root : _mJ[par]);
-    if (hidden(i, key)) continue;
+    if (hidden(i, key) || (MDL.lite && (key === 'boot' || key === 'eyes' || key === 'mask' || key === 'tusk' || (rig === RIG_Q && (i === 3 || i === 4))))) continue;
     const mesh = MDL.ghost ? (shape === 'box' ? MDL.tbox : shape === 'sph' ? MDL.tsph : MDL.tcyl) : shape === 'box' ? MDL.box : shape === 'sph' ? MDL.sph : MDL.cyl;
     if (mesh.count >= mesh.cap) continue;
     _mT.makeTranslation(off[0] * sk[3], off[1] * sk[4], off[2] * sk[5]); _mS.makeScale(sz[0] * sk[0], sz[1] * sk[1], sz[2] * sk[2]);
@@ -305,6 +305,7 @@ function mdlState(e) {
 function mdlFrame() {
   if (!MDL.ready) return;
   for (const m of [MDL.box, MDL.sph, MDL.cyl, MDL.tbox, MDL.tsph, MDL.tcyl, MDL.gbox, MDL.gsph, MDL.shd]) m.count = 0;
+  MDL.lite = potatoGfx();
   const V2 = Z3.view * Z3.view, c = Math.cos(Z3.yaw), s = Math.sin(Z3.yaw);
   const shadow = (x, y, r) => { if (MDL.shd.count >= 900) return; _mM.compose(_v.set(x, 0.7, y), _q.identity(), _vS.set(r, 1, r)); MDL.shd.setMatrixAt(MDL.shd.count++, _mM); };
   for (const e of G.enemies) {
