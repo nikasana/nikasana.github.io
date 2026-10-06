@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ZoneBonk 3D</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<script>
+// ZoneBonk 3D loads the original game page from ../zone/ as it is (same scripts, menus, saves and co-op), then adds
+// the 3D view on top. Nothing from ../zone/ is copied, so fixes there reach the 3D version too.
+var Z3_BUILD = 1;
+(function () {
+  var x = new XMLHttpRequest(), h = '';
+  try { x.open('GET', '../zone/index.html?t=' + Date.now(), false); x.send(); if (x.status === 200) h = x.responseText; } catch (e) { /* offline */ }
+  if (!h) { document.write('<p style="font:16px sans-serif;color:#ddd;background:#111;padding:20px">Could not load the game. Check your connection and reload.</p>'); return; }
+  var add = '<script src="../zone3d/vendor/three.min.js?v=160"><\/script><script src="../zone3d/js/r3d.js?v=' + Z3_BUILD + '"><\/script>';
+  h = h.replace(/<!doctype html>/i, '').replace(/<head([^>]*)>/i, '<head$1><base href="../zone/">').replace(/<\/body>/i, add + '</body>');
+  document.write(h);
+})();
+</script>
+</head>
+<body></body>
+</html>
