@@ -75,7 +75,7 @@ const SPR3 = {
   newPage() {
     const N = Z3.PAGE, t = new THREE.DataTexture(new Uint8Array(N * N * 4), N, N, THREE.RGBAFormat);
     t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; t.flipY = false; t.needsUpdate = true;
-    Z3.R.initTexture(t);
+    Z3.R.initTexture(t); t.image.data = null; // only the GPU copy is needed from here on
     const pg = { t, x: 0, y: 0, rh: 0, bb: new BB3(t) };
     this.pages.push(pg); Z3.scene.add(pg.bb.mesh);
     return pg;
@@ -334,7 +334,7 @@ function z3Ground() {
 const Z3_NULL = document.createElement('canvas').getContext('2d');
 const Z3_FX = new Set(['beam', 'lightning', 'tele']); // drawn in 3D instead
 let Z3_PASS = false;
-function z3GroundPass(_render) {
+function z3GroundPass(_render, title = false) {
   const N = Z3.ovN, R = Z3.ovR, c = Math.cos(Z3.yaw), s = Math.sin(Z3.yaw);
   const gx = P.x + c * R * 0.55, gy = P.y + s * R * 0.55;
   if (cv.width !== N || cv.height !== N) { cv.width = N; cv.height = N; }
@@ -351,7 +351,7 @@ function z3GroundPass(_render) {
   if (sv2.wat) Hz.watcher = null; if (sv2.tr) W2.train = Object.assign({}, sv2.tr, { cars: 0 });
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, N, N);
   Z3_PASS = true;
-  try { _render(false); } finally {
+  try { _render(title); } finally {
     Z3_PASS = false;
     VW = sv.VW; VH = sv.VH; DPR = sv.DPR; ZOOM = sv.ZOOM; CAM.x = sv.cx; CAM.y = sv.cy; ctx = sv.ctx; G.shake = sv.shake;
     minGfx = sv.mg; lowGfx = sv.lg; drawGroundFast = sv.gf; drawPropFast = sv.dp; drawEnemyScaled = sv.de; drawPlayer = sv.pl; drawCrate = sv.cr; drawPickup = sv.pk; drawArtifact = sv.ar; drawPoiChest = sv.pc; if (sv.pa) drawPartner = sv.pa;
@@ -428,6 +428,7 @@ function z3Stand() {
     const dx = e.x - px, dy = e.y - py; if (dx * dx + dy * dy > V2 || !ahead(e.x, e.y, 120)) continue;
     let a = e.alpha === undefined ? 1 : e.alpha;
     if (!e._z3t) e._z3t = NOW; a *= Math.min(1, (NOW - e._z3t) / 0.5); // fade in where they appear
+    const dd = dx * dx + dy * dy; if (dd < 60 * 60) a *= clamp(Math.sqrt(dd) / 60, 0.55, 1); // one in your face does not blank the screen
     if (a < 0.03) continue;
     const vs = (e.sc || 1) * (e.d && e.d.vsc || 1), an = typeof animSquash === 'function' ? animSquash(e) : 0;
     z3Push(z3EnemySprite(e), e.x, e.y, e.z || 0, vs * (1 + an), vs * (1 - an), (e.face || 1) * rxw < 0, e.flash > 0 ? -a : a);
@@ -876,7 +877,9 @@ function z3Leave() {
 {
   const _render = render;
   render = function (title) {
-    if (!Z3.ok || title || !G || G.title) { z3Leave(); return _render.apply(this, arguments); }
+    if (Z3.ok && title && G && G.title && !potatoGfx()) { try { return z3TitleFrame(_render); } catch (e) { Z3.noTitle = true; } }
+    if (!Z3.ok || title || !G || G.title) { z3Leave(); z3TitleOff(); return _render.apply(this, arguments); }
+    z3TitleOff();
     z3Enter(); Z3.on = true;
     const T = Z3.prof, t0 = performance.now();
     z3Camera();
@@ -898,6 +901,26 @@ function z3Leave() {
     const t4 = performance.now();
     T.flat = T.flat * 0.9 + (t1 - t0) * 0.1; T.build = T.build * 0.9 + (t2 - t1) * 0.1; T.gl = T.gl * 0.9 + (t3 - t2) * 0.1; T.ov = T.ov * 0.9 + (t4 - t3) * 0.1;
   };
+}
+// the title screen: a slow flight over the Zone behind the menus (the flat game's title camera path, from above the roofs)
+let Z3_TITLE = false;
+function z3TitleOff() { if (!Z3_TITLE) return; Z3_TITLE = false; if (!Z3_MODE) { Z3C.gl.style.display = 'none'; cv.style.opacity = ''; resize(); } }
+function z3TitleFrame(_render) {
+  if (Z3.noTitle) throw new Error('off');
+  if (Z3_MODE) z3Leave();
+  if (!Z3_TITLE) { Z3_TITLE = true; Z3C.gl.style.display = 'block'; Z3C.ov.style.display = 'none'; cv.style.opacity = '0'; }
+  const px = P.x, py = P.y; P.x = CAM.x; P.y = CAM.y;
+  try {
+    Z3.yaw = Math.atan2(-12, 30) + Math.sin(NOW * 0.07) * 0.5; Z3.pitch = -0.3;
+    z3Camera();
+    const cam = Z3.cam, h = 230; cam.position.y = h;
+    cam.lookAt(P.x + Math.cos(Z3.yaw) * 100, h - 31, P.y + Math.sin(Z3.yaw) * 100);
+    z3GroundPass(_render, true); z3Ground();
+    if (World.props !== Z3.propsRef || World.props.length !== Z3.propsLen) { Z3.propsRef = World.props; Z3.propsLen = World.props.length; z3Solids(); }
+    z3Stand(); z3Points();
+    Z3.sky.position.copy(cam.position); Z3.stars.position.copy(cam.position);
+    Z3.R.render(Z3.scene, cam);
+  } finally { P.x = px; P.y = py; }
 }
 if (typeof GLR !== 'undefined') GLR.want = () => false; // the WebGL 2D layer is not used under the 3D view
 
@@ -964,9 +987,18 @@ document.addEventListener('pointerlockchange', () => {
 addEventListener('keydown', (e) => { if (e.code === 'Escape' && Z3.autoPauseT && performance.now() - Z3.autoPauseT < 250) e.stopImmediatePropagation(); }, true);
 addEventListener('mousemove', (e) => {
   if (document.pointerLockElement !== cv || !Z3_MODE) return;
-  const k = 0.0023 * z3Sens();
-  Z3.yaw += e.movementX * k; Z3.pitch = clamp(Z3.pitch - e.movementY * k * (z3Set().inv3d ? -1 : 1), -1.1, 1.1);
+  const k = 0.0023 * z3Sens(), mx = clamp(e.movementX, -250, 250), my = clamp(e.movementY, -250, 250);
+  Z3.yaw += mx * k; Z3.pitch = clamp(Z3.pitch - my * k * (z3Set().inv3d ? -1 : 1), -1.1, 1.1);
 });
+// right mouse button held and dragged also turns the view (works even where the browser refuses to capture the mouse)
+const Z3M = { on: false, x: 0, y: 0 };
+addEventListener('mousedown', (e) => { if (Z3_MODE && e.button === 2 && e.target === cv && document.pointerLockElement !== cv) { Z3M.on = true; Z3M.x = e.clientX; Z3M.y = e.clientY; e.preventDefault(); } }, true);
+addEventListener('mousemove', (e) => {
+  if (!Z3M.on || document.pointerLockElement === cv) return;
+  const k = 0.0035 * z3Sens(); Z3.yaw += (e.clientX - Z3M.x) * k; Z3.pitch = clamp(Z3.pitch - (e.clientY - Z3M.y) * k * (z3Set().inv3d ? -1 : 1), -1.1, 1.1); Z3M.x = e.clientX; Z3M.y = e.clientY;
+});
+addEventListener('mouseup', (e) => { if (e.button === 2) Z3M.on = false; });
+addEventListener('contextmenu', (e) => { if (Z3_MODE && e.target === cv) e.preventDefault(); });
 // mouse clicks in the 3D view capture the mouse; once captured, a click focuses fire on the mutant under the crosshair
 addEventListener('mousedown', (e) => {
   if (!Z3_MODE || e.target !== cv || e.button !== 0) return;

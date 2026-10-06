@@ -30,7 +30,7 @@ Open `/zone3d/` on the same site as the game (https://nikasana.github.io/zone3d/
 
 ## Status
 
-Progress: about 80% (batches 1–4 of the plan). Remaining: polish from your testing + real-device FPS.
+Progress: about 88% (batches 1–5). Remaining: polish from your testing + real-device FPS.
 
 ### Batch 1 (MVP): done
 - Loads the original page and scripts from `../zone/`; title screen and menus are the original 2D ones.
@@ -82,6 +82,13 @@ Progress: about 80% (batches 1–4 of the plan). Remaining: polish from your tes
 ### Batch 4.1: done
 - Red arcs around the crosshair point to whatever just hurt you; orange chevrons show mutants close by but
   out of sight (behind or beside you); a white hit marker flashes when your weapons land a hit.
+
+### Batch 5: done (polish)
+- Title screen: a slow 3D flight over the Zone behind the menus (2D on the Potato setting).
+- Right mouse button + drag turns the view too (for browsers that refuse to capture the mouse); mouse-look
+  spikes some browsers send after capturing the mouse are clamped.
+- A mutant right in your face turns half see-through so a melee attacker does not blank out the view.
+- Sprite atlas pages no longer keep a CPU copy (less memory).
 
 Known gaps: enemies and props use side-view pictures (classic shooter style); smoke from camps/events
 and some event objects are still flat on the ground; real-device FPS not measured here (the test
