@@ -30,6 +30,8 @@ Open `/zone3d/` on the same site as the game (https://nikasana.github.io/zone3d/
 
 ## Status
 
+Progress: about 80% (batches 1–4 of the plan). Remaining: polish from your testing + real-device FPS.
+
 ### Batch 1 (MVP): done
 - Loads the original page and scripts from `../zone/`; title screen and menus are the original 2D ones.
 - 3D world: terrain tiles, buildings (enterable houses keep their doorway), fences, wrecks as blocks;
@@ -66,5 +68,17 @@ Open `/zone3d/` on the same site as the game (https://nikasana.github.io/zone3d/
 - The gun in your hands matches your first weapon (pistol, rifle, shotgun, launcher, energy weapon);
   bullets keep their colours by type (flames, arrows, lasers, acid, saws…).
 
-Known gaps: smoke columns, story bodies and some event objects are still flat on the ground; enemies use
-side-view pictures.
+### Batch 4: done (feature sweep)
+- All 13 maps load and play in 3D (zone, pripyat, npp, zaton, wasteland, metro, blackout, winter,
+  mountain, flooded, volcanic, duga, noosphere) with no errors.
+- All 14 bosses spawn and show (incl. The Monolith, gunship, hologram).
+- Markers for the newer goals: stash notes, courier package, evac zone, rescues, hot zone.
+- Wildfires get standing flames and a smoke column.
+- Tutorial texts explain looking and aiming in 3D (translated).
+- UI flows: settings (3D rows save), map, pause, death screen, back to the 2D title (screen restored),
+  new run, tutorial, co-op lobby → run.
+- Lightest settings redraw the flat ground layer every second frame (less work on weak phones).
+
+Known gaps: enemies and props use side-view pictures (classic shooter style); smoke from camps/events
+and some event objects are still flat on the ground; real-device FPS not measured here (the test
+browser has no GPU).

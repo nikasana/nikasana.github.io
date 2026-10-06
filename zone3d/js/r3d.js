@@ -528,6 +528,12 @@ function z3Points() {
     const R = e.r * 1.4 * (e.sc || 1), n = 14, a0 = NOW * 1.5, al = 0.55 + Math.sin(NOW * 6 + (e.seed || 0)) * 0.25;
     for (let i = 0; i < n; i++) { const a = a0 + (i / n) * TAU; A.push(e.x + Math.cos(a) * R, 3, e.y + Math.sin(a) * R, 9, c[0], c[1], c[2], al); }
   }
+  // wildfires: flames licking up from the burning ground, and a smoke column above
+  if (typeof Hz !== 'undefined' && Hz.fires) for (const f of Hz.fires) {
+    if (dist2(f.x, f.y, px, py) > V2) continue;
+    for (let i = 0; i < 7; i++) { const t = (NOW * 1.7 + i * 0.37 + f.x * 0.01) % 1, a = i * 2.4 + f.y; A.push(f.x + Math.cos(a) * 30 * (1 - t), 6 + t * 60, f.y + Math.sin(a) * 22 * (1 - t), 26 * (1 - t) + 8, 1, 0.45 + t * 0.35, 0.12, 0.9 * (1 - t)); }
+    for (let i = 0; i < 5; i++) { const t = (NOW * 0.12 + i / 5 + f.x * 0.003) % 1; N.push(f.x + t * 90 + Math.sin(t * 6 + i) * 20, 70 + t * 520, f.y - t * 40, 50 + t * 120, 0.28, 0.26, 0.24, 0.32 * (1 - t)); }
+  }
   for (const t of World.tornados || []) {
     if (dist2(t.x, t.y, px, py) > V2) continue;
     for (let i = 0; i < 10; i++) { const h = i * 26, w = 18 + i * 9, sw = Math.sin(NOW * 3 + i * 0.6 + (t.seed || 0)) * 10;
@@ -680,7 +686,7 @@ function z3Overlay() {
     g.fillStyle = e.stgT > 0 ? '#fff' : '#ffe070'; g.fillRect(p[0] - w / 2, p[1] + 9, w * (e.stgT > 0 ? e.stgT / 3 : Math.min(1, e.stg)), 3);
   }
   if (typeof Quests !== 'undefined') for (const q of Quests.list) { const n = q.npc; if (!n || n.dead || !(n.hp >= 0)) continue; const p = z3Project(n.x, 70, n.y); if (!p || Math.hypot(n.x - P.x, n.y - P.y) > 900) continue; g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(p[0] - 21, p[1] - 1, 42, 6); g.fillStyle = '#ffe070'; g.fillRect(p[0] - 20, p[1], 40 * clamp(n.hp / 100, 0, 1), 4); }
-  if (G.ft) for (const r of G.ft.res || []) { if (r.state) continue; const p = z3Project(r.x, 70, r.y); if (p && Math.hypot(r.x - P.x, r.y - P.y) < 1400) { g.font = 'bold 14px Oswald, sans-serif'; g.fillStyle = '#ffcf6a'; g.fillText('🆘 ' + r.name + ' · ' + Math.ceil(r.t) + 's', p[0], p[1]); } }
+  if (G.ft) for (const r of G.ft.res || []) { if (r.state) continue; const p = z3Project(r.x, 120, r.y); if (p && Math.hypot(r.x - P.x, r.y - P.y) < 1400) { g.font = 'bold 13px Oswald, sans-serif'; g.fillStyle = '#ffcf6a'; g.fillText(r.name || '', p[0], p[1]); } }
   for (const v of World.vehicles || []) if (v !== P.veh && (v.broken || v === G.escapeCar)) { const p = z3Project(v.x, 64, v.y); if (p && Math.hypot(v.x - P.x, v.y - P.y) < 900) { g.font = 'bold 13px Oswald, sans-serif'; g.fillStyle = '#7dff8a'; g.fillText(v.broken ? '🔧' : z3Tr('ESCAPE JEEP'), p[0], p[1]); } }
   if (typeof CO !== 'undefined' && CO.active && typeof coOthers === 'function') for (const q of coOthers()) {
     if (q.gone || q.x === undefined) continue; const p = z3Project(q.x, 74, q.y); if (!p) continue;
@@ -703,6 +709,14 @@ function z3Overlay() {
   for (const b of G.bosses) if (!b.dead) mark(b.x, b.y, '#ff3a2a', '💀', 120);
   if (typeof Quests !== 'undefined') for (const q of Quests.list) if (q.loc && World.kind === 'over') mark(q.loc.x, q.loc.y, '#ffcf3a', q.icon);
   if (typeof Events !== 'undefined' && Events.cur && Events.cur.loc) mark(Events.cur.loc.x, Events.cur.loc.y, '#ff8a3a', EVENTS[Events.cur.id].icon);
+  // goals from the newer features: stash notes, courier package, evac zone, rescues, the hot zone
+  const F3 = G.f3;
+  if (F3) {
+    const T = F3.notes; if (T && !T.done && T.list && T.list[T.i]) mark(T.list[T.i].x, T.list[T.i].y, '#ffdc8c', '📜', 50);
+    const C = F3.courier; if (C) { const x = C.got ? C.bx : C.ax, y = C.got ? C.by : C.ay; mark(x, y, '#ffc85a', '📦 ' + Math.ceil(C.t) + 's', 50); }
+    const E = F3.evac; if (E) mark(E.x, E.y, '#9fe8a0', '🚁 ' + Math.ceil(E.t) + 's', 90);
+  }
+  if (G.ft) { for (const r of G.ft.res || []) if (!r.state) mark(r.x, r.y, '#ff6a4a', '🆘 ' + Math.ceil(r.t) + 's', 95); if (G.ft.hotOn) mark(G.ft.hotOn.x, G.ft.hotOn.y, '#ffb040', '🔥', 60); }
   const em = G.em && G.em.phase !== 'after';
   if (em && !inShelter(P.x, P.y)) { const s = nearestShelter(); if (s) mark(s.x, s.y, `rgba(90,255,120,${0.7 + Math.sin(NOW * 10) * 0.3})`, '🛡️', 40); }
   // tints over the whole view (the same as the flat game)
@@ -865,7 +879,11 @@ function z3Leave() {
     z3Enter(); Z3.on = true;
     const T = Z3.prof, t0 = performance.now();
     z3Camera();
-    try { z3GroundPass(_render); } catch (e) { if (typeof guardReport === 'function') guardReport('z3ground', e); }
+    // on the lightest settings the flat layer is redrawn every second frame (it stays put in between)
+    Z3.fr = (Z3.fr || 0) + 1;
+    if (gfxLevel() < 3 || Z3.fr % 2 === 0 || !Z3.ovMesh.visible) {
+      try { z3GroundPass(_render); } catch (e) { if (typeof guardReport === 'function') guardReport('z3ground', e); }
+    }
     const t1 = performance.now();
     z3Ground();
     if (World.props !== Z3.propsRef || World.props.length !== Z3.propsLen) { Z3.propsRef = World.props; Z3.propsLen = World.props.length; z3Solids(); }
@@ -1008,6 +1026,11 @@ addEventListener('DOMContentLoaded', () => {
     for (const el of [head, aim, sens, fov, inv]) body.insertBefore(el, first);
   };
 });
+// the tutorial explains looking and aiming the 3D way
+if (typeof TUT_STEPS !== 'undefined') {
+  TUT_STEPS[0][0] = 'Look around with the mouse (or drag on the right side of a touch screen). Move with WASD (or drag on the left side).';
+  TUT_STEPS[2][0] = 'Your weapons fire at what you look at. Turn to the 5 zombies and kill them!';
+}
 // translations for the 3D screens
 (function () {
   if (typeof UI_TR === 'undefined' || typeof U !== 'function') return;
@@ -1020,6 +1043,10 @@ addEventListener('DOMContentLoaded', () => {
     '🔄 Automatic, all around': U('🔄 ავტომატური, ყველა მხარეს', '🔄 Автоматически, во все стороны', '🔄 Автоматично, на всі боки'),
     'Look sensitivity': U('ხედვის მგრძნობელობა', 'Чувствительность обзора', 'Чутливість огляду'),
     'Field of view': U('ხედვის კუთხე', 'Угол обзора', 'Кут огляду'),
+    'Look around with the mouse (or drag on the right side of a touch screen). Move with WASD (or drag on the left side).': U('მიმოიხედე მაუსით (ან სენსორულ ეკრანზე მარჯვენა მხარეს გაასრიალე). იმოძრავე WASD-ით (ან მარცხენა მხარეს გასრიალებით).', 'Осматривайся мышью (или проводи по правой стороне сенсорного экрана). Двигайся WASD (или проводи по левой стороне).', 'Роздивляйся мишею (або проводь по правому боці сенсорного екрана). Рухайся WASD (або проводь по лівому боці).'),
+    'Your weapons fire at what you look at. Turn to the 5 zombies and kill them!': U('იარაღი ისვრის იქ, სადაც იყურები. მიბრუნდი 5 ზომბისკენ და მოკალი ისინი!', 'Оружие стреляет туда, куда ты смотришь. Повернись к 5 зомби и убей их!', 'Зброя стріляє туди, куди ти дивишся. Повернися до 5 зомбі та вбий їх!'),
+    'ESCAPE JEEP': U('გაქცევის ჯიპი', 'ДЖИП ДЛЯ ПОБЕГА', 'ДЖИП ДЛЯ ВТЕЧІ'),
+    'FOCUS': U('ფოკუსი', 'ФОКУС', 'ФОКУС'),
     'Invert up/down look': U('ზემოთ/ქვემოთ ხედვის ინვერსია', 'Инвертировать взгляд вверх/вниз', 'Інвертувати погляд вгору/вниз'),
   };
   for (const k in T) { UI_TR[k] = T[k]; if (I18n.dict) I18n.dict.set(k, T[k]); }
