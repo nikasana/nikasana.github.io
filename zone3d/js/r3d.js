@@ -51,6 +51,8 @@ const Z3C = { gl: null, ov: null, og: null, hint: null };
   Z3.ovMesh.frustumCulled = false; Z3.scene.add(Z3.ovMesh);
   Z3.chunkGeo = new THREE.PlaneGeometry(CHUNK, CHUNK); Z3.chunkGeo.rotateX(-Math.PI / 2);
   Z3.solid = new THREE.Group(); Z3.scene.add(Z3.solid);
+  Z3.hemi = new THREE.HemisphereLight(0xdfe6ef, 0x4a4434, 0.7); Z3.scene.add(Z3.hemi);
+  Z3.sun = new THREE.DirectionalLight(0xfff0d8, 1.0); Z3.sun.position.set(-0.55, 1, 0.35); Z3.scene.add(Z3.sun);
   // sky: a dome that follows you, lighter at the horizon; stars come out at night
   {
     const g = new THREE.SphereGeometry(3200, 24, 12), n = g.attributes.position.count, col = new Float32Array(n * 3);
@@ -243,8 +245,8 @@ function z3Solids() {
     for (let i = 0; i < 6; i++) W.c.push(shade, shade, shade);
   };
   const box = (W, x, y, w, d, h) => { // four walls of an axis-aligned block
-    face(W, x, y + d, x + w, y + d, h, 0.92); face(W, x + w, y, x, y, h, 0.7);
-    face(W, x, y, x, y + d, h, 0.62); face(W, x + w, y + d, x + w, y, h, 0.82);
+    face(W, x, y + d, x + w, y + d, h, 1); face(W, x + w, y, x, y, h, 0.95);
+    face(W, x, y, x, y + d, h, 0.95); face(W, x + w, y + d, x + w, y, h, 1);
   };
   const flatQuad = (x, y, w, d, h, col) => { // a flat top (roof) in a solid colour
     const F = flat; F.p.push(x, h, y, x, h, y + d, x + w, h, y + d, x, h, y, x + w, h, y + d, x + w, h, y);
@@ -284,15 +286,15 @@ function z3Solids() {
   for (const [k, W] of walls) {
     if (!W.p.length) continue;
     let mat = Z3.wallMats.get(k);
-    if (!mat) { mat = new THREE.MeshBasicMaterial({ map: z3WallTex(W.style, W.alt), vertexColors: true, side: THREE.DoubleSide }); Z3.wallMats.set(k, mat); }
+    if (!mat) { mat = new THREE.MeshLambertMaterial({ map: z3WallTex(W.style, W.alt), vertexColors: true, side: THREE.DoubleSide }); Z3.wallMats.set(k, mat); }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(W.p, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(W.u, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(W.c, 3));
-    grp.add(new THREE.Mesh(g, mat));
+    g.computeVertexNormals(); grp.add(new THREE.Mesh(g, mat));
   }
   if (flat.p.length) {
-    if (!Z3.flatMat) Z3.flatMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
+    if (!Z3.flatMat) Z3.flatMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
     const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(flat.p, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(flat.c, 3));
+    g.setAttribute('position', new THREE.Float32BufferAttribute(flat.p, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(flat.c, 3)); g.computeVertexNormals();
     grp.add(new THREE.Mesh(g, Z3.flatMat));
   }
 }
@@ -351,9 +353,18 @@ function z3GroundPass(_render, title = false) {
   drawAnomalyTop = no; drawVehicle = no; W.crystals = []; W.tornados = []; G.fx = G.fx.filter((f) => !Z3_FX.has(f.k));
   if (sv2.wat) Hz.watcher = null; if (sv2.tr) W2.train = Object.assign({}, sv2.tr, { cars: 0 });
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, N, N);
+  const C = ctx, oArc = C.arc, oFT = C.fillText, rings = Z3.rings = [], labels = Z3.labels = [], ppx = P.x, ppy = P.y;
+  C.arc = function (x, y, r, a0, a1) {
+    if (Math.abs(a0 + Math.PI / 2) < 0.01 && r >= 8 && r <= 48 && a1 > a0 + 0.03 && a1 <= a0 + TAU + 0.01 && C.lineWidth >= 3 && Math.abs(x - ppx) < 420 && Math.abs(y - ppy) < 420) rings.push({ x, y, k: (a1 - a0) / TAU, c: String(C.strokeStyle) });
+    return oArc.apply(this, arguments);
+  };
+  C.fillText = function (t, x, y) {
+    if (typeof t === 'string' && t.length > 2 && /[A-Za-z\u00C0-\uFFFF]/.test(t) && Math.abs(x - ppx) < 220 && Math.abs(y - ppy) < 260 && labels.length < 8) labels.push({ t, x, y, c: String(C.fillStyle), f: C.font });
+    return oFT.apply(this, arguments);
+  };
   Z3_PASS = true;
   try { _render(title); } finally {
-    Z3_PASS = false;
+    Z3_PASS = false; delete C.arc; delete C.fillText;
     VW = sv.VW; VH = sv.VH; DPR = sv.DPR; ZOOM = sv.ZOOM; CAM.x = sv.cx; CAM.y = sv.cy; ctx = sv.ctx; G.shake = sv.shake;
     minGfx = sv.mg; lowGfx = sv.lg; drawGroundFast = sv.gf; drawPropFast = sv.dp; drawEnemyScaled = sv.de; drawPlayer = sv.pl; drawCrate = sv.cr; drawPickup = sv.pk; drawArtifact = sv.ar; drawPoiChest = sv.pc; if (sv.pa) drawPartner = sv.pa;
     G.enemies = sv.en; G.bullets = sv.bu; G.ebullets = sv.eb; G.particles = sv.pa2; G.texts = sv.tx; G.throws = sv.th;
@@ -559,6 +570,7 @@ function z3Points() {
       seg(ax, ay, bx, by, 24, 22, 11, 0.35, 0.63, 1, k * 0.7, 9); seg(ax, ay, bx, by, 24, 22, 4, 0.94, 0.98, 1, k, 5);
     }
   }
+  if (typeof z3GunTracers === 'function') z3GunTracers(A);
   A.end(); N.end();
   z3Train();
 }
@@ -641,8 +653,9 @@ function z3Camera() {
     }
   }
   Z3.stars.visible = !lab && dark > 0.35 && fogK < 0.5; Z3.stars.material.opacity = clamp((dark - 0.35) * 2.5, 0, 1);
-  if (Z3.flatMat) Z3.flatMat.color.setScalar(Z3.bright);
-  if (Z3.wallMats) for (const m of Z3.wallMats.values()) m.color.setScalar(Z3.bright);
+  // daylight: sky light from above and a low sun; at night mostly a dim blue sky light
+  Z3.hemi.intensity = 0.25 + Z3.bright * 0.55; Z3.sun.intensity = lab ? 0.15 : Math.max(0, Z3.bright - 0.35) * 1.4;
+  Z3.hemi.color.setRGB(lerp(0.6, 0.87, Z3.bright), lerp(0.66, 0.9, Z3.bright), lerp(0.85, 0.94, Z3.bright));
 }
 // picture quality follows the game's own graphics setting (phones start on the lighter ones)
 const Z3_Q = [
@@ -742,7 +755,7 @@ function z3Overlay() {
   if (lowhp) { g.fillStyle = `rgba(200,0,0,${(0.3 - P.hp / P.maxhp) * (0.5 + Math.sin(NOW * 6) * 0.3)})`; g.fillRect(0, 0, W, H); }
   if (typeof Events !== 'undefined') { const EM = Events.mods(); if (EM.red) { g.fillStyle = `rgba(160,0,0,${0.16 + Math.sin(NOW * 2) * 0.04})`; g.fillRect(0, 0, W, H); } if (EM.flood) { g.fillStyle = 'rgba(30,70,110,0.18)'; g.fillRect(0, 0, W, H); } }
   z3Weather(g, W, H);
-  if (P.veh) z3Ride(g, W, H); else z3Gun(g, W, H);
+  if (P.veh) z3Ride(g, W, H); else if (!(typeof VM !== 'undefined' && VM.gun && P.weapons.some((w) => w.id === 'z3gun'))) z3Gun(g, W, H);
   // crosshair: brackets the mutant your weapons will shoot at
   const t = Z3.target;
   const cc = t ? '#ff6a4a' : 'rgba(255,240,200,0.85)';
@@ -754,6 +767,14 @@ function z3Overlay() {
       g.beginPath(); g.moveTo(p[0] - r, p[1] - r + k); g.lineTo(p[0] - r, p[1] - r); g.lineTo(p[0] - r + k, p[1] - r); g.moveTo(p[0] + r - k, p[1] - r); g.lineTo(p[0] + r, p[1] - r); g.lineTo(p[0] + r, p[1] - r + k);
       g.moveTo(p[0] - r, p[1] + r - k); g.lineTo(p[0] - r, p[1] + r); g.lineTo(p[0] - r + k, p[1] + r); g.moveTo(p[0] + r - k, p[1] + r); g.lineTo(p[0] + r, p[1] + r); g.lineTo(p[0] + r, p[1] + r - k); g.stroke(); }
   }
+  // hold rings (boarding a vehicle, a hatch, a tower, a rescue…) and short prompts near you
+  for (const r of Z3.rings || []) {
+    const p = z3Project(r.x, 70, r.y + 70); if (p) { g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 7; g.beginPath(); g.arc(p[0], p[1], 16, 0, TAU); g.stroke(); g.strokeStyle = r.c; g.lineWidth = 5; g.beginPath(); g.arc(p[0], p[1], 16, -Math.PI / 2, -Math.PI / 2 + TAU * r.k); g.stroke(); }
+  }
+  const near = (Z3.rings || []).filter((r) => Math.hypot(r.x - P.x, r.y + 70 - P.y) < 160).sort((a, b) => b.k - a.k)[0];
+  if (near) { g.strokeStyle = 'rgba(0,0,0,0.55)'; g.lineWidth = 9; g.beginPath(); g.arc(W / 2, H / 2, 30, 0, TAU); g.stroke(); g.strokeStyle = near.c; g.lineWidth = 6; g.beginPath(); g.arc(W / 2, H / 2, 30, -Math.PI / 2, -Math.PI / 2 + TAU * near.k); g.stroke(); }
+  let ly = H * 0.62;
+  for (const l of Z3.labels || []) { g.font = 'bold 15px Oswald, sans-serif'; g.textAlign = 'center'; g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillText(l.t, W / 2 + 1.5, ly + 1.5); g.fillStyle = l.c && l.c[0] === '#' || /^rgb/.test(l.c) ? l.c : '#ffe9b0'; g.fillText(l.t, W / 2, ly); ly += 20; }
   z3Senses(g, W, H);
   if (G.flash > 0) { g.fillStyle = `rgba(${G.flashCol},${G.flash * 0.6})`; g.fillRect(0, 0, W, H); }
   if (G.fade > 0) { g.fillStyle = `rgba(0,0,0,${G.fade})`; g.fillRect(0, 0, W, H); }
@@ -901,6 +922,8 @@ function z3Leave() {
     Z3.target = G.state === 'play' || G.state === 'pause' ? z3Target(1200) : null;
     const t2 = performance.now();
     Z3.R.render(Z3.scene, Z3.cam);
+    if (typeof z3GunDraw === 'function') z3GunDraw();
+    if (typeof z3GunUi === 'function') z3GunUi();
     const t3 = performance.now();
     z3Overlay();
     z3Pointer();
@@ -969,6 +992,37 @@ function z3Target(range, skip) {
   };
 }
 
+// in first person you cannot see behind you: most new mutants arrive from in front (or the sides), all of them move a
+// little slower than in the flat game, and one closing in from behind is slowed while it is out of sight
+{
+  const _se = spawnEnemy;
+  spawnEnemy = function (id, x, y, o) {
+    if (Z3_MODE && G && !G.title && P && !(o && (o.noTheme || o.mini)) && ENEMIES[id] && !ENEMIES[id].boss) {
+      const d = Math.hypot(x - P.x, y - P.y);
+      if (d > 260) {
+        const rel = z3Rel(x, y);
+        if (Math.abs(rel) > 1.75 && Math.random() < 0.8) { // behind: mirror it to the front half
+          const a = Z3.yaw + (rel > 0 ? Math.PI - rel : -Math.PI - rel), nx = P.x + Math.cos(a) * d, ny = P.y + Math.sin(a) * d;
+          if (World.free(nx, ny, 20)) { x = nx; y = ny; }
+        }
+      }
+    }
+    const e = _se.call(this, id, x, y, o);
+    if (Z3_MODE && e && !e.boss && !e._z3s) { e._z3s = 1; e.spd *= 0.82; }
+    return e;
+  };
+  const _ue = updateEnemies;
+  updateEnemies = function (dt) {
+    if (!Z3_MODE || !P) return _ue.apply(this, arguments);
+    const half = Z3.cam.fov * Z3.cam.aspect * Math.PI / 360 * 0.9, slowed = [];
+    for (const e of G.enemies) {
+      if (e.dead || e.boss) continue; const dx = e.x - P.x, dy = e.y - P.y, d2 = dx * dx + dy * dy;
+      if (d2 < 420 * 420 && Math.abs(z3Rel(e.x, e.y)) > half) { slowed.push([e, e.spd]); e.spd *= d2 < 160 * 160 ? 0.5 : 0.7; }
+    }
+    try { return _ue.apply(this, arguments); } finally { for (const [e, sp] of slowed) e.spd = sp; }
+  };
+}
+
 // ---------- mouse and touch look ----------
 function z3Playing() { return Z3_MODE && G && !G.title && G.state === 'play'; }
 function z3Pointer() {
@@ -1010,6 +1064,11 @@ addEventListener('mousedown', (e) => {
   if (!Z3_MODE || e.target !== cv || e.button !== 0) return;
   e.stopImmediatePropagation();
   if (document.pointerLockElement !== cv) { if (z3Playing()) { try { const r = cv.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (er) { /* not allowed */ } } return; }
+  if (typeof GUN !== 'undefined') GUN.trig = true; // captured: the left button fires the gun in your hands
+}, true);
+// captured mouse: the right button marks the mutant under the crosshair for all your weapons (focus fire)
+addEventListener('mousedown', (e) => {
+  if (!Z3_MODE || e.button !== 2 || document.pointerLockElement !== cv) return;
   const t = z3Target(1400); if (t) { G.focus = t; G.focusT = 8; text(t.x, t.y - 50, '🎯 ' + z3Tr('FOCUS'), '#ff6a4a', true, true); }
 }, true);
 // phones: the right side of the screen turns the view, the left side stays the movement stick
@@ -1121,8 +1180,9 @@ addEventListener('DOMContentLoaded', () => {
     const sens = row(`<span>${z3Tr('Look sensitivity')}</span><input type="range" min="0.3" max="2.5" step="0.05">`, (el) => { const q = el.querySelector('input'); q.value = z3Sens(); q.oninput = () => { s.sens3d = +q.value; Save.save(); }; });
     const fov = row(`<span>${z3Tr('Field of view')}</span><input type="range" min="60" max="100" step="1">`, (el) => { const q = el.querySelector('input'); q.value = z3Fov(); q.oninput = () => { s.fov3d = +q.value; Save.save(); }; });
     const inv = row(`<span>${z3Tr('Invert up/down look')}</span><input type="checkbox">`, (el) => { const q = el.querySelector('input'); q.checked = !!s.inv3d; q.onchange = () => { s.inv3d = q.checked; Save.save(); }; });
+    const ga = row(`<span>${z3Tr('Rifle fires by itself when a mutant is under the crosshair')}</span><input type="checkbox">`, (el) => { const q = el.querySelector('input'); q.checked = typeof z3GunAuto === 'function' ? z3GunAuto() : false; q.onchange = () => { s.gunAuto = q.checked; Save.save(); }; });
     const first = body.firstChild;
-    for (const el of [head, aim, sens, fov, inv]) body.insertBefore(el, first);
+    for (const el of [head, aim, ga, sens, fov, inv]) body.insertBefore(el, first);
   };
 });
 // the tutorial explains looking and aiming the 3D way
@@ -1144,6 +1204,14 @@ if (typeof TUT_STEPS !== 'undefined') {
     'Field of view': U('ხედვის კუთხე', 'Угол обзора', 'Кут огляду'),
     'Look around with the mouse (or drag on the right side of a touch screen). Move with WASD (or drag on the left side).': U('მიმოიხედე მაუსით (ან სენსორულ ეკრანზე მარჯვენა მხარეს გაასრიალე). იმოძრავე WASD-ით (ან მარცხენა მხარეს გასრიალებით).', 'Осматривайся мышью (или проводи по правой стороне сенсорного экрана). Двигайся WASD (или проводи по левой стороне).', 'Роздивляйся мишею (або проводь по правому боці сенсорного екрана). Рухайся WASD (або проводь по лівому боці).'),
     'Your weapons fire at what you look at. Turn to the 5 zombies and kill them!': U('იარაღი ისვრის იქ, სადაც იყურები. მიბრუნდი 5 ზომბისკენ და მოკალი ისინი!', 'Оружие стреляет туда, куда ты смотришь. Повернись к 5 зомби и убей их!', 'Зброя стріляє туди, куди ти дивишся. Повернися до 5 зомбі та вбий їх!'),
+    'Rifle fires by itself when a mutant is under the crosshair': U('შაშხანა თავად ისვრის, როცა მუტანტი სამიზნეშია', 'Винтовка стреляет сама, когда мутант под прицелом', 'Гвинтівка стріляє сама, коли мутант під прицілом'),
+    'Stalker Rifle': U('სტალკერის შაშხანა', 'Винтовка сталкера', 'Гвинтівка сталкера'),
+    'The rifle in your hands: it shoots exactly where the crosshair points. Hold the left mouse button or FIRE.': U('შაშხანა შენს ხელში: ისვრის ზუსტად იქ, სადაც სამიზნეა. დააჭირე მაუსის მარცხენა ღილაკს ან FIRE-ს.', 'Винтовка в твоих руках: стреляет точно туда, куда смотрит прицел. Держи левую кнопку мыши или FIRE.', 'Гвинтівка у твоїх руках: стріляє точно туди, куди дивиться приціл. Тримай ліву кнопку миші або FIRE.'),
+    'Piercing rounds': U('გამჭოლი ტყვიები', 'Бронебойные патроны', 'Бронебійні набої'),
+    'Red-dot sight: +damage at range': U('კოლიმატორი: +ზიანი შორს', 'Коллиматор: +урон на дистанции', 'Коліматор: +шкода на відстані'),
+    'Double tap': U('ორმაგი გასროლა', 'Двойной выстрел', 'Подвійний постріл'),
+    'Heavy rounds': U('მძიმე ტყვიები', 'Тяжёлые патроны', 'Важкі набої'),
+    'Drum magazine: +fire rate': U('დოლური მაღაზია: +სისწრაფე', 'Барабанный магазин: +скорострельность', 'Барабанний магазин: +скорострільність'),
     'ESCAPE JEEP': U('გაქცევის ჯიპი', 'ДЖИП ДЛЯ ПОБЕГА', 'ДЖИП ДЛЯ ВТЕЧІ'),
     'FOCUS': U('ფოკუსი', 'ФОКУС', 'ФОКУС'),
     'Invert up/down look': U('ზემოთ/ქვემოთ ხედვის ინვერსია', 'Инвертировать взгляд вверх/вниз', 'Інвертувати погляд вгору/вниз'),

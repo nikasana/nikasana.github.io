@@ -19,12 +19,41 @@ Saves are shared with the 2D game (same site, same browser storage).
 4. Full feature sweep in 3D (emissions, story, events, bosses, contracts, evac, pets…), bug fixing, tests.
 5+. Polish.
 
+## v2 plan (from the feedback after batch 5)
+
+Goal: playable first-person, real 3D models instead of flat pictures, a gun you actually shoot, 3D
+anomalies, better light. Built procedurally in code (no artist assets can be downloaded here), so the
+look is stylised low-poly, not photoreal.
+
+- **v2-A (MVP)**: playability (most new mutants come from in front, mutants slightly slower in 3D and slowed
+  while behind you up close, stronger rear warnings), hold/progress rings and prompts that were only
+  painted on the ground now float in the air and show at the crosshair, a shootable gun (hitscan through
+  the crosshair, its own upgrade levels in level-up cards / auto-pick, auto-fire option, fire button on
+  phones), a 3D gun model with upgrade attachments, sun + sky light on buildings.
+- **v2-B**: 3D animated models for people (stalkers, teammates, bandits, soldiers, zombies, Monolith,
+  quest NPCs) and the common mutants (dogs, boars, flesh, rats, cats, pseudodogs, snorks).
+- **v2-C**: 3D models for the rest of the mutants and all bosses; hit reactions and death falls.
+- **v2-D**: 3D anomalies (electro arcs, burner flames, gravity vortex, acid…), 3D trees/rocks/crates,
+  vehicles, pickups and artifacts.
+- **v2-E**: weapon models per weapon, impacts, shell casings, muzzle light, shadows on high settings.
+- **v2-F**: phone performance tiers for all of the above, co-op player models, full test sweep.
+
+### v2 status
+- **v2-A: done.** Most new mutants arrive from in front/sides (80% of those that would appear behind
+  are moved to the front); mutants move at 0.82× speed in 3D and at 0.5–0.7× while close behind you
+  out of sight; hold rings and prompts that were only painted on the ground (boarding, hatches, towers,
+  rescues, camps…) show in the air and at the crosshair; the **Stalker Rifle** (hit-scan through the
+  crosshair, 8 upgrade levels through level-up cards / auto-pick: damage, fire rate, piercing, red-dot,
+  double tap, heavy rounds, drum magazine) with a 3D model whose attachments follow its level, tracers,
+  muzzle flash; left mouse = fire, right mouse = focus fire, FIRE button on touch screens, optional
+  auto-fire (on by default on phones); sun and sky light on buildings.
+
 ## How to play
 
 Open `/zone3d/` on the same site as the game (https://nikasana.github.io/zone3d/).
 - PC: click the view to capture the mouse, move the mouse to look, WASD to move (relative to where you look),
-  Space dash, Esc pause (frees the mouse). Click on a mutant while the mouse is captured = focus fire.
-- Phone: left side of the screen is the movement stick, drag on the right side to look around.
+  left mouse = fire the rifle, right mouse = focus fire, Space dash, Esc pause (frees the mouse).
+- Phone: left side of the screen is the movement stick, drag on the right side to look around, 🔥 = fire.
 - Settings → "3D view": aiming (where you look / automatic 360° like the flat game), look sensitivity,
   field of view, invert up/down.
 
