@@ -59,6 +59,12 @@ look is stylised low-poly, not photoreal.
   and poltergeists (glowing orbs with circling debris), the watching eye, bats and crows (flapping
   wings); bosses: pseudogiant, chimera (two heads, horns), behemoth (tusks, spikes), matriarch, controller
   prime, izlom lord, poltergeist king, the gunship (spinning rotor) and the Monolith (glowing crystal).
+- **v2-D: done.** 3D anomalies on top of their ground glow: electro/tesla arcs from a glowing core, burner and
+  comet flame columns, vortex/magnet/gravity-flip swirling debris, acid/gas bubbling domes, springboard and
+  geyser shimmer (geysers erupt), teleport/time-loop rings, mirror pane, frost ice shards, mincer blades,
+  burnt-fuzz strands, psi/sound waves. 3D trees (leafy and pines), dead trees, bushes, rocks, barrels
+  (red = explosive), tanks, crates (lid flies off), glowing artifacts, the guide, parked bikes and jeeps.
+  Scenery is cached and rebuilt only after you walk ~60 units (cheap per frame).
 
 ## How to play
 

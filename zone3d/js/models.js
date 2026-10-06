@@ -337,6 +337,7 @@ function mdlFrame() {
     _tint.setRGB(0.25, 0.22, 0.2); _tint.k = clamp((age - 0.5) / 4, 0, 0.4);
     if (b.k === 'h') mdlHuman(b.x, b.y, -sink, st.yaw, b.s, b.pal, st, _tint); else mdlQuad(b.x, b.y, -sink, st.yaw, b.s, b.pal, st, _tint);
   }
+  for (const f of MDL.extra || []) { try { f(); } catch (er) { if (typeof guardReport === 'function') guardReport('mdl-extra', er); } }
   for (const m of [MDL.box, MDL.sph, MDL.cyl, MDL.tbox, MDL.tsph, MDL.tcyl, MDL.gbox, MDL.gsph]) { m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; m.visible = m.count > 0; }
   MDL.shd.instanceMatrix.needsUpdate = true; MDL.shd.visible = MDL.shd.count > 0;
 }

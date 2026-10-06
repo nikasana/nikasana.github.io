@@ -421,12 +421,12 @@ function z3Stand() {
   const PC = WORLD / PCELL, st = ++World.stamp;
   const cx0 = Math.max(0, Math.floor((px - V) / PCELL)), cx1 = Math.min(PC - 1, Math.floor((px + V) / PCELL));
   const cy0 = Math.max(0, Math.floor((py - V) / PCELL)), cy1 = Math.min(PC - 1, Math.floor((py + V) / PCELL));
-  let made = 0; const lowQ = lowGfx(), potQ = potatoGfx();
+  let made = 0; const lowQ = lowGfx(), potQ = potatoGfx(), w3 = typeof W3_PROPS !== 'undefined' && MDL.cone;
   for (let gy = cy0; gy <= cy1; gy++) for (let gx = cx0; gx <= cx1; gx++) {
     const cell = World.propGrid[gy * PC + gx]; if (!cell) continue;
     for (const p of cell) {
       if (p._s === st) continue; p._s = st;
-      if (Z3_BLOCK.has(p.kind) || (lowQ && p.kind === 'grass') || (potQ && p.kind === 'reeds')) continue;
+      if (Z3_BLOCK.has(p.kind) || (lowQ && p.kind === 'grass') || (potQ && p.kind === 'reeds') || (w3 && W3_PROPS.has(p.kind))) continue;
       const dx = p.x - px, dy = p.y - py; if (dx * dx + dy * dy > V2 || !ahead(p.x, p.y, 260)) continue;
       if (!SPR3.map.has(z3PropKey(p)) && ++made > 24) continue; // new sprites are spread over a few frames
       const d2 = dx * dx + dy * dy, near = d2 < 110 * 110 ? clamp((Math.sqrt(d2) - 35) / 75, 0.12, 1) : 1; // see through scenery you stand in
@@ -448,7 +448,7 @@ function z3Stand() {
     z3Push(z3EnemySprite(e), e.x, e.y, e.z || 0, vs * (1 + an), vs * (1 - an), (e.face || 1) * rxw < 0, e.flash > 0 ? -a : a);
   }
   // crates, pickups, artifacts, locked chests
-  for (const k of G.crates) {
+  if (!w3) for (const k of G.crates) {
     if (k.open >= 1.5) continue; const dx = k.x - px, dy = k.y - py; if (dx * dx + dy * dy > V2) continue;
     const sp = SPR3.get('crate|' + (k.open ? 1 : 0), -40, -60, 80, 72, () => drawCrate({ x: 0, y: 0, open: k.open ? 1 : 0, _raw: 1 }));
     z3Push(sp, k.x, k.y, k.open ? 0 : Math.sin(NOW * 3 + k.x), 1, 1, false, k.open ? clamp(1 - k.open / 1.5, 0, 1) : 1);
@@ -460,7 +460,7 @@ function z3Stand() {
     z3Push(sp, k.x, k.y, 2 + Math.sin(NOW * 4 + k.x) * 3, 1, 1, false, 1);
   }
   const detR = 330 * (P.detect || 1);
-  for (const f of World.fields) {
+  if (!w3) for (const f of World.fields) {
     const a = f.art; if (!a) continue; const d = Math.hypot(a.x - px, a.y - py); if (d > detR) continue;
     const sp = SPR3.get('art|' + a.type, -60, -90, 120, 120, () => drawArtifact({ ...a, x: 0, y: 0 }, 1));
     z3Push(sp, a.x, a.y, 4 + Math.sin(NOW * 3 + a.x) * 3, 1, 1, false, clamp((detR - d) / 120, 0, 1));
@@ -480,14 +480,14 @@ function z3Stand() {
   if (G.pet && !G.pet.dead && !hasM) z3Push(z3EnemySprite(G.pet), G.pet.x, G.pet.y, G.pet.z || 0, 1, 1, (G.pet.face || 1) * rxw < 0, 1);
   // the tall part of anomalies: a few animation frames each, cached
   for (const a of World.anomalies) {
-    if (a.hidden) continue; const dx = a.x - px, dy = a.y - py; if (dx * dx + dy * dy > V2 || !ahead(a.x, a.y, a.r + 80)) continue;
+    if (a.hidden || (w3 && W3_ANOM.has(a.type))) continue; const dx = a.x - px, dy = a.y - py; if (dx * dx + dy * dy > V2 || !ahead(a.x, a.y, a.r + 80)) continue;
     const fr = Math.floor((NOW + (a.seed || 0)) * 6) % 4, rq = Math.max(10, Math.round(a.r / 16) * 16), key = 'at|' + a.type + '|' + rq + '|' + fr + (a.big ? 'b' : '');
     if (!SPR3.map.has(key) && ++made > 24) continue;
     const sp = SPR3.get(key, -rq * 1.8 - 40, -rq * 3 - 140, rq * 3.6 + 80, rq * 3.2 + 180, () => { const n = NOW; NOW = fr / 6; try { drawAnomalyTop({ ...a, x: 0, y: 0, r: rq, seed: 0 }); } finally { NOW = n; } }, 0.6);
     z3Push(sp, a.x, a.y, 0, 1, 1, false, 1);
   }
   // vehicles, crystals, the watcher's eye
-  for (const v of World.vehicles || []) {
+  if (!w3) for (const v of World.vehicles || []) {
     if (v === P.veh) continue; const dx = v.x - px, dy = v.y - py; if (dx * dx + dy * dy > V2) continue;
     const sp = SPR3.get('veh|' + v.kind, -70, -70, 140, 90, () => drawVehicle({ ...v, a: 0, fuel: 0 }, 0, 0));
     z3Push(sp, v.x, v.y, 0, 1, 1, (Math.cos(v.a || 0) >= 0 ? 1 : -1) * rxw < 0, 1);
@@ -573,6 +573,7 @@ function z3Points() {
     }
   }
   if (typeof z3GunTracers === 'function') z3GunTracers(A);
+  if (typeof w3AnomPts === 'function') w3AnomPts(A, N);
   A.end(); N.end();
   z3Train();
 }
