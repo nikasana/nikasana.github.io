@@ -69,10 +69,10 @@ const SPR3 = {
     return pg;
   },
   // (ox, oy, w, h): the box (relative to the anchor, y down like the game) that draw() may paint into
-  get(key, ox, oy, w, h, draw) {
+  get(key, ox, oy, w, h, draw, sk = 1) {
     let sp = this.map.get(key);
     if (sp) return sp;
-    const tc = performance.now(); let s = this.S;
+    const tc = performance.now(); let s = this.S * sk;
     s = Math.min(s, (Z3.PAGE - 8) / w, (Z3.PAGE - 8) / h);
     const W = Math.max(1, Math.ceil(w * s)), H = Math.max(1, Math.ceil(h * s));
     const c = document.createElement('canvas'); c.width = W; c.height = H;
@@ -197,6 +197,7 @@ function z3rgb(s) { // "r,g,b" → [r, g, b] in 0..1
   const m = String(s).split(','); v = [(+m[0] || 0) / 255, (+m[1] || 0) / 255, (+m[2] || 0) / 255];
   if (RGB3.size > 500) RGB3.clear(); RGB3.set(s, v); return v;
 }
+function z3hex(h) { let v = RGB3.get(h); if (v) return v; const n = parseInt(String(h).slice(1, 7), 16) || 0; v = [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; RGB3.set(h, v); return v; }
 if (Z3.ok) { Z3.ptAdd = new PT3(true); Z3.ptNorm = new PT3(false); }
 
 // ---------- buildings, fences and wrecks: 3D blocks ----------
@@ -318,6 +319,7 @@ function z3Ground() {
 // the original renderer, top-down around a point ahead of you, into the game canvas: everything it paints flat on the
 // ground. Things that stand up (props, mutants, the player, pickups, bullets, numbers) are left out; they are 3D here.
 const Z3_NULL = document.createElement('canvas').getContext('2d');
+const Z3_FX = new Set(['beam', 'lightning', 'tele']); // drawn in 3D instead
 let Z3_PASS = false;
 function z3GroundPass(_render) {
   const N = Z3.ovN, R = Z3.ovR, c = Math.cos(Z3.yaw), s = Math.sin(Z3.yaw);
@@ -331,6 +333,9 @@ function z3GroundPass(_render) {
   const no = () => {};
   drawPropFast = no; drawEnemyScaled = no; drawPlayer = no; drawCrate = no; drawPickup = no; drawArtifact = no; drawPoiChest = no; if (sv.pa) drawPartner = no;
   G.enemies = []; G.bullets = []; G.ebullets = []; G.particles = []; G.texts = []; G.throws = [];
+  const W = World, sv2 = { at: drawAnomalyTop, veh: drawVehicle, cry: W.crystals, tor: W.tornados, fx: G.fx, wat: typeof Hz !== 'undefined' ? Hz.watcher : null, tr: typeof W2 !== 'undefined' ? W2.train : null };
+  drawAnomalyTop = no; drawVehicle = no; W.crystals = []; W.tornados = []; G.fx = G.fx.filter((f) => !Z3_FX.has(f.k));
+  if (sv2.wat) Hz.watcher = null; if (sv2.tr) W2.train = Object.assign({}, sv2.tr, { cars: 0 });
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, N, N);
   Z3_PASS = true;
   try { _render(false); } finally {
@@ -338,6 +343,8 @@ function z3GroundPass(_render) {
     VW = sv.VW; VH = sv.VH; DPR = sv.DPR; ZOOM = sv.ZOOM; CAM.x = sv.cx; CAM.y = sv.cy; ctx = sv.ctx; G.shake = sv.shake;
     minGfx = sv.mg; lowGfx = sv.lg; drawGroundFast = sv.gf; drawPropFast = sv.dp; drawEnemyScaled = sv.de; drawPlayer = sv.pl; drawCrate = sv.cr; drawPickup = sv.pk; drawArtifact = sv.ar; drawPoiChest = sv.pc; if (sv.pa) drawPartner = sv.pa;
     G.enemies = sv.en; G.bullets = sv.bu; G.ebullets = sv.eb; G.particles = sv.pa2; G.texts = sv.tx; G.throws = sv.th;
+    drawAnomalyTop = sv2.at; drawVehicle = sv2.veh; W.crystals = sv2.cry; W.tornados = sv2.tor; G.fx = sv2.fx;
+    if (sv2.wat) Hz.watcher = sv2.wat; if (sv2.tr) W2.train = sv2.tr;
   }
   Z3.ovMesh.position.set(gx, 0.5, gy); Z3.ovMesh.scale.set(2 * R, 2 * R, 1);
   Z3.ovTex.needsUpdate = true; Z3.ovMat.color.setScalar(Z3.bright);
@@ -397,7 +404,8 @@ function z3Stand() {
       if (Z3_BLOCK.has(p.kind)) continue;
       const dx = p.x - px, dy = p.y - py; if (dx * dx + dy * dy > V2 || !ahead(p.x, p.y, 260)) continue;
       if (!SPR3.map.has(z3PropKey(p)) && ++made > 24) continue; // new sprites are spread over a few frames
-      z3Push(z3PropSprite(p), p.x, p.y, 0, 1, 1, false, 1);
+      const d2 = dx * dx + dy * dy, near = d2 < 110 * 110 ? clamp((Math.sqrt(d2) - 35) / 75, 0.12, 1) : 1; // see through scenery you stand in
+      z3Push(z3PropSprite(p), p.x, p.y, 0, 1, 1, false, near);
     }
   }
   // mutants
@@ -433,6 +441,38 @@ function z3Stand() {
     if (p.state >= 2) continue; const dx = p.x - px, dy = p.y - py; if (dx * dx + dy * dy > V2) continue;
     z3Push(SPR3.get('poi|' + p.icon + p.name, -140, -100, 280, 110, () => drawPoiChest({ ...p, x: 0, y: 0 })), p.x, p.y, 0, 1, 1, false, 1);
   }
+  // quest people (the scientist you escort or guard)
+  if (typeof Quests !== 'undefined') for (const q of Quests.list) {
+    const n = q.npc; if (!n || n.dead || n.x === undefined) continue; const dx = n.x - px, dy = n.y - py; if (dx * dx + dy * dy > V2) continue;
+    const mv = q.type === 'escort' || (n.vx || n.vy), fr = mv ? Math.floor((NOW * 8 / TAU * 4)) % 4 : 0;
+    const sp = SPR3.get('npc|sci|' + fr, -70, -110, 140, 130, () => drawStalker({ x: 0, y: 0, z: 0, anim: ((fr + 0.5) / 4) * TAU, face: 1, aim: 0, moving: !!mv }, typeof SCI_PAL !== 'undefined' ? SCI_PAL : PAL_PLAYER, false));
+    z3Push(sp, n.x, n.y, 0, 1, 1, (P.x > n.x ? 1 : -1) * rxw < 0, 1);
+  }
+  // the companion dog
+  if (G.pet && !G.pet.dead) z3Push(z3EnemySprite(G.pet), G.pet.x, G.pet.y, G.pet.z || 0, 1, 1, (G.pet.face || 1) * rxw < 0, 1);
+  // the tall part of anomalies: a few animation frames each, cached
+  for (const a of World.anomalies) {
+    if (a.hidden) continue; const dx = a.x - px, dy = a.y - py; if (dx * dx + dy * dy > V2 || !ahead(a.x, a.y, a.r + 80)) continue;
+    const fr = Math.floor((NOW + (a.seed || 0)) * 6) % 4, rq = Math.max(10, Math.round(a.r / 16) * 16), key = 'at|' + a.type + '|' + rq + '|' + fr + (a.big ? 'b' : '');
+    if (!SPR3.map.has(key) && ++made > 24) continue;
+    const sp = SPR3.get(key, -rq * 1.8 - 40, -rq * 3 - 140, rq * 3.6 + 80, rq * 3.2 + 180, () => { const n = NOW; NOW = fr / 6; try { drawAnomalyTop({ ...a, x: 0, y: 0, r: rq, seed: 0 }); } finally { NOW = n; } }, 0.6);
+    z3Push(sp, a.x, a.y, 0, 1, 1, false, 1);
+  }
+  // vehicles, crystals, the watcher's eye
+  for (const v of World.vehicles || []) {
+    if (v === P.veh) continue; const dx = v.x - px, dy = v.y - py; if (dx * dx + dy * dy > V2) continue;
+    const sp = SPR3.get('veh|' + v.kind, -70, -70, 140, 90, () => drawVehicle({ ...v, a: 0, fuel: 0 }, 0, 0));
+    z3Push(sp, v.x, v.y, 0, 1, 1, (Math.cos(v.a || 0) >= 0 ? 1 : -1) * rxw < 0, 1);
+  }
+  for (const c of World.crystals || []) {
+    const dx = c.x - px, dy = c.y - py; if (dx * dx + dy * dy > V2) continue;
+    const gq = Math.round((c.g || 0) * 4) / 4;
+    const sp = SPR3.get('cry|' + gq, -80, -140, 160, 160, () => { const W = World, sv = [W.crystals, W.vehicles, W.tornados, typeof Hz !== 'undefined' ? Hz.watcher : null];
+      W.crystals = [{ ...c, x: 0, y: 0, g: gq, hold: 0 }]; W.vehicles = []; W.tornados = []; if (typeof Hz !== 'undefined') Hz.watcher = null;
+      try { drawHazardsTop(-1e9, -1e9, 1e9, 1e9); } finally { W.crystals = sv[0]; W.vehicles = sv[1]; W.tornados = sv[2]; if (typeof Hz !== 'undefined') Hz.watcher = sv[3]; } });
+    z3Push(sp, c.x, c.y, 0, 1, 1, false, 1);
+  }
+  if (typeof Hz !== 'undefined' && Hz.watcher && typeof drawEye === 'function') { const w = Hz.watcher; z3Push(SPR3.get('eye', -60, -100, 120, 120, () => drawEye({ x: 0, y: 0, z: 0 })), w.x, w.y, 40 + Math.sin(NOW * 2) * 8, 1, 1, false, 0.8); }
   // teammates
   if (typeof CO !== 'undefined' && CO.active && typeof coOthers === 'function') for (const q of coOthers()) {
     if (q.gone || q.x === undefined) continue;
@@ -468,7 +508,59 @@ function z3Points() {
     const v = t.k === 'erock' ? [0.42, 0.35, 0.29] : t.k === 'acid' ? [0.55, 1, 0.35] : t.k === 'flare' ? [1, 0.55, 0.23] : [0.3, 0.38, 0.2];
     N.push(x, z, y, t.k === 'erock' ? 22 : 13, v[0], v[1], v[2], 1);
   }
+  // elites, alphas and mutated mutants keep their coloured glow on the ground around them
+  for (const e of G.enemies) {
+    if (e.dead || !(e.affix || e.mini || e.mut)) continue; const dx = e.x - px, dy = e.y - py; if (dx * dx + dy * dy > 1000 * 1000) continue;
+    let c; if (e.mut && typeof MUTATIONS !== 'undefined' && MUTATIONS[e.mut]) c = z3rgb(MUTATIONS[e.mut].rgb); else c = z3hex(e.mini ? '#ffb830' : (ELITE_AFFIX[e.affix] || {}).color || '#ffb830');
+    const R = e.r * 1.4 * (e.sc || 1), n = 14, a0 = NOW * 1.5, al = 0.55 + Math.sin(NOW * 6 + (e.seed || 0)) * 0.25;
+    for (let i = 0; i < n; i++) { const a = a0 + (i / n) * TAU; A.push(e.x + Math.cos(a) * R, 3, e.y + Math.sin(a) * R, 9, c[0], c[1], c[2], al); }
+  }
+  for (const t of World.tornados || []) {
+    if (dist2(t.x, t.y, px, py) > V2) continue;
+    for (let i = 0; i < 10; i++) { const h = i * 26, w = 18 + i * 9, sw = Math.sin(NOW * 3 + i * 0.6 + (t.seed || 0)) * 10;
+      for (let j = 0; j < 9; j++) { const a = NOW * 4 + j * 0.7 + i; N.push(t.x + sw + Math.cos(a) * w, h + 4, t.y + Math.sin(a) * w, 20 + i * 2, 0.59, 0.55, 0.47, 0.5 - i * 0.03); } }
+  }
+  for (const f of G.fx) {
+    if (!Z3_FX.has(f.k) || f.delay > 0) continue;
+    const k = clamp(f.life / f.max, 0, 1);
+    // shots that start at you come out of the gun: a bit ahead of the eye and to the right
+    const fromMe = (x, y) => Math.abs(x - P.x) < 40 && Math.abs(y - P.y) < 50;
+    const gx = P.x + Math.cos(Z3.yaw) * 26 + Z3.rx * 9, gy = P.y + Math.sin(Z3.yaw) * 26 + Z3.rz * 9, gh = Z3.cam.position.y - 12;
+    const seg = (x0, y0, x1, y1, h0, h1, sz, r, g, b, a, jag) => {
+      if (fromMe(x0, y0)) { x0 = gx; y0 = gy; h0 = gh; }
+      const L = Math.hypot(x1 - x0, y1 - y0), n = Math.min(90, Math.max(2, Math.ceil(L / 7)));
+      for (let i = 0; i <= n; i++) { const t = i / n, j = jag && i > 0 && i < n ? jag : 0; A.push(lerp(x0, x1, t) + (Math.random() - 0.5) * j, lerp(h0, h1, t) + (Math.random() - 0.5) * j, lerp(y0, y1, t) + (Math.random() - 0.5) * j, sz, r, g, b, a); }
+    };
+    if (f.k === 'beam') { const w = 6 + (f.w || 4) * k; if (f.psi) seg(f.x, f.y, f.x2, f.y2, 26, 26, w * 1.6, 0.78, 0.43, 1, k * 0.7); else seg(f.x, f.y, f.x2, f.y2, 26, 26, w * 1.6, 0.35, 0.7, 1, k * 0.6); seg(f.x, f.y, f.x2, f.y2, 26, 26, w * 0.6, 0.94, 0.98, 1, k); }
+    else if (f.k === 'tele') seg(f.x, f.y, f.x2, f.y2, 24, 24, (f.w || 3) + 4, 1, 0.16, 0.12, 0.35 + (1 - k) * 0.5);
+    else if (f.k === 'lightning' && f.pts) for (let i = 0; i < f.pts.length - 1; i++) {
+      const a = f.pts[i], b = f.pts[i + 1], ax = a[0], ay = a[1] + (i === 0 ? 30 : 14), bx = b[0], by = b[1] + 14;
+      seg(ax, ay, bx, by, 24, 22, 11, 0.35, 0.63, 1, k * 0.7, 9); seg(ax, ay, bx, by, 24, 22, 4, 0.94, 0.98, 1, k, 5);
+    }
+  }
   A.end(); N.end();
+  z3Train();
+}
+// the train: real 3D carriages
+function z3Train() {
+  const T = typeof W2 !== 'undefined' ? W2.train : null;
+  if (!Z3.trainMesh) {
+    Z3.trainGeo = new THREE.BufferGeometry(); Z3.trainPos = new Float32Array(12 * 36 * 3); Z3.trainCol = new Float32Array(12 * 36 * 3);
+    Z3.trainGeo.setAttribute('position', new THREE.BufferAttribute(Z3.trainPos, 3).setUsage(THREE.DynamicDrawUsage)); Z3.trainGeo.setAttribute('color', new THREE.BufferAttribute(Z3.trainCol, 3).setUsage(THREE.DynamicDrawUsage));
+    Z3.trainMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }); Z3.trainMesh = new THREE.Mesh(Z3.trainGeo, Z3.trainMat); Z3.trainMesh.frustumCulled = false; Z3.scene.add(Z3.trainMesh);
+  }
+  let n = 0;
+  if (T && !(T.warn > 0) && World.kind === 'over') for (let i = 0; i < Math.min(12, T.cars); i++) {
+    const [x, y, a0] = W2.railPos(T.r, T.s - T.dir * i * 130), a = a0 + (T.dir < 0 ? Math.PI : 0); if (dist2(x, y, P.x, P.y) > Z3.view * Z3.view) continue;
+    const c = Math.cos(a), s = Math.sin(a), L = 60, Wd = 28, H = i === 0 ? 74 : 66, base = T.ghost ? (i === 0 ? [0.23, 0.42, 0.32] : [0.18, 0.33, 0.27]) : i === 0 ? [0.23, 0.23, 0.24] : [0.35, 0.29, 0.23];
+    const corner = (u, v) => [x + c * u - s * v, y + s * u + c * v];
+    const q = [corner(-L, -Wd), corner(L, -Wd), corner(L, Wd), corner(-L, Wd)];
+    const quad = (A, B, h0, h1, k) => { for (const [px, h, py] of [[A[0], h0, A[1]], [B[0], h0, B[1]], [B[0], h1, B[1]], [A[0], h0, A[1]], [B[0], h1, B[1]], [A[0], h1, A[1]]]) { const j = n * 3; Z3.trainPos[j] = px; Z3.trainPos[j + 1] = h; Z3.trainPos[j + 2] = py; Z3.trainCol[j] = base[0] * k * Z3.bright; Z3.trainCol[j + 1] = base[1] * k * Z3.bright; Z3.trainCol[j + 2] = base[2] * k * Z3.bright; n++; } };
+    for (let e = 0; e < 4; e++) quad(q[e], q[(e + 1) % 4], 8, H, [0.8, 0.95, 0.7, 0.9][e]);
+    const top = (A, B, C, D) => { for (const p of [A, B, C, A, C, D]) { const j = n * 3; Z3.trainPos[j] = p[0]; Z3.trainPos[j + 1] = H; Z3.trainPos[j + 2] = p[1]; Z3.trainCol[j] = base[0] * 1.15 * Z3.bright; Z3.trainCol[j + 1] = base[1] * 1.15 * Z3.bright; Z3.trainCol[j + 2] = base[2] * 1.15 * Z3.bright; n++; } };
+    top(q[0], q[1], q[2], q[3]);
+  }
+  Z3.trainGeo.attributes.position.needsUpdate = true; Z3.trainGeo.attributes.color.needsUpdate = true; Z3.trainGeo.setDrawRange(0, n); Z3.trainMesh.visible = n > 0;
 }
 
 // ---------- camera ----------
@@ -542,6 +634,15 @@ function z3Overlay() {
     if (e.mini || e.boss) { g.font = 'bold 12px Oswald, sans-serif'; g.fillStyle = '#ffcf6a'; g.fillText(z3Tr(e.name || ''), p[0], p[1] - 6); }
     if (e.stun > 0) { g.font = '13px sans-serif'; g.fillStyle = '#ffe070'; g.fillText('✦ ✦', p[0], p[1] - (e.mini || e.boss ? 20 : 4)); }
   }
+  for (const e of G.enemies) { // stagger meters (heavy hits fill them; full = stunned and open to an execution)
+    if (e.dead || !(e.stg > 0.02 || e.stgT > 0)) continue; const d = Math.hypot(e.x - P.x, e.y - P.y); if (d > 900) continue;
+    const vs = (e.sc || 1) * (e.d && e.d.vsc || 1), p = z3Project(e.x, (e.z || 0) + e.r * 2.6 * vs + 14, e.y); if (!p) continue;
+    const w = e.boss ? 80 : e.mini ? 60 : 36; g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(p[0] - w / 2 - 1, p[1] + 8, w + 2, 5);
+    g.fillStyle = e.stgT > 0 ? '#fff' : '#ffe070'; g.fillRect(p[0] - w / 2, p[1] + 9, w * (e.stgT > 0 ? e.stgT / 3 : Math.min(1, e.stg)), 3);
+  }
+  if (typeof Quests !== 'undefined') for (const q of Quests.list) { const n = q.npc; if (!n || n.dead || !(n.hp >= 0)) continue; const p = z3Project(n.x, 70, n.y); if (!p || Math.hypot(n.x - P.x, n.y - P.y) > 900) continue; g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(p[0] - 21, p[1] - 1, 42, 6); g.fillStyle = '#ffe070'; g.fillRect(p[0] - 20, p[1], 40 * clamp(n.hp / 100, 0, 1), 4); }
+  if (G.ft) for (const r of G.ft.res || []) { if (r.state) continue; const p = z3Project(r.x, 70, r.y); if (p && Math.hypot(r.x - P.x, r.y - P.y) < 1400) { g.font = 'bold 14px Oswald, sans-serif'; g.fillStyle = '#ffcf6a'; g.fillText('🆘 ' + r.name + ' · ' + Math.ceil(r.t) + 's', p[0], p[1]); } }
+  for (const v of World.vehicles || []) if (v !== P.veh && (v.broken || v === G.escapeCar)) { const p = z3Project(v.x, 64, v.y); if (p && Math.hypot(v.x - P.x, v.y - P.y) < 900) { g.font = 'bold 13px Oswald, sans-serif'; g.fillStyle = '#7dff8a'; g.fillText(v.broken ? '🔧' : z3Tr('ESCAPE JEEP'), p[0], p[1]); } }
   if (typeof CO !== 'undefined' && CO.active && typeof coOthers === 'function') for (const q of coOthers()) {
     if (q.gone || q.x === undefined) continue; const p = z3Project(q.x, 74, q.y); if (!p) continue;
     g.font = 'bold 12px Oswald, sans-serif'; g.fillStyle = q.ghost ? '#aaa' : coColor(q.pid); g.fillText((q.ghost ? '💀 ' : '') + (q.name || 'Teammate'), p[0], p[1]);
@@ -754,6 +855,12 @@ addEventListener('pointerup', z3TEnd, true); addEventListener('pointercancel', z
 addEventListener('click', () => {
   if (Z3_PHONE || !z3Playing() || document.pointerLockElement === cv || !matchMedia('(pointer: fine)').matches) return;
   try { const r = cv.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) { /* not allowed */ }
+});
+
+// quest people are drawn standing in 3D, not flat on the ground
+addEventListener('DOMContentLoaded', () => {
+  if (typeof QT2 === 'undefined') return;
+  for (const k in QT2) { const d = QT2[k]; if (!d || typeof d.draw !== 'function') continue; const o = d.draw; d.draw = function (q) { if (Z3_PASS && q && q.npc) return; return o.apply(this, arguments); }; }
 });
 
 // ---------- settings ----------

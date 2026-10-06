@@ -46,5 +46,16 @@ Open `/zone3d/` on the same site as the game (https://nikasana.github.io/zone3d/
 - Tested: desktop and phone views, movement/strafe/stick directions, touch look, aim cone vs automatic,
   dash direction, pause, lab in/out, 5-minute simulated soak (bosses, emission, lab) with no errors.
 
-Known gaps (next batches): beams/lightning and tall anomaly parts are still flat on the ground; the
-player's vehicle is not drawn; enemies use side-view pictures; no sky details; co-op not tested live.
+### Batch 2: done
+- Standing in 3D now: the tall part of every anomaly (animated), parked vehicles, crystals, the watcher's
+  eye, the companion dog, quest people (escort/guard scientists, with health bar), teammates.
+- Tornadoes as spinning dust columns, the train as real 3D carriages, beams/lightning/sniper lasers as
+  glowing 3D lines coming out of your gun, coloured glow rings around elites, alphas and mutated mutants.
+- On screen: stagger meters, rescue labels, broken vehicle / escape jeep labels.
+- Scenery you stand inside (trees, bushes) turns see-through instead of filling the screen.
+- Co-op tested with two tabs (offline test mode): lobby, start, both players in 3D, the guest moves where
+  they look and the host sees them standing with their name.
+
+Known gaps: the vehicle you drive is not drawn (camera rides higher); smoke columns, story bodies and some
+event objects are still flat on the ground; enemies use side-view pictures; no sky details; the automatic
+"graphics lowered" from the flat game also applies (settings are shared).
