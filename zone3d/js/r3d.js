@@ -10,12 +10,13 @@
 //  - movement keys and the joystick are turned by where you look; weapons aim where you look (or 360° like before)
 const Z3 = {
   ok: false, on: false, yaw: -Math.PI / 2, pitch: 0, locked: false, wasLocked: false,
-  eye: 44, fov: 75, A: 0.42, // aim cone half-angle (radians)
+  eye: 44, fov: 75, A: 0.42, farK: 1, // aim cone half-angle (radians); view distance factor (adapts to FPS)
   ovN: 1024, ovR: 760, view: 1500,
   chunks: new Map(), chunkSrc: null, propsRef: null, propsLen: -1, stamp: 1,
   target: null, prof: { flat: 0, build: 0, gl: 0, ov: 0 },
 };
 const Z3_PHONE = typeof IS_PHONE !== 'undefined' && IS_PHONE;
+if (Z3_PHONE) Z3.A = 0.52; // thumbs aim less precisely than a mouse
 const z3Tr = (s) => (typeof I18n !== 'undefined' && I18n.cur !== 'en' && I18n.tc ? I18n.tc(s) : s);
 const z3Set = () => (Save.set || (Save.set = {}));
 const z3AimMode = () => z3Set().aim3d || 'look';
@@ -597,7 +598,8 @@ function z3Camera() {
   if (W < H) fov += (1 - W / H) * 40;
   cam.fov += (fov - cam.fov) * 0.25; cam.aspect = W / H; cam.updateProjectionMatrix();
   const bob = P.moving && !P.veh ? Math.sin((P.anim || 0) * 1) * 1.6 : 0;
-  const eye = (P.veh ? 58 : Z3.eye) + (P.z || 0) + bob;
+  let eye = (P.veh ? 58 : Z3.eye) + (P.z || 0) + bob;
+  if (G.state === 'over' && P.hp <= 0) { Z3.deadK = Math.min(1, (Z3.deadK || 0) + 0.025); eye = lerp(eye, 9, Z3.deadK); Z3.pitch = lerp(Z3.pitch, 0.25, Z3.deadK * 0.1); } else Z3.deadK = 0;
   const jx = sh ? (Math.random() - 0.5) * sh * 0.25 : 0, jy = sh ? (Math.random() - 0.5) * sh * 0.25 : 0;
   cam.position.set(P.x + jx, eye + jy, P.y);
   const cp = Math.cos(Z3.pitch);
@@ -609,7 +611,11 @@ function z3Camera() {
   Z3.bright = lab ? 0.6 + (1 - dark) * 0.3 : 1 - dark * 0.6;
   const fogK = clamp(Env.fogA || 0, 0, 1);
   const Q = z3Q(); Z3.ovN = Q.ovN; Z3.ptCap = Q.pts;
-  const far = Q.far * (1 - fogK * 0.55) * (lab ? 0.6 : 1);
+  // slow frames for a while: see a bit less far (and further again once it runs smoothly); this session only
+  const fm = typeof FRAME_MS !== 'undefined' ? FRAME_MS : 16;
+  if (fm > 0 && fm < 250) { Z3.fmA = (Z3.fmA || 16) * 0.97 + fm * 0.03; Z3.fmT = (Z3.fmT || 0) + 1;
+    if (Z3.fmT > 90) { Z3.fmT = 0; if (Z3.fmA > 26 && Z3.farK > 0.6) Z3.farK = Math.max(0.6, Z3.farK - 0.1); else if (Z3.fmA < 18 && Z3.farK < 1) Z3.farK = Math.min(1, Z3.farK + 0.05); } }
+  const far = Q.far * Z3.farK * (1 - fogK * 0.55) * (lab ? 0.6 : 1);
   Z3.view = far + 80;
   const base = lab ? [0.04, 0.045, 0.05] : [0.54, 0.565, 0.53];
   const night = lab ? [0.02, 0.02, 0.025] : [0.035, 0.045, 0.1];
@@ -1040,6 +1046,22 @@ addEventListener('click', () => {
 addEventListener('DOMContentLoaded', () => {
   if (typeof QT2 === 'undefined') return;
   for (const k in QT2) { const d = QT2[k]; if (!d || typeof d.draw !== 'function') continue; const o = d.draw; d.draw = function (q) { if (Z3_PASS && q && q.npc) return; return o.apply(this, arguments); }; }
+});
+
+// the minimap shows which way you look: a light cone from your dot
+addEventListener('DOMContentLoaded', () => {
+  if (typeof drawMinimap !== 'function' || typeof mmx === 'undefined') return;
+  const _dm = drawMinimap;
+  drawMinimap = function () {
+    const r = _dm.apply(this, arguments);
+    if (Z3_MODE && P && Z3.cam) {
+      const c = mm.width / 2, R = mm.width * 0.3, h = Math.min(1.2, Z3.cam.fov * Z3.cam.aspect * Math.PI / 360);
+      mmx.save(); mmx.setTransform(1, 0, 0, 1, 0, 0);
+      for (const [k, a] of [[1, 0.16], [0.6, 0.2]]) { mmx.fillStyle = `rgba(255,240,180,${a})`; mmx.beginPath(); mmx.moveTo(c, c); mmx.arc(c, c, R * k, Z3.yaw - h, Z3.yaw + h); mmx.closePath(); mmx.fill(); }
+      mmx.restore();
+    }
+    return r;
+  };
 });
 
 // ---------- knowing what is around you ----------

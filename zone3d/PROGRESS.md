@@ -89,6 +89,10 @@ Progress: about 88% (batches 1–5). Remaining: polish from your testing + real-
   spikes some browsers send after capturing the mouse are clamped.
 - A mutant right in your face turns half see-through so a melee attacker does not blank out the view.
 - Sprite atlas pages no longer keep a CPU copy (less memory).
+- Minimap shows a light cone in the direction you look.
+- When you die the camera drops to the ground.
+- Phones get a slightly wider aim cone (thumb aiming).
+- View distance adapts for the session: it shortens if frames are slow for a while, grows back when smooth.
 
 Known gaps: enemies and props use side-view pictures (classic shooter style); smoke from camps/events
 and some event objects are still flat on the ground; real-device FPS not measured here (the test
