@@ -79,6 +79,10 @@ Progress: about 80% (batches 1–4 of the plan). Remaining: polish from your tes
   new run, tutorial, co-op lobby → run.
 - Lightest settings redraw the flat ground layer every second frame (less work on weak phones).
 
+### Batch 4.1: done
+- Red arcs around the crosshair point to whatever just hurt you; orange chevrons show mutants close by but
+  out of sight (behind or beside you); a white hit marker flashes when your weapons land a hit.
+
 Known gaps: enemies and props use side-view pictures (classic shooter style); smoke from camps/events
 and some event objects are still flat on the ground; real-device FPS not measured here (the test
 browser has no GPU).

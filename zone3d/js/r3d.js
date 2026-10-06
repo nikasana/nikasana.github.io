@@ -747,6 +747,7 @@ function z3Overlay() {
       g.beginPath(); g.moveTo(p[0] - r, p[1] - r + k); g.lineTo(p[0] - r, p[1] - r); g.lineTo(p[0] - r + k, p[1] - r); g.moveTo(p[0] + r - k, p[1] - r); g.lineTo(p[0] + r, p[1] - r); g.lineTo(p[0] + r, p[1] - r + k);
       g.moveTo(p[0] - r, p[1] + r - k); g.lineTo(p[0] - r, p[1] + r); g.lineTo(p[0] - r + k, p[1] + r); g.moveTo(p[0] + r - k, p[1] + r); g.lineTo(p[0] + r, p[1] + r); g.lineTo(p[0] + r, p[1] + r - k); g.stroke(); }
   }
+  z3Senses(g, W, H);
   if (G.flash > 0) { g.fillStyle = `rgba(${G.flashCol},${G.flash * 0.6})`; g.fillRect(0, 0, W, H); }
   if (G.fade > 0) { g.fillStyle = `rgba(0,0,0,${G.fade})`; g.fillRect(0, 0, W, H); }
 }
@@ -1008,6 +1009,50 @@ addEventListener('DOMContentLoaded', () => {
   if (typeof QT2 === 'undefined') return;
   for (const k in QT2) { const d = QT2[k]; if (!d || typeof d.draw !== 'function') continue; const o = d.draw; d.draw = function (q) { if (Z3_PASS && q && q.npc) return; return o.apply(this, arguments); }; }
 });
+
+// ---------- knowing what is around you ----------
+// where a hit came from (the nearest mutant or enemy shot when you lose health), and a hit marker when you land one
+Z3.hits = [];
+{
+  const _hp = hurtPlayer;
+  hurtPlayer = function () {
+    const h0 = P ? P.hp : 0, r = _hp.apply(this, arguments);
+    if (Z3_MODE && P && P.hp < h0) {
+      let best = null, bd = 160 * 160;
+      for (const e of G.enemies) { if (e.dead) continue; const d = dist2(e.x, e.y, P.x, P.y); if (d < bd) { bd = d; best = e; } }
+      if (!best) for (const b of G.ebullets) { const d = dist2(b.x, b.y, P.x, P.y); if (d < 90 * 90 && d < bd) { bd = d; best = b; } }
+      if (best) { Z3.hits.push({ a: Math.atan2(best.y - P.y, best.x - P.x), t: NOW }); if (Z3.hits.length > 6) Z3.hits.shift(); }
+    }
+    return r;
+  };
+  const _he = hurtEnemy;
+  hurtEnemy = function () { const r = _he.apply(this, arguments); if (Z3_MODE) Z3.hmT = NOW; return r; };
+}
+function z3Senses(g, W, H) {
+  const cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.32, half = Z3.cam.fov * Z3.cam.aspect * Math.PI / 360;
+  // red arcs towards whatever just hurt you
+  for (const h of Z3.hits) {
+    const age = NOW - h.t; if (age > 1.2) continue;
+    let rel = h.a - Z3.yaw; while (rel > Math.PI) rel -= TAU; while (rel < -Math.PI) rel += TAU;
+    const a = rel - Math.PI / 2; g.strokeStyle = `rgba(255,40,30,${0.85 * (1 - age / 1.2)})`; g.lineWidth = 9;
+    g.beginPath(); g.arc(cx, cy, R, a - 0.28, a + 0.28); g.stroke();
+  }
+  // mutants close by but out of sight: chevrons around the crosshair pointing at them
+  const near = [];
+  for (const e of G.enemies) { if (e.dead || e.hidden || (e.alpha !== undefined && e.alpha < 0.3)) continue; const d2 = dist2(e.x, e.y, P.x, P.y); if (d2 < 280 * 280) near.push([d2, e]); }
+  near.sort((a, b) => a[0] - b[0]);
+  let n = 0;
+  for (const [d2, e] of near) {
+    const rel = z3Rel(e.x, e.y); if (Math.abs(rel) < half * 0.85) continue;
+    if (++n > 8) break;
+    const d = Math.sqrt(d2), k = clamp(1 - d / 280, 0.15, 1), a = rel - Math.PI / 2, x = cx + Math.cos(a) * R * 1.12, y = cy + Math.sin(a) * R * 1.12;
+    g.save(); g.translate(x, y); g.rotate(a); g.fillStyle = `rgba(255,${Math.round(150 - k * 120)},60,${0.35 + k * 0.55})`;
+    g.beginPath(); g.moveTo(14, 0); g.lineTo(-6, -10); g.lineTo(-1, 0); g.lineTo(-6, 10); g.fill(); g.restore();
+  }
+  // hit marker
+  const hm = NOW - (Z3.hmT || -9);
+  if (hm < 0.12) { g.strokeStyle = `rgba(255,255,255,${1 - hm / 0.12})`; g.lineWidth = 2; g.beginPath(); for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { g.moveTo(cx + sx * 6, cy + sy * 6); g.lineTo(cx + sx * 12, cy + sy * 12); } g.stroke(); }
+}
 
 // ---------- settings ----------
 addEventListener('DOMContentLoaded', () => {
