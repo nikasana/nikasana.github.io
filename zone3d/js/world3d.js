@@ -5,7 +5,7 @@
 // bushes, rocks, barrels, tanks), supply crates and artifacts are 3D now too, drawn with the same shared shapes.
 const W3S = { cx: 1e9, cy: 1e9, props: null, n: -1, v: 0 };
 const W3_PICK = new Set(['med', 'magnet', 'art', 'stash', 'poistash', 'labstash']);
-const W3_PROPS = new Set(['tree', 'deadtree', 'bush', 'rock', 'barrel', 'tank', 'guide']);
+const W3_PROPS = new Set(['tree', 'deadtree', 'bush', 'rock', 'barrel', 'tank', 'guide', 'campfire']);
 const W3_ANOM = new Set(['electro', 'tesla', 'burner', 'comet', 'vortex', 'magnet', 'flip', 'acid', 'gas', 'spring', 'geyser', 'teleport', 'timeloop', 'mirror', 'cryo', 'mincer', 'fuzz', 'psifield', 'sound']);
 (function w3Init() {
   if (!MDL.ready) return;
@@ -116,6 +116,7 @@ function w3Static(px, py, V) {
   W3S.cx = px; W3S.cy = py; W3S.props = World.props; W3S.n = World.props.length; W3S.v = V;
   if (W3S.gp !== World.props) { W3S.gp = World.props; W3S.guides = World.props.filter((p) => p.kind === 'guide'); }
   for (const k of ['box', 'sph', 'cyl', 'cone', 'tsph', 'shd']) W3S[k].count = 0;
+  W3S.fires = [];
   const V2 = V * V, lowQ = lowGfx(), PC = WORLD / PCELL, st = ++World.stamp, B = W3S;
   const cx0 = Math.max(0, Math.floor((px - V) / PCELL)), cx1 = Math.min(PC - 1, Math.floor((px + V) / PCELL));
   const cy0 = Math.max(0, Math.floor((py - V) / PCELL)), cy1 = Math.min(PC - 1, Math.floor((py + V) / PCELL));
@@ -150,6 +151,10 @@ function w3Static(px, py, V) {
       } else if (p.kind === 'barrel') {
         mdlPart(B.cyl, p.x, 14, p.y, 0, 0, 0, 20, 28, 20, p.ex ? '#a8382a' : p.rad ? '#b8a030' : '#4e5a48');
         mdlPart(B.cyl, p.x, 20, p.y, 0, 0, 0, 21, 2, 21, '#2a2a28'); mdlPart(B.cyl, p.x, 8, p.y, 0, 0, 0, 21, 2, 21, '#2a2a28');
+      } else if (p.kind === 'campfire') { // crossed logs in a ring of stones; flames and smoke come from w3AnomPts
+        W3S.fires.push(p);
+        mdlPart(B.cyl, p.x, 4, p.y, 0.3, 0, 1.45, 5, 34, 5, '#4a3420'); mdlPart(B.cyl, p.x, 6, p.y, 1.9, 0, 1.45, 5, 32, 5, '#3e2c1a');
+        for (let i = 0; i < (lowQ ? 5 : 9); i++) { const a = i / (lowQ ? 5 : 9) * TAU; mdlPart(B.sph, p.x + Math.cos(a) * 21, 3, p.y + Math.sin(a) * 21, a, 0, 0, 9, 6, 8, '#6c675e'); }
       } else if (p.kind === 'tank') {
         const r = p.r || 40, h = p.h || 90;
         mdlPart(B.cyl, p.x, h / 2, p.y, 0, 0, 0, r * 2, h, r * 2, '#7a7a72');
@@ -184,6 +189,13 @@ function w3Anoms() {
 }
 function w3AnomPts(A, N) {
   const V2 = Z3.view * Z3.view, c = Math.cos(Z3.yaw), s = Math.sin(Z3.yaw), q = gfxLevel() >= 3 ? 0.5 : 1;
+  // campfires: flickering flames, sparks rising, a thin smoke trail
+  for (const p of W3S.fires || []) {
+    const dx = p.x - P.x, dy = p.y - P.y; if (dx * dx + dy * dy > V2 || dx * c + dy * s < -60) continue;
+    for (let i = 0; i < 9 * q; i++) { const u = (NOW * 2.2 + i / 9 + p.x * 0.01) % 1, ang = i * 2.39; A.push(p.x + Math.cos(ang) * 9 * (1 - u), 6 + u * 34, p.y + Math.sin(ang) * 9 * (1 - u), 16 * (1 - u) + 5, 1, 0.45 + u * 0.4, 0.12, 0.85 * (1 - u)); }
+    for (let i = 0; i < 4; i++) { const u = (NOW * 0.5 + i / 4 + p.y * 0.01) % 1; A.push(p.x + Math.sin(u * 9 + i) * 8, 20 + u * 90, p.y + Math.cos(u * 7 + i) * 8, 3, 1, 0.65, 0.25, 1 - u); }
+    for (let i = 0; i < 4 * q; i++) { const u = (NOW * 0.15 + i / 4) % 1; N.push(p.x + u * 30, 40 + u * 200, p.y - u * 12, 26 + u * 60, 0.3, 0.29, 0.27, 0.25 * (1 - u)); }
+  }
   for (const a of World.anomalies) {
     if (a.hidden || !W3_ANOM.has(a.type)) continue; const dx = a.x - P.x, dy = a.y - P.y; if (dx * dx + dy * dy > V2 || dx * c + dy * s < -a.r - 80) continue;
     const r = a.r, t = NOW + (a.seed || 0), cc = z3hex((ANOMALIES[a.type] || {}).color || '#ffffff');

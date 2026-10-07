@@ -79,6 +79,9 @@ look is stylised low-poly, not photoreal.
   spin instead of flat marks on the ground; explosions get a swelling 3D fireball.
 - **v2-F (part 4): done.** Medkits (white box, red cross), magnets, artifacts lying around and stash chests
   are 3D; labs have a ceiling with light panels (some flicker).
+- **v2-F (part 5): done.** Campfires are 3D (crossed logs in a ring of stones, flickering flames, rising
+  sparks, a thin smoke trail); bandit camps and crash sites (satellite, airdrop) send up a tall 3D smoke
+  column you can spot from far away, instead of flat smoke painted on the ground.
 
 ## How to play
 
@@ -91,7 +94,7 @@ Open `/zone3d/` on the same site as the game (https://nikasana.github.io/zone3d/
 
 ## Status
 
-Progress: v1 batches 1–5 done; v2 about 94% (see v2 status). Remaining: fixes from real-device testing.
+Progress: v1 batches 1–5 done; v2 about 95% (see v2 status). Remaining: fixes from real-device testing.
 
 ### Batch 1 (MVP): done
 - Loads the original page and scripts from `../zone/`; title screen and menus are the original 2D ones.
@@ -155,6 +158,5 @@ Progress: v1 batches 1–5 done; v2 about 94% (see v2 status). Remaining: fixes 
 - Phones get a slightly wider aim cone (thumb aiming).
 - View distance adapts for the session: it shortens if frames are slow for a while, grows back when smooth.
 
-Known gaps: enemies and props use side-view pictures (classic shooter style); smoke from camps/events
-and some event objects are still flat on the ground; real-device FPS not measured here (the test
+Known gaps: a few event objects (satellite wreck, story bodies) are still flat on the ground; real-device FPS not measured here (the test
 browser has no GPU).

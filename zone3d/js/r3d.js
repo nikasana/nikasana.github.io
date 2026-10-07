@@ -370,6 +370,7 @@ function z3GroundPass(_render, title = false) {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, N, N);
   const C = ctx, oArc = C.arc, oFT = C.fillText, rings = Z3.rings = [], labels = Z3.labels = [], ppx = P.x, ppy = P.y;
   C.arc = function (x, y, r, a0, a1) {
+    if (typeof C.fillStyle === 'string' && C.fillStyle.startsWith('rgba(70,66,62,')) return; // flat smoke puffs: the 3D columns replace them
     if (Math.abs(a0 + Math.PI / 2) < 0.01 && r >= 8 && r <= 48 && a1 > a0 + 0.03 && a1 <= a0 + TAU + 0.01 && C.lineWidth >= 3 && Math.abs(x - ppx) < 420 && Math.abs(y - ppy) < 420) rings.push({ x, y, k: (a1 - a0) / TAU, c: String(C.strokeStyle) });
     return oArc.apply(this, arguments);
   };
@@ -565,6 +566,14 @@ function z3Points() {
     for (let i = 0; i < 7; i++) { const t = (NOW * 1.7 + i * 0.37 + f.x * 0.01) % 1, a = i * 2.4 + f.y; A.push(f.x + Math.cos(a) * 30 * (1 - t), 6 + t * 60, f.y + Math.sin(a) * 22 * (1 - t), 26 * (1 - t) + 8, 1, 0.45 + t * 0.35, 0.12, 0.9 * (1 - t)); }
     for (let i = 0; i < 5; i++) { const t = (NOW * 0.12 + i / 5 + f.x * 0.003) % 1; N.push(f.x + t * 90 + Math.sin(t * 6 + i) * 20, 70 + t * 520, f.y - t * 40, 50 + t * 120, 0.28, 0.26, 0.24, 0.32 * (1 - t)); }
   }
+  // smoke columns over camps and crash sites (seen from far away, like in the flat game)
+  { const ev = typeof Events !== 'undefined' ? Events.cur : null, src = [];
+    for (const p of World.pois || []) if (p.state < 2 && p.type === 'camp') src.push(p.x, p.y, 0.6);
+    if (ev && ev.loc && (ev.id === 'satellite' || ev.id === 'airdrop')) src.push(ev.loc.x, ev.loc.y, 1.2);
+    for (let j = 0; j < src.length; j += 3) {
+      const sx = src[j], sy = src[j + 1], k = src[j + 2]; if (dist2(sx, sy, px, py) > V2 * 2.2) continue;
+      for (let i = 0; i < 6; i++) { const t = (NOW * 0.1 + i / 6 + sx * 0.003) % 1; N.push(sx + t * 110 * k + Math.sin(t * 6 + i) * 20, 50 + t * 600 * k, sy - t * 40, (50 + t * 140) * k, 0.3, 0.28, 0.26, 0.3 * (1 - t)); }
+    } }
   for (const t of World.tornados || []) {
     if (dist2(t.x, t.y, px, py) > V2) continue;
     for (let i = 0; i < 10; i++) { const h = i * 26, w = 18 + i * 9, sw = Math.sin(NOW * 3 + i * 0.6 + (t.seed || 0)) * 10;
