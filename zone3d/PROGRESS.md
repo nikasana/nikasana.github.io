@@ -75,6 +75,8 @@ look is stylised low-poly, not photoreal.
   dead trees and rocks; the 🔥 FIRE button sits right above DASH (portrait and landscape).
 - **v2-F (part 2): done.** A mutant winding up an attack glows orange (dodge cue); the view leans
   slightly into sideways movement.
+- **v2-F (part 3): done.** XP gems are glowing 3D crystals (green / blue / pink by value) that bob and
+  spin instead of flat marks on the ground; explosions get a swelling 3D fireball.
 
 ## How to play
 
@@ -87,7 +89,7 @@ Open `/zone3d/` on the same site as the game (https://nikasana.github.io/zone3d/
 
 ## Status
 
-Progress: about 88% (batches 1–5). Remaining: polish from your testing + real-device FPS.
+Progress: v1 batches 1–5 done; v2 about 93% (see v2 status). Remaining: fixes from real-device testing.
 
 ### Batch 1 (MVP): done
 - Loads the original page and scripts from `../zone/`; title screen and menus are the original 2D ones.

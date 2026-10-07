@@ -47,6 +47,20 @@ function w3Props() {
       const [lx, ly] = at(37, -13); mdlPart(MDL.gbox, lx, 17, ly, -a, 0, 0, 1, 4, 5, '#ffe070'); const [rx, ry] = at(37, 13); mdlPart(MDL.gbox, rx, 17, ry, -a, 0, 0, 1, 4, 5, '#ffe070');
     }
   }
+  // XP gems: little glowing crystals that bob and spin (green, blue, pink by value)
+  let ng = 0;
+  for (const g of G.gems) {
+    if (ng > 400) break; const dx = g.x - px, dy = g.y - py; if (dx * dx + dy * dy > 800 * 800) continue; ng++;
+    const big = g.v >= 20, mid = g.v >= 5, s = big ? 9 : mid ? 7 : 5, h = 8 + (g.z || 0) + Math.sin(NOW * 4 + g.x) * 2;
+    mdlPart(MDL.gbox, g.x, h, g.y, NOW * 2 + g.x, 0.785, 0.785, s, s, s, big ? '#ff6ad5' : mid ? '#6ad0ff' : '#7dff8a');
+  }
+  // explosions: a fireball that swells and fades over the scorch on the ground
+  for (const f of G.fx) {
+    if (f.k !== 'boom' || f.delay > 0) continue; const dx = f.x - px, dy = f.y - py; if (dx * dx + dy * dy > V2) continue;
+    const k = clamp(f.life / f.max, 0, 1), r = (f.r || 60) * (1.1 - k * 0.5);
+    mdlPart(MDL.gsph, f.x, r * 0.35, f.y, 0, 0, 0, r * 0.7 * k, r * 0.6 * k, r * 0.7 * k, '#fff0c0');
+    mdlPart(MDL.tsph, f.x, r * 0.4, f.y, NOW, 0, 0, r * 1.6, r * 1.2 * (0.6 + k * 0.4), r * 1.6, k > 0.5 ? '#ff9a30' : '#5a4a40');
+  }
   // supply crates: a wooden box with a lid that flies off when opened
   for (const k of G.crates) {
     if (k.open >= 1.5) continue; const dx = k.x - px, dy = k.y - py; if (dx * dx + dy * dy > V2) continue;

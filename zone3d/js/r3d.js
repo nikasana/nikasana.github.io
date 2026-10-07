@@ -357,12 +357,12 @@ function z3GroundPass(_render, title = false) {
   if (cv.width !== N || cv.height !== N) { cv.width = N; cv.height = N; }
   const sv = { VW, VH, DPR, ZOOM, cx: CAM.x, cy: CAM.y, ctx, shake: G.shake, mg: minGfx, lg: lowGfx, gf: drawGroundFast,
     dp: drawPropFast, de: drawEnemyScaled, pl: drawPlayer, cr: drawCrate, pk: drawPickup, ar: drawArtifact, pc: drawPoiChest, pa: typeof drawPartner === 'function' ? drawPartner : null,
-    en: G.enemies, bu: G.bullets, eb: G.ebullets, pa2: G.particles, tx: G.texts, th: G.throws };
+    en: G.enemies, bu: G.bullets, eb: G.ebullets, pa2: G.particles, tx: G.texts, th: G.throws, gm: G.gems };
   VW = N; VH = N; DPR = 1; ZOOM = N / (2 * R); CAM.x = gx; CAM.y = gy; G.shake = 0;
   minGfx = () => true; lowGfx = () => true; drawGroundFast = () => {};
   const no = () => {};
   drawPropFast = no; drawEnemyScaled = no; drawPlayer = no; drawCrate = no; drawPickup = no; drawArtifact = no; drawPoiChest = no; if (sv.pa) drawPartner = no;
-  G.enemies = []; G.bullets = []; G.ebullets = []; G.particles = []; G.texts = []; G.throws = [];
+  G.enemies = []; G.bullets = []; G.ebullets = []; G.particles = []; G.texts = []; G.throws = []; if (typeof MDL !== 'undefined' && MDL.ready) G.gems = [];
   const W = World, sv2 = { at: drawAnomalyTop, veh: drawVehicle, cry: W.crystals, tor: W.tornados, fx: G.fx, wat: typeof Hz !== 'undefined' ? Hz.watcher : null, tr: typeof W2 !== 'undefined' ? W2.train : null };
   drawAnomalyTop = no; drawVehicle = no; W.crystals = []; W.tornados = []; G.fx = G.fx.filter((f) => !Z3_FX.has(f.k));
   if (sv2.wat) Hz.watcher = null; if (sv2.tr) W2.train = Object.assign({}, sv2.tr, { cars: 0 });
@@ -381,7 +381,7 @@ function z3GroundPass(_render, title = false) {
     Z3_PASS = false; delete C.arc; delete C.fillText;
     VW = sv.VW; VH = sv.VH; DPR = sv.DPR; ZOOM = sv.ZOOM; CAM.x = sv.cx; CAM.y = sv.cy; ctx = sv.ctx; G.shake = sv.shake;
     minGfx = sv.mg; lowGfx = sv.lg; drawGroundFast = sv.gf; drawPropFast = sv.dp; drawEnemyScaled = sv.de; drawPlayer = sv.pl; drawCrate = sv.cr; drawPickup = sv.pk; drawArtifact = sv.ar; drawPoiChest = sv.pc; if (sv.pa) drawPartner = sv.pa;
-    G.enemies = sv.en; G.bullets = sv.bu; G.ebullets = sv.eb; G.particles = sv.pa2; G.texts = sv.tx; G.throws = sv.th;
+    G.enemies = sv.en; G.bullets = sv.bu; G.ebullets = sv.eb; G.particles = sv.pa2; G.texts = sv.tx; G.throws = sv.th; G.gems = sv.gm;
     drawAnomalyTop = sv2.at; drawVehicle = sv2.veh; W.crystals = sv2.cry; W.tornados = sv2.tor; G.fx = sv2.fx;
     if (sv2.wat) Hz.watcher = sv2.wat; if (sv2.tr) W2.train = sv2.tr;
   }
