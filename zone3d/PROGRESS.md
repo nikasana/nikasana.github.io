@@ -70,6 +70,9 @@ look is stylised low-poly, not photoreal.
   out of the rifle; firing lights up the world around you; real sun shadows on the High setting
   (buildings, trees, people and mutants); a fine detail texture on the ground so it stays crisp at
   your feet; on Potato, people and mutants drop their small parts.
+- **v2-F (part 1): done.** Phones: only the used part of each instance buffer goes to the GPU every
+  frame (was the whole buffer), people and mutants use the lighter detail on Ultra-low/Potato, simpler
+  dead trees and rocks; the 🔥 FIRE button sits right above DASH (portrait and landscape).
 
 ## How to play
 

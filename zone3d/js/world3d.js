@@ -63,7 +63,7 @@ function w3Props() {
     mdlPart(MDL.gsph, a.x, h, a.y, NOW, NOW * 0.7, 0, 10, 12, 10, A.color || '#d4f2ff');
     MDL.ghost = true; mdlPart(MDL.tsph, a.x, h, a.y, 0, 0, 0, 30, 30, 30, A.c2 || A.color || '#8ab8ff'); MDL.ghost = false;
   }
-  MDL.cone.instanceMatrix.needsUpdate = true; MDL.cone.instanceColor.needsUpdate = true; MDL.cone.visible = MDL.cone.count > 0;
+  mdlUpload(MDL.cone);
 }
 
 // trees, dead trees, bushes, rocks, barrels and tanks around you, into the static buffers
@@ -93,7 +93,7 @@ function w3Static(px, py, V) {
       } else if (p.kind === 'deadtree') {
         const k = p.s || 1, h = 88 * k * 1.25, col = p.red ? '#5a2e1e' : '#4d463c';
         mdlPart(B.cyl, p.x, h * 0.5, p.y, 0, 0, 0, 6 * k, h, 6 * k, col);
-        for (let i = 0; i < 4; i++) { const a = (p.seed || 0) + i * 1.7, hh = h * (0.45 + i * 0.13); mdlPart(B.cyl, p.x + Math.cos(a) * 9 * k, hh + 7 * k, p.y + Math.sin(a) * 9 * k, -a, 0, 0.9, 2.5 * k, 26 * k, 2.5 * k, col); }
+        for (let i = 0; i < (lowQ ? 2 : 4); i++) { const a = (p.seed || 0) + i * 1.7, hh = h * (0.45 + i * 0.13); mdlPart(B.cyl, p.x + Math.cos(a) * 9 * k, hh + 7 * k, p.y + Math.sin(a) * 9 * k, -a, 0, 0.9, 2.5 * k, 26 * k, 2.5 * k, col); }
       } else if (p.kind === 'bush') {
         const k = p.s || 1;
         mdlPart(near ? B.tsph : B.sph, p.x, 9 * k, p.y, 0, 0, 0, 36 * k, 22 * k, 34 * k, '#3e5a2e');
@@ -101,7 +101,7 @@ function w3Static(px, py, V) {
       } else if (p.kind === 'rock') {
         const r = p.r || 20, a = (p.x * 0.01 + p.y * 0.013);
         mdlPart(B.sph, p.x, r * 0.32, p.y, a, 0.1, 0, r * 2.1, r * 1.3, r * 1.8, '#6c675e');
-        mdlPart(B.sph, p.x + r * 0.3, r * 0.55, p.y - r * 0.2, a + 1, 0, 0.2, r * 1.1, r * 0.9, r * 1.0, '#7c776d');
+        if (!lowQ) mdlPart(B.sph, p.x + r * 0.3, r * 0.55, p.y - r * 0.2, a + 1, 0, 0.2, r * 1.1, r * 0.9, r * 1.0, '#7c776d');
       } else if (p.kind === 'barrel') {
         mdlPart(B.cyl, p.x, 14, p.y, 0, 0, 0, 20, 28, 20, p.ex ? '#a8382a' : p.rad ? '#b8a030' : '#4e5a48');
         mdlPart(B.cyl, p.x, 20, p.y, 0, 0, 0, 21, 2, 21, '#2a2a28'); mdlPart(B.cyl, p.x, 8, p.y, 0, 0, 0, 21, 2, 21, '#2a2a28');
@@ -113,8 +113,7 @@ function w3Static(px, py, V) {
       }
     }
   }
-  for (const k of ['box', 'sph', 'cyl', 'cone', 'tsph']) { const m = B[k]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; m.visible = m.count > 0; }
-  B.shd.instanceMatrix.needsUpdate = true; B.shd.visible = B.shd.count > 0;
+  for (const k of ['box', 'sph', 'cyl', 'cone', 'tsph', 'shd']) mdlUpload(B[k]);
 }
 
 // ---------- anomalies: solid glowing parts here, sparks and dust in w3AnomPts ----------

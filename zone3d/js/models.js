@@ -33,6 +33,13 @@ const MDL = { ready: false, corpses: [], human: {}, quad: {} };
 const M4 = () => new THREE.Matrix4();
 const _mT = M4(), _mR = M4(), _mS = M4(), _mJ = [], _mM = M4(), _col = new THREE.Color(), _eul = new THREE.Euler(), _q = new THREE.Quaternion(), _v = new THREE.Vector3(), _one = new THREE.Vector3(1, 1, 1);
 for (let i = 0; i < 24; i++) _mJ.push(M4());
+// mark only the used part of an instanced mesh for upload
+function mdlUpload(m) {
+  const n = Math.max(1, m.count);
+  m.instanceMatrix.clearUpdateRanges(); m.instanceMatrix.addUpdateRange(0, n * 16); m.instanceMatrix.needsUpdate = true;
+  if (m.instanceColor) { m.instanceColor.clearUpdateRanges(); m.instanceColor.addUpdateRange(0, n * 3); m.instanceColor.needsUpdate = true; }
+  m.visible = m.count > 0;
+}
 const hexc = (h, f) => { const c = new THREE.Color(); c.set(h || '#777'); if (f) c.multiplyScalar(f); return c; };
 
 // ---------- rigs: [name, parent, joint position, shape, mesh offset, size, colour key] (forward is +x, up is +y) ----------
@@ -305,7 +312,7 @@ function mdlState(e) {
 function mdlFrame() {
   if (!MDL.ready) return;
   for (const m of [MDL.box, MDL.sph, MDL.cyl, MDL.tbox, MDL.tsph, MDL.tcyl, MDL.gbox, MDL.gsph, MDL.shd]) m.count = 0;
-  MDL.lite = potatoGfx();
+  MDL.lite = gfxLevel() >= 3; // phones: no boots, eyes, masks, tusks or ears
   const V2 = Z3.view * Z3.view, c = Math.cos(Z3.yaw), s = Math.sin(Z3.yaw);
   const shadow = (x, y, r) => { if (MDL.shd.count >= 900) return; _mM.compose(_v.set(x, 0.7, y), _q.identity(), _vS.set(r, 1, r)); MDL.shd.setMatrixAt(MDL.shd.count++, _mM); };
   for (const e of G.enemies) {
@@ -339,8 +346,7 @@ function mdlFrame() {
     if (b.k === 'h') mdlHuman(b.x, b.y, -sink, st.yaw, b.s, b.pal, st, _tint); else mdlQuad(b.x, b.y, -sink, st.yaw, b.s, b.pal, st, _tint);
   }
   for (const f of MDL.extra || []) { try { f(); } catch (er) { if (typeof guardReport === 'function') guardReport('mdl-extra', er); } }
-  for (const m of [MDL.box, MDL.sph, MDL.cyl, MDL.tbox, MDL.tsph, MDL.tcyl, MDL.gbox, MDL.gsph]) { m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; m.visible = m.count > 0; }
-  MDL.shd.instanceMatrix.needsUpdate = true; MDL.shd.visible = MDL.shd.count > 0;
+  for (const m of [MDL.box, MDL.sph, MDL.cyl, MDL.tbox, MDL.tsph, MDL.tcyl, MDL.gbox, MDL.gsph, MDL.shd]) mdlUpload(m);
 }
 {
   const _ke = killEnemy;

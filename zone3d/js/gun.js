@@ -89,7 +89,7 @@ addEventListener('blur', () => { GUN.trig = false; });
 addEventListener('DOMContentLoaded', () => {
   const tu = $('touchUi') || document.body;
   const b = document.createElement('button'); b.id = 'z3Fire'; b.className = 'tbtn'; b.textContent = '🔥';
-  b.style.cssText = 'position:fixed;right:118px;bottom:150px;width:78px;height:78px;border-radius:50%;font-size:30px;z-index:20;display:none;background:rgba(160,40,30,0.55);border:2px solid rgba(255,140,110,0.8);color:#fff;touch-action:none';
+  b.style.cssText = 'position:fixed;right:18px;bottom:120px;width:72px;height:72px;border-radius:50%;font-size:30px;z-index:20;display:none;background:rgba(160,40,30,0.55);border:2px solid rgba(255,140,110,0.8);color:#fff;touch-action:none';
   const on = (e) => { e.preventDefault(); e.stopPropagation(); GUN.trig = true; }, off = (e) => { e.stopPropagation(); GUN.trig = false; };
   b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
   tu.appendChild(b); GUN.btn = b;
