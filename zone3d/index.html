@@ -7,7 +7,7 @@
 <script>
 // ZoneBonk 3D loads the original game page from ../zone/ as it is (same scripts, menus, saves and co-op), then adds
 // the 3D view on top. Nothing from ../zone/ is copied, so fixes there reach the 3D version too.
-var Z3_BUILD = 14;
+var Z3_BUILD = 15;
 (function () {
   var x = new XMLHttpRequest(), h = '';
   try { x.open('GET', '../zone/index.html?t=' + Date.now(), false); x.send(); if (x.status === 200) h = x.responseText; } catch (e) { /* offline */ }

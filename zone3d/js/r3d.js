@@ -633,6 +633,10 @@ function z3Camera() {
   cam.position.set(P.x + jx, eye + jy, P.y);
   const cp = Math.cos(Z3.pitch);
   cam.lookAt(P.x + jx + Math.cos(Z3.yaw) * cp * 100, eye + jy + Math.sin(Z3.pitch) * 100, P.y + Math.sin(Z3.yaw) * cp * 100);
+  // a slight lean into sideways movement
+  const side = (P.ivx || 0) * -Math.sin(Z3.yaw) + (P.ivy || 0) * Math.cos(Z3.yaw);
+  Z3.roll = (Z3.roll || 0) + (clamp(-side / 200, -1, 1) * 0.025 - (Z3.roll || 0)) * 0.15;
+  if (Z3.roll) cam.rotateZ(Z3.roll);
   Z3.rx = -Math.sin(Z3.yaw); Z3.rz = Math.cos(Z3.yaw);
   Z3.ptK = H * Z3.pr * 0.5 / Math.tan(cam.fov * Math.PI / 360);
   // light and air: daylight, night, fog weather and labs

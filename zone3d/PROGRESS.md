@@ -73,6 +73,8 @@ look is stylised low-poly, not photoreal.
 - **v2-F (part 1): done.** Phones: only the used part of each instance buffer goes to the GPU every
   frame (was the whole buffer), people and mutants use the lighter detail on Ultra-low/Potato, simpler
   dead trees and rocks; the 🔥 FIRE button sits right above DASH (portrait and landscape).
+- **v2-F (part 2): done.** A mutant winding up an attack glows orange (dodge cue); the view leans
+  slightly into sideways movement.
 
 ## How to play
 

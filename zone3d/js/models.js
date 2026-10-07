@@ -324,6 +324,7 @@ function mdlFrame() {
     if (e.flash > 0) { _tint.setRGB(1, 1, 1); _tint.k = 0.65; tint = _tint; }
     else if (e.affix || e.mini) { _tint.set(e.mini ? '#ffb830' : (ELITE_AFFIX[e.affix] || {}).color || '#ffb830'); _tint.k = 0.22; tint = _tint; }
     else if (e.frozen && e.stun > 0) { _tint.setRGB(0.65, 0.85, 1); _tint.k = 0.55; tint = _tint; }
+    else if (e.state === 1 && !e.boss) { _tint.setRGB(1, 0.45, 0.1); _tint.k = 0.3 + Math.sin(NOW * 18) * 0.2; tint = _tint; } // winding up an attack
     if (k === 'o') { ODD_OF[e.id](e, st, (e.sc || 1) * (e.d && e.d.vsc || 1) * (e.boss ? 1.3 : 1)); continue; }
     st.cloak = e.alpha !== undefined && e.alpha < 0.9;
     if (k === 'h') { const pal = MDL.human[e.id]; mdlHuman(e.x, e.y, e.z || 0, st.yaw, (e.r || 13) / 13 * vs * 0.92, pal, st, tint); shadow(e.x, e.y, (e.r || 13) * 2.2 * vs); }
