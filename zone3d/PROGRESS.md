@@ -77,6 +77,8 @@ look is stylised low-poly, not photoreal.
   slightly into sideways movement.
 - **v2-F (part 3): done.** XP gems are glowing 3D crystals (green / blue / pink by value) that bob and
   spin instead of flat marks on the ground; explosions get a swelling 3D fireball.
+- **v2-F (part 4): done.** Medkits (white box, red cross), magnets, artifacts lying around and stash chests
+  are 3D; labs have a ceiling with light panels (some flicker).
 
 ## How to play
 
@@ -89,7 +91,7 @@ Open `/zone3d/` on the same site as the game (https://nikasana.github.io/zone3d/
 
 ## Status
 
-Progress: v1 batches 1–5 done; v2 about 93% (see v2 status). Remaining: fixes from real-device testing.
+Progress: v1 batches 1–5 done; v2 about 94% (see v2 status). Remaining: fixes from real-device testing.
 
 ### Batch 1 (MVP): done
 - Loads the original page and scripts from `../zone/`; title screen and menus are the original 2D ones.

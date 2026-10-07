@@ -4,6 +4,7 @@
 // debris, bubbling acid, ice shards, shimmering domes… Scenery that used to be a flat picture (trees, dead trees,
 // bushes, rocks, barrels, tanks), supply crates and artifacts are 3D now too, drawn with the same shared shapes.
 const W3S = { cx: 1e9, cy: 1e9, props: null, n: -1, v: 0 };
+const W3_PICK = new Set(['med', 'magnet', 'art', 'stash', 'poistash', 'labstash']);
 const W3_PROPS = new Set(['tree', 'deadtree', 'bush', 'rock', 'barrel', 'tank', 'guide']);
 const W3_ANOM = new Set(['electro', 'tesla', 'burner', 'comet', 'vortex', 'magnet', 'flip', 'acid', 'gas', 'spring', 'geyser', 'teleport', 'timeloop', 'mirror', 'cryo', 'mincer', 'fuzz', 'psifield', 'sound']);
 (function w3Init() {
@@ -60,6 +61,36 @@ function w3Props() {
     const k = clamp(f.life / f.max, 0, 1), r = (f.r || 60) * (1.1 - k * 0.5);
     mdlPart(MDL.gsph, f.x, r * 0.35, f.y, 0, 0, 0, r * 0.7 * k, r * 0.6 * k, r * 0.7 * k, '#fff0c0');
     mdlPart(MDL.tsph, f.x, r * 0.4, f.y, NOW, 0, 0, r * 1.6, r * 1.2 * (0.6 + k * 0.4), r * 1.6, k > 0.5 ? '#ff9a30' : '#5a4a40');
+  }
+  // labs: light panels in the ceiling, some flickering
+  if (World.kind === 'lab' && World.lab && World.lab.grid) {
+    const gr = World.lab.grid;
+    for (let ty = 0; ty < LAB_N; ty += 2) for (let tx = (ty / 2) % 2; tx < LAB_N; tx += 2) {
+      if (gr[ty * LAB_N + tx] !== 1) continue; const x = tx * LAB_T + LAB_T / 2, y = ty * LAB_T + LAB_T / 2; if (dist2(x, y, px, py) > V2) continue;
+      const fl = w3hash(tx * 31 + ty) < 0.15 ? (Math.sin(NOW * 23 + tx) > 0.3 ? 1 : 0.25) : 1;
+      mdlPart(MDL.gbox, x, 120, y, 0, 0, 0, 34, 1.5, 10, fl > 0.5 ? '#d8f0e8' : '#3a4440');
+    }
+  }
+  // pickups: medkits, magnets, artifacts lying around, stash chests
+  for (const k of G.pickups) {
+    if (!W3_PICK.has(k.type)) continue; const dx = k.x - px, dy = k.y - py; if (dx * dx + dy * dy > V2) continue;
+    const bob = Math.sin(NOW * 4 + k.x) * 3, h = 14 + bob, rot = NOW * 1.5 + k.x;
+    if (k.type === 'med') {
+      mdlPart(MDL.box, k.x, h, k.y, rot, 0, 0, 18, 13, 12, '#e8e8e4');
+      mdlPart(MDL.gbox, k.x, h, k.y, rot, 0, 0, 4, 9, 12.5, '#e02a20'); mdlPart(MDL.gbox, k.x, h, k.y, rot, 0, 0, 10, 3.5, 12.5, '#e02a20');
+    } else if (k.type === 'magnet') {
+      for (const sd of [-1, 1]) mdlPart(MDL.box, k.x + Math.cos(rot + 1.57) * sd * 5, h, k.y + Math.sin(rot + 1.57) * sd * 5, rot, 0, 0, 4, 14, 4, '#d23a2a');
+      mdlPart(MDL.box, k.x, h + 7, k.y, rot, 0, 0, 4, 4, 14, '#d23a2a');
+      for (const sd of [-1, 1]) mdlPart(MDL.gbox, k.x + Math.cos(rot + 1.57) * sd * 5, h - 7, k.y + Math.sin(rot + 1.57) * sd * 5, rot, 0, 0, 4.5, 3, 4.5, '#e0e0e0');
+    } else if (k.type === 'art') {
+      mdlPart(MDL.gsph, k.x, h + 4, k.y, rot, rot * 0.7, 0, 10, 12, 10, '#d4f2ff');
+      mdlPart(MDL.tsph, k.x, h + 4, k.y, 0, 0, 0, 28, 28, 28, '#8ab8ff');
+    } else { // stash chests
+      mdlPart(MDL.box, k.x, 13, k.y, 0.3, 0, 0, 46, 24, 30, '#8a6a2a');
+      mdlPart(MDL.box, k.x, 28, k.y, 0.3, 0, 0, 48, 8, 32, '#c9a040');
+      mdlPart(MDL.gbox, k.x, 20, k.y, 0.3, 0, 0, 47, 3, 31, '#ffe070');
+      mdlPart(MDL.tsph, k.x, 25, k.y, 0, 0, 0, 90 + Math.sin(NOW * 4) * 8, 60, 90 + Math.sin(NOW * 4) * 8, '#ffd250');
+    }
   }
   // supply crates: a wooden box with a lid that flies off when opened
   for (const k of G.crates) {

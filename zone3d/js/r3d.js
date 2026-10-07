@@ -291,6 +291,7 @@ function z3Solids() {
       if (fl(x + 1, y)) face(W, X + T, Y + T, X + T, Y, h, 0.82);
       flatQuad(X, Y, T, T, h, [24, 26, 28]);
     }
+    flatQuad(-LAB_T, -LAB_T, (LAB_N + 2) * LAB_T, (LAB_N + 2) * LAB_T, 121, [34, 36, 38]); // the ceiling
   }
   for (const [k, W] of walls) {
     if (!W.p.length) continue;
@@ -468,6 +469,7 @@ function z3Stand() {
     z3Push(sp, k.x, k.y, k.open ? 0 : Math.sin(NOW * 3 + k.x), 1, 1, false, k.open ? clamp(1 - k.open / 1.5, 0, 1) : 1);
   }
   for (const k of G.pickups) {
+    if (w3 && W3_PICK.has(k.type)) continue; // a 3D object now
     const dx = k.x - px, dy = k.y - py; if (dx * dx + dy * dy > V2) continue;
     const key = 'pk|' + k.type + '|' + (k.id || '');
     const sp = SPR3.get(key, -80, -110, 160, 140, () => { const n = NOW; NOW = 0; try { drawPickup({ ...k, x: 0, y: 0 }); } finally { NOW = n; } });
