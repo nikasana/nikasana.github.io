@@ -110,6 +110,11 @@ Last measured in the test browser (software rendering, no GPU, phone profile, 46
 4.7 ms of script work per frame; the 3D scenery around you is rebuilt every ~60 units walked (2–5 ms once).
 Real-device frame rate, controls feel and co-op on two devices still need checking on real hardware.
 
+Final test pass (build 21, 2026-10-08): 5-minute play runs on desktop and phone, all 13 maps, all 14 bosses,
+menus/settings/tutorial/death screen, title screen, movement directions, labs in/out, rifle + auto-fire,
+co-op host/guest: no errors. Script work per frame in the test browser: phone ~4 ms, desktop High with
+111 mutants ~7.5 ms (the desktop figure includes ground tiles still loading in).
+
 ### Batch 1 (MVP): done
 - Loads the original page and scripts from `../zone/`; title screen and menus are the original 2D ones.
 - 3D world: terrain tiles, buildings (enterable houses keep their doorway), fences, wrecks as blocks;
