@@ -106,6 +106,10 @@ Open `/zone3d/` on the same site as the game (https://nikasana.github.io/zone3d/
 
 Progress: v1 batches 1–5 done; v2 about 98% (see v2 status). Remaining: fixes from real-device testing.
 
+Last measured in the test browser (software rendering, no GPU, phone profile, 46 mutants + 6 weapons): about
+4.7 ms of script work per frame; the 3D scenery around you is rebuilt every ~60 units walked (2–5 ms once).
+Real-device frame rate, controls feel and co-op on two devices still need checking on real hardware.
+
 ### Batch 1 (MVP): done
 - Loads the original page and scripts from `../zone/`; title screen and menus are the original 2D ones.
 - 3D world: terrain tiles, buildings (enterable houses keep their doorway), fences, wrecks as blocks;
