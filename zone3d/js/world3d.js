@@ -48,6 +48,15 @@ function w3Props() {
       const [lx, ly] = at(37, -13); mdlPart(MDL.gbox, lx, 17, ly, -a, 0, 0, 1, 4, 5, '#ffe070'); const [rx, ry] = at(37, 13); mdlPart(MDL.gbox, rx, 17, ry, -a, 0, 0, 1, 4, 5, '#ffe070');
     }
   }
+  // the fallen satellite: a scorched body half dug in, two bent solar panels, a pulsing beacon
+  const ev = typeof Events !== 'undefined' ? Events.cur : null;
+  if (ev && ev.id === 'satellite' && ev.landed && ev.loc && dist2(ev.loc.x, ev.loc.y, px, py) < V2) {
+    const x = ev.loc.x, y = ev.loc.y - 22, k = 1 + Math.sin(NOW * 6) * 0.25;
+    mdlPart(MDL.box, x, 16, y, 0.15, 0.2, 0.12, 50, 36, 38, '#6a6e74'); mdlPart(MDL.cyl, x + 10, 40, y, 0, 0, 0.5, 14, 22, 14, '#4a4e54');
+    mdlPart(MDL.box, x - 60, 8, y - 1, 0, 0, -0.18, 60, 2, 22, '#2a4a8a'); mdlPart(MDL.box, x + 60, 14, y + 3, 0, 0, 0.3, 60, 2, 22, '#2a4a8a');
+    mdlPart(MDL.box, x - 30, 10, y, 0, 0, 0, 12, 2, 2, '#9ab'); mdlPart(MDL.box, x + 30, 14, y, 0, 0, 0, 12, 2, 2, '#9ab');
+    mdlPart(MDL.gsph, x, 38, y + 10, 0, 0, 0, 9 * k, 9 * k, 9 * k, '#78dcff');
+  }
   // XP gems: little glowing crystals that bob and spin (green, blue, pink by value)
   let ng = 0;
   for (const g of G.gems) {

@@ -82,6 +82,8 @@ look is stylised low-poly, not photoreal.
 - **v2-F (part 5): done.** Campfires are 3D (crossed logs in a ring of stones, flickering flames, rising
   sparks, a thin smoke trail); bandit camps and crash sites (satellite, airdrop) send up a tall 3D smoke
   column you can spot from far away, instead of flat smoke painted on the ground.
+- **v2-F (part 6): done.** The Satellite Crash event's wreck is 3D (scorched body, bent solar panels, pulsing
+  beacon).
 
 ## How to play
 
@@ -158,5 +160,5 @@ Progress: v1 batches 1–5 done; v2 about 95% (see v2 status). Remaining: fixes 
 - Phones get a slightly wider aim cone (thumb aiming).
 - View distance adapts for the session: it shortens if frames are slow for a while, grows back when smooth.
 
-Known gaps: a few event objects (satellite wreck, story bodies) are still flat on the ground; real-device FPS not measured here (the test
+Known gaps: a few story/event decorations are still flat on the ground; real-device FPS not measured here (the test
 browser has no GPU).
