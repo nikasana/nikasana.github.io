@@ -744,6 +744,13 @@ function z3Overlay() {
   if (typeof Quests !== 'undefined') for (const q of Quests.list) { const n = q.npc; if (!n || n.dead || !(n.hp >= 0)) continue; const p = z3Project(n.x, 70, n.y); if (!p || Math.hypot(n.x - P.x, n.y - P.y) > 900) continue; g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(p[0] - 21, p[1] - 1, 42, 6); g.fillStyle = '#ffe070'; g.fillRect(p[0] - 20, p[1], 40 * clamp(n.hp / 100, 0, 1), 4); }
   if (G.ft) for (const r of G.ft.res || []) { if (r.state) continue; const p = z3Project(r.x, 120, r.y); if (p && Math.hypot(r.x - P.x, r.y - P.y) < 1400) { g.font = 'bold 13px Oswald, sans-serif'; g.fillStyle = '#ffcf6a'; g.fillText(r.name || '', p[0], p[1]); } }
   for (const v of World.vehicles || []) if (v !== P.veh && (v.broken || v === G.escapeCar)) { const p = z3Project(v.x, 64, v.y); if (p && Math.hypot(v.x - P.x, v.y - P.y) < 900) { g.font = 'bold 13px Oswald, sans-serif'; g.fillStyle = '#7dff8a'; g.fillText(v.broken ? '🔧' : z3Tr('ESCAPE JEEP'), p[0], p[1]); } }
+  // what the flat game wrote under climbable watchtowers and radio towers you can switch on
+  if (typeof W3S !== 'undefined') for (const t of W3S.labels || []) {
+    const on = t.kind === 'wtower' ? t.t.used : t.t.on; if (on) continue; const d = Math.hypot(t.x - P.x, t.y - P.y); if (d > 700) continue;
+    const p = z3Project(t.x, 60, t.y); if (!p) continue;
+    g.font = 'bold 13px Oswald, sans-serif'; g.globalAlpha = 0.6 + Math.sin(NOW * 3) * 0.3; g.fillStyle = 'rgba(0,0,0,0.6)';
+    const s = t.kind === 'wtower' ? '▲ ' + z3Tr('CLIMB') : '📡 ' + z3Tr('ACTIVATE'); g.fillText(s, p[0] + 1, p[1] + 1); g.fillStyle = t.kind === 'wtower' ? '#ffdc78' : '#78c8ff'; g.fillText(s, p[0], p[1]); g.globalAlpha = 1;
+  }
   if (typeof CO !== 'undefined' && CO.active && typeof coOthers === 'function') for (const q of coOthers()) {
     if (q.gone || q.x === undefined) continue; const p = z3Project(q.x, 74, q.y); if (!p) continue;
     g.font = 'bold 12px Oswald, sans-serif'; g.fillStyle = q.ghost ? '#aaa' : coColor(q.pid); g.fillText((q.ghost ? '💀 ' : '') + (q.name || 'Teammate'), p[0], p[1]);

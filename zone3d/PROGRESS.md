@@ -84,6 +84,11 @@ look is stylised low-poly, not photoreal.
   column you can spot from far away, instead of flat smoke painted on the ground.
 - **v2-F (part 6): done.** The Satellite Crash event's wreck is 3D (scorched body, bent solar panels, pulsing
   beacon).
+- **v2-F (part 7): done.** The rest of the scenery is 3D: steel lattice masts with a dish and blinking red
+  light, emission shelters (concrete bunker, dark doorway, green lamp), scrap heaps, power poles with
+  sagging wires, sandbag walls, crashed helicopters (broken tail, bent rotor, smoke), ridge tents, metro
+  pillars with lamps, climbable wooden watchtowers and radio masts (their "CLIMB" / "ACTIVATE" labels float
+  above them). Only grass, reeds, hatches and lairs (which carry name labels) stay as pictures.
 
 ## How to play
 
@@ -96,7 +101,7 @@ Open `/zone3d/` on the same site as the game (https://nikasana.github.io/zone3d/
 
 ## Status
 
-Progress: v1 batches 1–5 done; v2 about 95% (see v2 status). Remaining: fixes from real-device testing.
+Progress: v1 batches 1–5 done; v2 about 97% (see v2 status). Remaining: fixes from real-device testing.
 
 ### Batch 1 (MVP): done
 - Loads the original page and scripts from `../zone/`; title screen and menus are the original 2D ones.

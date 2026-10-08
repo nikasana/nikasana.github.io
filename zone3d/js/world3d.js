@@ -5,7 +5,7 @@
 // bushes, rocks, barrels, tanks), supply crates and artifacts are 3D now too, drawn with the same shared shapes.
 const W3S = { cx: 1e9, cy: 1e9, props: null, n: -1, v: 0 };
 const W3_PICK = new Set(['med', 'magnet', 'art', 'stash', 'poistash', 'labstash']);
-const W3_PROPS = new Set(['tree', 'deadtree', 'bush', 'rock', 'barrel', 'tank', 'guide', 'campfire']);
+const W3_PROPS = new Set(['tree', 'deadtree', 'bush', 'rock', 'barrel', 'tank', 'guide', 'campfire', 'bunker', 'tower', 'heap', 'pylon', 'sandbag', 'heli', 'tent', 'pillar', 'wtower', 'rtower']);
 const W3_ANOM = new Set(['electro', 'tesla', 'burner', 'comet', 'vortex', 'magnet', 'flip', 'acid', 'gas', 'spring', 'geyser', 'teleport', 'timeloop', 'mirror', 'cryo', 'mincer', 'fuzz', 'psifield', 'sound']);
 (function w3Init() {
   if (!MDL.ready) return;
@@ -23,6 +23,15 @@ const W3_ANOM = new Set(['electro', 'tesla', 'burner', 'comet', 'vortex', 'magne
 })();
 const w3c = (a, k = 1) => '#' + ((Math.round(a[0] * k) << 16) | (Math.round(a[1] * k) << 8) | Math.round(a[2] * k)).toString(16).padStart(6, '0');
 const w3hash = (n) => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); };
+// a straight rod from one point to another (tower legs, braces, wires)
+const _w3U = new THREE.Vector3(0, 1, 0), _w3D = new THREE.Vector3(), _w3P = new THREE.Vector3(), _w3S = new THREE.Vector3(), _w3Q = new THREE.Quaternion(), _w3M = new THREE.Matrix4(), _w3C = new THREE.Color();
+function w3Rod(m, x0, h0, y0, x1, h1, y1, t, col) {
+  if (m.count >= m.cap) return;
+  const dx = x1 - x0, dh = h1 - h0, dy = y1 - y0, L = Math.hypot(dx, dh, dy) || 1;
+  _w3Q.setFromUnitVectors(_w3U, _w3D.set(dx / L, dh / L, dy / L));
+  _w3M.compose(_w3P.set((x0 + x1) / 2, (h0 + h1) / 2, (y0 + y1) / 2), _w3Q, _w3S.set(t, L, t));
+  m.setMatrixAt(m.count, _w3M); m.setColorAt(m.count, _w3C.set(col)); m.count++;
+}
 
 // ---------- scenery ----------
 function w3Props() {
@@ -120,12 +129,17 @@ function w3Props() {
   mdlUpload(MDL.cone);
 }
 
+function w3NextPylon(p) {
+  if (p._nb !== undefined) return p._nb; let best = null, bd = 260 * 260;
+  for (const q of World.props) if (q.kind === 'pylon' && q !== p && (q.x > p.x || (q.x === p.x && q.y > p.y))) { const d = dist2(p.x, p.y, q.x, q.y); if (d < bd) { bd = d; best = q; } }
+  return (p._nb = best);
+}
 // trees, dead trees, bushes, rocks, barrels and tanks around you, into the static buffers
 function w3Static(px, py, V) {
   W3S.cx = px; W3S.cy = py; W3S.props = World.props; W3S.n = World.props.length; W3S.v = V;
   if (W3S.gp !== World.props) { W3S.gp = World.props; W3S.guides = World.props.filter((p) => p.kind === 'guide'); }
   for (const k of ['box', 'sph', 'cyl', 'cone', 'tsph', 'shd']) W3S[k].count = 0;
-  W3S.fires = [];
+  W3S.fires = []; W3S.blinks = []; W3S.smk = []; W3S.labels = [];
   const V2 = V * V, lowQ = lowGfx(), PC = WORLD / PCELL, st = ++World.stamp, B = W3S;
   const cx0 = Math.max(0, Math.floor((px - V) / PCELL)), cx1 = Math.min(PC - 1, Math.floor((px + V) / PCELL));
   const cy0 = Math.max(0, Math.floor((py - V) / PCELL)), cy1 = Math.min(PC - 1, Math.floor((py + V) / PCELL));
@@ -164,6 +178,54 @@ function w3Static(px, py, V) {
         W3S.fires.push(p);
         mdlPart(B.cyl, p.x, 4, p.y, 0.3, 0, 1.45, 5, 34, 5, '#4a3420'); mdlPart(B.cyl, p.x, 6, p.y, 1.9, 0, 1.45, 5, 32, 5, '#3e2c1a');
         for (let i = 0; i < (lowQ ? 5 : 9); i++) { const a = i / (lowQ ? 5 : 9) * TAU; mdlPart(B.sph, p.x + Math.cos(a) * 21, 3, p.y + Math.sin(a) * 21, a, 0, 0, 9, 6, 8, '#6c675e'); }
+      } else if (p.kind === 'bunker') { // the emission shelter: a concrete box with a dark doorway and a green lamp
+        const cy = p.y - 63;
+        mdlPart(B.box, p.x, 18, cy, 0, 0, 0, 80, 36, 30, '#7a7d76'); mdlPart(B.box, p.x, 38, cy, 0, 0, 0, 90, 5, 38, '#8e918a');
+        mdlPart(B.box, p.x, 14, cy + 15.2, 0, 0, 0, 30, 26, 1, '#22241f'); mdlPart(B.box, p.x, 28, cy + 16, 0, 0, 0, 36, 3, 3, '#5c5f5a');
+        W3S.blinks.push([p.x, 31, cy + 18, 0.35, 1, 0.47, 1]); shadow(p.x, cy, 70);
+      } else if (p.kind === 'tower') { // steel lattice mast with a dish and a red light on top
+        const h = p.h || 260, L = [[-30, -30], [30, -30], [30, 30], [-30, 30]], n = lowQ ? 3 : 7, at = (i, u) => [p.x + L[i][0] * (1 - u * 0.85), u * h, p.y + L[i][1] * (1 - u * 0.85)];
+        for (let i = 0; i < 4; i++) { const a = at(i, 0), b = at(i, 1); w3Rod(B.cyl, a[0], 0, a[2], b[0], h, b[2], 4, '#3c3f40'); }
+        for (let i = 0; i < 4; i++) for (let k = 0; k < n; k++) { const a = at(i, k / n), b = at((i + 1) % 4, (k + 1) / n); w3Rod(B.cyl, a[0], a[1], a[2], b[0], b[1], b[2], 1.6, '#4c5052'); }
+        mdlPart(B.sph, p.x + 6, h - 14, p.y, 0, 0, 1.1, 50, 10, 50, '#7a7e80'); W3S.blinks.push([p.x, h + 6, p.y, 1, 0.19, 0.19, 2, p.x]); shadow(p.x, p.y, 60);
+      } else if (p.kind === 'heap') { // a mound of rubbish and scrap
+        const r = p.r || 40, R = mulberry32(p.seed | 0);
+        mdlPart(B.sph, p.x, r * 0.15, p.y, R() * 3, 0, 0, r * 2, r * 1.1, r * 1.7, '#5a4c3a'); mdlPart(B.sph, p.x - r * 0.1, r * 0.45, p.y, 0, 0, 0, r * 1.2, r * 0.6, r * 1.0, '#6e5e46');
+        for (let i = 0; i < (lowQ ? 3 : 8); i++) { const a = R() * TAU, d = R() * r * 0.7; mdlPart(B.box, p.x + Math.cos(a) * d, r * 0.3 + R() * r * 0.3, p.y + Math.sin(a) * d, R() * 3, R() * 0.8, R() * 0.8, 10 + R() * 14, 5 + R() * 5, 8 + R() * 8, ['#3c3a36', '#7a6e5a', '#6d3a2a', '#44525a', '#8a8470'][i % 5]); }
+      } else if (p.kind === 'pylon') { // wooden power pole, sagging wires to the next one
+        mdlPart(B.cyl, p.x, 120, p.y, 0, 0, 0, 8, 240, 8, '#4a4034'); mdlPart(B.box, p.x, 222, p.y, 0, 0, 0, 5, 5, 80, '#4a4034');
+        if (!lowQ) { const nb = w3NextPylon(p); if (nb) for (const o of [-36, 36]) { let px0 = p.x, py0 = p.y + o, h0 = 225; for (let k = 1; k <= 4; k++) { const u = k / 4, x1 = lerp(p.x, nb.x, u), y1 = lerp(p.y, nb.y, u) + o, h1 = 225 - Math.sin(u * Math.PI) * 26; w3Rod(B.cyl, px0, h0, py0, x1, h1, y1, 1.2, '#1a1a1a'); px0 = x1; py0 = y1; h0 = h1; } } }
+      } else if (p.kind === 'sandbag') { // a low wall of sandbags
+        for (let r = 0; r < 3; r++) for (let i = 0; i < 5 - (r ? 1 : 0); i++) mdlPart(B.sph, p.x - 32 + i * 16 + r * 8, 5 + r * 9, p.y + 2, 0, 0, 0, 19, 10, 14, r % 2 ? '#8a7a52' : '#9a8a60');
+      } else if (p.kind === 'heli') { // a crashed army helicopter, tail broken off, rotor bent
+        const x = p.x, y = p.y + 8;
+        mdlPart(B.sph, x, 24, y, 0.1, 0, 0.12, 180, 52, 62, '#3e4a36'); mdlPart(B.sph, x - 4, 44, y, 0.1, 0, 0.12, 120, 26, 40, '#4c5a42');
+        mdlPart(B.sph, x + 66, 30, y + 6, 0.2, 0, 0.3, 46, 30, 40, '#20262a'); w3Rod(B.cyl, x - 80, 32, y - 2, x - 180, 18, y + 12, 12, '#3e4a36');
+        mdlPart(B.box, x - 178, 30, y + 12, 0.15, 0, 0.2, 6, 30, 4, '#3e4a36'); mdlPart(B.cyl, x, 56, y, 0, 0, 0, 10, 12, 10, '#2a2e28');
+        w3Rod(B.box, x, 60, y, x + 150, 50, y - 30, 5, '#2a2e28'); w3Rod(B.box, x, 60, y, x - 70, 6, y + 70, 5, '#2a2e28');
+        W3S.smk.push([x - 20, y]); shadow(x - 20, y, 130);
+      } else if (p.kind === 'tent') { // ridge tent with a dark opening
+        const c = ['#5a6a3a', '#6a5a3a', '#4a5a5a'][(p.seed | 0) % 3];
+        mdlPart(B.box, p.x, 0, p.y, 0, 0, Math.PI / 4, 52, 52, 80, c); mdlPart(B.box, p.x, 11, p.y + 40.5, 0, 0, Math.PI / 4, 20, 20, 1, '#1e1c16'); shadow(p.x, p.y, 70);
+      } else if (p.kind === 'pillar') { // concrete column holding up the tunnel, a lamp on it
+        const h = World.kind === 'lab' ? 121 : 200;
+        mdlPart(B.box, p.x, h / 2, p.y, 0, 0, 0, 44, h, 44, '#6a6660'); mdlPart(B.box, p.x, h - 6, p.y, 0, 0, 0, 56, 12, 56, '#8a857c');
+        W3S.blinks.push([p.x, h * 0.6, p.y + 23, 1, 0.86, 0.6, 3, p.x]);
+      } else if (p.kind === 'wtower') { // wooden watchtower you can climb
+        const h = 150, col = '#5a4630';
+        for (const [lx, ly] of [[-24, -24], [24, -24], [24, 24], [-24, 24]]) w3Rod(B.cyl, p.x + lx, 0, p.y + ly, p.x + lx * 0.7, h, p.y + ly * 0.7, 5, col);
+        for (let i = 1; i < 6; i++) { const u = i / 6, w = 24 - u * 7; w3Rod(B.cyl, p.x - w, u * h, p.y + w, p.x + w, u * h, p.y + w, 2, col); }
+        mdlPart(B.box, p.x, h, p.y, 0, 0, 0, 64, 6, 64, '#6a5436');
+        for (const [lx, ly] of [[-30, -30], [30, -30], [30, 30], [-30, 30]]) mdlPart(B.box, p.x + lx, h + 18, p.y + ly, 0, 0, 0, 4, 32, 4, '#4a3a26');
+        mdlPart(B.box, p.x, h + 12, p.y - 30, 0, 0, 0, 62, 3, 3, '#4a3a26'); mdlPart(B.box, p.x - 30, h + 12, p.y, 0, 0, 0, 3, 3, 62, '#4a3a26'); mdlPart(B.box, p.x + 30, h + 12, p.y, 0, 0, 0, 3, 3, 62, '#4a3a26');
+        mdlPart(B.cone, p.x, h + 46, p.y, 0.4, 0, 0, 96, 26, 96, '#5a4a36'); shadow(p.x, p.y, 50);
+        W3S.labels.push(p);
+      } else if (p.kind === 'rtower') { // radio mast with a hut at the bottom
+        const h = 260, L = [[-18, -12], [18, -12], [0, 20]], n = lowQ ? 4 : 9, at = (i, u) => [p.x + L[i][0] * (1 - u * 0.9), u * h, p.y + L[i][1] * (1 - u * 0.9)];
+        for (let i = 0; i < 3; i++) { const a = at(i, 0); w3Rod(B.cyl, a[0], 0, a[2], p.x + L[i][0] * 0.1, h, p.y + L[i][1] * 0.1, 3, '#6a6e70'); }
+        for (let i = 0; i < 3; i++) for (let k = 0; k < n; k++) { const a = at(i, k / n), b = at((i + 1) % 3, (k + 1) / n); w3Rod(B.cyl, a[0], a[1], a[2], b[0], b[1], b[2], 1.3, '#7a7e80'); }
+        mdlPart(B.box, p.x + 30, 12, p.y + 4, 0, 0, 0, 28, 24, 28, '#50565a'); mdlPart(B.box, p.x + 30, 25, p.y + 4, 0, 0, 0, 32, 3, 32, '#3e4246');
+        W3S.blinks.push([p.x, h + 4, p.y, 1, 0.23, 0.16, 4, p]); W3S.labels.push(p);
       } else if (p.kind === 'tank') {
         const r = p.r || 40, h = p.h || 90;
         mdlPart(B.cyl, p.x, h / 2, p.y, 0, 0, 0, r * 2, h, r * 2, '#7a7a72');
@@ -198,6 +260,20 @@ function w3Anoms() {
 }
 function w3AnomPts(A, N) {
   const V2 = Z3.view * Z3.view, c = Math.cos(Z3.yaw), s = Math.sin(Z3.yaw), q = gfxLevel() >= 3 ? 0.5 : 1;
+  // lamps on bunkers, towers and pillars (some blink), smoke from crashed helicopters
+  for (const b of W3S.blinks || []) {
+    const dx = b[0] - P.x, dy = b[2] - P.y; if (dx * dx + dy * dy > V2) continue;
+    const m = b[6]; let k = 1;
+    if (m === 1) k = G.em ? (Math.sin(NOW * 10) > 0 ? 1 : 0.3) : 0.6 + Math.sin(NOW * 2) * 0.3;
+    else if (m === 2) k = Math.sin(NOW * 3 + b[7]) > 0 ? 1 : 0.15;
+    else if (m === 3) k = Math.sin(NOW * 9 + b[7]) > -0.9 ? 0.9 : 0.2;
+    else if (m === 4) k = b[7].t && b[7].t.on ? (Math.sin(NOW * 4) > 0 ? 1 : 0.15) : 0.12;
+    A.push(b[0], b[1], b[2], 7, b[3], b[4], b[5], k); A.push(b[0], b[1], b[2], 26, b[3], b[4], b[5], k * 0.3);
+  }
+  for (const [x, y] of W3S.smk || []) {
+    const dx = x - P.x, dy = y - P.y; if (dx * dx + dy * dy > V2) continue;
+    for (let i = 0; i < 5 * q; i++) { const u = (NOW * 0.12 + i / 5 + x * 0.002) % 1; N.push(x + u * 50, 40 + u * 260, y - u * 20, 24 + u * 70, 0.3, 0.3, 0.29, 0.3 * (1 - u)); }
+  }
   // campfires: flickering flames, sparks rising, a thin smoke trail
   for (const p of W3S.fires || []) {
     const dx = p.x - P.x, dy = p.y - P.y; if (dx * dx + dy * dy > V2 || dx * c + dy * s < -60) continue;
