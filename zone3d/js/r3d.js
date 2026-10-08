@@ -746,7 +746,15 @@ function z3Overlay() {
   for (const v of World.vehicles || []) if (v !== P.veh && (v.broken || v === G.escapeCar)) { const p = z3Project(v.x, 64, v.y); if (p && Math.hypot(v.x - P.x, v.y - P.y) < 900) { g.font = 'bold 13px Oswald, sans-serif'; g.fillStyle = '#7dff8a'; g.fillText(v.broken ? '🔧' : z3Tr('ESCAPE JEEP'), p[0], p[1]); } }
   // what the flat game wrote under climbable watchtowers and radio towers you can switch on
   if (typeof W3S !== 'undefined') for (const t of W3S.labels || []) {
-    const on = t.kind === 'wtower' ? t.t.used : t.t.on; if (on) continue; const d = Math.hypot(t.x - P.x, t.y - P.y); if (d > 700) continue;
+    const d = Math.hypot(t.x - P.x, t.y - P.y); if (d > 700) continue;
+    if (t.kind === 'lair' || t.kind === 'hatch') {
+      if (t.kind === 'lair' && t.lair && t.lair.dead) continue;
+      const p = z3Project(t.x, t.kind === 'lair' ? 84 : 60, t.y); if (!p) continue;
+      const s = t.kind === 'lair' ? '☣ ' + z3Tr(((ENEMIES[t.family] || {}).name || '').toUpperCase() + ' LAIR') : z3Tr(((t.h && t.h.name) || '').toUpperCase());
+      g.font = 'bold 12px Oswald, sans-serif'; g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillText(s, p[0] + 1, p[1] + 1);
+      g.fillStyle = t.kind === 'lair' ? '#c8f060' : t.h && t.h.exit ? '#9fe8a0' : '#ffcf6a'; g.fillText(s, p[0], p[1]); continue;
+    }
+    const on = t.kind === 'wtower' ? t.t.used : t.t.on; if (on) continue;
     const p = z3Project(t.x, 60, t.y); if (!p) continue;
     g.font = 'bold 13px Oswald, sans-serif'; g.globalAlpha = 0.6 + Math.sin(NOW * 3) * 0.3; g.fillStyle = 'rgba(0,0,0,0.6)';
     const s = t.kind === 'wtower' ? '▲ ' + z3Tr('CLIMB') : '📡 ' + z3Tr('ACTIVATE'); g.fillText(s, p[0] + 1, p[1] + 1); g.fillStyle = t.kind === 'wtower' ? '#ffdc78' : '#78c8ff'; g.fillText(s, p[0], p[1]); g.globalAlpha = 1;

@@ -88,7 +88,10 @@ look is stylised low-poly, not photoreal.
   light, emission shelters (concrete bunker, dark doorway, green lamp), scrap heaps, power poles with
   sagging wires, sandbag walls, crashed helicopters (broken tail, bent rotor, smoke), ridge tents, metro
   pillars with lamps, climbable wooden watchtowers and radio masts (their "CLIMB" / "ACTIVATE" labels float
-  above them). Only grass, reeds, hatches and lairs (which carry name labels) stay as pictures.
+  above them). Only grass and reeds stay as pictures.
+- **v2-F (part 8): done.** Mutant lairs are 3D burrow mounds with a glowing hole and bones (flash white when
+  shot), lab hatches are round steel hatches with ladder rails, a lamp and a lid that turns into a black hole
+  once the way out opens; their names float above them.
 
 ## How to play
 
@@ -101,7 +104,7 @@ Open `/zone3d/` on the same site as the game (https://nikasana.github.io/zone3d/
 
 ## Status
 
-Progress: v1 batches 1–5 done; v2 about 97% (see v2 status). Remaining: fixes from real-device testing.
+Progress: v1 batches 1–5 done; v2 about 98% (see v2 status). Remaining: fixes from real-device testing.
 
 ### Batch 1 (MVP): done
 - Loads the original page and scripts from `../zone/`; title screen and menus are the original 2D ones.

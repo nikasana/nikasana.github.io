@@ -5,7 +5,7 @@
 // bushes, rocks, barrels, tanks), supply crates and artifacts are 3D now too, drawn with the same shared shapes.
 const W3S = { cx: 1e9, cy: 1e9, props: null, n: -1, v: 0 };
 const W3_PICK = new Set(['med', 'magnet', 'art', 'stash', 'poistash', 'labstash']);
-const W3_PROPS = new Set(['tree', 'deadtree', 'bush', 'rock', 'barrel', 'tank', 'guide', 'campfire', 'bunker', 'tower', 'heap', 'pylon', 'sandbag', 'heli', 'tent', 'pillar', 'wtower', 'rtower']);
+const W3_PROPS = new Set(['tree', 'deadtree', 'bush', 'rock', 'barrel', 'tank', 'guide', 'campfire', 'bunker', 'tower', 'heap', 'pylon', 'sandbag', 'heli', 'tent', 'pillar', 'wtower', 'rtower', 'lair', 'hatch']);
 const W3_ANOM = new Set(['electro', 'tesla', 'burner', 'comet', 'vortex', 'magnet', 'flip', 'acid', 'gas', 'spring', 'geyser', 'teleport', 'timeloop', 'mirror', 'cryo', 'mincer', 'fuzz', 'psifield', 'sound']);
 (function w3Init() {
   if (!MDL.ready) return;
@@ -57,6 +57,8 @@ function w3Props() {
       const [lx, ly] = at(37, -13); mdlPart(MDL.gbox, lx, 17, ly, -a, 0, 0, 1, 4, 5, '#ffe070'); const [rx, ry] = at(37, 13); mdlPart(MDL.gbox, rx, 17, ry, -a, 0, 0, 1, 4, 5, '#ffe070');
     }
   }
+  // hatch lids: closed steel, or a black hole once the way out is open
+  for (const h of W3S.hatches || []) { if (dist2(h.x, h.y, px, py) > V2) continue; const o = h.h && h.h.exit; mdlPart(MDL.cyl, h.x, 9.5, h.y - 6, 0, 0, 0, 52, 1, 52, o ? '#0b0c0c' : '#6a6e70'); if (!o) mdlPart(MDL.cyl, h.x, 10.5, h.y - 6, 0, 0, 0, 28, 1, 28, '#444'); }
   // the fallen satellite: a scorched body half dug in, two bent solar panels, a pulsing beacon
   const ev = typeof Events !== 'undefined' ? Events.cur : null;
   if (ev && ev.id === 'satellite' && ev.landed && ev.loc && dist2(ev.loc.x, ev.loc.y, px, py) < V2) {
@@ -139,7 +141,7 @@ function w3Static(px, py, V) {
   W3S.cx = px; W3S.cy = py; W3S.props = World.props; W3S.n = World.props.length; W3S.v = V;
   if (W3S.gp !== World.props) { W3S.gp = World.props; W3S.guides = World.props.filter((p) => p.kind === 'guide'); }
   for (const k of ['box', 'sph', 'cyl', 'cone', 'tsph', 'shd']) W3S[k].count = 0;
-  W3S.fires = []; W3S.blinks = []; W3S.smk = []; W3S.labels = [];
+  W3S.fires = []; W3S.blinks = []; W3S.smk = []; W3S.labels = []; W3S.hatches = [];
   const V2 = V * V, lowQ = lowGfx(), PC = WORLD / PCELL, st = ++World.stamp, B = W3S;
   const cx0 = Math.max(0, Math.floor((px - V) / PCELL)), cx1 = Math.min(PC - 1, Math.floor((px + V) / PCELL));
   const cy0 = Math.max(0, Math.floor((py - V) / PCELL)), cy1 = Math.min(PC - 1, Math.floor((py + V) / PCELL));
@@ -226,6 +228,16 @@ function w3Static(px, py, V) {
         for (let i = 0; i < 3; i++) for (let k = 0; k < n; k++) { const a = at(i, k / n), b = at((i + 1) % 3, (k + 1) / n); w3Rod(B.cyl, a[0], a[1], a[2], b[0], b[1], b[2], 1.3, '#7a7e80'); }
         mdlPart(B.box, p.x + 30, 12, p.y + 4, 0, 0, 0, 28, 24, 28, '#50565a'); mdlPart(B.box, p.x + 30, 25, p.y + 4, 0, 0, 0, 32, 3, 32, '#3e4246');
         W3S.blinks.push([p.x, h + 4, p.y, 1, 0.23, 0.16, 4, p]); W3S.labels.push(p);
+      } else if (p.kind === 'lair') { // a burrow mound with a glowing hole, bones stuck around it
+        mdlPart(B.sph, p.x, 6, p.y, 0, 0, 0, 124, 54, 104, '#4a3a2a'); mdlPart(B.sph, p.x - 8, 26, p.y - 6, 0, 0, 0, 80, 34, 64, '#5e4a34');
+        mdlPart(B.sph, p.x, 22, p.y + 30, 0, -0.5, 0, 50, 34, 16, '#120c08');
+        for (let i = 0; i < 5; i++) { const a = i * 1.3 + 0.4; w3Rod(B.cyl, p.x + Math.cos(a) * 50, 6, p.y + Math.sin(a) * 40, p.x + Math.cos(a) * 64, 26, p.y + Math.sin(a) * 52, 3, '#d8d0b8'); }
+        W3S.blinks.push([p.x, 24, p.y + 36, 0.7, 0.9, 0.24, 5, p]); W3S.labels.push(p); shadow(p.x, p.y, 120);
+      } else if (p.kind === 'hatch') { // round steel hatch into a lab, ladder rails and a lamp
+        mdlPart(B.cyl, p.x, 3, p.y, 0, 0, 0, 88, 6, 88, '#56595a'); mdlPart(B.cyl, p.x, 6, p.y - 4, 0, 0, 0, 68, 6, 68, '#3a3d3e');
+        for (const o of [-18, 18]) w3Rod(B.cyl, p.x + o, 0, p.y - 6, p.x + o, 44, p.y - 6, 3, '#8a8e90');
+        w3Rod(B.cyl, p.x - 18, 44, p.y - 6, p.x, 52, p.y - 6, 3, '#8a8e90'); w3Rod(B.cyl, p.x, 52, p.y - 6, p.x + 18, 44, p.y - 6, 3, '#8a8e90');
+        W3S.blinks.push([p.x, 54, p.y - 6, 1, 0.5, 0.24, 6, p]); W3S.hatches.push(p); W3S.labels.push(p);
       } else if (p.kind === 'tank') {
         const r = p.r || 40, h = p.h || 90;
         mdlPart(B.cyl, p.x, h / 2, p.y, 0, 0, 0, r * 2, h, r * 2, '#7a7a72');
@@ -268,6 +280,8 @@ function w3AnomPts(A, N) {
     else if (m === 2) k = Math.sin(NOW * 3 + b[7]) > 0 ? 1 : 0.15;
     else if (m === 3) k = Math.sin(NOW * 9 + b[7]) > -0.9 ? 0.9 : 0.2;
     else if (m === 4) k = b[7].t && b[7].t.on ? (Math.sin(NOW * 4) > 0 ? 1 : 0.15) : 0.12;
+    else if (m === 5) { const L = b[7].lair; k = 0.5 + Math.sin(NOW * 3 + b[0]) * 0.3; if (L && L.hitT > 0) { A.push(b[0], 30, b[2] - 36, 140, 1, 1, 1, 0.5); } }
+    else if (m === 6) { const o = b[7].h && b[7].h.exit; k = 0.5 + Math.sin(NOW * 3) * 0.3; A.push(b[0], b[1], b[2], 7, 1, o ? 0.86 : 0.35, 0.24, k); continue; }
     A.push(b[0], b[1], b[2], 7, b[3], b[4], b[5], k); A.push(b[0], b[1], b[2], 26, b[3], b[4], b[5], k * 0.3);
   }
   for (const [x, y] of W3S.smk || []) {
