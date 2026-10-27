@@ -61,9 +61,16 @@ function gemGeometry(r, detail = 0) {
   return g.toNonIndexed();
 }
 
+// Relics are tiny turned vases, not coins.
+function relicGeometry(r, segs = 18) {
+  const pts = [[0, -0.5], [0.42, -0.5], [0.55, -0.32], [0.62, -0.05], [0.5, 0.2], [0.26, 0.34], [0.22, 0.46], [0.32, 0.5], [0, 0.5]].map(([x, y]) => new THREE.Vector2(x * r, y * r * 1.9));
+  return new THREE.LatheGeometry(pts, segs);
+}
+
 function coinGeometry(tier, segs) {
   const c = COINS[tier];
   if (c.id === 'gem') { const g = gemGeometry(c.radius * 0.9, 0); g.computeVertexNormals(); return g; }
+  if (c.id === 'relic') return relicGeometry(c.radius * 0.7);
   const r = c.radius, t = c.thick;
   // lathe profile: raised rim, recessed field, raised centre boss
   const pts = [];
@@ -210,6 +217,11 @@ function engravingMaps(tier) {
 
 export function coinMaterial(atmo, tier) {
   const c = COINS[tier];
+  if (c.id === 'relic') {
+    const relic = new THREE.MeshStandardMaterial({ color: new THREE.Color(...c.color), metalness: 0.35, roughness: 0.45, emissive: new THREE.Color(0.12, 0.05, 0.0) });
+    atmo.register(relic, 'coinRelic');
+    return relic;
+  }
   if (c.id === 'gem') {
     const gem = new THREE.MeshStandardMaterial({ color: new THREE.Color(...c.color), metalness: 0.1, roughness: 0.04, envMapIntensity: 2.2, emissive: new THREE.Color(0.08, 0.22, 0.3), flatShading: true });
     atmo.register(gem, 'coinGem');
@@ -231,16 +243,17 @@ export class CoinSystem {
     this.scene = scene;
     this.volume = volume;
     this.tiers = tiersUnlocked;
-    this.geos = COINS.slice(0, 4).map((_, i) => coinGeometry(i));
+    this.geos = COINS.slice(0, 5).map((_, i) => coinGeometry(i));
     // seen blurred through the ice: a plain low-poly disc is enough
     this.lowGeos = COINS.slice(0, 4).map((c) => {
       if (c.id === 'gem') return gemGeometry(c.radius * 0.9, 0);
+      if (c.id === 'relic') return relicGeometry(c.radius * 0.7, 8);
       const g = new THREE.CylinderGeometry(c.radius, c.radius, c.thick, 10, 1).rotateX(Math.PI / 2);
       const uv = g.attributes.uv;
       for (let i = 0; i < uv.count; i++) { const x = g.attributes.position.getX(i), y = g.attributes.position.getY(i); uv.setXY(i, x / (c.radius * 2) + 0.5, y / (c.radius * 2) + 0.5); }
       return g;
     });
-    this.mats = COINS.slice(0, 4).map((_, i) => coinMaterial(atmo, i));
+    this.mats = COINS.slice(0, 5).map((_, i) => coinMaterial(atmo, i));
     this.embedded = new Map();       // chunk key -> [{tier, x, y, z, q, id}]
     this.loose = [];                 // {tier, p, v, q, w, sleep, value, id, t}
     // frozen coins glow faintly in their own colour so they read through the ice
@@ -309,7 +322,7 @@ export class CoinSystem {
       const w = tierWeights(depth, this.tiers);
       let tier = 0, acc = 0;
       for (let t = 0; t < w.length; t++) { acc += w[t]; if (tierRoll <= acc) { tier = t; break; } }
-      tier = Math.min(tier, 3);
+      tier = Math.min(tier, 4);
       _q.setFromEuler(new THREE.Euler(b * 6.28, cc * 6.28, a * 6.28));
       list.push({ tier, x, y, z, q: _q.clone(), id, depth });
     }
@@ -370,6 +383,13 @@ export class CoinSystem {
   }
 
   // Physics, magnet and collection. `collectors`: [{ pos: Vector3 (chest), range, canTake(coin) }]
+  // Aurora sky coins: they drift down and hover above the snow until caught.
+  spawnSky(p, tier, value, floorY) {
+    this.skyId = (this.skyId || 0) - 1;
+    this.loose.push({ tier, id: this.skyId, p: p.clone(), v: new THREE.Vector3(), q: new THREE.Quaternion(), w: new THREE.Vector3(0, 2.5, 0),
+      sleep: 0, t: 0, value, depth: 0, magnet: false, sky: true, floorY });
+  }
+
   update(dt, camPos, collectors, autoCollect = 0) {
     const vol = this.volume;
     for (let i = this.loose.length - 1; i >= 0; i--) {
@@ -395,6 +415,19 @@ export class CoinSystem {
         c.p.addScaledVector(c.v, dt);
         c.sleep = 0;
         _q.setFromEuler(new THREE.Euler(c.w.x * dt, c.w.y * dt, c.w.z * dt));
+        c.q.multiply(_q);
+        continue;
+      }
+      // Tidalis: the current keeps sliding loose coins along the ice, so they drift downstream
+      if (this.current) {
+        const cur = this.current(c.p.x, c.p.z);
+        c.v.x += (cur[0] - c.v.x) * Math.min(1, dt * 1.5);
+        c.v.z += (cur[1] - c.v.z) * Math.min(1, dt * 1.5);
+        c.sleep = Math.min(c.sleep, 0.5);
+      }
+      if (c.sky) {
+        c.p.y = Math.max(c.floorY + 1.3 + Math.sin(c.t * 2 + c.id) * 0.15, c.p.y - 0.8 * dt);
+        _q.setFromEuler(new THREE.Euler(0, 2.5 * dt, 0));
         c.q.multiply(_q);
         continue;
       }

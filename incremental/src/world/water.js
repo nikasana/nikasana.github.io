@@ -104,8 +104,31 @@ export class Water {
       // a pool spreads to the walls of the hole it lies in, then rises (up to about chest height)
       p.r = Math.min(p.maxR || 4.5, Math.max(0.35, Math.sqrt(p.vol / (Math.PI * 0.12))));
       p.level = p.floor + Math.min(1.6, p.vol / (Math.PI * p.r * p.r) + 0.03);
-      // let it settle onto the actual floor as the crater changes
-      if (Math.random() < dt) p.floor = this.volume.floorBelow(p.x, p.level + 0.4, p.z, 30);
+      // let it settle onto the actual floor as the crater changes, and run downhill to a lower floor nearby
+      if (Math.random() < dt) {
+        p.floor = this.volume.floorBelow(p.x, p.level + 0.4, p.z, 30);
+        let best = null, bestF = p.floor - 0.3;
+        for (let k = 0; k < 6; k++) {
+          const a = (k / 6) * Math.PI * 2, d = p.r + 0.6;
+          const x = p.x + Math.cos(a) * d, z = p.z + Math.sin(a) * d;
+          if (this.volume.sdf(x, p.level, z) > -0.1) continue;   // a wall: no way through
+          const f = this.volume.floorBelow(x, p.level + 0.2, z, 30);
+          if (f < bestF) { bestF = f; best = [x, z]; }
+        }
+        if (best && p.frozen < 0.5) { p.x += (best[0] - p.x) * 0.5; p.z += (best[1] - p.z) * 0.5; p.floor = bestF; p.idle = Math.min(p.idle, 4); }
+      }
+      // pools that meet become one
+      for (let j = i - 1; j >= 0; j--) {
+        const q = this.pools[j];
+        if (Math.hypot(q.x - p.x, q.z - p.z) < (q.r + p.r) * 0.8 && Math.abs(q.floor - p.floor) < 0.6) {
+          q.vol += p.vol; q.frozen = Math.min(q.frozen, p.frozen);
+          p.mesh.removeFromParent(); p.mesh.material.dispose();
+          this.pools.splice(i, 1);
+          p.merged = true;
+          break;
+        }
+      }
+      if (p.merged) continue;
       const grace = 14 * this.antiRefreeze;
       if (p.idle > grace) {
         p.frozen = Math.min(1, p.frozen + dt / (10 * this.antiRefreeze));

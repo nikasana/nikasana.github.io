@@ -355,6 +355,12 @@ export class Menus {
         const msg = h('div.status');
         pane.append(
           h('div.set-group', {}, h('h3', {}, 'Numbers'), row('Scientific notation', toggle('scientific', () => { numberFormat.scientific = s.scientific; }))),
+          h('div.set-group', {}, h('h3', {}, 'Style'), ...[['styleGold', 'Gilded Pick'], ['styleObsid', 'Obsidian Tools'], ['styleWarm', 'Warm Crater Light'], ['styleWide', 'Wide Lens']].map(([k, label]) => {
+            const owned = g.stats[k] >= 1;
+            if (!owned) return row(label, h('span.val', {}, 'Style tree'));
+            const t = h(`button.toggle${!(s.styleOff || {})[k] ? '.on' : ''}`, { onclick: () => { s.styleOff = { ...(s.styleOff || {}), [k]: !(s.styleOff || {})[k] }; t.classList.toggle('on', !s.styleOff[k]); g.styleKey = null; g.saveSettings(); } });
+            return row(label, t);
+          })),
           h('div.set-group', {}, h('h3', {}, 'Save'),
             row('Auto-save', h('span.val', {}, 'Every 10 s and on exit')),
             row('Export', h('button.btn', { onclick: async () => { box.value = await g.exportSave(); box.select(); msg.textContent = 'Copy this code somewhere safe.'; } }, 'Make save code')),

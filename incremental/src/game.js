@@ -20,6 +20,7 @@ import { Tools, FAMILIES } from './player/tools.js';
 import { mutantPockets, MUTANT_BY_ID } from './econ/data/mutants.js';
 import { MAX_MUT } from './world/iceMaterial.js';
 import { Lava, LAVA_COLOR } from './world/lava.js';
+import { Aurora } from './world/aurora.js';
 import { AudioEngine } from './audio/engine.js';
 import { Sfx } from './audio/sfx.js';
 import { Music } from './audio/music.js';
@@ -39,7 +40,7 @@ import * as Save from './save/save.js';
 const SIM_STEP = 1 / 30;
 const PHYS_STEP = 1 / 60;
 const COINS_PER_M3 = 0.58;    // expected embedded coins per m³ (see coins.js spawn: 2.0 tries x 1.6 x mean seam acceptance 0.18)
-const COIN_RGB = [[1, 0.62, 0.45], [0.9, 0.95, 1], [1, 0.82, 0.35], [0.55, 0.9, 1]];
+const COIN_RGB = [[1, 0.62, 0.45], [0.9, 0.95, 1], [1, 0.82, 0.35], [0.55, 0.9, 1], [1, 0.6, 0.35]];
 
 const DEFAULT_SETTINGS = {
   preset: 'high', ...PRESETS.high, shadowQ: 'high', fov: 78, vsync: true, fpsCap: 0, grade: true, grain: true, vignette: true,
@@ -92,6 +93,8 @@ class Game {
     this.gfx.scene.add(this.stakes);
     this.coins = new CoinSystem(this.gfx.scene, this.volume, this.atmo, ['copper', 'silver', 'gold']);
     this.coins.useIcePass(this.gfx);
+    this.aurora = new Aurora(this.gfx.scene);
+    this.auroraT = 300 + Math.random() * 240;
     this.works = new Works(this.gfx.scene, this.atmo, this.coins.lowGeos, this.coins.mats);
     this.water = new Water(this.gfx, this.volume);
     this.frozen = new FrozenThings(this.gfx.scene, this.atmo, this.volume);
@@ -301,6 +304,49 @@ class Game {
     this.hud.notice('Lava burst', scorch ? 'The lava flooded the hole and froze into basalt. It scorched part of your pack.' : 'The lava flooded the hole and froze. Heat Skin kept your pack safe.', 'heat', 6000);
   }
 
+  currentAt(x, z) {
+    const c = this.planet.current;
+    if (!c) return [0, 0];
+    const t = this.time * c.turn;
+    const a = Math.sin(x * 0.021 + t) * 1.3 + Math.cos(z * 0.027 - t * 0.7) * 1.1 + t;
+    return [Math.cos(a) * c.speed, Math.sin(a) * c.speed];
+  }
+
+  // Aurora (first version): curtains in the sky and coins drifting down around you for a minute.
+  startAurora() {
+    this.auroraT = 300 + Math.random() * 240;
+    this.aurora.start(60);
+    const p = this.ctl.pos, value = Math.max(5, this.measuredRate() * 12);
+    const tier = this.planet.coinTiers.includes('gem') ? 3 : 2;
+    for (let k = 0; k < 14; k++) {
+      const a = Math.random() * Math.PI * 2, d = 4 + Math.random() * 18;
+      const x = p.x + Math.cos(a) * d, z = p.z + Math.sin(a) * d;
+      const floorY = Math.max(surfaceY(x, z), this.volume.floorBelow(x, surfaceY(x, z) + 2, z, 40));
+      this.coins.spawnSky(new THREE.Vector3(x, surfaceY(x, z) + 14 + Math.random() * 8, z), tier, value, floorY);
+    }
+    this.music.cue('swell');
+    this.hud.notice('Aurora', 'Light is falling from the sky, and coins with it. Catch them before the aurora fades.', 'resonance', 8000);
+  }
+
+  // Style tree: skins, crater grade and camera mode (each can be switched off in Settings > Game)
+  applyStyle(st) {
+    const off = this.settings.styleOff || {};
+    const on = (k) => st[k] >= 1 && !off[k];
+    const key = ['styleGold', 'styleObsid', 'styleWarm', 'styleWide'].map((k) => (on(k) ? 1 : 0)).join('');
+    if (key === this.styleKey) return;
+    this.styleKey = key;
+    const M = this.tools.M;
+    M.steel.color.set(on('styleObsid') ? 0x1a1424 : on('styleGold') ? 0xe0b450 : 0x9aa3a8);
+    M.steel.metalness = on('styleObsid') ? 0.3 : 0.92;
+    M.steel.roughness = on('styleObsid') ? 0.08 : on('styleGold') ? 0.18 : 0.28;
+    M.steel.emissive = new THREE.Color(on('styleObsid') ? 0x2a1050 : 0x000000);
+    const p = this.planet, g = { ...p.grade };
+    if (on('styleWarm')) g.gain = [g.gain[0] * 1.06, g.gain[1] * 1.0, g.gain[2] * 0.9];
+    this.gfx.setGrade(g, p.exposure);
+    const fov = this.settings.fov + (on('styleWide') ? 12 : 0);
+    if (this.gfx.camera.fov !== fov) { this.gfx.camera.fov = fov; this.gfx.camera.updateProjectionMatrix(); this.gfx.viewCam.fov = fov; this.gfx.viewCam.updateProjectionMatrix(); }
+  }
+
   // ---------- planets ----------
 
   get planet() { return PLANET_BY_ID[this.econ.planet]; }
@@ -321,7 +367,10 @@ class Game {
     }
     this.coins.setContext({ seed: p.seed, coinValue: (tier, depth) => this.coinValue(tier, depth) });
     this.coins.tiers = p.coinTiers.slice();
+    this.styleKey = null;   // re-apply style (grade) on the new planet
     this.terrain.material.color.setRGB(...p.ice.snow);   // the snowfield takes the planet's colour (ash on Cinderice)
+    // Tidalis: a slowly turning current field under the ice (Current Reading)
+    this.coins.current = p.current ? (x, z) => this.currentAt(x, z) : null;
     // mutant ice pockets for this planet and pole; types already found stay unlocked for DNA
     this.mutants = mutantPockets(p, pole, surfaceY);
     (this.lava ||= new Lava()).setup(p, pole, surfaceY);
@@ -428,7 +477,7 @@ class Game {
     return M.valueMult(this.econ, st) * Math.max(1, M.collectEff(st)) * Math.max(1, M.bankEff(st));
   }
 
-  tierMix(depth) { const w = tierWeights(depth, this.planet.coinTiers); return [w[0], w[1], w[2], w[3]]; }
+  tierMix(depth) { const w = tierWeights(depth, this.planet.coinTiers); return [w[0], w[1], w[2], w[3], w[4]]; }
 
   depthAt(x, y, z) { return surfaceY(x, z) - y; }
 
@@ -1360,6 +1409,22 @@ class Game {
     this.updateTreasure(dt, eye);
     this.particles.update(dt, this.volume);
     this.updateMutants(dt, eye);
+    this.aurora.update(dt, this.time, eye);
+    if (this.started && !(this.crew.active && !this.crew.isHost) && (this.auroraT -= dt) <= 0) this.startAurora();
+    if (!this.aurora.active && this.aurora.fade <= 0) this.coins.loose = this.coins.loose.filter((c) => !c.sky);
+    // Current Reading: drifting motes show which way the current runs
+    if (this.planet.current) {
+      this.curT = (this.curT || 0) - dt;
+      if (this.curT <= 0) {
+        this.curT = 0.12;
+        for (let k = 0; k < 2; k++) {
+          const x = eye.x + (Math.random() - 0.5) * 16, z = eye.z + (Math.random() - 0.5) * 16, y = eye.y - 1 - Math.random() * 1.5;
+          if (this.volume.sdf(x, y, z) > -0.2) continue;
+          const [cx, cz] = this.currentAt(x, z);
+          this.particles.alpha.spawn(2, 0, x, y, z, cx * 1.6, 0, cz * 1.6, 2.4, 0.05, 0.03, 0.85, 0.97, 1, 0.55, 0, 0, 0);
+        }
+      }
+    }
     if (this.lava && this.lava.pockets.length) {
       this.lavaHeat = Math.max(0, this.lavaHeat - dt * 0.12);
       if (this.veinCombo > 0 && this.time - (this.veinT || 0) > 1.5) { if (this.veinCombo > 1.5) this.hud.notice(`Vein combo ×${this.veinCombo.toFixed(1)}`, 'The vein ran out.', '', 2500); this.veinCombo = 0; }
@@ -1370,6 +1435,7 @@ class Game {
       }
     }
     this.ctl.walkSpeed = 4.4 * (st.walkSpeed || 1);
+    this.applyStyle(st);
     if (this.volume.maskDirty) { this.volume.maskDirty = false; this.terrain.userData.maskTex.needsUpdate = true; }
     // vision cuts fog (Mistral) and the X-ray shows coins deeper in the ice while the lamp is focused
     const vt = st.visionTier || 0, focusing = FAMILIES[this.tools.family].id === 'vision' && this.tools.using;

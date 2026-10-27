@@ -16,6 +16,7 @@ export const TREES = [
   { id: 'auto', name: 'Automation', icon: '🤖', color: '#b9a4ff', origin: [1, 1] },
   { id: 'planet', name: 'Planet', icon: '🛰️', color: '#ffd27a', origin: [1, 0], label: [1000, -230] },
   { id: 'climate', name: 'Climate', icon: '🌡️', color: '#8fe3c8', origin: [-1, 0], label: [-1000, 420] },
+  { id: 'style', name: 'Style', icon: '🎨', color: '#ff9fc4', origin: [1, 0], label: [1000, 420] },
   { id: 'audio', name: 'Audio', icon: '🎼', color: '#f2c9ff', origin: [-1, 0], label: [-1000, -230] },
   { id: 'dna', name: 'DNA', icon: '🧬', color: '#7dffb2', origin: [0, 1], label: [0, 1040] },
 ];
@@ -43,6 +44,7 @@ export const NODES = [
   N('dig', 'dig_wide', 'Wide Auger', '🕳️', 'A broad, hungry bit.', 75000, 12, ['dig_bit', 'dig_cool'], [['digRadius', 'add', 0.02]], 2, 4),
   N('dig', 'dig_echo', 'Echo Strike', '🔔', 'A clean break rings through the seam: more of them, and they free more.', 260000, 8, ['dig_frac'], [['crit', 'add', 0.012], ['critMult', 'add', 0.25]], 3, 3, { kind: 'mech' }),
   N('dig', 'dig_temper', 'Tempered Steel', '🛡️', 'Everything about digging, better.', 900000, 8, ['dig_wide'], [['digRate', 'mul', 0.06], ['digRadius', 'add', 0.01]], 2, 5),
+  N('dig', 'dig_sonic', 'Sonic Hammer', '🔊', 'Tool tier 3: a heavy hammer whose every blow sends a shockwave that breaks a ring of ice around the crater.', 1.2e6, 1, ['dig_echo', 'dig_wide'], [['digTier', 'set', 3], ['digRadius', 'add', 0.25], ['digRate', 'mul', -0.25], ['heavyMult', 'add', 0.3]], 3, 4, { gate: true, kind: 'mech' }),
   N('dig', 'dig_master', 'Ice Breaker', '🏔️', 'Capstone. Every strike sends a fracture through the seam: far more yield and a crushing heavy blow.', 3.2e6, 1, ['dig_temper', 'dig_core'], [['digYield', 'add', 0.45], ['heavyMult', 'add', 0.5], ['shock', 'add', 0.2]], 1.5, 6, { kind: 'cap' }),
 
   // 🔥 MELT
@@ -120,6 +122,7 @@ export const NODES = [
   N('planet', 'pl_mirror', 'Satellite Mirrors', '🪞', 'Planet tool: hold left mouse to focus a sunbeam from orbit on the ice you point at. A wide, gentle melt from far away.', 25000, 1, [], [['planetTier', 'set', 1], ['mirrorPower', 'add', 0.4]], 0, 0, { root: true, gate: true, kind: 'mech', at: [900, -120] }),
   N('planet', 'pl_lens', 'Focus Lens', '🔎', 'A tighter, hotter sunbeam.', 90000, 10, ['pl_mirror'], [['mirrorPower', 'mul', 0.15]], 0, 0, { at: [1110, -120] }),
   N('planet', 'pl_array', 'Mirror Array', '✨', 'More mirrors in orbit: they keep melting the pole while you work.', 60000, 10, ['pl_mirror'], [['autoMelt', 'add', 0.12]], 0, 0, { at: [900, 30] }),
+  N('planet', 'pl_pipe', 'Heat Pipe', '🔥', 'Planet tool tier 2: tap the mantle. Right mouse with the planet tool melts a narrow column straight down; the pipe also melts the pole on its own.', 2.5e6, 1, ['pl_orbit'], [['planetTier', 'set', 2], ['autoMelt', 'add', 0.5]], 0, 0, { gate: true, kind: 'mech', at: [1110, 180] }),
   N('planet', 'pl_orbit', 'Polar Orbit', '🌐', 'The mirrors never set: steadier automatic melting and a stronger beam.', 600000, 8, ['pl_lens', 'pl_array'], [['autoMelt', 'mul', 0.08], ['mirrorPower', 'add', 0.2]], 0, 0, { at: [1110, 30] }),
 
   // 🌡️ CLIMATE: albedo and the sea
@@ -127,6 +130,12 @@ export const NODES = [
   N('climate', 'cl_dark', 'Dark Ice', '⬛', 'Deeper albedo: hotter melting.', 12000, 10, ['cl_soot'], [['meltPower', 'mul', 0.04]], 0, 0, { at: [-1110, 180] }),
   N('climate', 'cl_sea', 'Sea Wall', '🌊', 'A managed sea: coins from a warming world fetch more.', 8000, 8, ['cl_soot'], [['valueMult', 'add', 0.02]], 0, 0, { at: [-900, 330] }),
   N('climate', 'cl_green', 'Greenhouse Vents', '🏭', 'Vents warm the pole from below: the ice melts on its own.', 45000, 10, ['cl_dark'], [['autoMelt', 'add', 0.06]], 0, 0, { at: [-1110, 330] }),
+
+  // 🎨 STYLE: purely cosmetic; each can be switched off in Settings > Game
+  N('style', 'sty_gold', 'Gilded Pick', '🌟', 'Tool skin: your pick and hammer heads in polished gold.', 800, 1, [], [['styleGold', 'set', 1]], 0, 0, { root: true, kind: 'mech', at: [900, 330] }),
+  N('style', 'sty_obsid', 'Obsidian Tools', '🖤', 'Tool skin: black volcanic glass with a violet edge.', 6000, 1, ['sty_gold'], [['styleObsid', 'set', 1]], 0, 0, { kind: 'mech', at: [1110, 330] }),
+  N('style', 'sty_warm', 'Warm Crater Light', '🕯️', 'Crater colour: a warmer, golden grade over the ice.', 2500, 1, ['sty_gold'], [['styleWarm', 'set', 1]], 0, 0, { kind: 'mech', at: [900, 480] }),
+  N('style', 'sty_wide', 'Wide Lens', '📷', 'Camera mode: a wider view.', 4000, 1, ['sty_warm'], [['styleWide', 'set', 1]], 0, 0, { kind: 'mech', at: [1110, 480] }),
 
   // 🎼 AUDIO: music variations, an ambient layer and a sound pack (no income; for the ears)
   N('audio', 'aud_choir', 'Wind Choir', '🌬️', 'An ambient layer of slow bowed voices under the music. Pick it in the Music screen.', 40, 1, [], [['audioChoir', 'set', 1]], 0, 0, { root: true, kind: 'mech', at: [-900, -120] }),
@@ -166,4 +175,6 @@ export const BASE_STATS = {
   audioChoir: 0, audioNight: 0, audioGlass: 0, audioPack: 0,
   // Planet
   planetTier: 0, mirrorPower: 0,
+  // Style
+  styleGold: 0, styleObsid: 0, styleWarm: 0, styleWide: 0,
 };

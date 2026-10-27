@@ -61,6 +61,23 @@ function buildPick(M) {
   return g;
 }
 
+// Sonic hammer: a heavy two-handed head with a glowing resonator.
+function buildHammer(M) {
+  const g = new THREE.Group();
+  const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.026, 0.7, 10), M.grip);
+  handle.position.y = -0.12;
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.14, 0.14), M.dark);
+  head.position.y = 0.24;
+  const face = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.05, 16), M.steel);
+  face.rotation.z = Math.PI / 2; face.position.set(0.19, 0.24, 0);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.012, 8, 20), M.glow);
+  ring.rotation.y = Math.PI / 2; ring.position.set(0.05, 0.24, 0);
+  g.add(handle, head, face, ring);
+  g.userData.tip = new THREE.Vector3(0.22, 0.24, 0);
+  g.userData.tipDir = new THREE.Vector3(1, 0, 0);
+  return g;
+}
+
 function buildDrill(M) {
   const g = new THREE.Group();
   const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.2, 6, 14), M.paint);
@@ -176,11 +193,12 @@ export class Tools {
     this.view = new THREE.Group();
     game.gfx.viewCam.add(this.view);
     this.models = {
-      pick: buildPick(this.M), drill: buildDrill(this.M), torch: buildTorch(this.M, false), lance: buildTorch(this.M, true),
+      pick: buildPick(this.M), drill: buildDrill(this.M), hammer: buildHammer(this.M), torch: buildTorch(this.M, false), lance: buildTorch(this.M, true),
       lamp: buildLamp(this.M), remote: buildMirrorRemote(this.M),
     };
     for (const m of Object.values(this.models)) { m.visible = false; this.view.add(m); }
     this.models.pick.scale.setScalar(0.62);
+    this.models.hammer.scale.setScalar(0.66);
     for (const k of ['drill', 'torch', 'lance', 'lamp', 'remote']) this.models[k].scale.setScalar(0.55);
     // lights for the held tool
     const vs = game.gfx.viewScene;
@@ -225,7 +243,7 @@ export class Tools {
   modelName(st) {
     const F = FAMILIES[this.family];
     const t = this.tierOf(st);
-    if (F.id === 'dig') return t >= 2 ? 'drill' : 'pick';
+    if (F.id === 'dig') return t >= 3 ? 'hammer' : t >= 2 ? 'drill' : 'pick';
     if (F.id === 'melt') return t >= 2 ? 'lance' : 'torch';
     if (F.id === 'vision') return 'lamp';
     return 'remote';   // planet tools and the orbital laser's designator
@@ -249,7 +267,7 @@ export class Tools {
     this.cooldown = Math.max(0, this.cooldown - dt);
 
     if (F.id === 'dig') {
-      if (tier >= 2) this.updateDrill(dt, lmb, rmb, st, ctx);
+      if (tier === 2) this.updateDrill(dt, lmb, rmb, st, ctx);
       else this.updatePick(dt, lmb, rmb, st, ctx);
     } else if (F.id === 'melt') {
       this.updateMelt(dt, lmb, rmb, st, ctx, tier);
@@ -339,6 +357,16 @@ export class Tools {
       res.removed += b.removed;
       for (let i = 0; i < 4; i++) g.particles.steam(h.point, h.normal, 3);
     }
+    // Sonic hammer: the blow's shockwave breaks a ring of ice around the crater
+    if (st.digTier >= 3 && !drill) {
+      const up = Math.abs(h.normal.y) > 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+      const u = new THREE.Vector3().crossVectors(h.normal, up).normalize(), v = new THREE.Vector3().crossVectors(h.normal, u);
+      for (let k = 0; k < 6; k++) {
+        const a = (k / 6) * Math.PI * 2, o = c.clone().addScaledVector(u, Math.cos(a) * r * 1.25).addScaledVector(v, Math.sin(a) * r * 1.25);
+        res.removed += g.applyOp({ kind: 'dig', x: o.x, y: o.y, z: o.z, r: r * 0.5, seed: (Math.random() * 1000) | 0 }, 'local').removed;
+      }
+      g.particles.sparks && g.particles.sparks(h.point, h.normal, 1.5);
+    }
     // More Hands (DNA): a second strike lands beside the first
     if (st.hands >= 1) {
       const side = new THREE.Vector3().crossVectors(h.normal, new THREE.Vector3(0, 1, 0.3)).normalize().multiplyScalar(r * 0.7);
@@ -389,6 +417,22 @@ export class Tools {
     const g = this.game;
     this.mirroring = (lmb || rmb) && !!this.hit;
     if (!this.mirroring) return;
+    // Heat pipe (tier 2): right mouse melts a narrow column straight down from where you point
+    if (rmb && st.planetTier >= 2) {
+      this.using = true;
+      const h = this.hit;
+      const hard = ctx.hardness(ctx.depthAt(h.point.y));
+      let removed = 0;
+      for (let k = 0; k < 4; k++) {
+        const vt = ((st.mirrorPower || 0) * 1.5 + 0.6) / hard * dt;
+        const r = 0.9, amount = (3 * GRAD * vt) / (Math.PI * r * r * r) * 3;
+        removed += g.applyOp({ kind: 'melt', x: h.point.x, y: h.point.y - 0.3 - k * 0.8, z: h.point.z, r, amount, seed: 0 }, 'local').removed;
+      }
+      this.skyBeam(h.point.clone().add(new THREE.Vector3(0, -4, 0)), 0.5, [1.0, 0.45, 0.15]);
+      if (Math.random() < dt * 12) g.particles.steam(h.point, h.normal, 1.2);
+      this.emit('melt', { point: h.point, normal: h.normal, removed, depth: ctx.depthAt(h.point.y), dt, wide: false });
+      return;
+    }
     this.using = true;
     const h = this.hit;
     const depth = ctx.depthAt(h.point.y);
@@ -516,7 +560,7 @@ export class Tools {
     const by = Math.sin(this.bob) * (moving ? 0.012 : 0.004), bx = Math.cos(this.bob * 0.5) * (moving ? 0.01 : 0.003);
     m.position.set(0.24 + bx, -0.2 + by, -0.5);
     m.rotation.set(0, 0, 0);
-    if (name === 'pick') {
+    if (name === 'pick' || name === 'hammer') {
       // rest, raised (wind-up) and impact poses; the swing blends between them
       _restQ.setFromEuler(_eu.set(0.12, -0.5, 0.18));
       _restP.set(0.36 + bx, -0.3 + by, -0.66);

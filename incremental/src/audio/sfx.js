@@ -146,8 +146,8 @@ export class Sfx {
     out.gain.value = 0.32 * (o.gain ?? 1);
     const ctx = this.e.ctx;
     // copper, silver, gold, and the glassy ring of a gem
-    const base = [2350, 3300, 2750, 4400][tier] * vary(1, 0.06);
-    const dur = [0.18, 0.4, 0.55, 0.9][tier];
+    const base = [2350, 3300, 2750, 4400, 1500][tier] * vary(1, 0.06);
+    const dur = [0.18, 0.4, 0.55, 0.9, 1.3][tier];
     for (const [ratio, amp] of [[1, 1], [2.76, 0.45], [5.4, 0.2]]) {
       const c = ctx.createOscillator(); c.type = 'sine'; c.frequency.value = base * ratio;
       const m = ctx.createOscillator(); m.type = 'sine'; m.frequency.value = base * ratio * 1.41;
@@ -173,7 +173,7 @@ export class Sfx {
   }
 
   s_clinkRaw(out, t, tier) {
-    const base = [2350, 3300, 2750, 4400][tier] * vary(1, 0.1);
+    const base = [2350, 3300, 2750, 4400, 1500][tier] * vary(1, 0.1);
     this.tone(out, t, base, 'sine', 0.12, 0.001, 0.12);
     this.tone(out, t, base * 2.76, 'sine', 0.05, 0.001, 0.06);
   }

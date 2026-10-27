@@ -4,7 +4,7 @@ export const COINS = [
   { id: 'silver', name: 'Silver', icon: '⚪', value: 10, color: [0.972, 0.96, 0.915], rough: 0.22, minDepth: 4, radius: 0.162, thick: 0.023 },
   { id: 'gold', name: 'Gold', icon: '🟡', value: 100, color: [1.0, 0.766, 0.336], rough: 0.16, minDepth: 30, radius: 0.180, thick: 0.029 },
   { id: 'gem', name: 'Gem', icon: '💎', value: 1000, color: [0.55, 0.85, 1.0], rough: 0.05, minDepth: 25, radius: 0.144, thick: 0.144 },
-  { id: 'relic', name: 'Relic', icon: '🏺', value: 10000, color: [0.8, 0.5, 0.3], rough: 0.5, minDepth: 1e9, radius: 0.288, thick: 0.180 },
+  { id: 'relic', name: 'Relic', icon: '🏺', value: 10000, color: [0.8, 0.5, 0.3], rough: 0.5, minDepth: 60, radius: 0.288, thick: 0.180 },
 ];
 
 export const COIN_BY_ID = Object.fromEntries(COINS.map((c) => [c.id, c]));

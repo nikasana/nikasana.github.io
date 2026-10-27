@@ -19,7 +19,12 @@ export const THEMES = [
     root: 52, mode: [0, 1, 3, 5, 7, 8, 10], prog: [0, 1, 0, 6, 5, 1, 3, 0],
     bpm: [64, 108], bright: 0.7, glass: 0.5, mallet: 1.2, brass: 1.3, bowed: 0.8, perc: 1.3,
   },
-  { id: 'tidalis', name: 'Undertow', planet: 'tidalis', desc: 'Tidalis. Flowing arpeggios.', locked: true },
+  {
+    id: 'tidalis', name: 'Undertow', planet: 'tidalis',
+    desc: 'Tidalis. Flowing arpeggios over a slow tide: a mixolydian swell.',
+    root: 55, mode: [0, 2, 4, 5, 7, 9, 10], prog: [0, 6, 3, 4, 0, 5, 6, 4],
+    bpm: [60, 100], bright: 1.1, glass: 1.1, mallet: 1.4, brass: 0.6, bowed: 1.0, perc: 0.7,
+  },
   { id: 'gale', name: 'Pressure Front', planet: 'gale', desc: 'Gale. Driving percussion and wind.', locked: true },
   { id: 'auralis', name: 'Sky Choir', planet: 'auralis', desc: 'Auralis. Shimmering choir pads.', locked: true },
   { id: 'omega', name: 'All Rivers', planet: 'omega', desc: 'Omega. Every theme at once.', locked: true },
