@@ -340,3 +340,5 @@ textarea.code { width: 100%; min-height: 110px; background: rgba(0,0,0,0.35); co
 .hud-stats, .hud-keys { background: linear-gradient(to top, rgba(6, 18, 26, 0.55), rgba(6, 18, 26, 0.28)); padding: 10px 12px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 .hud-wallet .rate, .hud-wallet .carry, .hud-goal .label, .hud-depth .labels { color: #c4d7de; }
 .hud-goal { background: radial-gradient(ellipse at 50% 40%, rgba(6, 18, 26, 0.42), transparent 72%); padding: 6px 30px 10px; }
+.hud-keys em { font-style: normal; }
+@media (max-width: 1500px) { .hud-keys em { display: none; } .hud-keys { gap: 6px; } }

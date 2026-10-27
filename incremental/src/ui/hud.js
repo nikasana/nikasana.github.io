@@ -146,7 +146,7 @@ export class Hud {
     if (!this.keysDone) {
       this.keysDone = true;
       this.keys.innerHTML = [['upgrades', 'Upgrades'], ['planet', 'Planet'], ['collections', 'Notebook'], ['coop', 'Crew'], ['music', 'Music']]
-        .map(([a, l]) => `<span><kbd>${k(a)}</kbd>${l}</span>`).join('') + '<span><kbd>Esc</kbd>Pause</span>';
+        .map(([a, l]) => `<span title="${l}"><kbd>${k(a)}</kbd><em>${l}</em></span>`).join('') + '<span title="Pause"><kbd>Esc</kbd><em>Pause</em></span>';
     }
 
     this.cross.classList.toggle('hit', !!s.hit);
