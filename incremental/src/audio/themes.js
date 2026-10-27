@@ -13,7 +13,12 @@ export const THEMES = [
     root: 57, mode: [0, 2, 3, 5, 7, 9, 10], prog: [0, 3, 6, 4, 0, 5, 3, 4],
     bpm: [52, 84], bright: 0.6, glass: 0.7, mallet: 0.6, brass: 0.5, bowed: 1.2, perc: 0.5,
   },
-  { id: 'cinderice', name: 'Iron Under Ice', planet: 'cinderice', desc: 'Cinderice. Dark metal and heat.', locked: true },
+  {
+    id: 'cinderice', name: 'Iron Under Ice', planet: 'cinderice',
+    desc: 'Cinderice. Dark metal and heat: a phrygian pulse with low brass and struck iron.',
+    root: 52, mode: [0, 1, 3, 5, 7, 8, 10], prog: [0, 1, 0, 6, 5, 1, 3, 0],
+    bpm: [64, 108], bright: 0.7, glass: 0.5, mallet: 1.2, brass: 1.3, bowed: 0.8, perc: 1.3,
+  },
   { id: 'tidalis', name: 'Undertow', planet: 'tidalis', desc: 'Tidalis. Flowing arpeggios.', locked: true },
   { id: 'gale', name: 'Pressure Front', planet: 'gale', desc: 'Gale. Driving percussion and wind.', locked: true },
   { id: 'auralis', name: 'Sky Choir', planet: 'auralis', desc: 'Auralis. Shimmering choir pads.', locked: true },

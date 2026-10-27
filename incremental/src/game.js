@@ -19,6 +19,7 @@ import { Input, DEFAULT_BINDINGS } from './player/input.js';
 import { Tools, FAMILIES } from './player/tools.js';
 import { mutantPockets, MUTANT_BY_ID } from './econ/data/mutants.js';
 import { MAX_MUT } from './world/iceMaterial.js';
+import { Lava, LAVA_COLOR } from './world/lava.js';
 import { AudioEngine } from './audio/engine.js';
 import { Sfx } from './audio/sfx.js';
 import { Music } from './audio/music.js';
@@ -142,7 +143,7 @@ class Game {
     this.tools.on('whiff', () => this.sfx.play('whiff'));
     this.tools.on('select', (f, ok) => {
       this.sfx.play('click');
-      if (!ok) this.hud.notice(`${FAMILIES[f].name} tools`, FAMILIES[f].id === 'planet' ? 'Satellite mirrors and the heat pipe arrive with later planets.' : 'Buy the first upgrade in this tree to unlock the tool.');
+      if (!ok) this.hud.notice(`${FAMILIES[f].name} tools`, FAMILIES[f].id === 'planet' ? 'Buy Satellite Mirrors in the Planet tree (right side of the upgrade graph) to unlock it.' : 'Buy the first upgrade in this tree to unlock the tool.');
     });
     this.ctl.on('step', () => this.sfx.play('step', { ice: this.feetOnIce() }));
     // water: wading, swimming and splashes
@@ -273,14 +274,31 @@ class Game {
     if (this.mutT > 0 || !this.mutants) return;
     this.mutT = 0.4;
     const u = this.iceMat.userData.uniforms;
-    const near = this.mutants.map((m) => [Math.hypot(m.x - eye.x, m.y - eye.y, m.z - eye.z), m]).sort((a, b) => a[0] - b[0]).slice(0, MAX_MUT);
+    const all = this.lava ? this.mutants.concat(this.lava.pockets) : this.mutants;
+    const near = all.map((m) => [Math.hypot(m.x - eye.x, m.y - eye.y, m.z - eye.z), m]).sort((a, b) => a[0] - b[0]).slice(0, MAX_MUT);
     for (let i = 0; i < MAX_MUT; i++) {
       const m = near[i] && near[i][0] < 60 ? near[i][1] : null;
       if (!m) { u.uMut.value[i].set(0, -1e5, 0, 0); continue; }
-      const t = MUTANT_BY_ID[m.type];
+      const t = m.type === 'lava' ? { color: LAVA_COLOR, glow: 1.8 } : MUTANT_BY_ID[m.type];
       u.uMut.value[i].set(m.x, m.y, m.z, m.r);
       u.uMutCol.value[i].set(t.color[0], t.color[1], t.color[2], t.glow);
     }
+  }
+
+  // Too much heat over a lava pocket: it bursts, floods the hole and freezes into basalt.
+  lavaBurst(point, pocket) {
+    this.lavaHeat = 0;
+    const st = this.stats;
+    const y = Math.min(point.y + 1.4, pocket ? pocket.y + pocket.r + 2 : point.y + 1.4);
+    this.applyOp({ kind: 'fill', x: point.x, y, z: point.z, r: 2.6, level: y, seed: 0 }, 'local');
+    for (let i = 0; i < 6; i++) this.particles.flame(point, new THREE.Vector3(0, 1, 0), 2);
+    for (let i = 0; i < 4; i++) this.particles.steam(point, new THREE.Vector3(0, 1, 0), 2.5);
+    this.sfx.play('crack', { pos: point, gain: 1 });
+    this.sfx.play('creak', { pos: point });
+    const c = this.state.carried;
+    const scorch = (st.heatSkin || 0) >= 1 ? 0 : 0.3;
+    if (scorch && c.value > 0) { c.value *= 1 - scorch; c.count *= 1 - scorch; }
+    this.hud.notice('Lava burst', scorch ? 'The lava flooded the hole and froze into basalt. It scorched part of your pack.' : 'The lava flooded the hole and froze. Heat Skin kept your pack safe.', 'heat', 6000);
   }
 
   // ---------- planets ----------
@@ -305,6 +323,8 @@ class Game {
     this.coins.tiers = p.coinTiers.slice();
     // mutant ice pockets for this planet and pole; types already found stay unlocked for DNA
     this.mutants = mutantPockets(p, pole, surfaceY);
+    (this.lava ||= new Lava()).setup(p, pole, surfaceY);
+    this.lavaHeat = 0; this.veinCombo = 0;
     this.mutT = 0;
     if (this.econ) for (const id of Object.keys(this.profile.mutations || {})) (this.econ.mutations ||= {})[id] = true;
     if (!(this.profile.visited ||= {})[p.id]) { this.profile.visited[p.id] = Date.now(); this.writeProfile(); }
@@ -502,6 +522,7 @@ class Game {
     if (mut) {
       this.discoverMutant(mut);
       if (mut.type === 'tarfrost') s.removed *= 2;   // holds twice the coins
+      if (mut.type === 'obsidice') s.removed *= 3;   // volcanic glass: three times the coins
       if (mut.type === 'chimeice') {
         this.sfx.play('shatter', { pos: s.point, pitch: 1.6, gain: 0.8 });
         this.music.cue('motif', 2);
@@ -521,9 +542,30 @@ class Game {
 
   onMelt(m) {
     this.frozen.warm(m.point, m.dt || 0.016);
+    // Cinderice: lava makes melting faster and riskier; heat veins build a combo
+    let lavaMult = 1;
+    if (this.lava && this.lava.pockets.length) {
+      const st = this.stats, dt = m.dt || 0.016;
+      const h = this.lava.heatAt(m.point);
+      if (h.heat > 0) {
+        lavaMult *= 1 + 0.6 * h.heat;
+        this.lavaHeat += dt * 0.35 * h.heat * (1 - Math.min(0.8, st.heatSkin || 0));
+        if (this.lavaHeat >= 1) this.lavaBurst(m.point, h.pocket);
+      }
+      if (this.lava.veinDistance(m.point) < 1.0) {
+        if (this.veinCombo < 1) this.hud.notice('Heat vein', 'Melt along the vein to build the combo. Leave it and the combo fades.', '', 3500);
+        this.veinCombo = Math.min(5, Math.max(1, this.veinCombo) + dt * 0.6);
+        this.veinT = this.time;
+      }
+      if (this.veinCombo > 1) lavaMult *= 1 + (this.veinCombo - 1) * 0.35;
+    }
+    m.lavaMult = lavaMult;
     const mut = this.mutantAt(m.point, 0.3);
-    if (mut) this.discoverMutant(mut);
-    this.addDust(m.removed, m.depth, 1);
+    if (mut) {
+      this.discoverMutant(mut);
+      if (mut.type === 'emberice') { this.veinCombo = Math.max(this.veinCombo || 0, 2.5); this.veinT = this.time; }
+    }
+    this.addDust(m.removed, m.depth, m.lavaMult || 1);
     if (m.removed > 0) this.water.add(m.point, m.removed);
   }
 
@@ -1307,6 +1349,15 @@ class Game {
     this.updateTreasure(dt, eye);
     this.particles.update(dt, this.volume);
     this.updateMutants(dt, eye);
+    if (this.lava && this.lava.pockets.length) {
+      this.lavaHeat = Math.max(0, this.lavaHeat - dt * 0.12);
+      if (this.veinCombo > 0 && this.time - (this.veinT || 0) > 1.5) { if (this.veinCombo > 1.5) this.hud.notice(`Vein combo ×${this.veinCombo.toFixed(1)}`, 'The vein ran out.', '', 2500); this.veinCombo = 0; }
+      this.emberT = (this.emberT || 0) - dt;
+      if (this.emberT <= 0) {
+        this.emberT = 0.25;
+        for (const q of this.lava.veinPointsNear(eye, 9, 3, Math.random)) this.particles.add.spawn(6, 6, q[0], q[1], q[2], 0, 0.2, 0, 0.8, 0.22, 0.05, 1, 0.45, 0.12, 0.8, 0, 0, 1);
+      }
+    }
     this.ctl.walkSpeed = 4.4 * (st.walkSpeed || 1);
     if (this.volume.maskDirty) { this.volume.maskDirty = false; this.terrain.userData.maskTex.needsUpdate = true; }
     // vision cuts fog (Mistral) and the X-ray shows coins deeper in the ice while the lamp is focused
@@ -1376,6 +1427,8 @@ class Game {
     if (this.ride) prompt = 'Riding the lift up';
     else if (this.atBeacon && deep) prompt = c.value > 0 ? `Banking your pack · hold ${jump} to ride the lift up` : `Hold ${jump} to ride the lift up and out of the crater`;
     else if (full) prompt = 'Pack full · walk to the glowing lift beacon ◆ to bank it';
+    else if (this.lavaHeat > 0.25) prompt = `Heat ${Math.round(this.lavaHeat * 100)}% · lava below: ease off the torch or it bursts`;
+    else if (this.veinCombo > 1) prompt = `Heat vein ×${this.veinCombo.toFixed(1)}`;
     else if (this.frozen.sealedNear) {
       const it = this.frozen.sealedNear, P = it.data.puzzle;
       prompt = `${it.data.name} · ${P.kind === 'heat' ? 'frozen shut: melt the ice right next to it' : 'fog-sealed: hold your focused lamp on it'} (${Math.round(100 * (it.progress || 0) / P.need)}%)`;
@@ -1385,7 +1438,7 @@ class Game {
     const tips = this.state.tips || (this.state.tips = {});
     if (full && !tips.full) { tips.full = 1; this.hud.notice('Your pack is full', 'Coins you free go into your pack first. They only count once banked: stand next to the glowing lift beacon ◆ (it follows you around) and the pack empties into the vault.', '', 12000); }
     if (deep && !tips.deep && this.craterDepth() > 2.5) { tips.deep = 1; this.liftHintAt = this.time; this.hud.notice('Getting out of the crater', `The lift beacon ◆ follows you down. Stand next to it and hold ${jump} to ride it up to the rim.`, '', 12000); }
-    else if (!this.tools.available(st, this.tools.family)) prompt = FAMILIES[this.tools.family].id === 'planet' ? 'Planet tools arrive with later planets' : 'Locked · buy this tree\'s first upgrade';
+    else if (!this.tools.available(st, this.tools.family)) prompt = FAMILIES[this.tools.family].id === 'planet' ? 'Locked · buy Satellite Mirrors in the Planet tree' : 'Locked · buy this tree\'s first upgrade';
     this.hud.update({
       coins: e.coins, rate: this.measuredRate(), carried: c.count, carryCap: st.carry, carriedValue: c.value * this.bankMult(),
       goal, goalReady: goal ? e.coins.gte(goal.cost) : false, goalProgress: goal ? e.coins.ratio(goal.cost) : 0,

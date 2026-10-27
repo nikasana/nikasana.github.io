@@ -11,6 +11,10 @@ export const MUTANTS = [
     desc: 'Thick and slow to cut, but it holds twice the coins.', perk: 'Steady Hands: faster, cleaner digging.' },
   { id: 'chimeice', name: 'Chimeice', planet: 'mistral', color: [0.68, 0.58, 1.0], glow: 0.35, effect: 'chime',
     desc: 'Rings when struck; the echo shows you the finds nearby for a while.', perk: 'Echo Sense: feel for treasure and pull coins from farther.' },
+  { id: 'emberice', name: 'Emberice', planet: 'cinderice', color: [1.0, 0.55, 0.22], glow: 0.7, effect: 'ember',
+    desc: 'Warm to the touch. Melting it lights a heat-vein combo at once.', perk: 'Heat Skin: lava bursts spare your pack; Ember Heart: hotter melting.' },
+  { id: 'obsidice', name: 'Obsidice', planet: 'cinderice', color: [0.3, 0.22, 0.4], glow: 0.08, effect: 'obsidian',
+    desc: 'Black volcanic glass. Very hard to cut, but it holds three times the coins.', perk: 'Glass Eye: clean breaks on rich seams.' },
 ];
 
 export const MUTANT_BY_ID = Object.fromEntries(MUTANTS.map((m) => [m.id, m]));

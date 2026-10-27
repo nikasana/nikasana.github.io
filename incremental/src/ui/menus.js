@@ -697,7 +697,7 @@ class TreeView {
 const KIND_LABEL = { mech: 'Mechanic', choice: 'Choose one', hybrid: 'Cross-tree', cap: 'Capstone' };
 
 const STAT_NAMES = {
-  nightVision: 'Night vision', walkSpeed: 'Walking speed', hands: 'More hands',
+  nightVision: 'Night vision', walkSpeed: 'Walking speed', hands: 'More hands', heatSkin: 'Heat skin',
   shock: 'Thermal shock (warm ice digs wider)', seep: 'Crack seep (cracked ice melts faster)', heatLinger: 'Warm time', heavyMult: 'Heavy blow', richCrit: 'Clean breaks on rich seams',
   steamBurst: 'Steam burst', pipes: 'Heat pipes (auto-dig from auto-melt)',
   digRadius: 'Bite radius', digRate: 'Strikes per second', digYield: 'Extraction', crit: 'Clean-break chance', critMult: 'Clean-break size', reach: 'Reach',
@@ -708,7 +708,7 @@ const STAT_NAMES = {
 };
 function statName(s) { return STAT_NAMES[s] || s; }
 function fmtV(v, stat) {
-  if (['digYield', 'crit', 'vision', 'collect', 'autoCollect', 'bank', 'offline', 'valueMult', 'meltEff', 'critMult', 'shock', 'seep', 'heatLinger', 'richCrit', 'pipes', 'nightVision', 'walkSpeed'].includes(stat)) return `${(v * 100).toFixed(1)}%`;
+  if (['digYield', 'crit', 'vision', 'collect', 'autoCollect', 'bank', 'offline', 'valueMult', 'meltEff', 'critMult', 'shock', 'seep', 'heatLinger', 'richCrit', 'pipes', 'nightVision', 'walkSpeed', 'heatSkin'].includes(stat)) return `${(v * 100).toFixed(1)}%`;
   if (stat === 'heavyMult') return `×${v.toFixed(2)}`;
   if (['digRadius', 'meltRadius', 'reach', 'collectRange'].includes(stat)) return `${v.toFixed(3)} m`;
   if (['autoDig', 'autoMelt', 'meltPower'].includes(stat)) return `${v.toFixed(3)} m³/s`;

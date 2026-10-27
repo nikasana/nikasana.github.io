@@ -14,6 +14,8 @@ export const TREES = [
   { id: 'melt', name: 'Melt', icon: '🔥', color: '#ff7a45', origin: [1, -1] },
   { id: 'vision', name: 'Vision', icon: '👁️', color: '#7fd4ff', origin: [-1, 1] },
   { id: 'auto', name: 'Automation', icon: '🤖', color: '#b9a4ff', origin: [1, 1] },
+  { id: 'planet', name: 'Planet', icon: '🛰️', color: '#ffd27a', origin: [1, 0], label: [1000, -230] },
+  { id: 'climate', name: 'Climate', icon: '🌡️', color: '#8fe3c8', origin: [-1, 0], label: [-1000, 420] },
   { id: 'audio', name: 'Audio', icon: '🎼', color: '#f2c9ff', origin: [-1, 0], label: [-1000, -230] },
   { id: 'dna', name: 'DNA', icon: '🧬', color: '#7dffb2', origin: [0, 1], label: [0, 1040] },
 ];
@@ -62,6 +64,7 @@ export const NODES = [
   N('melt', 'melt_heat', 'Latent Heat', '🌋', 'Heat lingers in the ice.', 380000, 10, ['melt_jet'], [['meltPower', 'mul', 0.035], ['heatLinger', 'add', 0.05]], 2, 3),
   N('melt', 'melt_glow', 'Glow Edge', '🌟', 'Molten edges reveal value.', 950000, 10, ['melt_sear'], [['valueMult', 'add', 0.035]], 3, 4),
   N('melt', 'melt_plasma', 'Plasma Sheath', '🟣', 'A wide, white-hot sheath.', 2.8e6, 10, ['melt_heat'], [['meltRadius', 'add', 0.06]], 2, 4),
+  N('melt', 'melt_laser', 'Orbital Laser', '🛰️', 'Tool tier 3: a satellite laser answers your designator: a white-hot beam from the sky melts a wide shaft.', 1.5e6, 1, ['melt_heat'], [['meltTier', 'set', 3], ['meltPower', 'mul', 0.6], ['meltRadius', 'add', 0.5]], 1, 4, { gate: true, kind: 'mech' }),
   N('melt', 'melt_master', 'Thermal Mastery', '☀️', 'Capstone. Complete command of heat: much stronger melting, and heat pours into every crack.', 9e6, 1, ['melt_plasma', 'melt_glow'], [['meltPower', 'mul', 0.6], ['seep', 'add', 0.4], ['heatLinger', 'add', 0.5]], 2.5, 5, { kind: 'cap' }),
 
   // 👁️ VISION
@@ -113,6 +116,18 @@ export const NODES = [
   N('vision', 'hy_sort', 'Sorting Lens', '🔬', 'Vision + Automation. The lift sorts as it hauls: banking pays more.', 160, 8, ['vis_glint', 'auto_magnet'], [['bank', 'add', 0.02], ['valueMult', 'add', 0.01]], 0, 0, { kind: 'hybrid', join: ['vision', 'auto'], at: [0, 300] }),
   N('auto', 'hy_drones', 'Survey Drones', '🛸', 'Vision + Automation. Drones sweep the floor for coins and treasure.', 40000, 1, ['hy_sort', 'vis_strata', 'auto_vac'], [['autoCollect', 'add', 0.15], ['hint', 'add', 1]], 0, 0, { kind: 'hybrid', join: ['vision', 'auto'], at: [0, 470] }),
 
+  // 🛰️ PLANET: satellite mirrors focus sunlight on your pole (tool 3), and arrays of them melt on their own
+  N('planet', 'pl_mirror', 'Satellite Mirrors', '🪞', 'Planet tool: hold left mouse to focus a sunbeam from orbit on the ice you point at. A wide, gentle melt from far away.', 25000, 1, [], [['planetTier', 'set', 1], ['mirrorPower', 'add', 0.4]], 0, 0, { root: true, gate: true, kind: 'mech', at: [900, -120] }),
+  N('planet', 'pl_lens', 'Focus Lens', '🔎', 'A tighter, hotter sunbeam.', 90000, 10, ['pl_mirror'], [['mirrorPower', 'mul', 0.15]], 0, 0, { at: [1110, -120] }),
+  N('planet', 'pl_array', 'Mirror Array', '✨', 'More mirrors in orbit: they keep melting the pole while you work.', 60000, 10, ['pl_mirror'], [['autoMelt', 'add', 0.12]], 0, 0, { at: [900, 30] }),
+  N('planet', 'pl_orbit', 'Polar Orbit', '🌐', 'The mirrors never set: steadier automatic melting and a stronger beam.', 600000, 8, ['pl_lens', 'pl_array'], [['autoMelt', 'mul', 0.08], ['mirrorPower', 'add', 0.2]], 0, 0, { at: [1110, 30] }),
+
+  // 🌡️ CLIMATE: albedo and the sea
+  N('climate', 'cl_soot', 'Soot Dusting', '🌑', 'Darken the ice so it drinks the sun: every melt goes further.', 3000, 10, [], [['meltEff', 'add', 0.05]], 0, 0, { root: true, at: [-900, 180] }),
+  N('climate', 'cl_dark', 'Dark Ice', '⬛', 'Deeper albedo: hotter melting.', 12000, 10, ['cl_soot'], [['meltPower', 'mul', 0.04]], 0, 0, { at: [-1110, 180] }),
+  N('climate', 'cl_sea', 'Sea Wall', '🌊', 'A managed sea: coins from a warming world fetch more.', 8000, 8, ['cl_soot'], [['valueMult', 'add', 0.02]], 0, 0, { at: [-900, 330] }),
+  N('climate', 'cl_green', 'Greenhouse Vents', '🏭', 'Vents warm the pole from below: the ice melts on its own.', 45000, 10, ['cl_dark'], [['autoMelt', 'add', 0.06]], 0, 0, { at: [-1110, 330] }),
+
   // 🎼 AUDIO: music variations, an ambient layer and a sound pack (no income; for the ears)
   N('audio', 'aud_choir', 'Wind Choir', '🌬️', 'An ambient layer of slow bowed voices under the music. Pick it in the Music screen.', 40, 1, [], [['audioChoir', 'set', 1]], 0, 0, { root: true, kind: 'mech', at: [-900, -120] }),
   N('audio', 'aud_night', 'Night Variation', '🌙', 'A slower, darker version of every theme.', 120, 1, ['aud_choir'], [['audioNight', 'set', 1]], 0, 0, { kind: 'mech', at: [-1110, -120] }),
@@ -126,6 +141,9 @@ export const NODES = [
   N('dna', 'dna_cold', 'Cold Blood', '🧊', 'Glowice DNA. The cold bothers you less: digging and melting both work a little harder.', 2400, 8, ['dna_eyes'], [['digRate', 'mul', 0.03], ['meltPower', 'mul', 0.04]], 0, 0, { mutation: 'glowice', at: [-230, 790] }),
   N('dna', 'dna_steady', 'Steady Hands', '🖐️', 'Tarfrost DNA. Faster, cleaner digging.', 5200, 10, [], [['digRate', 'mul', 0.05], ['digYield', 'add', 0.04]], 0, 0, { root: true, mutation: 'tarfrost', at: [230, 640] }),
   N('dna', 'dna_echo', 'Echo Sense', '📯', 'Chimeice DNA. Feel for treasure, and pull coins in from farther away.', 9000, 5, ['dna_steady'], [['hint', 'add', 1], ['collectRange', 'add', 0.4]], 0, 0, { mutation: 'chimeice', at: [230, 790] }),
+  N('dna', 'dna_heatskin', 'Heat Skin', '🧯', 'Emberice DNA. Heat builds slower near lava, and a lava burst no longer scorches your pack.', 4000, 2, [], [['heatSkin', 'add', 0.5]], 0, 0, { root: true, mutation: 'emberice', at: [-460, 640] }),
+  N('dna', 'dna_ember', 'Ember Heart', '❤️‍🔥', 'Emberice DNA. Hotter melting.', 7000, 8, ['dna_heatskin'], [['meltPower', 'mul', 0.06]], 0, 0, { mutation: 'emberice', at: [-460, 790] }),
+  N('dna', 'dna_glass', 'Glass Eye', '🔮', 'Obsidice DNA. You see the seams in volcanic glass: clean breaks on rich ice.', 6000, 6, [], [['richCrit', 'add', 0.05]], 0, 0, { root: true, mutation: 'obsidice', at: [460, 640] }),
   N('dna', 'dna_hands', 'More Hands', '🙌', 'Capstone. Two tools at once: every strike lands twice, and the second hit opens its own crater.', 120000, 1, ['dna_arms', 'dna_steady'], [['hands', 'set', 1], ['digRate', 'mul', 0.1]], 0, 0, { kind: 'cap', mutation: 'tarfrost', at: [115, 930] }),
 ];
 
@@ -143,7 +161,9 @@ export const BASE_STATS = {
   // tool interplay: warmed ice digs out wider (shock), cracked ice melts faster (seep)
   shock: 0.6, seep: 0.5, heatLinger: 1, heavyMult: 1.55, richCrit: 0, steamBurst: 0, pipes: 0,
   // DNA
-  nightVision: 0, walkSpeed: 1, hands: 0,
+  nightVision: 0, walkSpeed: 1, hands: 0, heatSkin: 0,
   // Audio
   audioChoir: 0, audioNight: 0, audioGlass: 0, audioPack: 0,
+  // Planet
+  planetTier: 0, mirrorPower: 0,
 };

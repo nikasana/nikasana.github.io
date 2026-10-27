@@ -215,8 +215,11 @@ export function digVolumeRate(st) {
 }
 
 export function meltVolumeRate(st) {
-  if (st.meltTier < 1) return 0;
-  return st.meltPower * st.meltEff * (0.6 + 0.45 * st.meltRadius);
+  if (st.meltTier < 1 && !(st.planetTier >= 1)) return 0;
+  const hand = st.meltTier >= 1 ? st.meltPower * st.meltEff * (0.6 + 0.45 * st.meltRadius) : 0;
+  // the satellite mirrors add a gentle, wide melt the player can point while they work
+  const mirror = st.planetTier >= 1 ? (st.mirrorPower || 0) * 0.8 * st.meltEff : 0;
+  return hand + mirror;
 }
 
 // Collection and banking efficiency. Not capped at 1: in the world, the part above 1 is paid

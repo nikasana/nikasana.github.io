@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { GRAD, VOXEL, richness } from '../world/field.js';
 import { digVolumeRate, meltVolumeRate } from '../econ/model.js';
 import { MAX_HEAT, MAX_CRACK } from '../world/iceMaterial.js';
+import { LAYERS } from '../render/graphics.js';
 
 export const FAMILIES = [
   { id: 'dig', name: 'Dig', key: 'tool1', tiers: ['Pick', 'Drill', 'Sonic hammer'], stat: 'digTier' },
@@ -202,7 +203,6 @@ export class Tools {
 
   tierOf(st, fam = this.family) {
     const F = FAMILIES[fam];
-    if (F.id === 'planet') return 0;
     return Math.round(st[F.stat] || 0);
   }
 
@@ -228,7 +228,7 @@ export class Tools {
     if (F.id === 'dig') return t >= 2 ? 'drill' : 'pick';
     if (F.id === 'melt') return t >= 2 ? 'lance' : 'torch';
     if (F.id === 'vision') return 'lamp';
-    return 'remote';
+    return 'remote';   // planet tools and the orbital laser's designator
   }
 
   // ctx: { eye, dir, st, hardness(depth), depthAt(y), time, move }
@@ -253,6 +253,8 @@ export class Tools {
       else this.updatePick(dt, lmb, rmb, st, ctx);
     } else if (F.id === 'melt') {
       this.updateMelt(dt, lmb, rmb, st, ctx, tier);
+    } else if (F.id === 'planet') {
+      this.updateMirror(dt, lmb, rmb, st, ctx);
     } else if (F.id === 'vision') {
       if (input.was('alt') || input.was('lamp')) this.lampOn = !this.lampOn;
       this.using = lmb;
@@ -266,6 +268,7 @@ export class Tools {
     this.cracks = this.cracks.filter((c) => c.t < 18);
     this.lastMeltAt = this.lastMeltAt.filter((m) => this.time - m.t < 8 * (st.heatLinger || 1));
     this.pushUniforms(st);
+    if (this.beam && (this.beamT -= dt) <= 0) this.beam.visible = false;
     this.updateLights(dt, st, ctx);
     this.animate(dt, st, ctx);
   }
@@ -323,6 +326,7 @@ export class Tools {
     if (pre) r *= Math.cbrt(1 + st.shock);
     const mut = g.mutantAt ? g.mutantAt(h.point, 0.3) : null;
     if (mut && mut.type === 'tarfrost') r *= 0.75;      // thick, slow to cut
+    if (mut && mut.type === 'obsidice') r *= 0.6;       // volcanic glass
     r = Math.max(0.36, r);  // never narrower than the player can follow down
     const c = h.point.clone().addScaledVector(h.normal, -r * 0.35);
     const op = { kind: 'dig', x: c.x, y: c.y, z: c.z, r, seed: (Math.random() * 1000) | 0 };
@@ -368,6 +372,7 @@ export class Tools {
     const amount = (3 * GRAD * vt * (cracked ? 1 + st.seep : 1)) / (Math.PI * r * r * r);
     const c = h.point.clone().addScaledVector(h.normal, -r * 0.25);
     const res = g.applyOp({ kind: 'melt', x: c.x, y: c.y, z: c.z, r, amount, seed: 0 }, 'local');
+    if (tier >= 3) this.skyBeam(h.point, 0.35 + r * 0.25, [1.0, 0.75, 0.55]);   // orbital laser
     // heat point for the shader
     let hp = this.heat.find((q) => q.p.distanceTo(h.point) < r * 0.7);
     if (!hp) { hp = { p: h.point.clone(), r, i: 0, t: 0 }; this.heat.unshift(hp); if (this.heat.length > MAX_HEAT) this.heat.length = MAX_HEAT; }
@@ -377,6 +382,40 @@ export class Tools {
     if (Math.random() < dt * 14) g.particles.steam(h.point, h.normal, tier >= 2 ? 1.8 : 1);
     if (Math.random() < dt * 6) g.particles.drip(h.point.clone().add(new THREE.Vector3(0, -r * 0.6, 0)));
     this.emit('melt', { point: h.point, normal: h.normal, removed: res.removed, depth, dt, wide });
+  }
+
+  // Satellite mirrors: a sunbeam from orbit, wide and gentle, wherever you point.
+  updateMirror(dt, lmb, rmb, st, ctx) {
+    const g = this.game;
+    this.mirroring = (lmb || rmb) && !!this.hit;
+    if (!this.mirroring) return;
+    this.using = true;
+    const h = this.hit;
+    const depth = ctx.depthAt(h.point.y);
+    const hard = ctx.hardness(depth);
+    const r = 3.2;
+    const vt = ((st.mirrorPower || 0) * 0.8 * st.meltEff / hard) * dt;
+    const amount = (3 * GRAD * vt) / (Math.PI * r * r * r) * 3;
+    const res = g.applyOp({ kind: 'melt', x: h.point.x, y: h.point.y - 0.4, z: h.point.z, r, amount, seed: 0 }, 'local');
+    this.skyBeam(h.point, 1.6, [1.0, 0.92, 0.7]);
+    if (Math.random() < dt * 10) g.particles.steam(h.point, h.normal, 1.4);
+    this.emit('melt', { point: h.point, normal: h.normal, removed: res.removed, depth, dt, wide: true });
+  }
+
+  // a column of light from the sky down to a point (mirror sunbeam, orbital laser)
+  skyBeam(p, width, rgb) {
+    if (!this.beam) {
+      const geo = new THREE.CylinderGeometry(1, 1, 1, 16, 1, true).translate(0, 0.5, 0);
+      this.beam = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, side: THREE.DoubleSide }));
+      this.beam.layers.set(LAYERS.FX);
+      this.beam.frustumCulled = false;
+      this.game.gfx.scene.add(this.beam);
+    }
+    this.beam.visible = true;
+    this.beamT = 0.12;
+    this.beam.position.copy(p);
+    this.beam.scale.set(width * (0.9 + Math.random() * 0.2), 160, width * (0.9 + Math.random() * 0.2));
+    this.beam.material.color.setRGB(...rgb);
   }
 
   nozzleWorld(ctx) {

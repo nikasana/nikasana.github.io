@@ -123,7 +123,7 @@ export class Hud {
       FAMILIES.forEach((F, i) => {
         const tier = s.tiers[i];
         const ok = F.id === 'dig' || tier >= 1;
-        const name = F.id === 'planet' ? 'Next planet' : ok ? F.tiers[Math.max(0, tier - 1)] : 'Locked';
+        const name = ok ? F.tiers[Math.max(0, tier - 1)] : F.id === 'planet' ? 'Planet tree' : 'Locked';
         this.tools.append(h(`div.slot${i === g.tools.family ? '.on' : ''}${ok ? '' : '.locked'}`, { title: F.id === 'planet' ? 'Planet tools arrive on Cinderice, the next planet' : '' },
           h('span.key', {}, keyLabel(g.input.code(F.key))), h('span.nm', {}, F.name), h('span.tier', {}, name)));
       });
