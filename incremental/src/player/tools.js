@@ -13,6 +13,11 @@ export const FAMILIES = [
 ];
 
 const ease = (t) => t * t * (3 - 2 * t);
+const HAND = new THREE.Vector3(0.28, -0.45, -0.2);   // where the grip sits, in camera space
+const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _v = new THREE.Vector3();
+const _m1 = new THREE.Matrix4(), _m2 = new THREE.Matrix4(), _eu = new THREE.Euler();
+const _restQ = new THREE.Quaternion(), _upQ = new THREE.Quaternion(), _hitQ = new THREE.Quaternion();
+const _restP = new THREE.Vector3(), _upP = new THREE.Vector3(), _hitP = new THREE.Vector3();
 
 // ---------- held models ----------
 
@@ -51,6 +56,7 @@ function buildPick(M) {
   collar.position.y = 0.22;
   g.add(handle, wrap, head, collar);
   g.userData.tip = new THREE.Vector3(0.24, 0.15, 0);
+  g.userData.tipDir = new THREE.Vector3(0.88, -0.47, 0).normalize();   // the point's own direction
   return g;
 }
 
@@ -258,7 +264,7 @@ export class Tools {
     this.heat = this.heat.filter((h) => h.t < 22);
     for (const c of this.cracks) c.t += dt;
     this.cracks = this.cracks.filter((c) => c.t < 18);
-    this.lastMeltAt = this.lastMeltAt.filter((m) => this.time - m.t < 8);
+    this.lastMeltAt = this.lastMeltAt.filter((m) => this.time - m.t < 8 * (st.heatLinger || 1));
     this.pushUniforms(st);
     this.updateLights(dt, st, ctx);
     this.animate(dt, st, ctx);
@@ -282,7 +288,7 @@ export class Tools {
       this.swing += dt / (period * (this.heavy ? 1.8 : 1));
       if (!this.impactDone && this.swing >= 0.5) {
         this.impactDone = true;
-        if (this.hit) this.strike(st, ctx, 1 + this.heavy * 0.55, this.heavy > 0);
+        if (this.hit) this.strike(st, ctx, 1 + this.heavy * (st.heavyMult - 1), this.heavy > 0);
         else this.emit('whiff');
       }
       if (this.swing >= 1) { this.swinging = false; this.swing = 0; if (this.heavy) this.cooldown = period * 0.8; this.heavy = 0; }
@@ -306,22 +312,33 @@ export class Tools {
     const h = this.hit;
     const depth = ctx.depthAt(h.point.y);
     const hard = ctx.hardness(depth);
-    const crit = Math.random() < st.crit;
+    const rich = richness(h.point.x, h.point.y, h.point.z);
+    const crit = Math.random() < Math.min(0.9, st.crit + st.richCrit * rich);
     // one strike removes a sphere of digVolume/digRate, scaled by hardness
-    const perHit = digVolumeRate({ ...st, crit: 0 }) / Math.max(0.2, st.digRate);
+    const perHit = digVolumeRate({ ...st, crit: 0, richCrit: 0, heavyMult: 1.55 }) / Math.max(0.2, st.digRate);
     let r = Math.cbrt((perHit / hard) / ((4 / 3) * Math.PI * 0.5));
     r *= Math.cbrt(scale * scale * scale) * (crit ? Math.cbrt(st.critMult) : 1);
+    // thermal shock: ice warmed by the torch a moment ago blows out a bigger crater
+    const pre = this.lastMeltAt.some((m) => m.p.distanceTo(h.point) < r + 1.2);
+    if (pre) r *= Math.cbrt(1 + st.shock);
     r = Math.max(0.36, r);  // never narrower than the player can follow down
     const c = h.point.clone().addScaledVector(h.normal, -r * 0.35);
-    const pre = this.lastMeltAt.some((m) => m.p.distanceTo(h.point) < r + 1.2);
-    const rich = richness(h.point.x, h.point.y, h.point.z);
     const op = { kind: 'dig', x: c.x, y: c.y, z: c.z, r, seed: (Math.random() * 1000) | 0 };
     const res = g.applyOp(op, 'local');
+    // steam burst: a heavy blow on warm ice flashes it to steam and blasts a wide crater
+    let burst = false;
+    if (pre && heavy && st.steamBurst >= 1) {
+      burst = true;
+      const b = g.applyOp({ kind: 'dig', x: c.x, y: c.y, z: c.z, r: r * 1.7, seed: (Math.random() * 1000) | 0 }, 'local');
+      res.removed += b.removed;
+      for (let i = 0; i < 4; i++) g.particles.steam(h.point, h.normal, 3);
+    }
     this.cracks.unshift({ p: h.point.clone(), r: r * 1.3, t: 0 });
     if (this.cracks.length > MAX_CRACK) this.cracks.length = MAX_CRACK;
-    g.particles.chips(h.point, h.normal, (drill ? 0.35 : 1) * (heavy ? 1.8 : 1) * (crit ? 1.5 : 1));
+    g.particles.chips(h.point, h.normal, (drill ? 0.35 : 1) * (heavy ? 1.8 : 1) * (crit ? 1.5 : 1) * (pre ? 1.3 : 1));
     if (crit) g.particles.glint(h.point, [0.8, 0.95, 1], 0.5);
-    this.emit('strike', { point: h.point, normal: h.normal, removed: res.removed, crit, heavy, drill, pre, rich, depth, hard });
+    if (pre) g.particles.steam(h.point, h.normal, 1.2);
+    this.emit('strike', { point: h.point, normal: h.normal, removed: res.removed, crit, heavy, drill, pre, burst, rich, depth, hard });
   }
 
   updateMelt(dt, lmb, rmb, st, ctx, tier) {
@@ -338,7 +355,9 @@ export class Tools {
     const wide = rmb && !lmb;
     const r = Math.max(0.45, st.meltRadius * (wide ? 1.6 : 1));
     const vt = (meltVolumeRate(st) / hard) * (wide ? 0.7 : 1) * dt;
-    const amount = (3 * GRAD * vt) / (Math.PI * r * r * r);
+    // crack seep: heat pours into fresh pick cracks
+    const cracked = this.cracks.some((q) => q.t < 12 && q.p.distanceTo(h.point) < q.r + r * 0.5);
+    const amount = (3 * GRAD * vt * (cracked ? 1 + st.seep : 1)) / (Math.PI * r * r * r);
     const c = h.point.clone().addScaledVector(h.normal, -r * 0.25);
     const res = g.applyOp({ kind: 'melt', x: c.x, y: c.y, z: c.z, r, amount, seed: 0 }, 'local');
     // heat point for the shader
@@ -406,6 +425,41 @@ export class Tools {
     this.viewSun.intensity = 1.8 * g.atmo.depthDim;
   }
 
+  // Where the tool should touch, in camera space: the hit point, pulled in along its own view ray to
+  // arm's length. Seen from the eye it lands exactly on the struck spot, and the chips fly from there.
+  contactTarget(maxD) {
+    const cam = this.game.gfx.camera;
+    const out = this._target || (this._target = { p: new THREE.Vector3(), n: new THREE.Vector3(), ray: new THREE.Vector3(), has: false });
+    if (this.hit) {
+      out.p.copy(this.hit.point).applyMatrix4(cam.matrixWorldInverse);
+      out.n.copy(this.hit.normal).transformDirection(cam.matrixWorldInverse);
+      out.has = true;
+    } else {
+      out.p.set(0.08, -0.12, -1);
+      out.n.set(0, 0.3, 1).normalize();
+      out.has = false;
+    }
+    out.ray.copy(out.p).normalize();
+    const d = out.p.length();
+    if (d > maxD) out.p.multiplyScalar(maxD / d);
+    return out;
+  }
+
+  // Pick orientation at the moment of impact: the point drives into the surface, the handle runs back to the hand.
+  impactPose(m, T, quat, pos) {
+    const sc = m.scale.x;
+    const tipL = m.userData.tip, tipDirL = m.userData.tipDir;
+    const d = _a.copy(T.n).multiplyScalar(-0.65).addScaledVector(T.ray, 0.35).normalize();
+    const yW = _b.copy(T.p).sub(HAND).normalize();
+    // orthonormal frames: local (tipDir, handle-up, cross) -> world (d, handle toward target, cross)
+    const a = tipDirL, bl = _c.set(0, 1, 0).addScaledVector(a, -a.y).normalize(), cl = _d.crossVectors(a, bl);
+    const B = yW.addScaledVector(d, -yW.dot(d)).normalize(), C = _e.crossVectors(d, B);
+    _m1.makeBasis(a, bl, cl).transpose();
+    _m2.makeBasis(d, B, C).multiply(_m1);
+    quat.setFromRotationMatrix(_m2);
+    pos.copy(tipL).multiplyScalar(sc).applyQuaternion(quat).negate().add(T.p);
+  }
+
   animate(dt, st, ctx) {
     const name = this.modelName(st);
     for (const [k, m] of Object.entries(this.models)) m.visible = k === name;
@@ -416,19 +470,42 @@ export class Tools {
     m.position.set(0.24 + bx, -0.2 + by, -0.5);
     m.rotation.set(0, 0, 0);
     if (name === 'pick') {
-      m.position.set(0.36 + bx, -0.3 + by, -0.66);
-      m.rotation.set(0.12, -0.5, 0.18);
-      let a = 0;
+      // rest, raised (wind-up) and impact poses; the swing blends between them
+      _restQ.setFromEuler(_eu.set(0.12, -0.5, 0.18));
+      _restP.set(0.36 + bx, -0.3 + by, -0.66);
+      const lift = 1.05 + (this.heavy || this.charge) * 0.35;
+      _upQ.setFromEuler(_eu.set(0.12 - lift, -0.42, 0.3));
+      _upP.copy(_restP).add(_v.set(0.03, 0.14 + lift * 0.04, 0.12));
       const s = this.swing;
-      if (this.swinging) a = s < 0.36 ? -ease(s / 0.36) * 1.05 : s < 0.5 ? -1.05 + ease((s - 0.36) / 0.14) * 1.75 : 0.7 - ease((s - 0.5) / 0.5) * 0.7;
-      else if (this.charge > 0) a = -this.charge * 1.15;
-      m.rotation.z += 0;
-      m.rotation.x += a;
-      m.position.y += a < 0 ? -a * 0.05 : -a * 0.08;
+      if (this.swinging) {
+        const T = this.contactTarget(0.9);
+        this.impactPose(m, T, _hitQ, _hitP);
+        if (s < 0.32) { const t = ease(s / 0.32); m.quaternion.slerpQuaternions(_restQ, _upQ, t); m.position.lerpVectors(_restP, _upP, t); }
+        else if (s < 0.5) { const t = Math.pow((s - 0.32) / 0.18, 2); m.quaternion.slerpQuaternions(_upQ, _hitQ, t); m.position.lerpVectors(_upP, _hitP, t); }
+        else if (s < 0.6) {
+          // bite: the point sits in the ice, then kicks back a touch
+          const t = (s - 0.5) / 0.1;
+          m.quaternion.copy(_hitQ);
+          m.position.copy(_hitP).addScaledVector(T.ray, -0.025 * Math.sin(t * Math.PI));
+        } else { const t = ease((s - 0.6) / 0.4); m.quaternion.slerpQuaternions(_hitQ, _restQ, t); m.position.lerpVectors(_hitP, _restP, t); }
+      } else if (this.charge > 0) {
+        const t = ease(Math.min(1, this.charge));
+        m.quaternion.slerpQuaternions(_restQ, _upQ, t); m.position.lerpVectors(_restP, _upP, t);
+      } else { m.quaternion.copy(_restQ); m.position.copy(_restP); }
     } else if (name === 'drill') {
       m.userData.bit.rotation.y = this.drillSpin;
+      // pushed forward until the bit is in the surface while it bores
+      this.drillReach = THREE.MathUtils.lerp(this.drillReach || 0, this.drillOn ? 1 : 0, Math.min(1, dt * 10));
+      _restQ.setFromEuler(_eu.set(0.04, -0.1, 0));
+      _restP.copy(m.position);
+      if (this.drillReach > 0.001) {
+        const T = this.contactTarget(0.85);
+        _hitQ.setFromUnitVectors(_v.set(0, 0, -1), T.ray);
+        _hitP.copy(m.userData.tip).multiplyScalar(m.scale.x).applyQuaternion(_hitQ).negate().add(T.p);
+        m.quaternion.slerpQuaternions(_restQ, _hitQ, this.drillReach);
+        m.position.lerpVectors(_restP, _hitP, this.drillReach);
+      } else m.quaternion.copy(_restQ);
       if (this.drillOn) { m.position.x += (Math.random() - 0.5) * 0.004; m.position.y += (Math.random() - 0.5) * 0.004; }
-      m.rotation.set(0.04, -0.1, 0);
     } else if (name === 'torch' || name === 'lance') {
       m.rotation.set(0.05, -0.12, 0);
       if (this.melting) m.position.z += 0.01 * Math.sin(this.time * 40);

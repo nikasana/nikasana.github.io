@@ -9,7 +9,7 @@ export const GROWTH_BASE = 1.25;  // per-level node cost growth with no synergy 
 export const RED_CAP = 0.65;      // max growth reduction (1 + 0.25 * 0.35 = 1.09)
 export const ACTIVITY = 0.8;      // fraction of time an average player is actively using a tool
 // Global tuning knobs (swept by tools/sim.mjs --sweep).
-export const TUNE = { area: 1, rich: 1, red: 1, infl: 1.02, damp: 0.08, eff: 1, gb: GROWTH_BASE };
+export const TUNE = { area: 1, rich: 1, red: 1, infl: 1.04, damp: 0.08, eff: 1, gb: GROWTH_BASE };
 
 export function createEcon(planetId = 'frostara', pole = 'N', opts = {}) {
   return {
@@ -39,9 +39,16 @@ export function createEcon(planetId = 'frostara', pole = 'N', opts = {}) {
 
 export const level = (e, id) => e.levels[id] || 0;
 
+// Choice nodes share an `excl` group: owning one locks the others for this planet.
+export function lockedBy(e, id) {
+  const n = NODE_BY_ID[id];
+  if (!n.excl) return null;
+  return NODES.find((o) => o.excl === n.excl && o.id !== id && level(e, o.id) >= 1) || null;
+}
+
 export function isUnlocked(e, id) {
   const n = NODE_BY_ID[id];
-  return n.parents.every((p) => level(e, p) >= 1);
+  return n.parents.every((p) => level(e, p) >= 1) && !lockedBy(e, id);
 }
 
 export function isMaxed(e, id) { return level(e, id) >= NODE_BY_ID[id].max; }
@@ -125,6 +132,7 @@ export function computeStats(e, active = activeSynergies(e)) {
   if (e.crew.income) income *= e.crew.income;
   if (e.crew.dig) st.digRate *= e.crew.dig;
   st.incomeMult = income;
+  st.autoDig += st.autoMelt * st.pipes;
   st.autoDig *= st.autoAll;
   st.autoMelt *= st.autoAll;
   return st;
@@ -195,9 +203,14 @@ export function hardnessAt(e, depth = e.depth) {
   return strataProps(planetOf(e), e.pole, depth).hard * (1 + depth / 2500);
 }
 
+// Average clean-break chance: rich seams (about 40% of struck ice) add richCrit.
+export function critChance(st) { return Math.min(0.9, st.crit + (st.richCrit || 0) * 0.4); }
+
 export function digVolumeRate(st) {
   const perHit = (4 / 3) * Math.PI * st.digRadius ** 3 * 0.5;
-  return perHit * st.digRate * (1 + st.crit * (st.critMult - 1));
+  // an occasional heavy strike: its crater grows with the cube of heavyMult
+  const heavy = 1 + 0.08 * (Math.pow(st.heavyMult || 1.55, 3) / 3.72 - 1);
+  return perHit * st.digRate * (1 + critChance(st) * (st.critMult - 1)) * heavy;
 }
 
 export function meltVolumeRate(st) {
@@ -220,18 +233,34 @@ export function valueMult(e, st) {
   return st.valueMult * st.vision * st.incomeMult;
 }
 
+// The player holds one tool at a time. Swapping pays: ice warmed by the torch digs out wider
+// (shock) and ice cracked by the pick melts faster (seep). The best split of time between the two
+// tools decides the active rate, so a build that grows both tools together earns the most.
+const SPLITS = [1, 0.85, 0.7, 0.55, 0.4, 0.25, 0];
+export function toolMix(st, d, m) {
+  const shock = st.shock * (1 + 0.5 * (st.steamBurst || 0));
+  let best = { f: 1, vol: d, val: d * st.digYield, meltVol: 0 };
+  if (m <= 0) return best;
+  for (const f of SPLITS) {
+    const warm = Math.min(1, 1.6 * (1 - f) * st.heatLinger);   // share of digging done on warm ice
+    const cracked = Math.min(1, 1.6 * f);                        // share of melting done on cracked ice
+    const dv = f * d * (1 + shock * warm), mv = (1 - f) * m * (1 + st.seep * cracked);
+    const val = dv * st.digYield + mv;
+    if (val > best.val) best = { f, vol: dv + mv, val, meltVol: mv };
+  }
+  return best;
+}
+
 export function rates(e, st = computeStats(e), activity = ACTIVITY) {
   const hard = hardnessAt(e);
   const d = digVolumeRate(st) / hard;
   const m = meltVolumeRate(st) / hard;
-  const dShare = d >= m ? 1 : 0.5, mShare = d >= m ? 0.5 : 1;
-  const activeValueVol = (d * dShare * st.digYield + m * mShare);
-  const activeVol = d * dShare + m * mShare;
+  const mix = toolMix(st, d, m);
   const autoVol = (st.autoDig + st.autoMelt) / hard;
   const V = baseValuePerM3(e) * valueMult(e, st) * collectEff(st) * bankEff(st);
-  const income = (activeValueVol * activity + autoVol) * V;
+  const income = (mix.val * activity + autoVol) * V;
   const passive = autoVol * V;
-  return { income, passive, activeVol: activeVol * activity, autoVol, V, digVol: d, meltVol: m };
+  return { income, passive, activeVol: mix.vol * activity, autoVol, V, digVol: d, meltVol: m, mix };
 }
 
 export function shaftArea(st) {
@@ -287,7 +316,7 @@ export function simTick(e, dt, st, activity = ACTIVITY) {
   earn(e, r.income * dt);
   const vol = (r.activeVol + r.autoVol) * dt;
   e.volume += vol;
-  e.melted += (r.meltVol * (r.digVol >= r.meltVol ? 0.5 : 1) * activity + st.autoMelt / hardnessAt(e)) * dt;
+  e.melted += (r.mix.meltVol * activity + st.autoMelt / hardnessAt(e)) * dt;
   e.depth += vol / shaftArea(st);
   e.time += dt;
   return r;

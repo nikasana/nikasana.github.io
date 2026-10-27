@@ -8,26 +8,26 @@ Growth is the effective per-level cost growth a bot felt: geometric mean of each
 
 | bot | purchases | first wait | early median | mid median | late median | p95 | peak | drift | growth | goal (min) | synergies | wave peaks |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| random | 491 | 2.40 | 4.4 | 22.1 | 34.9 | 42.0 | 78.0 | 5.04 | 1.495 | 102.1 | 8.2 | 7% |
-| cheapest | 583 | 2.00 | 1.8 | 14.2 | 20.1 | 20.1 | 21.8 | 3.74 | 1.285 | 76.4 | 11.0 | 1% |
-| roi | 524 | 2.50 | 1.1 | 3.1 | 3.0 | 9.1 | 43.3 | 0.62 | 1.287 | 25.3 | 8.0 | 12% |
-| synergy | 689 | 2.50 | 0.8 | 3.5 | 1.8 | 8.8 | 22.4 | 0.14 | 1.210 | 25.1 | 10.0 | 14% |
+| random | 259 | 2.40 | 7.5 | 39.7 | 52.5 | 72.5 | 168.9 | 18.86 | 2.007 | 98.4 (3/5) | 6.6 | 6% |
+| cheapest | 301 | 2.00 | 4.3 | 17.8 | 35.3 | 32.0 | 45.1 | 9.48 | 1.485 | 73.7 | 9.0 | 0% |
+| roi | 282 | 2.50 | 2.0 | 2.3 | 2.5 | 9.6 | 44.9 | 0.38 | 1.366 | 16.3 | 6.0 | 9% |
+| synergy | 301 | 2.50 | 1.8 | 3.5 | 1.9 | 8.8 | 29.4 | 0.06 | 1.279 | 13.9 | 8.0 | 14% |
 
 - Drift ordering random > cheapest > ROI > synergy: **PASS**
-- Synergy drift near zero (|drift| < 1 s/100): **PASS** (0.14)
+- Synergy drift near zero (|drift| < 1 s/100): **PASS** (0.06)
 - First-upgrade wait about 2 s for every bot: **PASS**
 
 ## 🌍 Frostara, South pole (Old Shelf)
 
 | bot | purchases | first wait | early median | mid median | late median | p95 | peak | drift | growth | goal (min) | synergies | wave peaks |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| random | 491 | 2.65 | 5.6 | 19.1 | 38.1 | 38.9 | 84.2 | 4.93 | 1.488 | 106.4 | 8.4 | 8% |
-| cheapest | 583 | 2.25 | 2.0 | 14.1 | 20.1 | 20.0 | 22.3 | 3.66 | 1.284 | 78.5 | 11.0 | 1% |
-| roi | 535 | 2.75 | 1.0 | 1.9 | 2.5 | 8.9 | 51.2 | 0.50 | 1.278 | 25.4 | 8.0 | 12% |
-| synergy | 689 | 2.75 | 1.0 | 5.7 | 1.8 | 9.0 | 23.6 | 0.10 | 1.211 | 26.0 | 10.0 | 14% |
+| random | 262 | 2.65 | 8.7 | 26.6 | 45.8 | 63.8 | 156.1 | 14.74 | 2.009 | 97.8 (4/5) | 6.4 | 5% |
+| cheapest | 302 | 2.25 | 4.2 | 17.8 | 35.3 | 30.8 | 43.5 | 8.87 | 1.471 | 75.6 | 9.0 | 2% |
+| roi | 284 | 2.75 | 2.0 | 2.6 | 2.4 | 10.3 | 47.8 | 0.01 | 1.358 | 17.4 | 6.0 | 9% |
+| synergy | 302 | 2.75 | 1.8 | 2.7 | 1.9 | 9.1 | 37.8 | -0.18 | 1.281 | 15.0 | 8.0 | 14% |
 
 - Drift ordering random > cheapest > ROI > synergy: **PASS**
-- Synergy drift near zero (|drift| < 1 s/100): **PASS** (0.10)
+- Synergy drift near zero (|drift| < 1 s/100): **PASS** (-0.18)
 - First-upgrade wait about 2 s for every bot: **PASS**
 
 Overall: **PASS**

@@ -2,14 +2,22 @@
 // export/import as a compressed code, hard reset.
 import { Big } from '../core/big.js';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 const PREFIX = 'mtp.';
 const SETTINGS_KEY = 'mtp.settings';
 
 // Each migration upgrades a save from version i to i+1. Keep them forever.
+import { NODE_BY_ID } from '../econ/data/nodes.js';
+
 const MIGRATIONS = [
   // v0 -> v1: (pre-release saves) nothing stored yet
   (s) => s,
+  // v1 -> v2: upgrade trees redesigned; levels above a node's new maximum are trimmed
+  (s) => {
+    const lv = s.econ && s.econ.levels;
+    if (lv) for (const id of Object.keys(lv)) { const n = NODE_BY_ID[id]; if (!n) delete lv[id]; else lv[id] = Math.min(lv[id], n.max); }
+    return s;
+  },
 ];
 
 export function slotKey(slot) { return `${PREFIX}save.${slot}`; }

@@ -220,6 +220,16 @@ textarea.code { width: 100%; min-height: 110px; background: rgba(0,0,0,0.35); co
 .tnode.maxed { border-color: rgba(159, 220, 176, 0.4); }
 .tnode.maxed .cost { color: var(--moss); }
 .tnode.gate { width: 188px; border-width: 1px 1px 1px 3px; border-left-color: var(--tc); }
+.tnode .kind { font: 600 9px/1 var(--mono); letter-spacing: 0.14em; color: var(--tc); margin: -2px 0 1px; }
+.tnode.k-mech { border-style: dashed; border-color: color-mix(in srgb, var(--tc) 45%, transparent); }
+.tnode.k-choice { border-color: var(--brass); border-width: 1px 1px 1px 3px; }
+.tnode.k-choice .kind { color: var(--brass); }
+.tnode.k-hybrid { border: 1px solid transparent; background: linear-gradient(rgba(6, 17, 24, 0.96), rgba(6, 17, 24, 0.96)) padding-box, linear-gradient(90deg, var(--tc), var(--tc2)) border-box; }
+.tnode.k-hybrid .kind { background: linear-gradient(90deg, var(--tc), var(--tc2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.tnode.k-cap { width: 196px; border: 1px solid var(--tc); box-shadow: 0 0 26px -8px var(--tc); }
+.tnode.k-cap .nm { font-size: var(--t-md); }
+.tnode.barred { opacity: 0.22; filter: grayscale(1); cursor: not-allowed; }
+.tnode.barred .kind { color: var(--ember); }
 .tnode.flash { animation: buyflash 520ms ease-out; }
 @keyframes buyflash { 0% { box-shadow: 0 0 0 2px var(--frost), 0 0 40px var(--tc); } 100% { box-shadow: 0 0 0 0 transparent; } }
 .tree-label { position: absolute; transform: translate(-50%, 0); font: 800 64px/0.9 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--tc); opacity: 0.12; white-space: nowrap; pointer-events: none; }
@@ -344,3 +354,10 @@ textarea.code { width: 100%; min-height: 110px; background: rgba(0,0,0,0.35); co
 .hud-goal { background: radial-gradient(ellipse at 50% 40%, rgba(6, 18, 26, 0.42), transparent 72%); padding: 6px 30px 10px; }
 .hud-keys em { font-style: normal; }
 @media (max-width: 1500px) { .hud-keys em { display: none; } .hud-keys { gap: 6px; } }
+
+/* orientation: compass strip on top, north-up minimap top right */
+.hud-compass { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); pointer-events: none; }
+.hud .hud-goal { top: calc(var(--edge) + 34px); }
+.hud-mapwrap { position: absolute; top: var(--edge); right: var(--edge); width: 176px; height: 176px; pointer-events: none; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.4)); }
+.hud-map-n { position: absolute; top: -2px; left: 50%; transform: translateX(-50%); font: 700 11px/1 var(--display); color: var(--ember); text-shadow: 0 1px 3px #000; }
+.hud .hud-depth { top: calc(var(--edge) + 200px); bottom: calc(var(--edge) + 64px); height: auto; transform: none; }

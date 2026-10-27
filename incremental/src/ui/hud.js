@@ -5,6 +5,7 @@ import { FAMILIES } from '../player/tools.js';
 import { keyLabel } from '../player/input.js';
 import { NODE_BY_ID, TREES } from '../econ/data/nodes.js';
 import * as THREE from 'three';
+import { Navigation } from './navigation.js';
 
 const TREE_COLOR = Object.fromEntries(TREES.map((t) => [t.id, t.color]));
 
@@ -55,6 +56,8 @@ export class Hud {
     root.appendChild(this.lift);
     this.needle = h('div', { style: { position: 'absolute', left: '50%', top: '50%', width: '120px', height: '120px', marginLeft: '-60px', marginTop: '-60px', borderRadius: '50%', pointerEvents: 'none' }, hidden: true });
     root.appendChild(this.needle);
+    this.nav = new Navigation(this.el, game);
+    this.navT = performance.now();
     this.lastTools = '';
     this.depthTicks = false;
   }
@@ -88,6 +91,9 @@ export class Hud {
 
   update(s) {
     const g = this.game;
+    const now = performance.now();
+    if (!this.el.hidden) this.nav.update(Math.min(0.5, (now - this.navT) / 1000));
+    this.navT = now;
     this.coins.textContent = format(s.coins);
     this.rate.innerHTML = `<b>+${format(s.rate)}</b>/s into the vault`;
     const fill = Math.min(1, s.carried / s.carryCap);
@@ -168,7 +174,7 @@ export class Hud {
         // off screen: pin to the left or right edge, at the height it would be
         if (behind) x = x > 0 ? -1 : 1;
         edge = x > 0 ? 'right' : 'left';
-        x = x > 0 ? 0.9 : -0.9;
+        x = x > 0 ? 0.8 : -0.9;
         y = behind ? 0 : Math.max(-0.6, Math.min(0.6, y));
       }
       this.lift.hidden = false;

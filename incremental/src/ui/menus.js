@@ -429,7 +429,7 @@ class TreeView {
       const [ox, oy] = t.origin;
       const x = ox * (230 + n.gx * SX);
       const y = oy * (110 + n.gy * SY);
-      this.pos[n.id] = [x, y];
+      this.pos[n.id] = n.at ? [...n.at] : [x, y];
     }
     let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
     for (const [x, y] of Object.values(this.pos)) { minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y); }
@@ -470,7 +470,8 @@ class TreeView {
     }
     for (const n of NODES) {
       const t = TREE[n.tree];
-      const el = h(`div.tnode${n.gate ? '.gate' : ''}`, { style: { left: `${this.pos[n.id][0]}px`, top: `${this.pos[n.id][1]}px`, '--tc': t.color } });
+      const tc2 = n.join ? TREE[n.join[1]].color : t.color;
+      const el = h(`div.tnode${n.gate ? '.gate' : ''}.k-${n.kind || 'stat'}`, { style: { left: `${this.pos[n.id][0]}px`, top: `${this.pos[n.id][1]}px`, '--tc': n.join ? TREE[n.join[0]].color : t.color, '--tc2': tc2 } });
       el.addEventListener('mouseenter', () => { this.hover = n.id; this.showTip(n.id); this.game.sfx.play('hover'); });
       el.addEventListener('mouseleave', () => { if (this.hover === n.id) { this.hover = null; this.tip.hidden = true; } });
       el.addEventListener('click', (ev) => { ev.stopPropagation(); if (!this.dragged) this.buy(n.id, el); });
@@ -493,22 +494,29 @@ class TreeView {
     const lvl = M.level(e, id);
     const table = M.costTable(e);
     const cost = table[id].cost;
+    const per = n.max > 1 ? ' per level' : '';
     const fx = n.effects.map(([stat, op, v]) => {
-      if (op === 'set') return `${statName(stat)} → tier ${v}`;
-      if (op === 'add') return `${statName(stat)} +${fmtV(v, stat)} per level (now +${fmtV(v * lvl, stat)})`;
-      return `${statName(stat)} ×${(1 + v).toFixed(2)} per level`;
+      if (op === 'set') return stat.endsWith('Tier') ? `${statName(stat)} → tier ${v}` : `${statName(stat)}: unlocked`;
+      if (op === 'add') return `${statName(stat)} ${v < 0 ? '−' : '+'}${fmtV(Math.abs(v), stat)}${per}${n.max > 1 ? ` (now ${v < 0 ? '−' : '+'}${fmtV(Math.abs(v * lvl), stat)})` : ''}`;
+      return `${statName(stat)} ×${(1 + v).toFixed(2)}${per}`;
     });
+    const lock = M.lockedBy(e, id);
+    const rival = n.excl ? NODES.filter((o) => o.excl === n.excl && o.id !== id).map((o) => o.name).join(' / ') : '';
+    const eyebrow = n.join ? `${TREE[n.join[0]].icon} ${TREE[n.join[0]].name} × ${TREE[n.join[1]].icon} ${TREE[n.join[1]].name} · cross-tree`
+      : `${TREE[n.tree].icon} ${TREE[n.tree].name}${n.gate ? ' · tool tier' : n.kind && KIND_LABEL[n.kind] ? ` · ${KIND_LABEL[n.kind].toLowerCase()}` : ''}`;
     const inc = g.measuredRate();
     const wait = Math.max(0, cost.sub(e.coins).toNumber()) / Math.max(1e-9, inc);
     clear(this.tip).append(
-      h('div.eyebrow', {}, `${TREE[n.tree].icon} ${TREE[n.tree].name}${n.gate ? ' · tool tier' : ''}`),
+      h('div.eyebrow', {}, eyebrow),
       h('h4', {}, `${n.icon} ${n.name}`),
       h('p', {}, n.desc),
       h('div.eff', { html: fx.map((x) => `<div>${x}</div>`).join('') }),
       h('div.eff', { html: `<div>Level <b>${lvl}</b> / ${n.max}</div>` }),
       M.isMaxed(e, id) ? h('div.eff', { html: '<b>Maxed</b>' }) :
         h('div.eff', { html: `<div>Cost <span style="color:var(--brass)">${format(cost)}</span>${!M.isUnlocked(e, id) ? ' · locked' : e.coins.gte(cost) ? ' · <b>affordable</b>' : ` · about ${formatTime(wait)}`}</div>` }),
-      !M.isUnlocked(e, id) ? h('p', {}, `Needs ${n.parents.map((p) => NODE_BY_ID[p].name).join(' and ')}.`) : '',
+      lock ? h('p', { style: { color: 'var(--ember)' } }, `Closed: you chose ${lock.name}.`)
+        : !M.isUnlocked(e, id) ? h('p', {}, `Needs ${n.parents.map((p) => NODE_BY_ID[p].name).join(' and ')}.`) : '',
+      rival && !lock && lvl < 1 ? h('p', { style: { color: 'var(--brass)' } }, `Choose one: buying this closes ${rival} for this planet.`) : '',
     );
     this.tip.hidden = false;
   }
@@ -524,7 +532,9 @@ class TreeView {
       const maxed = lvl >= n.max;
       const cost = table[n.id].cost;
       const can = unlocked && !maxed && e.coins.gte(cost);
+      const barred = !!M.lockedBy(e, n.id);
       el.classList.toggle('locked', !unlocked);
+      el.classList.toggle('barred', barred);
       el.classList.toggle('maxed', maxed);
       el.classList.toggle('can', can);
       const pips = Math.min(n.max, 12);
@@ -532,6 +542,7 @@ class TreeView {
       const wait = Math.max(0, cost.sub(e.coins).toNumber()) / Math.max(1e-9, inc);
       el.innerHTML = '';
       el.append(
+        KIND_LABEL[n.kind] ? h('div.kind', {}, barred ? 'CLOSED' : KIND_LABEL[n.kind]) : null,
         h('div.top', {}, h('span.ic', {}, n.icon), h('span.nm', {}, n.name), h('span.lv', {}, `${lvl}/${n.max}`)),
         h('div.pips', {}, Array.from({ length: pips }, (_, i) => h(`i${i < filled ? '.f' : ''}`))),
         h('div.cost', {}, h('span', {}, maxed ? 'MAX' : format(cost)), h('span.eta', {}, maxed || !unlocked ? '' : can ? 'buy' : formatTime(wait))),
@@ -539,7 +550,7 @@ class TreeView {
     }
     for (const ed of this.edges) {
       const on = M.level(e, ed.from) >= 1;
-      const tc = TREE[NODE_BY_ID[ed.to].tree].color;
+      const tc = TREE[NODE_BY_ID[ed.from].tree].color;
       ed.path.setAttribute('stroke', on ? tc : 'rgba(196,232,244,0.14)');
       ed.path.setAttribute('stroke-opacity', on ? (M.level(e, ed.to) >= 1 ? '0.85' : '0.45') : '1');
     }
@@ -584,7 +595,11 @@ class TreeView {
   }
 }
 
+const KIND_LABEL = { mech: 'Mechanic', choice: 'Choose one', hybrid: 'Cross-tree', cap: 'Capstone' };
+
 const STAT_NAMES = {
+  shock: 'Thermal shock (warm ice digs wider)', seep: 'Crack seep (cracked ice melts faster)', heatLinger: 'Warm time', heavyMult: 'Heavy blow', richCrit: 'Clean breaks on rich seams',
+  steamBurst: 'Steam burst', pipes: 'Heat pipes (auto-dig from auto-melt)',
   digRadius: 'Bite radius', digRate: 'Strikes per second', digYield: 'Extraction', crit: 'Clean-break chance', critMult: 'Clean-break size', reach: 'Reach',
   meltPower: 'Melt power', meltRadius: 'Melt radius', meltEff: 'Melt efficiency', meltTier: 'Melt tool', digTier: 'Dig tool', visionTier: 'Vision tool',
   vision: 'Seam reading', hint: 'Needle sense', collectRange: 'Collection range', collect: 'Meltwater collection', autoCollect: 'Auto-collect',
@@ -593,7 +608,8 @@ const STAT_NAMES = {
 };
 function statName(s) { return STAT_NAMES[s] || s; }
 function fmtV(v, stat) {
-  if (['digYield', 'crit', 'vision', 'collect', 'autoCollect', 'bank', 'offline', 'valueMult', 'meltEff', 'critMult'].includes(stat)) return `${(v * 100).toFixed(1)}%`;
+  if (['digYield', 'crit', 'vision', 'collect', 'autoCollect', 'bank', 'offline', 'valueMult', 'meltEff', 'critMult', 'shock', 'seep', 'heatLinger', 'richCrit', 'pipes'].includes(stat)) return `${(v * 100).toFixed(1)}%`;
+  if (stat === 'heavyMult') return `×${v.toFixed(2)}`;
   if (['digRadius', 'meltRadius', 'reach', 'collectRange'].includes(stat)) return `${v.toFixed(3)} m`;
   if (['autoDig', 'autoMelt', 'meltPower'].includes(stat)) return `${v.toFixed(3)} m³/s`;
   if (stat === 'liftSpeed') return `${v.toFixed(2)} m/s`;
