@@ -12,6 +12,25 @@ How to reach and check every feature. Each batch adds a section; earlier section
 
 ---
 
+## Batch 2: Mistral
+
+Automated: `node incremental/tools/batch2.mjs` (screenshots and report in `tools/shots/batch2/`).
+
+| New | How to reach it | Dev menu | Working looks like |
+|---|---|---|---|
+| Planet travel | Reach Frostara's goal depth (1,000 m) | Events: Complete this planet | Travel screen with Mistral's two poles and your legacy; Travel takes you there; Stay keeps you here (Pause has Travel later) |
+| Mistral | Travel there | World: planet Mistral, Go | Pearl-grey fog and sky; Rime crust at the top of the North pole |
+| Legacy and re-scaling | Travel | Legacy: Set | Income ×legacy on arrival; the first upgrade still takes about 2 s |
+| Gem coins | Dig below about 25 m on Mistral | Coins: +Gem | Faceted crystals with a glassy ring |
+| X-ray | Vision tree: X-ray (after Depth Lens) | Upgrades: vis_xray Max | Focus the lamp on a wall: coins show through about 4 m of ice |
+| Satellite radar | Vision tree: Satellite Radar | Upgrades: vis_radar Max | Finds appear as coloured dots on the minimap |
+| Mutant ice | Dig into a tinted pocket | Events: Mutant ice ahead | A notice names the type; its DNA nodes unlock; Springice bounces, Tarfrost doubles coins, Chimeice rings and shows finds |
+| DNA tree | Upgrades, below the planet | Upgrades: dna_* | Nodes need their mutant ice; prices are double |
+| Mutation Log | Notebook (J), Mutation log tab | — | Found types with perks, silhouettes for the rest |
+| Capsule Puzzles | Capsules at 42 m (Frostara) and on Mistral | Events: Time capsule here | Sealed capsules show progress in the prompt; melting next to them or a focused lamp opens them |
+| Audio tree, variations | Upgrades: Audio (left); Music (M) | Upgrades: aud_* | Night variation slows the theme; Glass is quicker; Wind Choir adds bowed voices; Crystal Picks rings the pick |
+| Postcards | Complete a planet; Notebook, Postcards tab | Events: Complete this planet | A captioned still of the planet |
+
 ## Batch 1: Frostara and co-op
 
 ### First minutes

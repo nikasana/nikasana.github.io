@@ -61,3 +61,10 @@ Choices made where the build prompt is silent, and the reasons. Updated every ba
 
 ## World persistence
 - The heightmap of carved depth is kept for coarse streaming and the planet view; every chunk that was ever edited also keeps its exact density, in memory, in saves (run-length encoded) and in crew snapshots.
+
+## Batch 2: travel, legacy and Mistral
+- Legacy multiplies income on the next planet: legacy x (1 + 0.15 log10(1 + coins earned) + 0.4 min(1, depth / goal) + 0.2 min(1, time / 1 h)). Costs re-scale by the same factor times the planet's coin density relative to Frostara, so waits on arrival match planet 1 (the sim checks the first wait after travel for every bot).
+- Mistral's fog is real exponential fog (density 0.022) plus a sky veil; each Vision tier divides the fog density, and the focused lamp divides it again, so Vision is how you see on Mistral.
+- Mutant ice pockets are placed per planet and pole from the seed; the 12 nearest are passed to the ice shader. Finding a type is remembered across planets, so its DNA stays unlocked.
+- DNA nodes cost twice a comparable node; bots in the sim never find mutant ice, so the wait curve does not depend on DNA.
+- Postcards are a captioned still of the frame when the planet is completed, stored as a small JPEG in the profile.

@@ -663,7 +663,28 @@ class Game {
 
   // ---------- planets ----------
 
+  // Planet Postcards: a still of the finished crater, captioned, kept in the Notebook gallery.
+  takePostcard() {
+    this.postcardPending = false;
+    try {
+      const src = this.gfx.renderer.domElement, W = 480, H = 270;
+      const c = document.createElement('canvas'); c.width = W; c.height = H;
+      const x = c.getContext('2d');
+      x.drawImage(src, 0, 0, W, H);
+      const grad = x.createLinearGradient(0, H - 70, 0, H);
+      grad.addColorStop(0, 'rgba(6,18,26,0)'); grad.addColorStop(1, 'rgba(6,18,26,0.85)');
+      x.fillStyle = grad; x.fillRect(0, H - 70, W, 70);
+      x.fillStyle = '#e6f1f4'; x.font = "700 26px 'Big Shoulders Display', sans-serif";
+      x.fillText(`${this.planet.name.toUpperCase()}`, 16, H - 32);
+      x.font = "500 12px 'IBM Plex Mono', monospace"; x.fillStyle = '#9fb8c2';
+      x.fillText(`${this.planet.poles[this.econ.pole].name} · ${Math.round(this.econ.depth)} m · ${new Date().toLocaleDateString('en-GB')}`, 16, H - 14);
+      (this.profile.postcards ||= {})[this.planet.id] = { img: c.toDataURL('image/jpeg', 0.72), depth: this.econ.depth, pole: this.econ.pole, at: Date.now() };
+      this.writeProfile();
+    } catch (err) { console.warn('postcard failed', err); }
+  }
+
   completePlanet() {
+    this.postcardPending = true;
     this.state.complete = Date.now();
     (this.profile.completed ||= {})[this.planet.id] = Date.now();
     this.writeProfile();
@@ -1318,6 +1339,7 @@ class Game {
     if (this.hudT <= 0 && (this.view === 'fp' || this.view === 'fpIn')) { this.hudT = 0.1; this.updateHud(depthHere); }
 
     this.gfx.render(dt, this.time);
+    if (this.postcardPending) this.takePostcard();
     inp.endFrame();
   }
 

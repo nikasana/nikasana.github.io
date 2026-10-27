@@ -9,6 +9,7 @@ import { THEMES, VARIATIONS } from '../audio/themes.js';
 import { PRESETS } from '../render/graphics.js';
 import { ACTION_LABELS, keyLabel } from '../player/input.js';
 import * as M from '../econ/model.js';
+import { PLANETS } from '../econ/data/planets.js';
 import { MUTANTS, MUTANT_BY_ID } from '../econ/data/mutants.js';
 
 const TREE = Object.fromEntries(TREES.map((t) => [t.id, t]));
@@ -154,12 +155,22 @@ export class Menus {
             h('p', {}, ok ? m.desc : `A silhouette in the ice. Found on ${m.planet[0].toUpperCase() + m.planet.slice(1)}.`),
             ok ? h('p', { style: { color: 'var(--moss)' } }, m.perk) : '');
         })));
+      } else if (t === 'postcards') {
+        const cards = g.profile.postcards || {};
+        body.append(h('p', { style: { color: 'var(--haze)', maxWidth: '64ch', marginTop: 0 } }, 'A postcard is kept for every planet you melt through.'));
+        body.append(h('div.coll', {}, PLANETS.filter((p) => p.available).map((p) => {
+          const pc = cards[p.id];
+          return h(`div.card${pc ? '' : '.blank'}`, {},
+            pc ? h('img', { src: pc.img, alt: `${p.name} postcard`, style: { width: '100%', display: 'block', marginBottom: '8px' } }) : '',
+            h('h4', {}, `${p.icon} ${p.name}`),
+            h('p', {}, pc ? `Melted through at the ${pc.pole === 'S' ? 'South' : 'North'} pole, ${Math.round(pc.depth)} m.` : 'Not yet. Reach the goal depth to send a postcard.'));
+        })));
       } else if (t === 'milestones') {
         body.append(h('div.coll', {}, MILESTONES.map((m) => h(`div.card${e.milestones[m.id] !== undefined ? '' : '.blank'}`, {},
           h('h4', {}, `${m.icon} ${m.name}`), h('p', {}, e.milestones[m.id] !== undefined ? `Reached at ${formatTime(e.milestones[m.id])}. Paid ${m.bonusSec} s of income.` : `Pays ${m.bonusSec} s of income.`)))));
       }
     };
-    for (const [id, l] of [['resonance', 'Resonance notebook'], ['mutations', 'Mutation log'], ['capsules', 'Capsules & needle'], ['milestones', 'Milestones']]) {
+    for (const [id, l] of [['resonance', 'Resonance notebook'], ['mutations', 'Mutation log'], ['capsules', 'Capsules & needle'], ['milestones', 'Milestones'], ['postcards', 'Postcards']]) {
       const b = h('button.tab', { onclick: () => setTab(id) }, l);
       b.dataset.t = id;
       tabs.append(b);

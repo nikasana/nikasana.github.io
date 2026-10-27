@@ -1,5 +1,17 @@
 # Changelog
 
+## Batch 2: Mistral
+- Mistral, the fog planet: North (Pearl Hollow) and South (Grey Reach) poles with their own strata, a pearl-grey sky and dense fog. Vision tiers and the focused lamp cut the fog.
+- Planet travel: reaching a planet's goal depth completes it, saves a postcard and offers travel to the next planet with a pole choice. Legacy (from coins earned, depth reached and time spent) multiplies income there, and costs re-scale to it, so the first upgrade is as quick as on planet 1 (verified by the sim).
+- Gem coins: faceted crystals with their own glassy ring, on Mistral.
+- Vision tier 2, X-ray: while the lamp is focused, coins show through up to 4 m of ice and finds glow from 45 m. Tier 3, satellite radar: every find nearby on the minimap.
+- Mutant ice: Glowice and Springice on Frostara, Tarfrost and Chimeice on Mistral, in tinted pockets. Springice bounces you, Tarfrost is slow to cut but doubles coins, Chimeice rings and reveals finds, Glowice shines.
+- DNA tree (7 nodes at twice the usual price), unlocked by the mutant ice you find: Night Eyes, Spring Legs, Long Arms, Cold Blood, Steady Hands, Echo Sense and the More Hands capstone (every strike lands twice).
+- Mutation Log in the notebook, with silhouettes for undiscovered types.
+- Six time capsules; Capsule Puzzles: frost-sealed capsules open after melting next to them, fog-sealed ones under a focused lamp.
+- Mistral's theme (Veiled Breath); themes unlock per planet visited. Audio tree: Wind Choir layer, Night and Glass variations, Crystal Picks sound pack.
+- Planet Postcards gallery in the notebook.
+
 ## Batch 1.2: open ice and water
 - Dig anywhere: the ice streams in a window around you out to 400 m from the claim; holes anywhere persist exactly. The snowfield hides itself over ice that has been meshed, so there is no seam. The lift follows you anywhere.
 - 90 more finds are scattered across the open ice out to 160 m.
