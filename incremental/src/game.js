@@ -1369,8 +1369,10 @@ class Game {
     const carried = this.state.carried;
     this.coins.update(dt, eye, [{
       pos: chest, range: st.collectRange,
-      canTake: () => carried.count + 1 <= st.carry,
+      canTake: (c) => c.sky || carried.count + 1 <= st.carry,
       take: (c) => {
+        // aurora coins are caught straight into the vault
+        if (c.sky) { this.earn(c.value * this.bankMult()); this.sfx.play('clink', { tier: c.tier, gain: 0.9 }); this.particles.glint(chest.clone().addScaledVector(dir, 0.6), COIN_RGB[c.tier], 0.3); return; }
         carried.count += 1; carried.value += c.value; carried.ids.push(c.id);
         if (carried.ids.length > 400) carried.ids.splice(0, carried.ids.length - 400);
         this.sfx.play('clink', { tier: c.tier, gain: 0.7 });

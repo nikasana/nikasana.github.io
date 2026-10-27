@@ -1,5 +1,15 @@
 # Changelog
 
+## Batch 4: Tidalis
+- Tidalis: green-blue ocean ice, North (Pack Ice, strong current, gems shallow) and South (Shelf Front, slow current, relics deeper), theme Undertow.
+- Current Reading: a slowly turning current carries loose coins along the ice at up to 0.9 m/s; drifting motes show where it runs, so you can catch coins downstream.
+- Meltwater flows: pools run downhill to lower floors nearby, and pools that meet merge (every planet).
+- Dig tier 3, the Sonic Hammer: each blow opens a crater and its shockwave breaks a ring of ice around it.
+- Planet tier 2, the Heat Pipe: right mouse with the planet tool melts a narrow column straight down; the pipe also melts on its own.
+- Relic coins: small turned vases with a low ring, worth 10,000 copper, deeper on Tidalis.
+- Aurora events (first version): every 5-9 minutes, curtains of light fill the sky for a minute and coins drift down around you; caught coins go straight into the vault.
+- Style tree: Gilded Pick, Obsidian Tools, Warm Crater Light, Wide Lens; each can be switched off in Settings > Game.
+
 ## Batch 3: Cinderice
 - Cinderice: ash-dark ice over a hot core, North (Ash Crown, lava early) and South (Cold Caldera, safe for longer), a smoky red sky and an ash-grey snowfield. Theme: Iron Under Ice. Three capsules and a Golden Needle; Mistral gets its needle too.
 - Lava: pockets glow orange through the ice. Melting next to one pays up to 60% more but builds heat (shown in the prompt); at full heat the lava bursts, floods the hole, freezes into basalt and scorches 30% of your pack.

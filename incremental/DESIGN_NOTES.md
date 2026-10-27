@@ -75,3 +75,10 @@ Choices made where the build prompt is silent, and the reasons. Updated every ba
 - Veins are random walks of 14 points from 3-15 m deep; within 1 m of one, the combo grows 0.6/s to x5 and multiplies melted value by 1 + 0.35 (combo - 1).
 - Lava pockets share the ice shader's 12 pocket slots with mutant ice (nearest first) and glow over 1.7x their radius.
 - The mirror sunbeam is modelled in the sim as extra melt volume (0.8 x mirror power), so the Planet tree is part of the economy proof.
+
+## Batch 4: Tidalis
+- The current is a smooth field of angle a = 1.3 sin(0.021x + t) + 1.1 cos(0.027z - 0.7t) + t, turning slowly with t = time x 0.004, at 0.9 m/s. Loose coins blend toward it and are also carried directly (contact friction would otherwise cancel it), never into a wall.
+- Pools test six directions a step beyond their edge once a second on average and slide half-way toward the lowest open floor; overlapping pools on the same floor merge their volume.
+- The sonic hammer trades swing speed (-25%) for a wider bite and a six-crater ring per blow; the sim sees only its stats, so its wait curve is part of the proof.
+- Aurora coins are worth 12 s of income each and go straight to the vault so a full pack never wastes an aurora. In co-op only the host runs the aurora in this batch.
+- Style is cosmetic only and never touches the economy.

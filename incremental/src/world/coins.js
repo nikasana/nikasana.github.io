@@ -245,7 +245,7 @@ export class CoinSystem {
     this.tiers = tiersUnlocked;
     this.geos = COINS.slice(0, 5).map((_, i) => coinGeometry(i));
     // seen blurred through the ice: a plain low-poly disc is enough
-    this.lowGeos = COINS.slice(0, 4).map((c) => {
+    this.lowGeos = COINS.slice(0, 5).map((c) => {
       if (c.id === 'gem') return gemGeometry(c.radius * 0.9, 0);
       if (c.id === 'relic') return relicGeometry(c.radius * 0.7, 8);
       const g = new THREE.CylinderGeometry(c.radius, c.radius, c.thick, 10, 1).rotateX(Math.PI / 2);
@@ -423,6 +423,8 @@ export class CoinSystem {
         const cur = this.current(c.p.x, c.p.z);
         c.v.x += (cur[0] - c.v.x) * Math.min(1, dt * 1.5);
         c.v.z += (cur[1] - c.v.z) * Math.min(1, dt * 1.5);
+        // contact friction would cancel most of that push: the current also carries the coin along directly
+        if (vol.sdf(c.p.x + cur[0] * dt * 0.7, c.p.y + 0.05, c.p.z + cur[1] * dt * 0.7) < -0.04) { c.p.x += cur[0] * dt * 0.7; c.p.z += cur[1] * dt * 0.7; }
         c.sleep = Math.min(c.sleep, 0.5);
       }
       if (c.sky) {

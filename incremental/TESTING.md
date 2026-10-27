@@ -12,6 +12,21 @@ How to reach and check every feature. Each batch adds a section; earlier section
 
 ---
 
+## Batch 4: Tidalis
+
+Automated: `node incremental/tools/batch4.mjs` (screenshots and report in `tools/shots/batch4/`).
+
+| New | How to reach it | Dev menu | Working looks like |
+|---|---|---|---|
+| Tidalis | Complete Cinderice and travel | World: planet Tidalis, Go | Green-blue ice, a bright sky, Pancake ice at the top |
+| Current Reading | Free coins on Tidalis | — | White motes drift one way; loose coins slide the same way along the ice |
+| Flowing meltwater | Melt on a slope or next to a lower hole | — | A pool slides downhill; two pools that touch become one |
+| Sonic Hammer | Dig tree: Sonic Hammer (after Echo Strike and Wide Auger) | Upgrades: dig_sonic Max | A heavy hammer; each blow leaves a crater ringed by smaller ones |
+| Heat Pipe | Planet tree: Heat Pipe (after Polar Orbit) | Upgrades: pl_pipe Max | Planet tool, right mouse: a narrow column melts straight down |
+| Relic coins | Deeper than about 60 m on Tidalis | Coins: +Relic | Small vases with a low ring |
+| Aurora | Wait 5-9 minutes | Events: Aurora now | Green and violet curtains; coins hover over the snow; walking through one adds to the vault |
+| Style tree | Right of the graph, below Planet | Upgrades: sty_* | Gold or black glass tools, a warmer grade, a wider view; toggles in Settings > Game |
+
 ## Batch 3: Cinderice
 
 Automated: `node incremental/tools/batch3.mjs` (screenshots and report in `tools/shots/batch3/`).
