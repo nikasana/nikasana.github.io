@@ -1,0 +1,584 @@
+// Full-screen menus: pause, upgrades (node graph), notebook/collections, crew, music, settings,
+// the start screen (pole choice), offline summary and confirmations.
+import { h, clear } from './dom.js';
+import { format, formatTime, numberFormat } from '../core/big.js';
+import { TREES, NODES, NODE_BY_ID } from '../econ/data/nodes.js';
+import { SYNERGIES } from '../econ/data/synergies.js';
+import { MILESTONES, CREW_MILESTONES, CAPSULES } from '../econ/data/milestones.js';
+import { THEMES } from '../audio/themes.js';
+import { PRESETS } from '../render/graphics.js';
+import { ACTION_LABELS, keyLabel } from '../player/input.js';
+import * as M from '../econ/model.js';
+
+const TREE = Object.fromEntries(TREES.map((t) => [t.id, t]));
+
+export class Menus {
+  constructor(root, game) {
+    this.root = root;
+    this.game = game;
+    this.cur = null;
+    this.el = null;
+  }
+
+  get open() { return !!this.cur; }
+
+  close() {
+    if (!this.el) return;
+    const el = this.el;
+    el.classList.add('closing');
+    setTimeout(() => el.remove(), 170);
+    if (this.cur === 'upgrades' && this.tree) { this.tree.destroy(); this.tree = null; }
+    this.el = null;
+    this.cur = null;
+    this.game.onMenuChange(null);
+  }
+
+  show(name, ...args) {
+    if (this.el) { this.el.remove(); if (this.tree) { this.tree.destroy(); this.tree = null; } }
+    this.cur = name;
+    this.el = this[`build_${name}`](...args);
+    this.el.classList.add('interactive');
+    this.root.appendChild(this.el);
+    this.game.onMenuChange(name);
+    this.game.sfx.play('open');
+  }
+
+  toggle(name) { if (this.cur === name) this.close(); else this.show(name); }
+
+  frame(title, body, tabs) {
+    const head = h('div.menu-head', {}, h('h1', {}, title), tabs || h('div', { style: { marginLeft: 'auto' } }),
+      h('button.close-x', { onclick: () => this.close() }, 'ESC  CLOSE'));
+    return h('div.menu', {}, head, body);
+  }
+
+  refresh() {
+    if (!this.cur) return;
+    if (this.cur === 'upgrades' && this.tree) { this.tree.refresh(); return; }
+    if (this.cur === 'pause' && this.pauseStats) this.fillPauseStats();
+    if (this.cur === 'crew' && this.crewRefresh) this.crewRefresh();
+  }
+
+  // ---------- pause ----------
+
+  build_pause() {
+    const g = this.game;
+    const k = (a) => keyLabel(g.input.code(a));
+    const nav = [
+      ['Resume', 'Esc', () => { this.close(); g.input.lock(); }],
+      ['Upgrades', k('upgrades'), () => this.show('upgrades')],
+      ['Planet view', k('planet'), () => { this.close(); g.togglePlanet(true); }],
+      ['Notebook', k('collections'), () => this.show('collections')],
+      ['Crew', k('coop'), () => this.show('crew')],
+      ['Music', k('music'), () => this.show('music')],
+      ['Settings', '', () => this.show('settings')],
+    ];
+    this.pauseStats = h('div.pause-stats');
+    this.fillPauseStats();
+    const p = g.planet;
+    return h('div.menu', {}, h('div.pause', {},
+      h('div.pause-left', {},
+        h('div.eyebrow', {}, `${p.name} · ${g.econ.pole === 'N' ? 'North' : 'South'} pole`),
+        h('div.title', {}, 'Melt the', h('span', {}, 'Planet')),
+        h('div.sub', {}, 'Dig straight down through the ice. Every coin goes up the lift.'),
+        h('div.pause-nav', {}, nav.map(([l, key, fn]) => h('button', { onclick: fn, onmouseenter: () => g.sfx.play('hover') }, l, key ? h('kbd', {}, key) : null))),
+      ),
+      h('div.pause-right', {},
+        h('div.eyebrow', {}, 'Survey log'),
+        this.pauseStats,
+        h('div.eyebrow', { id: 'saveinfo' }, g.saveInfo()),
+      ),
+    ));
+  }
+
+  fillPauseStats() {
+    const g = this.game, e = g.econ;
+    const cells = [
+      ['Vault', format(e.coins)], ['Crater', `${g.craterDepth().toFixed(1)} m`], ['Upgrades bought', e.purchases], ['Resonances', `${Object.keys(e.found).length} / ${SYNERGIES.length}`],
+      ['Time on planet', formatTime(e.time)], ['Sea level', `+${M.seaLevelCm(e).toFixed(2)} cm`], ['Lifetime earned', format(e.total)], ['Milestones', `${Object.keys(e.milestones).length} / ${MILESTONES.length}`],
+    ];
+    clear(this.pauseStats).append(...cells.map(([a, b]) => h('div', {}, h('span.eyebrow', {}, a), h('b', {}, String(b)))));
+  }
+
+  // ---------- upgrades ----------
+
+  build_upgrades() {
+    const wrap = h('div.tree-wrap');
+    const body = h('div', { style: { position: 'relative', minHeight: 0 } }, wrap);
+    const el = this.frame('Upgrades', body);
+    this.tree = new TreeView(wrap, this.game, this);
+    return el;
+  }
+
+  // ---------- notebook ----------
+
+  build_collections(tab = 'resonance') {
+    const g = this.game, e = g.econ;
+    const body = h('div.menu-body');
+    const tabs = h('div.tabs');
+    const setTab = (t) => {
+      for (const b of tabs.children) b.classList.toggle('on', b.dataset.t === t);
+      clear(body);
+      if (t === 'resonance') {
+        body.append(h('p', { style: { color: 'var(--haze)', maxWidth: '64ch', marginTop: 0 } },
+          'Some upgrades and habits work better together. When you find one, it is written here. The blanks are still out there; the riddle under each is all the notebook knows.'));
+        body.append(h('div.coll', {}, SYNERGIES.map((s) => {
+          const found = e.found[s.id] !== undefined;
+          return h(`div.card${found ? '' : '.blank'}`, {},
+            h('h4', {}, found ? s.name : '— — — — —'),
+            h('p', {}, found ? s.desc : `“${s.hint}”`),
+            found ? h('span.when', {}, `Found at ${formatTime(e.found[s.id])}`) : null);
+        })));
+      } else if (t === 'capsules') {
+        const done = g.state.capsules || {};
+        body.append(h('div.coll', {}, CAPSULES.map((c) => h(`div.card${done[c.id] ? '' : '.blank'}`, {},
+          h('h4', {}, done[c.id] ? c.name : 'Unopened capsule'),
+          h('p', {}, done[c.id] ? c.contents.lore : `Frozen somewhere around ${c.depth} m down.`))),
+          h(`div.card${g.state.needle ? '' : '.blank'}`, {}, h('h4', {}, g.state.needle ? 'The Golden Needle' : 'Golden Needle'),
+            h('p', {}, g.state.needle ? 'Found. One per planet, and this one is yours.' : 'One is hidden on every planet. Needle Sense helps you feel for it.'))));
+      } else if (t === 'milestones') {
+        body.append(h('div.coll', {}, MILESTONES.map((m) => h(`div.card${e.milestones[m.id] !== undefined ? '' : '.blank'}`, {},
+          h('h4', {}, `${m.icon} ${m.name}`), h('p', {}, e.milestones[m.id] !== undefined ? `Reached at ${formatTime(e.milestones[m.id])}. Paid ${m.bonusSec} s of income.` : `Pays ${m.bonusSec} s of income.`)))));
+      }
+    };
+    for (const [id, l] of [['resonance', 'Resonance notebook'], ['capsules', 'Capsules & needle'], ['milestones', 'Milestones']]) {
+      const b = h('button.tab', { onclick: () => setTab(id) }, l);
+      b.dataset.t = id;
+      tabs.append(b);
+    }
+    const el = this.frame('Notebook', body, tabs);
+    setTab(tab);
+    return el;
+  }
+
+  // ---------- crew ----------
+
+  build_crew() {
+    const g = this.game, c = g.crew;
+    const body = h('div.menu-body');
+    const status = h('div.status');
+    const left = h('div.panel');
+    const right = h('div.panel');
+    body.append(h('div.coop', {}, left, right));
+    const nameIn = h('input', { type: 'text', id: 'crew-name', value: c.name, maxlength: 18, style: { textTransform: 'none', letterSpacing: '0.02em' } });
+    nameIn.addEventListener('change', () => { c.name = nameIn.value.trim() || 'Surveyor'; g.saveSettings(); });
+    const codeIn = h('input', { type: 'text', id: 'crew-code', placeholder: 'CODE', maxlength: 6 });
+    const render = () => {
+      clear(left); clear(right);
+      status.textContent = c.status;
+      status.className = `status ${c.statusKind}`;
+      if (!c.active) {
+        left.append(h('h3', {}, 'Start a crew'),
+          h('p', { style: { color: 'var(--haze)', margin: 0 } }, 'A crew is a saved campaign you share: one vault, one crater, one planet. Up to four players, each with their own tools.'),
+          h('label.eyebrow', { for: 'crew-name' }, 'Your name'), nameIn,
+          h('div', { style: { display: 'flex', gap: '8px' } }, h('button.btn.primary', { onclick: async () => { c.name = nameIn.value.trim() || 'Surveyor'; await g.crewCreate(); render(); } }, 'Create crew')),
+          status);
+        right.append(h('h3', {}, 'Join a crew'),
+          h('p', { style: { color: 'var(--haze)', margin: 0 } }, 'Enter the six-letter code from your crew, or open their link.'),
+          codeIn,
+          h('button.btn', { onclick: async () => { c.name = nameIn.value.trim() || 'Surveyor'; if (codeIn.value.trim()) await g.crewJoin(codeIn.value); render(); } }, 'Join'),
+          g.crewSlots().length ? h('div', {}, h('div.eyebrow', { style: { margin: '12px 0 6px' } }, 'Your crews'),
+            h('div.members', {}, g.crewSlots().map((code) => h('div', {}, h('span', {}, code), h('span', {},
+              h('button.btn', { style: { padding: '4px 8px' }, onclick: async () => { await g.crewJoin(code); render(); } }, 'Rejoin'), ' ',
+              h('button.btn', { style: { padding: '4px 8px' }, onclick: async () => { await g.crewResume(code); render(); } }, 'Host'))))))
+            : null);
+      } else {
+        const link = c.link();
+        left.append(h('div.eyebrow', {}, c.isHost ? 'You host this crew' : 'Crew'), h('div.code', {}, c.code),
+          h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
+            h('button.btn.primary', { onclick: (ev) => { navigator.clipboard?.writeText(link).then(() => { ev.target.textContent = 'Link copied'; }, () => { linkBox.select(); }); } }, 'Copy invite link'),
+            c.lostHost ? h('button.btn', { onclick: async () => { await c.resumeAsHost(); render(); } }, 'Resume as host') : null,
+            h('button.btn.danger', { onclick: () => { g.crewLeave(); render(); } }, 'Leave crew')),
+          h('div.eyebrow', {}, 'Members'), h('div.members', {}, c.memberList().map((m) => h('div', {}, h('span', {}, m.name), h('span', {}, m.host ? 'host' : '')))),
+          status);
+        const linkBox = h('input', { type: 'text', value: link, readonly: true, style: { textTransform: 'none', fontSize: '12px', letterSpacing: 0 } });
+        left.append(linkBox);
+        right.append(h('h3', {}, 'Crew milestones'),
+          h('p', { style: { color: 'var(--haze)', margin: 0 } }, 'Shared goals. Each one gives every member a permanent bonus, solo play included.'),
+          h('div.ms', {}, CREW_MILESTONES.map((m) => {
+            const v = c.progress[m.kind] || 0;
+            const done = !!c.done[m.id];
+            return h('div', {}, h('span', {}, `${m.icon} ${m.name}`), h('span', { style: { color: done ? 'var(--moss)' : 'var(--haze)' } }, done ? 'Done' : `${Math.floor(Math.min(v, m.value)).toLocaleString('en-US')} / ${m.value.toLocaleString('en-US')}`),
+              h('div.bar', {}, h('i', { style: { width: `${Math.min(100, (v / m.value) * 100)}%` } })));
+          })));
+      }
+    };
+    this.crewRefresh = () => { if (this.cur === 'crew') { status.textContent = c.status; status.className = `status ${c.statusKind}`; } };
+    render();
+    c.on('status', () => this.cur === 'crew' && render());
+    c.on('members', () => this.cur === 'crew' && render());
+    return this.frame('Crew', body);
+  }
+
+  // ---------- music ----------
+
+  build_music() {
+    const g = this.game;
+    const body = h('div.menu-body');
+    const list = h('div.music-list');
+    const render = () => {
+      clear(list);
+      THEMES.forEach((t, i) => {
+        const locked = t.locked || !g.unlockedThemes().includes(t.id);
+        list.append(h(`button${g.music.theme.id === t.id ? '.on' : ''}${locked ? '.locked' : ''}`, {
+          onclick: () => { if (locked) return; g.music.setTheme(t.id); g.settings.theme = t.id; g.saveSettings(); render(); },
+        }, h('span.ix', {}, String(i + 1).padStart(2, '0')), h('span.nm', {}, t.name, h('small', {}, locked ? `Unlocks with ${t.planet[0].toUpperCase() + t.planet.slice(1)}.` : t.desc)),
+          h('span.eyebrow', {}, g.music.theme.id === t.id ? 'Playing' : locked ? 'Locked' : '')));
+      });
+    };
+    render();
+    const tog = h(`button.toggle${g.settings.musicOn ? '.on' : ''}`, { 'aria-label': 'Music on', onclick: () => { g.settings.musicOn = !g.settings.musicOn; tog.classList.toggle('on', g.settings.musicOn); g.music.setEnabled(g.settings.musicOn); g.saveSettings(); } });
+    body.append(h('p', { style: { color: 'var(--haze)', maxWidth: '64ch', marginTop: 0 } },
+      'The score is played live and never repeats exactly. New layers enter as the crater deepens: sparse at the surface, a pulse in the middle depths, weight and brass deep down, and everything near the core.'),
+      h('div.set-row', { style: { maxWidth: '760px', marginBottom: '16px' } }, h('div.lbl', {}, 'Music'), h('div.ctl', {}, tog)),
+      list);
+    return this.frame('Music', body);
+  }
+
+  // ---------- settings ----------
+
+  build_settings(section = 'graphics') {
+    const g = this.game, s = g.settings;
+    const body = h('div.menu-body');
+    const nav = h('nav');
+    const pane = h('div');
+    body.append(h('div.settings', {}, nav, pane));
+    const apply = () => { g.applySettings(); };
+    const row = (label, ctl, sub) => h('div.set-row', {}, h('div.lbl', {}, label, sub ? h('small', {}, sub) : null), h('div.ctl', {}, ctl));
+    const seg = (key, opts, cb) => {
+      const el = h('div.seg');
+      for (const [v, l] of opts) {
+        el.append(h(`button${s[key] === v ? '.on' : ''}`, { onclick: () => { s[key] = v; if (cb) cb(v); apply(); show(cur); } }, l));
+      }
+      return el;
+    };
+    const toggle = (key, cb) => h(`button.toggle${s[key] ? '.on' : ''}`, { 'aria-label': key, onclick: (ev) => { s[key] = !s[key]; ev.currentTarget.classList.toggle('on', s[key]); if (cb) cb(); s.preset = 'custom'; apply(); } });
+    const slider = (key, min, max, step, fmt, cb) => {
+      const val = h('span.val', {}, fmt(s[key]));
+      const inp = h('input', { type: 'range', min, max, step, value: s[key], id: `set-${key}` });
+      inp.addEventListener('input', () => { s[key] = +inp.value; val.textContent = fmt(s[key]); if (cb) cb(); apply(); });
+      return h('div', { style: { display: 'flex', gap: '10px', alignItems: 'center' } }, inp, val);
+    };
+    const vslider = (key) => {
+      const val = h('span.val', {}, `${Math.round(s.volume[key] * 100)}%`);
+      const inp = h('input', { type: 'range', min: 0, max: 1, step: 0.01, value: s.volume[key], id: `vol-${key}` });
+      inp.addEventListener('input', () => { s.volume[key] = +inp.value; val.textContent = `${Math.round(s.volume[key] * 100)}%`; apply(); });
+      return h('div', { style: { display: 'flex', gap: '10px', alignItems: 'center' } }, inp, val);
+    };
+    let cur = section;
+    const show = (sec) => {
+      cur = sec;
+      for (const b of nav.children) b.classList.toggle('on', b.dataset.s === sec);
+      clear(pane);
+      if (sec === 'graphics') {
+        pane.append(
+          h('div.set-group', {}, h('h3', {}, 'Quality'),
+            row('Preset', seg('preset', [['low', 'Low'], ['medium', 'Medium'], ['high', 'High'], ['ultra', 'Ultra']], (v) => Object.assign(s, PRESETS[v], { preset: v })), 'Sets everything below; change any item to customise.'),
+            row('Render scale', slider('renderScale', 0.5, 1.5, 0.05, (v) => `${Math.round(v * 100)}%`, () => { s.preset = 'custom'; })),
+            row('Shadows', seg('shadowQ', [['low', 'Low'], ['medium', 'Medium'], ['high', 'High'], ['ultra', 'Ultra']], (v) => { s.shadows = PRESETS[v].shadows; s.preset = 'custom'; })),
+            row('Ice detail', seg('iceQuality', [[0, 'Simple'], [1, 'Bubbles'], [2, 'Full']], () => { s.preset = 'custom'; }), 'Bubbles and fracture planes inside the ice.'),
+            row('Particles', seg('particles', [[0.5, 'Few'], [0.75, 'Some'], [1, 'Many'], [1.4, 'Max']], () => { s.preset = 'custom'; })),
+          ),
+          h('div.set-group', {}, h('h3', {}, 'Display'),
+            row('V-Sync', toggle('vsync'), 'Off renders as fast as the frame cap allows.'),
+            row('Frame cap', seg('fpsCap', [[30, '30'], [60, '60'], [120, '120'], [144, '144'], [0, 'Unlimited']])),
+            row('Field of view', slider('fov', 60, 110, 1, (v) => `${v}°`)),
+            row('Performance overlay', toggle('perfOverlay'), 'Frame rate, frame time, draw calls.'),
+          ),
+          h('div.set-group', {}, h('h3', {}, 'Effects'),
+            row('Ambient occlusion', toggle('ao')), row('Bloom', toggle('bloom')), row('Anti-aliasing (SMAA)', toggle('smaa')),
+            row('Colour grading', toggle('grade')), row('Film grain', toggle('grain')), row('Vignette', toggle('vignette')),
+            row('Height & depth fog', toggle('fog')),
+            row('Tone mapping', seg('toneMapping', [['aces', 'ACES'], ['agx', 'AgX']])),
+          ),
+        );
+      } else if (sec === 'audio') {
+        pane.append(h('div.set-group', {}, h('h3', {}, 'Volume'),
+          row('Master', vslider('master')), row('Music', vslider('music')), row('Effects', vslider('sfx')), row('Ambience', vslider('amb'))));
+      } else if (sec === 'controls') {
+        const binds = h('div.set-group', {}, h('h3', {}, 'Keys'));
+        for (const [a, label] of Object.entries(ACTION_LABELS)) {
+          const cap = h('button.keycap', {}, keyLabel(g.input.bindings[a]));
+          cap.addEventListener('click', () => {
+            cap.classList.add('listening'); cap.textContent = 'Press a key';
+            g.input.rebind(a, (b) => { s.bindings = { ...b }; g.saveSettings(); show('controls'); });
+          });
+          binds.append(row(label, cap));
+        }
+        binds.append(row('Restore defaults', h('button.btn', { onclick: () => { s.bindings = {}; g.input.bindings = { ...g.defaultBindings }; g.saveSettings(); show('controls'); } }, 'Reset keys')));
+        pane.append(h('div.set-group', {}, h('h3', {}, 'Mouse'),
+          row('Sensitivity', slider('sensitivity', 0.3, 3, 0.05, (v) => v.toFixed(2))),
+          row('Invert vertical look', toggle('invertY'))), binds);
+      } else if (sec === 'game') {
+        const box = h('textarea.code', { id: 'save-code', placeholder: 'Your save code appears here. Paste one to import.' });
+        const msg = h('div.status');
+        pane.append(
+          h('div.set-group', {}, h('h3', {}, 'Numbers'), row('Scientific notation', toggle('scientific', () => { numberFormat.scientific = s.scientific; }))),
+          h('div.set-group', {}, h('h3', {}, 'Save'),
+            row('Auto-save', h('span.val', {}, 'Every 10 s and on exit')),
+            row('Export', h('button.btn', { onclick: async () => { box.value = await g.exportSave(); box.select(); msg.textContent = 'Copy this code somewhere safe.'; } }, 'Make save code')),
+            row('Import', h('button.btn', { onclick: async () => { try { await g.importSave(box.value); msg.textContent = 'Imported.'; } catch (e) { msg.textContent = e.message; msg.className = 'status bad'; } } }, 'Load from code')),
+            h('div', { style: { background: 'rgba(8,20,28,0.92)', padding: '10px 14px', display: 'grid', gap: '8px' } }, box, msg),
+            row('Hard reset', h('button.btn.danger', { onclick: () => this.confirm('Erase this save?', 'Your vault, crater and upgrades on this slot are deleted. Settings stay.', 'Erase save', () => g.hardReset()) }, 'Erase save…'), 'Deletes the current slot.'),
+          ));
+      }
+    };
+    for (const [id, l] of [['graphics', 'Graphics'], ['audio', 'Audio'], ['controls', 'Controls'], ['game', 'Game']]) {
+      const b = h('button', { onclick: () => show(id) }, l);
+      b.dataset.s = id;
+      nav.append(b);
+    }
+    show(section);
+    return this.frame('Settings', body);
+  }
+
+  // ---------- start / offline / confirm ----------
+
+  build_start(onBegin) {
+    const g = this.game, p = g.planet;
+    let pole = 'N';
+    const cards = h('div.poles');
+    const render = () => {
+      clear(cards);
+      for (const k of ['N', 'S']) {
+        const P = p.poles[k];
+        cards.append(h(`button.pole${pole === k ? '.on' : ''}`, { onclick: () => { pole = k; render(); g.sfx.play('click'); } },
+          h('span.nm', {}, k === 'N' ? 'North pole' : 'South pole'), h('h3', {}, P.name), h('p', {}, P.desc),
+          h('div.strata', {}, P.strata.slice(0, 5).map((s) => h('i', { style: { background: `rgb(${s.color.map((c) => Math.round(c * 255)).join(',')})` } })))));
+      }
+    };
+    render();
+    return h('div.start', {},
+      h('div.start-left', {},
+        h('div.eyebrow', {}, `Planet 1 of 7 · ${p.name}`),
+        h('div.title', {}, 'Melt the', h('span', {}, 'Planet')),
+        h('p.lede', {}, `${p.name} is frozen to the core. Pick a pole and dig straight down. The deeper the ice, the richer the coins, and the lift beacon follows you all the way.`),
+        h('div.eyebrow', {}, 'Choose your pole. You stay there for the whole planet.'),
+        cards,
+        h('div.start-actions', {}, h('button.btn.primary', { onclick: () => { this.close(); onBegin(pole); } }, 'Begin the survey')),
+        h('div.start-foot', {}, 'Mouse and keyboard. WASD to move, left mouse to use your tool, U for upgrades, Esc to pause.'),
+      ),
+      h('div'),
+    );
+  }
+
+  build_offline(r) {
+    return h('div', { style: { position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' } }, h('div.offline-card', {},
+      h('div.eyebrow', {}, `While you were away · ${formatTime(r.seconds)}`),
+      h('h3', {}, 'The stakes kept working'),
+      h('div.big', {}, `+${format(r.coins)}`),
+      h('p', { style: { color: 'var(--haze)', margin: 0 } }, r.coins > 0 ? `Automation removed ${r.volume.toFixed(1)} m³ of ice and banked it. Away time counts up to 8 hours.` : 'Nothing was automated yet. Seismic Stakes and Heat Seeps keep working while you are away.'),
+      h('button.btn.primary', { onclick: () => { this.close(); } }, 'Back to the ice')));
+  }
+
+  confirm(title, text, action, fn) {
+    const el = h('div.confirm.interactive', {}, h('div', {}, h('h3', {}, title), h('p', { style: { color: 'var(--haze)', margin: 0 } }, text),
+      h('div.actions', {}, h('button.btn', { onclick: () => el.remove() }, 'Cancel'), h('button.btn.danger', { onclick: () => { el.remove(); fn(); } }, action))));
+    this.root.appendChild(el);
+  }
+}
+
+// ---------- upgrade node graph ----------
+
+class TreeView {
+  constructor(wrap, game, menus) {
+    this.wrap = wrap;
+    this.game = game;
+    this.menus = menus;
+    this.canvas = h('div.tree-canvas');
+    this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    this.canvas.appendChild(this.svg);
+    wrap.appendChild(this.canvas);
+    this.tip = h('div.tree-tip', { hidden: true });
+    this.wallet = h('div.wallet');
+    this.walletSub = h('div', { style: { font: '500 12px/1 var(--mono)', color: 'var(--haze)' } });
+    wrap.parentElement.appendChild(h('div.tree-hud', {}, h('div.eyebrow', {}, 'Vault'), this.wallet, this.walletSub));
+    wrap.parentElement.appendChild(this.tip);
+    wrap.parentElement.appendChild(h('div.tree-zoom', {},
+      h('button.btn', { onclick: () => this.zoomBy(1.2) }, '+'), h('button.btn', { onclick: () => this.zoomBy(1 / 1.2) }, '−'), h('button.btn', { onclick: () => this.center() }, 'Centre')));
+    this.nodes = {};
+    this.pos = {};
+    this.layout();
+    this.scale = 0.85;
+    this.ox = 0; this.oy = 0;
+    this.center();
+    this.bind();
+    this.refresh();
+  }
+
+  layout() {
+    const SX = 210, SY = 124;
+    for (const n of NODES) {
+      const t = TREE[n.tree];
+      const [ox, oy] = t.origin;
+      const x = ox * (230 + n.gx * SX);
+      const y = oy * (110 + n.gy * SY);
+      this.pos[n.id] = [x, y];
+    }
+    let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    for (const [x, y] of Object.values(this.pos)) { minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y); }
+    this.bounds = { minX: minX - 140, minY: minY - 120, maxX: maxX + 140, maxY: maxY + 120 };
+    const W = this.bounds.maxX - this.bounds.minX, H = this.bounds.maxY - this.bounds.minY;
+    this.svg.setAttribute('width', W); this.svg.setAttribute('height', H);
+    this.svg.style.left = `${this.bounds.minX}px`; this.svg.style.top = `${this.bounds.minY}px`;
+    this.svg.setAttribute('viewBox', `${this.bounds.minX} ${this.bounds.minY} ${W} ${H}`);
+    // tree labels
+    for (const t of TREES) {
+      const [ox, oy] = t.origin;
+      const lab = h('div.tree-label', { style: { left: `${ox * 520}px`, top: `${oy > 0 ? oy * 70 + 690 : -790}px`, '--tc': t.color } }, `${t.name}`);
+      this.canvas.appendChild(lab);
+    }
+    // the planet at the centre
+    const core = h('div', { style: { position: 'absolute', left: '-70px', top: '-70px', width: '140px', height: '140px', borderRadius: '50%', background: 'radial-gradient(circle at 35% 30%, #e6f1f4, #8fd6ec 35%, #1d4a63 70%, #06121a)', boxShadow: '0 0 60px rgba(143,214,236,0.35)' } });
+    this.canvas.appendChild(core);
+    this.edges = [];
+    for (const n of NODES) for (const p of n.parents) {
+      const [x1, y1] = this.pos[p], [x2, y2] = this.pos[n.id];
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      const mx = (x1 + x2) / 2;
+      path.setAttribute('d', `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke-width', '2');
+      this.svg.appendChild(path);
+      this.edges.push({ path, from: p, to: n.id });
+    }
+    // roots connect to the core
+    for (const n of NODES.filter((x) => x.root)) {
+      const [x2, y2] = this.pos[n.id];
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `M0,0 L${x2},${y2}`);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', 'rgba(143,214,236,0.25)');
+      path.setAttribute('stroke-dasharray', '4 6');
+      this.svg.appendChild(path);
+    }
+    for (const n of NODES) {
+      const t = TREE[n.tree];
+      const el = h(`div.tnode${n.gate ? '.gate' : ''}`, { style: { left: `${this.pos[n.id][0]}px`, top: `${this.pos[n.id][1]}px`, '--tc': t.color } });
+      el.addEventListener('mouseenter', () => { this.hover = n.id; this.showTip(n.id); this.game.sfx.play('hover'); });
+      el.addEventListener('mouseleave', () => { if (this.hover === n.id) { this.hover = null; this.tip.hidden = true; } });
+      el.addEventListener('click', (ev) => { ev.stopPropagation(); if (!this.dragged) this.buy(n.id, el); });
+      this.canvas.appendChild(el);
+      this.nodes[n.id] = el;
+    }
+  }
+
+  buy(id, el) {
+    const ok = this.game.buy(id);
+    if (ok) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+    else this.game.sfx.play('deny');
+    this.refresh();
+    if (this.hover) this.showTip(this.hover);
+  }
+
+  showTip(id) {
+    const g = this.game, e = g.econ;
+    const n = NODE_BY_ID[id];
+    const lvl = M.level(e, id);
+    const table = M.costTable(e);
+    const cost = table[id].cost;
+    const fx = n.effects.map(([stat, op, v]) => {
+      if (op === 'set') return `${statName(stat)} → tier ${v}`;
+      if (op === 'add') return `${statName(stat)} +${fmtV(v, stat)} per level (now +${fmtV(v * lvl, stat)})`;
+      return `${statName(stat)} ×${(1 + v).toFixed(2)} per level`;
+    });
+    const inc = g.measuredRate();
+    const wait = Math.max(0, cost.sub(e.coins).toNumber()) / Math.max(1e-9, inc);
+    clear(this.tip).append(
+      h('div.eyebrow', {}, `${TREE[n.tree].icon} ${TREE[n.tree].name}${n.gate ? ' · tool tier' : ''}`),
+      h('h4', {}, `${n.icon} ${n.name}`),
+      h('p', {}, n.desc),
+      h('div.eff', { html: fx.map((x) => `<div>${x}</div>`).join('') }),
+      h('div.eff', { html: `<div>Level <b>${lvl}</b> / ${n.max}</div>` }),
+      M.isMaxed(e, id) ? h('div.eff', { html: '<b>Maxed</b>' }) :
+        h('div.eff', { html: `<div>Cost <span style="color:var(--brass)">${format(cost)}</span>${!M.isUnlocked(e, id) ? ' · locked' : e.coins.gte(cost) ? ' · <b>affordable</b>' : ` · about ${formatTime(wait)}`}</div>` }),
+      !M.isUnlocked(e, id) ? h('p', {}, `Needs ${n.parents.map((p) => NODE_BY_ID[p].name).join(' and ')}.`) : null,
+    );
+    this.tip.hidden = false;
+  }
+
+  refresh() {
+    const g = this.game, e = g.econ;
+    const table = M.costTable(e);
+    const inc = g.measuredRate();
+    for (const n of NODES) {
+      const el = this.nodes[n.id];
+      const lvl = M.level(e, n.id);
+      const unlocked = M.isUnlocked(e, n.id);
+      const maxed = lvl >= n.max;
+      const cost = table[n.id].cost;
+      const can = unlocked && !maxed && e.coins.gte(cost);
+      el.classList.toggle('locked', !unlocked);
+      el.classList.toggle('maxed', maxed);
+      el.classList.toggle('can', can);
+      const pips = Math.min(n.max, 12);
+      const filled = Math.round((lvl / n.max) * pips);
+      const wait = Math.max(0, cost.sub(e.coins).toNumber()) / Math.max(1e-9, inc);
+      el.innerHTML = '';
+      el.append(
+        h('div.top', {}, h('span.ic', {}, n.icon), h('span.nm', {}, n.name), h('span.lv', {}, `${lvl}/${n.max}`)),
+        h('div.pips', {}, Array.from({ length: pips }, (_, i) => h(`i${i < filled ? '.f' : ''}`))),
+        h('div.cost', {}, h('span', {}, maxed ? 'MAX' : format(cost)), h('span.eta', {}, maxed || !unlocked ? '' : can ? 'buy' : formatTime(wait))),
+      );
+    }
+    for (const ed of this.edges) {
+      const on = M.level(e, ed.from) >= 1;
+      const tc = TREE[NODE_BY_ID[ed.to].tree].color;
+      ed.path.setAttribute('stroke', on ? tc : 'rgba(196,232,244,0.14)');
+      ed.path.setAttribute('stroke-opacity', on ? (M.level(e, ed.to) >= 1 ? '0.85' : '0.45') : '1');
+    }
+    this.wallet.textContent = format(e.coins);
+    this.walletSub.textContent = `+${format(inc)}/s`;
+  }
+
+  apply() { this.canvas.style.transform = `translate(${this.ox}px, ${this.oy}px) scale(${this.scale})`; }
+  center() { const r = this.wrap.getBoundingClientRect(); this.ox = r.width / 2; this.oy = r.height / 2; this.apply(); }
+  zoomBy(k, cx, cy) {
+    const r = this.wrap.getBoundingClientRect();
+    cx ??= r.width / 2; cy ??= r.height / 2;
+    const ns = Math.max(0.35, Math.min(1.8, this.scale * k));
+    this.ox = cx - (cx - this.ox) * (ns / this.scale);
+    this.oy = cy - (cy - this.oy) * (ns / this.scale);
+    this.scale = ns;
+    this.apply();
+  }
+
+  bind() {
+    let down = null;
+    this.onDown = (ev) => { if (ev.button !== 0) return; down = { x: ev.clientX, y: ev.clientY, ox: this.ox, oy: this.oy }; this.dragged = false; this.wrap.classList.add('drag'); };
+    this.onMove = (ev) => {
+      if (!down) return;
+      const dx = ev.clientX - down.x, dy = ev.clientY - down.y;
+      if (Math.abs(dx) + Math.abs(dy) > 4) this.dragged = true;
+      this.ox = down.ox + dx; this.oy = down.oy + dy; this.apply();
+    };
+    this.onUp = () => { down = null; this.wrap.classList.remove('drag'); setTimeout(() => { this.dragged = false; }, 0); };
+    this.onWheel = (ev) => { ev.preventDefault(); const r = this.wrap.getBoundingClientRect(); this.zoomBy(ev.deltaY < 0 ? 1.1 : 1 / 1.1, ev.clientX - r.left, ev.clientY - r.top); };
+    this.wrap.addEventListener('mousedown', this.onDown);
+    addEventListener('mousemove', this.onMove);
+    addEventListener('mouseup', this.onUp);
+    this.wrap.addEventListener('wheel', this.onWheel, { passive: false });
+    this.timer = setInterval(() => this.refresh(), 400);
+  }
+
+  destroy() {
+    removeEventListener('mousemove', this.onMove);
+    removeEventListener('mouseup', this.onUp);
+    clearInterval(this.timer);
+  }
+}
+
+const STAT_NAMES = {
+  digRadius: 'Bite radius', digRate: 'Strikes per second', digYield: 'Extraction', crit: 'Clean-break chance', critMult: 'Clean-break size', reach: 'Reach',
+  meltPower: 'Melt power', meltRadius: 'Melt radius', meltEff: 'Melt efficiency', meltTier: 'Melt tool', digTier: 'Dig tool', visionTier: 'Vision tool',
+  vision: 'Seam reading', hint: 'Needle sense', collectRange: 'Collection range', collect: 'Meltwater collection', autoCollect: 'Auto-collect',
+  carry: 'Pack size', liftSpeed: 'Lift speed', bank: 'Banking', autoDig: 'Auto-dig', autoMelt: 'Auto-melt', autoAll: 'All automation', offline: 'Offline efficiency',
+  valueMult: 'Coin value',
+};
+function statName(s) { return STAT_NAMES[s] || s; }
+function fmtV(v, stat) {
+  if (['digYield', 'crit', 'vision', 'collect', 'autoCollect', 'bank', 'offline', 'valueMult', 'meltEff', 'critMult'].includes(stat)) return `${(v * 100).toFixed(1)}%`;
+  if (['digRadius', 'meltRadius', 'reach', 'collectRange'].includes(stat)) return `${v.toFixed(3)} m`;
+  if (['autoDig', 'autoMelt', 'meltPower'].includes(stat)) return `${v.toFixed(3)} m³/s`;
+  if (stat === 'liftSpeed') return `${v.toFixed(2)} m/s`;
+  return v.toFixed(2);
+}

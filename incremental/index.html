@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Melt the Planet</title>
+<meta name="description" content="Dig straight down through a frozen planet's pole, melt it, and send its coins up the lift. A first-person incremental for desktop.">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/three.module.js",
+    "three/addons/": "./vendor/three/addons/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="guard" hidden>
+  <div class="guard-card">
+    <div class="eyebrow">Melt the Planet</div>
+    <p>Melt the Planet needs a desktop browser with mouse and keyboard.</p>
+  </div>
+</div>
+
+<canvas id="view" tabindex="0" aria-label="Game view"></canvas>
+<div id="ui"></div>
+
+<noscript><div class="guard-card">Melt the Planet needs JavaScript.</div></noscript>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
