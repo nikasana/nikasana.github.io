@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Scripted play session with Playwright: dig, collect, bank, buy, open every screen, planet view,
 // dev-menu features, and a two-tab co-op test (?coopdebug=1). Screenshots go to tools/shots/<batch>/.
-// Usage: node incremental/tools/playtest.mjs [--batch batch1] [--port 8123] [--preset low] [--skip-coop]
+// Usage: node incremental/tools/playtest.mjs [--batch batch1] [--port 8123] [--preset low] [--skip-coop] [--out dir]
 // Needs a static server on the incremental/ folder (python3 -m http.server 8123).
 import { createRequire } from 'node:module';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -15,7 +15,7 @@ const BATCH = opt('--batch', 'batch1');
 const PORT = opt('--port', '8123');
 const PRESET = opt('--preset', 'low');
 const here = dirname(fileURLToPath(import.meta.url));
-const out = join(here, 'shots', BATCH);
+const out = opt('--out', join(here, 'shots', BATCH));
 mkdirSync(out, { recursive: true });
 const base = `http://localhost:${PORT}/index.html`;
 const results = [];
