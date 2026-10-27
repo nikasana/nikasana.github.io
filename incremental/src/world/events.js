@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { ISO, HALF, surfaceY } from './field.js';
 import { rng, hash32 } from '../core/rng.js';
 import { CAPSULES, NEEDLES } from '../econ/data/milestones.js';
+import { findForDepth } from '../econ/data/finds.js';
 
 function capsuleMesh(atmo) {
   const g = new THREE.Group();
@@ -21,19 +22,75 @@ function capsuleMesh(atmo) {
   return g;
 }
 
-// A surveyor's supply chest: dark iron-bound box with glowing amber seams that show through the ice.
-function chestMesh(atmo, relic) {
+// Models for the finds frozen in the ice. Each has glowing parts so it shows through the ice.
+function findMesh(atmo, look, glowHex) {
   const g = new THREE.Group();
-  const wood = atmo.register(new THREE.MeshStandardMaterial({ color: 0x3b2a1e, roughness: 0.8, metalness: 0.05 }), 'chestWood');
-  const iron = atmo.register(new THREE.MeshStandardMaterial({ color: 0x2b2f33, roughness: 0.45, metalness: 0.9 }), 'chestIron');
-  const glow = new THREE.MeshStandardMaterial({ color: 0x1a0f05, emissive: relic ? 0x9fe6ff : 0xffb347, emissiveIntensity: 2.4 });
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.46, 0.52), wood);
-  const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.8, 16, 1, false, 0, Math.PI).rotateZ(Math.PI / 2), wood);
-  lid.position.y = 0.23;
-  const seam = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.035, 0.54), glow); seam.position.y = 0.23;
-  const lock = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 0.04), glow); lock.position.set(0, 0.18, 0.27);
-  g.add(body, lid, seam, lock);
-  for (const x of [-0.3, 0.3]) { const band = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.5, 0.55), iron); band.position.x = x; g.add(band); }
+  const M = (key, color, rough, metal) => atmo.register(new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal }), key);
+  const wood = M('findWood', 0x3b2a1e, 0.8, 0.05), iron = M('findIron', 0x2b2f33, 0.45, 0.9), cloth = M('findCloth', 0x5a3d2a, 0.95, 0);
+  const bone = M('findBone', 0xe9dcc0, 0.6, 0), brass = M('findBrass', 0xb8893e, 0.32, 1), rock = M('findRock', 0x2a2433, 0.7, 0.4);
+  const glow = new THREE.MeshStandardMaterial({ color: 0x100a05, emissive: glowHex, emissiveIntensity: 2.4 });
+  const add = (geo, mat, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); g.add(m); return m; };
+  switch (look) {
+    case 'lantern':
+      add(new THREE.CylinderGeometry(0.1, 0.12, 0.05, 12), iron, 0, -0.16);
+      add(new THREE.CylinderGeometry(0.08, 0.08, 0.26, 12), glow);
+      add(new THREE.ConeGeometry(0.12, 0.1, 12), iron, 0, 0.18);
+      add(new THREE.TorusGeometry(0.06, 0.01, 6, 16), iron, 0, 0.27);
+      break;
+    case 'satchel':
+      add(new THREE.BoxGeometry(0.5, 0.36, 0.2), cloth);
+      add(new THREE.BoxGeometry(0.52, 0.16, 0.22), cloth, 0, 0.14, 0.01);
+      add(new THREE.BoxGeometry(0.08, 0.08, 0.03), glow, 0, 0.06, 0.12);
+      add(new THREE.TorusGeometry(0.22, 0.015, 6, 20, Math.PI), cloth, 0, 0.18, 0);
+      break;
+    case 'pickhead':
+      add(new THREE.CylinderGeometry(0.03, 0.03, 0.7, 8), wood, 0, 0, 0, 0, 0, 0.3);
+      add(new THREE.BoxGeometry(0.62, 0.06, 0.06), iron, 0.08, 0.32, 0, 0, 0, 0.3);
+      add(new THREE.ConeGeometry(0.04, 0.16, 8), glow, 0.43, 0.42, 0, 0, 0, -1.27);
+      break;
+    case 'thermos':
+      add(new THREE.CylinderGeometry(0.1, 0.1, 0.42, 16), iron);
+      add(new THREE.CylinderGeometry(0.104, 0.104, 0.1, 16), glow, 0, 0.05);
+      add(new THREE.CylinderGeometry(0.07, 0.08, 0.08, 16), brass, 0, 0.25);
+      break;
+    case 'drone':
+      add(new THREE.SphereGeometry(0.16, 16, 10), iron);
+      add(new THREE.SphereGeometry(0.06, 12, 8), glow, 0, 0, 0.14);
+      for (const s of [-1, 1]) for (const t of [-1, 1]) {
+        add(new THREE.CylinderGeometry(0.012, 0.012, 0.26, 6), iron, s * 0.18, 0.02, t * 0.18, 0, 0, Math.PI / 2);
+        add(new THREE.TorusGeometry(0.09, 0.01, 6, 20), brass, s * 0.3, 0.05, t * 0.3, Math.PI / 2);
+      }
+      break;
+    case 'crate':
+      add(new THREE.BoxGeometry(0.9, 0.7, 0.7), wood);
+      for (const y of [-0.25, 0.25]) add(new THREE.BoxGeometry(0.92, 0.06, 0.72), iron, 0, y);
+      add(new THREE.BoxGeometry(0.4, 0.2, 0.02), glow, 0, 0, 0.36);
+      break;
+    case 'shard': {
+      const geo = new THREE.OctahedronGeometry(0.28, 0).scale(0.7, 1.3, 0.6);
+      add(geo, rock, 0, 0, 0, 0.3, 0.4, 0.2);
+      add(new THREE.OctahedronGeometry(0.12, 0).scale(0.7, 1.4, 0.6), glow, 0.12, 0.1, 0.1, 0.5, 0.2, 0.4);
+      break;
+    }
+    case 'tusk': {
+      const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(-0.6, 0, 0), new THREE.Vector3(-0.1, 0.12, 0), new THREE.Vector3(0.3, 0.32, 0), new THREE.Vector3(0.55, 0.62, 0)]);
+      add(new THREE.TubeGeometry(curve, 24, 0.07, 10), bone);
+      add(new THREE.TorusGeometry(0.08, 0.02, 6, 16), glow, -0.45, 0.03, 0, 0, Math.PI / 2);
+      break;
+    }
+    case 'reliquary':
+      add(new THREE.CylinderGeometry(0.2, 0.26, 0.5, 8), brass);
+      add(new THREE.SphereGeometry(0.2, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), brass, 0, 0.25);
+      add(new THREE.TorusGeometry(0.235, 0.025, 8, 24), glow, 0, 0.02, 0, Math.PI / 2);
+      add(new THREE.SphereGeometry(0.05, 10, 8), glow, 0, 0.47);
+      break;
+    default: // chest
+      add(new THREE.BoxGeometry(0.8, 0.46, 0.52), wood);
+      add(new THREE.CylinderGeometry(0.26, 0.26, 0.8, 16, 1, false, 0, Math.PI).rotateZ(Math.PI / 2), wood, 0, 0.23);
+      add(new THREE.BoxGeometry(0.82, 0.035, 0.54), glow, 0, 0.23);
+      add(new THREE.BoxGeometry(0.1, 0.12, 0.04), glow, 0, 0.18, 0.27);
+      for (const x of [-0.3, 0.3]) add(new THREE.BoxGeometry(0.05, 0.5, 0.55), iron, x);
+  }
   g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
   g.userData.glow = glow;
   return g;
@@ -139,19 +196,21 @@ export class FrozenThings {
       this.group.add(m);
       this.items.push({ kind: 'needle', data: nd, mesh: m, freed: false });
     }
-    // supply chests, set in the coin seams and spread across the claim (rarely right under the start)
-    for (let i = 0; i < 44; i++) {
-      const id = `chest${i}`;
-      const seam = 1 + Math.floor(Math.pow(r(), 1.5) * 22);          // seams every 5.5 m
+    // finds: lost gear, supplies and relics, set in the coin seams across the claim; which kind depends on depth
+    for (let i = 0; i < 60; i++) {
+      const id = `find${i}`;
+      const seam = 1 + Math.floor(Math.pow(r(), 1.5) * 24);          // seams every 5.5 m
       let x = 0, z = 0;
       for (let t = 0; t < 8; t++) { x = (r() * 2 - 1) * lim; z = (r() * 2 - 1) * lim; if (Math.hypot(x - 2.4, z - 5.6) > 5) break; }
-      const relic = r() < 0.22;
-      if (done.chests?.[id]) continue;
-      const m = chestMesh(this.atmo, relic);
-      m.position.set(x, surfaceY(x, z) - (seam - 0.5) * 5.5, z);
-      m.rotation.set((r() - 0.5) * 0.5, r() * 6.28, (r() - 0.5) * 0.5);
+      const depth = (seam - 0.5) * 5.5;
+      const find = findForDepth(depth, r());
+      const rx = (r() - 0.5) * 0.6, ry = r() * 6.28, rz = (r() - 0.5) * 0.6;
+      if (done.finds?.[id] || done.chests?.[id]) continue;
+      const m = findMesh(this.atmo, find.look, find.glow);
+      m.position.set(x, surfaceY(x, z) - depth, z);
+      m.rotation.set(rx, ry, rz);
       this.group.add(m);
-      this.items.push({ kind: 'chest', id, relic, depth: (seam - 0.5) * 5.5, mesh: m, freed: false });
+      this.items.push({ kind: 'find', id, find, depth, mesh: m, freed: false });
     }
     // fossils down the strata
     const geos = [0, 1, 2].map((k) => fossilGeometry(k));
@@ -180,7 +239,7 @@ export class FrozenThings {
       if (it.kind === 'fossil') continue;
       if (!it.freed && dPlayer < 30) it.freed = this.volume.sample(p.x, p.y, p.z) < ISO - 10;
       if (it.kind === 'capsule') it.mesh.userData.seam.emissiveIntensity = 1.4 + Math.sin(time * 2.2) * 0.6;
-      if (it.kind === 'chest') it.mesh.userData.glow.emissiveIntensity = 2.0 + Math.sin(time * 3 + p.x) * 0.9;
+      if (it.kind === 'find') it.mesh.userData.glow.emissiveIntensity = 2.0 + Math.sin(time * 3 + p.x) * 0.9;
       if (it.kind === 'needle') {
         it.mesh.rotation.y += dt * 0.5;
         it.mesh.userData.glow.intensity = 0.4 + Math.sin(time * 5) * 0.3;

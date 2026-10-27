@@ -542,7 +542,7 @@ class TreeView {
       const wait = Math.max(0, cost.sub(e.coins).toNumber()) / Math.max(1e-9, inc);
       el.innerHTML = '';
       el.append(
-        KIND_LABEL[n.kind] ? h('div.kind', {}, barred ? 'CLOSED' : KIND_LABEL[n.kind]) : null,
+        KIND_LABEL[n.kind] ? h('div.kind', {}, barred ? 'CLOSED' : KIND_LABEL[n.kind]) : '',
         h('div.top', {}, h('span.ic', {}, n.icon), h('span.nm', {}, n.name), h('span.lv', {}, `${lvl}/${n.max}`)),
         h('div.pips', {}, Array.from({ length: pips }, (_, i) => h(`i${i < filled ? '.f' : ''}`))),
         h('div.cost', {}, h('span', {}, maxed ? 'MAX' : format(cost)), h('span.eta', {}, maxed || !unlocked ? '' : can ? 'buy' : formatTime(wait))),

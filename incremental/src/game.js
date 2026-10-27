@@ -162,7 +162,7 @@ class Game {
     };
     this.frozen.on('capsule', (it) => this.openCapsule(it));
     this.frozen.on('needle', (it) => this.foundNeedle(it));
-    this.frozen.on('chest', (it) => this.openChest(it));
+    this.frozen.on('find', (it) => this.openFind(it));
     this.crew.on('notice', (t) => this.hud.notice('Crew', t));
     this.crew.on('crewMilestones', (done, fresh) => this.onCrewMilestones(done, fresh));
     this.crew.on('hostLost', () => this.hud.notice('Host left', 'You keep playing from your copy of the crew. Rejoining automatically, or resume as host from the crew screen.', 'heat', 7000));
@@ -320,7 +320,16 @@ class Game {
   // ---------- economy glue ----------
 
   get stats() {
-    if (this.statsDirty || !this._stats) { this._stats = M.computeStats(this.econ); this.statsDirty = false; }
+    if (this.buffs && this.buffs.length && this.buffs.some((b) => this.time > b.until)) {
+      this.buffs = this.buffs.filter((b) => this.time <= b.until);
+      this.statsDirty = true;
+      if (!this.buffs.length) this.hud.notice('Boost worn off', '', '', 2500);
+    }
+    if (this.statsDirty || !this._stats) {
+      this._stats = M.computeStats(this.econ);
+      for (const b of this.buffs || []) this._stats[b.stat] *= b.mult;
+      this.statsDirty = false;
+    }
     return this._stats;
   }
 
@@ -520,17 +529,19 @@ class Game {
 
   // ---------- events ----------
 
-  // Supply chest: a burst of coins scaled to your income and its depth; relic chests also add +3% income for good.
-  openChest(it) {
-    (this.state.chests ||= {})[it.id] = Date.now();
-    const sec = 45 + it.depth * 1.6;
-    const bonus = Math.max(30, this.measuredRate() * sec);
+  // A find frozen in the ice: coins worth some seconds of income (more when deeper), plus maybe a relic or a short boost.
+  openFind(it) {
+    const f = it.find;
+    (this.state.finds ||= {})[it.id] = Date.now();
+    const bonus = Math.max(20, this.measuredRate() * (f.sec + it.depth * 1.6));
     this.earn(bonus);
-    if (it.relic) { this.econ.legacy *= 1.03; this.statsDirty = true; }
+    let extra = '';
+    if (f.relic) { this.econ.legacy *= f.relic; this.statsDirty = true; extra = ` · +${Math.round((f.relic - 1) * 100)}% income for good`; }
+    if (f.buff) { (this.buffs ||= []).push({ ...f.buff, until: this.time + f.buff.dur, name: f.name }); this.statsDirty = true; extra = ` · ${f.desc}`; }
     this.music.cue('capsule');
     this.sfx.play('bank', { pos: it.mesh.position, count: 10, tier: 2 });
-    this.hud.notice(it.relic ? 'Relic chest' : 'Supply chest', `+${format(bonus)} coins${it.relic ? ' and a relic: +3% income for good' : ''}.`, 'money', 7000);
-    if (this.crew.active) this.crew.event({ k: 'chest', id: it.id, bonus });
+    this.hud.notice(`${f.icon} ${f.name}`, `+${format(bonus)} coins${extra}${f.relic || f.buff ? '' : ` · ${f.desc}`}`, 'money', 7000);
+    if (this.crew.active) this.crew.event({ k: 'find', id: it.id, name: f.name, bonus });
     this.save();
   }
 
@@ -781,7 +792,7 @@ class Game {
     else if (ev.k === 'ms') { const m = MILESTONES.find((x) => x.id === ev.id); if (m) { this.hud.notice(`${m.icon} Milestone: ${m.name}`, `+${format(Big.parse(ev.bonus))} coins for the crew.`, 'money'); this.music.cue('motif', m.motif); } }
     else if (ev.k === 'capsule') { this.state.capsules[ev.id] = Date.now(); this.hud.notice('Time capsule opened', `+${format(ev.bonus)} coins for the crew.`, 'money'); }
     else if (ev.k === 'needle') { this.state.needle = true; this.music.cue('stinger'); this.hud.notice('The Golden Needle', 'A crewmate found it.', 'money'); }
-    else if (ev.k === 'chest') { (this.state.chests ||= {})[ev.id] = Date.now(); this.hud.notice('Supply chest', `A crewmate opened one: +${format(ev.bonus)} coins for the crew.`, 'money'); }
+    else if (ev.k === 'find') { (this.state.finds ||= {})[ev.id] = Date.now(); this.hud.notice(ev.name || 'A find', `A crewmate dug it out: +${format(ev.bonus)} coins for the crew.`, 'money'); }
     else if (ev.k === 'buy') { this.sfx.play('buy', { step: this.econ.purchases }); }
   }
 
