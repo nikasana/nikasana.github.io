@@ -68,3 +68,10 @@ Choices made where the build prompt is silent, and the reasons. Updated every ba
 - Mutant ice pockets are placed per planet and pole from the seed; the 12 nearest are passed to the ice shader. Finding a type is remembered across planets, so its DNA stays unlocked.
 - DNA nodes cost twice a comparable node; bots in the sim never find mutant ice, so the wait curve does not depend on DNA.
 - Postcards are a captioned still of the frame when the planet is completed, stored as a small JPEG in the profile.
+
+## Batch 3: Cinderice
+- Lava is the risk on Cinderice: melting is the fast tool, and near lava it is faster still (value x up to 1.6), but heat builds at 0.35/s at the pocket edge and decays at 0.12/s, so short bursts are safe and long burns are not. Digging never builds heat.
+- A burst refills the hole with a fill op (shared in co-op) and costs 30% of the pack, never banked coins. Heat Skin (Emberice DNA) slows the heat and protects the pack.
+- Veins are random walks of 14 points from 3-15 m deep; within 1 m of one, the combo grows 0.6/s to x5 and multiplies melted value by 1 + 0.35 (combo - 1).
+- Lava pockets share the ice shader's 12 pocket slots with mutant ice (nearest first) and glow over 1.7x their radius.
+- The mirror sunbeam is modelled in the sim as extra melt volume (0.8 x mirror power), so the Planet tree is part of the economy proof.

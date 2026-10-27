@@ -280,7 +280,7 @@ class Game {
       const m = near[i] && near[i][0] < 60 ? near[i][1] : null;
       if (!m) { u.uMut.value[i].set(0, -1e5, 0, 0); continue; }
       const t = m.type === 'lava' ? { color: LAVA_COLOR, glow: 1.8 } : MUTANT_BY_ID[m.type];
-      u.uMut.value[i].set(m.x, m.y, m.z, m.r);
+      u.uMut.value[i].set(m.x, m.y, m.z, m.type === 'lava' ? m.r * 1.7 : m.r);   // lava glows through the ice around it
       u.uMutCol.value[i].set(t.color[0], t.color[1], t.color[2], t.glow);
     }
   }
@@ -321,6 +321,7 @@ class Game {
     }
     this.coins.setContext({ seed: p.seed, coinValue: (tier, depth) => this.coinValue(tier, depth) });
     this.coins.tiers = p.coinTiers.slice();
+    this.terrain.material.color.setRGB(...p.ice.snow);   // the snowfield takes the planet's colour (ash on Cinderice)
     // mutant ice pockets for this planet and pole; types already found stay unlocked for DNA
     this.mutants = mutantPockets(p, pole, surfaceY);
     (this.lava ||= new Lava()).setup(p, pole, surfaceY);
@@ -1158,6 +1159,16 @@ class Game {
   devCrewMilestone(id) { this.profile.crewMilestones = { ...(this.profile.crewMilestones || {}), [id]: Date.now() }; this.onCrewMilestones(this.profile.crewMilestones, [id]); }
   devResonance(id) { if (this.econ.found[id] !== undefined) return; this.econ.found[id] = this.econ.time; this.onResonance(SYNERGY_BY_ID[id]); }
   devOffline(sec) { this.showOffline(sec); }
+  // move a lava pocket (Cinderice) into the ice right in front of you
+  devLava() {
+    if (!this.lava || !this.lava.pockets.length) return false;
+    const k = this.lava.pockets[0], e = this.ctl.eye(1), f = this.ctl.forward();
+    const hit = this.volume.raycast(e, f, 8);
+    const p = hit.hit ? hit.point.addScaledVector(f, k.r + 0.5) : e.clone().addScaledVector(f, 4);
+    k.x = p.x; k.y = p.y; k.z = p.z;
+    this.mutT = 0;
+    return true;
+  }
   // move a mutant-ice pocket of the next unfound type (or any) into the ice in front of you
   devMutant() {
     if (!this.mutants || !this.mutants.length) return;

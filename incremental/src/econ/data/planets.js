@@ -88,7 +88,7 @@ export const PLANETS = [
     sky: { turbidity: 12, rayleigh: 0.6, mieCoefficient: 0.012, mieDirectionalG: 0.8 },
     sunElevation: 7, dayLength: 540,
     grade: { lift: [0.03, 0.01, 0.0], gain: [1.04, 0.97, 0.92], sat: 1.05, contrast: 1.12 },
-    ice: { tint: [0.62, 0.66, 0.72], deep: [0.18, 0.08, 0.06], snow: [0.82, 0.8, 0.8] },
+    ice: { tint: [0.62, 0.66, 0.72], deep: [0.18, 0.08, 0.06], snow: [0.6, 0.56, 0.55] },
     ocean: [0.16, 0.06, 0.04], land: [0.22, 0.18, 0.17], seed: 4417,
     theme: 'cinderice',
     lava: { from: 12, pockets: 90, veins: 8 },

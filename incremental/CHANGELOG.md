@@ -1,5 +1,15 @@
 # Changelog
 
+## Batch 3: Cinderice
+- Cinderice: ash-dark ice over a hot core, North (Ash Crown, lava early) and South (Cold Caldera, safe for longer), a smoky red sky and an ash-grey snowfield. Theme: Iron Under Ice. Three capsules and a Golden Needle; Mistral gets its needle too.
+- Lava: pockets glow orange through the ice. Melting next to one pays up to 60% more but builds heat (shown in the prompt); at full heat the lava bursts, floods the hole, freezes into basalt and scorches 30% of your pack.
+- Heat Vein Mini-Hunt: hidden veins wind through the ice, traced by embers. Melting along one builds a combo up to x5 on melted value; leave the vein and it fades.
+- Melt tier 3, the Orbital Laser: a beam from the sky on your designator.
+- Planet tree: Satellite Mirrors (tool 3: hold to focus a wide sunbeam from orbit), Focus Lens, Mirror Array (automatic melting) and Polar Orbit.
+- Climate tree: Soot Dusting and Dark Ice (albedo), Sea Wall, Greenhouse Vents.
+- Mutant ice Emberice (starts a vein combo) and Obsidice (hard volcanic glass, three times the coins), with DNA Heat Skin, Ember Heart and Glass Eye.
+- The snowfield takes each planet's colour.
+
 ## Batch 2: Mistral
 - Mistral, the fog planet: North (Pearl Hollow) and South (Grey Reach) poles with their own strata, a pearl-grey sky and dense fog. Vision tiers and the focused lamp cut the fog.
 - Planet travel: reaching a planet's goal depth completes it, saves a postcard and offers travel to the next planet with a pole choice. Legacy (from coins earned, depth reached and time spent) multiplies income there, and costs re-scale to it, so the first upgrade is as quick as on planet 1 (verified by the sim).

@@ -12,6 +12,20 @@ How to reach and check every feature. Each batch adds a section; earlier section
 
 ---
 
+## Batch 3: Cinderice
+
+Automated: `node incremental/tools/batch3.mjs` (screenshots and report in `tools/shots/batch3/`).
+
+| New | How to reach it | Dev menu | Working looks like |
+|---|---|---|---|
+| Cinderice | Complete Mistral and travel | World: planet Cinderice, Go | Red smoky sky, ash-grey snowfield, Ash crust at the top |
+| Lava pockets | Melt below about 12 m (North) | Events: Lava ahead | Orange glow through the ice; melting next to it fills the Heat gauge in the prompt; at 100% the lava bursts and refills the hole |
+| Heat Vein Mini-Hunt | Look for ember sparks in the ice | — | Melting along the sparks shows Heat vein xN and grows it to x5 |
+| Orbital Laser | Melt tree: Orbital Laser (after Latent Heat) | Upgrades: melt_laser Max | A beam from the sky where you melt |
+| Satellite Mirrors | Planet tree (right of the graph) | Upgrades: pl_mirror Max | Tool 3: hold left mouse, a wide sunbeam melts what you point at |
+| Climate tree | Left of the graph, below Audio | Upgrades: cl_* | Melt efficiency and power go up |
+| Emberice, Obsidice | Dig into tinted pockets on Cinderice | Events: Mutant ice ahead | Emberice starts a vein combo; Obsidice is hard but pays triple; DNA unlocks |
+
 ## Batch 2: Mistral
 
 Automated: `node incremental/tools/batch2.mjs` (screenshots and report in `tools/shots/batch2/`).

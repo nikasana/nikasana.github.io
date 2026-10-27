@@ -22,8 +22,13 @@ export const CAPSULES = [
   { id: 'cap_mist_1', planet: 'mistral', depth: 9, name: 'Lantern Capsule', puzzle: { kind: 'light', need: 3 }, contents: { coinsSec: 150, lore: 'A lantern with no wick. It lights when you look at it.' } },
   { id: 'cap_mist_2', planet: 'mistral', depth: 48, name: 'Frost-sealed Capsule', puzzle: { kind: 'heat', need: 5 }, contents: { coinsSec: 280, lore: 'Seeds, still frozen, labelled with the names of seven worlds.' } },
   { id: 'cap_mist_3', planet: 'mistral', depth: 150, name: 'Breath Capsule', puzzle: { kind: 'light', need: 4 }, contents: { coinsSec: 480, lore: 'A glass jar of fog. When you open it the fog outside thins for a moment.' } },
+  { id: 'cap_cind_1', planet: 'cinderice', depth: 11, name: 'Ash Capsule', contents: { coinsSec: 160, lore: 'A tin of matches, every one struck, packed with care.' } },
+  { id: 'cap_cind_2', planet: 'cinderice', depth: 55, name: 'Frost-sealed Capsule', puzzle: { kind: 'heat', need: 6 }, contents: { coinsSec: 320, lore: 'A map of the lava veins, drawn by someone who walked along them.' } },
+  { id: 'cap_cind_3', planet: 'cinderice', depth: 170, name: 'Ember Capsule', puzzle: { kind: 'light', need: 4 }, contents: { coinsSec: 520, lore: 'A coal that is still warm, wrapped in a letter that says: keep it lit.' } },
 ];
 
 export const NEEDLES = {
   frostara: { depthMin: 35, depthMax: 60, rewardSec: 600 },
+  mistral: { depthMin: 40, depthMax: 70, rewardSec: 700 },
+  cinderice: { depthMin: 45, depthMax: 80, rewardSec: 800 },
 };

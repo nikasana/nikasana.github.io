@@ -8,13 +8,13 @@ Growth is the effective per-level cost growth a bot felt: geometric mean of each
 
 | bot | purchases | first wait | early median | mid median | late median | p95 | peak | drift | growth | goal (min) | synergies | wave peaks |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| random | 264 | 2.40 | 7.6 | 28.1 | 46.4 | 63.1 | 141.5 | 15.19 | 1.970 | 97.5 (4/5) | 6.4 | 6% |
+| random | 264 | 2.40 | 7.6 | 28.1 | 44.6 | 63.1 | 141.5 | 15.19 | 1.969 | 97.3 (4/5) | 6.4 | 6% |
 | cheapest | 302 | 2.00 | 4.3 | 18.3 | 34.9 | 32.4 | 45.4 | 9.65 | 1.488 | 74.9 | 9.0 | 0% |
-| roi | 284 | 2.50 | 2.0 | 2.3 | 2.5 | 9.7 | 44.9 | 0.29 | 1.361 | 16.2 | 6.0 | 10% |
-| synergy | 306 | 2.50 | 1.8 | 7.0 | 1.6 | 8.9 | 29.4 | 0.06 | 1.284 | 14.1 | 8.0 | 13% |
+| roi | 283 | 2.50 | 2.0 | 2.3 | 2.5 | 9.7 | 44.9 | 0.31 | 1.362 | 16.2 | 6.0 | 10% |
+| synergy | 310 | 2.50 | 1.8 | 7.2 | 1.5 | 8.9 | 29.4 | 0.02 | 1.284 | 14.1 | 8.0 | 13% |
 
 - Drift ordering random > cheapest > ROI > synergy: **PASS**
-- Synergy drift near zero (|drift| < 1 s/100): **PASS** (0.06)
+- Synergy drift near zero (|drift| < 1 s/100): **PASS** (0.02)
 - First-upgrade wait about 2 s for every bot: **PASS**
 
 ## 🌍 Frostara, South pole (Old Shelf)
@@ -23,21 +23,21 @@ Growth is the effective per-level cost growth a bot felt: geometric mean of each
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | random | 258 | 2.65 | 8.6 | 27.9 | 47.6 | 60.6 | 117.0 | 14.91 | 2.035 | 103.8 | 6.2 | 5% |
 | cheapest | 303 | 2.25 | 4.2 | 18.1 | 34.6 | 31.6 | 45.0 | 9.03 | 1.474 | 76.9 | 9.0 | 2% |
-| roi | 288 | 2.75 | 2.0 | 2.4 | 2.1 | 10.4 | 47.8 | -0.03 | 1.357 | 17.4 | 6.0 | 9% |
-| synergy | 307 | 2.75 | 1.8 | 3.5 | 1.7 | 9.2 | 37.8 | -0.18 | 1.286 | 15.1 | 8.0 | 13% |
+| roi | 286 | 2.75 | 2.0 | 2.4 | 2.5 | 10.4 | 47.8 | -0.00 | 1.359 | 17.4 | 6.0 | 9% |
+| synergy | 310 | 2.75 | 1.8 | 3.5 | 1.5 | 9.2 | 37.8 | -0.21 | 1.286 | 15.2 | 8.0 | 13% |
 
 - Drift ordering random > cheapest > ROI > synergy: **PASS**
-- Synergy drift near zero (|drift| < 1 s/100): **PASS** (-0.18)
+- Synergy drift near zero (|drift| < 1 s/100): **PASS** (-0.21)
 - First-upgrade wait about 2 s for every bot: **PASS**
 
 ## 🌫️ Mistral, North pole (Pearl Hollow)
 
 | bot | purchases | first wait | early median | mid median | late median | p95 | peak | drift | growth | goal (min) | synergies | wave peaks |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| random | 275 | 2.30 | 7.5 | 28.7 | 57.6 | 68.2 | 172.2 | 12.67 | 1.973 | 93.3 (2/5) | 7.2 | 8% |
-| cheapest | 315 | 2.00 | 4.1 | 20.3 | 43.3 | 39.5 | 48.5 | 10.01 | 1.479 | 80.6 | 10.0 | 1% |
-| roi | 302 | 2.50 | 1.9 | 2.4 | 1.8 | 9.4 | 43.0 | 0.02 | 1.351 | 16.1 | 7.0 | 11% |
-| synergy | 351 | 2.50 | 1.8 | 7.8 | 0.6 | 8.1 | 27.4 | -0.22 | 1.331 | 14.2 | 8.0 | 14% |
+| random | 275 | 2.30 | 7.5 | 28.7 | 59.0 | 68.2 | 181.6 | 12.72 | 1.971 | 93.3 (2/5) | 7.2 | 8% |
+| cheapest | 315 | 2.00 | 4.1 | 20.3 | 43.4 | 39.7 | 48.0 | 10.03 | 1.479 | 80.6 | 10.0 | 1% |
+| roi | 307 | 2.50 | 1.9 | 2.4 | 1.7 | 9.3 | 43.0 | -0.00 | 1.351 | 16.1 | 7.0 | 11% |
+| synergy | 360 | 2.50 | 1.8 | 7.8 | 0.5 | 8.1 | 27.4 | -0.22 | 1.327 | 14.2 | 8.0 | 12% |
 
 - Drift ordering random > cheapest > ROI > synergy: **PASS**
 - Synergy drift near zero (|drift| < 1 s/100): **PASS** (-0.22)
@@ -48,12 +48,38 @@ Growth is the effective per-level cost growth a bot felt: geometric mean of each
 | bot | purchases | first wait | early median | mid median | late median | p95 | peak | drift | growth | goal (min) | synergies | wave peaks |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | random | 256 | 2.80 | 8.8 | 37.4 | 71.8 | 79.5 | 161.3 | 18.43 | 2.012 | 108.3 (1/5) | 6.6 | 5% |
-| cheapest | 316 | 2.50 | 4.3 | 19.3 | 42.4 | 39.8 | 48.5 | 9.54 | 1.482 | 85.3 | 10.0 | 1% |
-| roi | 304 | 3.00 | 2.0 | 2.3 | 1.8 | 10.3 | 48.2 | -0.34 | 1.347 | 18.0 | 7.0 | 11% |
-| synergy | 351 | 3.00 | 1.8 | 3.0 | 1.3 | 8.7 | 38.0 | -0.43 | 1.333 | 15.9 | 8.0 | 14% |
+| cheapest | 316 | 2.50 | 4.3 | 19.3 | 42.4 | 39.9 | 47.0 | 9.55 | 1.482 | 85.3 | 10.0 | 1% |
+| roi | 311 | 3.00 | 2.0 | 2.3 | 1.7 | 10.3 | 48.2 | -0.36 | 1.368 | 18.0 | 7.0 | 10% |
+| synergy | 360 | 3.00 | 1.8 | 3.0 | 0.5 | 8.7 | 38.0 | -0.42 | 1.329 | 16.0 | 8.0 | 12% |
 
 - Drift ordering random > cheapest > ROI > synergy: **PASS**
-- Synergy drift near zero (|drift| < 1 s/100): **PASS** (-0.43)
+- Synergy drift near zero (|drift| < 1 s/100): **PASS** (-0.42)
+- First-upgrade wait about 2 s for every bot: **PASS**
+
+## 🌋 Cinderice, North pole (Ash Crown)
+
+| bot | purchases | first wait | early median | mid median | late median | p95 | peak | drift | growth | goal (min) | synergies | wave peaks |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| random | 277 | 2.30 | 7.3 | 30.5 | 49.9 | 68.5 | 135.6 | 14.61 | 1.971 | 101.0 (1/5) | 7.2 | 6% |
+| cheapest | 328 | 2.00 | 4.0 | 26.1 | 48.8 | 46.4 | 55.0 | 11.46 | 1.479 | 92.3 | 10.0 | 1% |
+| roi | 323 | 2.50 | 2.0 | 3.8 | 2.0 | 9.5 | 42.8 | 0.01 | 1.377 | 17.6 | 7.0 | 10% |
+| synergy | 390 | 2.50 | 1.8 | 1.5 | 0.5 | 8.2 | 28.2 | -0.26 | 1.341 | 15.8 | 8.0 | 15% |
+
+- Drift ordering random > cheapest > ROI > synergy: **PASS**
+- Synergy drift near zero (|drift| < 1 s/100): **PASS** (-0.26)
+- First-upgrade wait about 2 s for every bot: **PASS**
+
+## 🌋 Cinderice, South pole (Cold Caldera)
+
+| bot | purchases | first wait | early median | mid median | late median | p95 | peak | drift | growth | goal (min) | synergies | wave peaks |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| random | 284 | 2.45 | 7.7 | 23.0 | 67.5 | 68.0 | 131.2 | 11.88 | 1.988 | 104.1 (3/5) | 7.4 | 9% |
+| cheapest | 329 | 2.25 | 3.5 | 24.1 | 47.5 | 45.4 | 53.9 | 10.61 | 1.489 | 93.0 | 10.0 | 1% |
+| roi | 328 | 2.50 | 2.1 | 2.4 | 1.9 | 10.0 | 45.3 | -0.21 | 1.373 | 18.2 | 7.0 | 11% |
+| synergy | 391 | 2.50 | 1.8 | 4.7 | 0.5 | 8.1 | 38.1 | -0.36 | 1.343 | 16.6 | 8.0 | 16% |
+
+- Drift ordering random > cheapest > ROI > synergy: **PASS**
+- Synergy drift near zero (|drift| < 1 s/100): **PASS** (-0.36)
 - First-upgrade wait about 2 s for every bot: **PASS**
 
 ## Planet travel and re-scaling
