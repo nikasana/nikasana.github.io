@@ -51,3 +51,13 @@ Choices made where the build prompt is silent, and the reasons. Updated every ba
 
 - Defaults follow the prompt. Two extra rebindable keys: `J` opens the notebook (collections) and `F` toggles the lamp.
 - The pick has a secondary heavy strike (hold right mouse to charge); the torch's secondary is a wide, gentler spray; the vision tool's secondary toggles the lamp.
+
+## Why not just dig straight down? (round 2)
+- Coins sit in horizontal seams every 5.5 m, with barren ice between; a seam is worth following sideways.
+- Finds are scattered across the whole claim, mostly away from the starting column, and change with depth.
+- Upgrades are only sold at the Outfitter's hut on the surface, so every upgrade is a trip up the lift and back.
+- Dig and melt multiply each other (thermal shock, crack seep): swapping tools on one face beats pushing one tool down.
+- What is left: a straight shaft is still the fastest way to depth. Batch 1.2 (water) and later planets add more reasons to spread out.
+
+## World persistence
+- The heightmap of carved depth is kept for coarse streaming and the planet view; every chunk that was ever edited also keeps its exact density, in memory, in saves (run-length encoded) and in crew snapshots.

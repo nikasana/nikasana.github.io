@@ -98,5 +98,15 @@ How to reach and check every feature. Each batch adds a section; earlier section
 | Crew milestones | `C` screen, or dev **Crew:** buttons | Progress bars. Completing one gives every member a permanent bonus that also applies solo. |
 | Host leaves | Close the host tab | The member sees "Host left", keeps playing from their copy and retries automatically. **Resume as host** on the crew screen re-opens the same code. |
 
+### Round 2 checks
+1. Dig a narrow shaft 10 m down with a side tunnel, ride the lift up, walk away, come back: the shaft and tunnel are exactly as dug. Reload the page: still exact.
+2. Press U away from the blue Outfitter's hut: a notice sends you there; at the hut, U opens the upgrades. The hut shows as ▣ on the compass and minimap, and its ground cannot be dug.
+3. Dig into a crater wall: coins show through up to about a metre of ice, mostly in horizontal seams; freed coins hang visible for a moment before flying to the pack.
+4. Find a glowing find in the ice, dig it free and walk to it: a notice names it with its reward (coins, a boost such as faster swings, or a permanent relic).
+5. Stand still at the bottom of a shaft: the view does not move at all.
+6. Open and close any menu with its key or Esc: play resumes without a click (Esc from play still opens Pause).
+7. Start screen with saves: every survey and crew is listed; Continue loads it; Begin a new survey keeps the old ones; Delete asks first.
+8. Two tabs with ?coopdebug=1: host digs a tunnel, member joins: the tunnel is identical for both; both see each other's avatar; a find opened by one vanishes for the other.
+
 ### Dev menu coverage (Batch 1)
 Jump planet and pole, dig a shaft to any depth, noclip and teleport; add copper, silver or gold, add one minute or one hour of income, fill the pack; set Legacy; add, max or reset any node or whole tree; spawn the time capsule or the needle, reveal the needle; trigger each milestone, crew milestone and resonance; refreeze pools; ×10 and ×100 time; simulate 1 h or 8 h away; live debug readout (measured vs model income, live wait for the next goal, inflation, active resonances, chunk and particle counts, draw calls).
