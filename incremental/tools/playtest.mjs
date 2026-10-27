@@ -207,7 +207,7 @@ async function coop(browser) {
   const link = await ev(host, () => window.__game.crew.link());
   check('Join link carries the code', link.includes(`join=${code}`), link);
   const member = await open(browser, `coopdebug=1&dev=1&slot=coopmember&join=${code}`, 'member', ctx);
-  const joined = await until(member, () => window.__game.crew.active && window.__game.started && window.__game.slot.startsWith('crew.'), 90000);
+  const joined = await until(member, () => window.__game.crew.active && window.__game.started && window.__game.slot.startsWith('crew.'), 150000);  // software WebGL loads the crater slowly
   check('Member joins through the link', joined);
   // host digs, member sees the edit; member banks, host vault grows
   await ev(host, () => { const g = window.__game; g.input.locked = true; g.applyOp({ kind: 'dig', x: 6, y: -1, z: -6, r: 1.5, seed: 3 }, 'local'); });

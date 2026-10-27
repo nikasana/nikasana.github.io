@@ -15,7 +15,7 @@ const unkey = (k) => { const cy = (k % 8192) - 4096, r = Math.floor(k / 8192); r
 // Open ice: you can dig anywhere within WORLD_LIM of the claim centre. Chunks stream in a window
 // around the player; the snowfield (terrain.js) hides itself over columns that have an ice mesh.
 export const WORLD_LIM = 400;
-export const WIN_H = 5;                  // horizontal window radius in chunks (40 m)
+export const WIN_H = 4;                  // horizontal window radius in chunks (36 m around you)
 export const MASK_N = 128;               // owned-column mask covers MASK_N chunks per side, centred on 0
 const colIndex = (cx, cz) => { const i = cx + MASK_N / 2, k = cz + MASK_N / 2; return i < 0 || k < 0 || i >= MASK_N || k >= MASK_N ? -1 : k * MASK_N + i; };
 const occ = (d) => clamp((d - ISO) / GRAD + 0.5, 0, 1);
