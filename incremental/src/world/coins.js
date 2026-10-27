@@ -188,7 +188,9 @@ export class CoinSystem {
     this.mats = COINS.slice(0, 3).map((_, i) => coinMaterial(atmo, i));
     this.embedded = new Map();       // chunk key -> [{tier, x, y, z, q, id}]
     this.loose = [];                 // {tier, p, v, q, w, sleep, value, id, t}
-    this.embMesh = this.lowGeos.map((g, i) => this.mkInst(g, this.mats[i], 7000, false));
+    // frozen coins glow faintly in their own colour so they read through the ice
+    this.embMats = this.mats.map((m, i) => { const e = m.clone(); e.emissive = new THREE.Color(...COINS[i].color).multiplyScalar(0.35); atmo.register(e, `coinEmb${i}`); return e; });
+    this.embMesh = this.lowGeos.map((g, i) => this.mkInst(g, this.embMats[i], 7000, false));
     // loose coins: full detail with shadows close to the eye, the plain disc further away
     this.looseMesh = this.geos.map((g, i) => this.mkInst(g, this.mats[i], 400));
     this.looseFar = this.lowGeos.map((g, i) => this.mkInst(g, this.mats[i], 2500, false));

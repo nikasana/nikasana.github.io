@@ -291,16 +291,20 @@ export class Works {
     const tx = Math.max(-lim, Math.min(lim, target.x)), tz = Math.max(-lim, Math.min(lim, target.z));
     // hover above the floor at the target, never inside the ice
     const floor = volume.floorBelow(tx, target.y + 2.5, tz, 60);
-    const ty = Math.max(floor + 1.5, Math.min(target.y + 1.2, surfaceY(tx, tz) + 3));
+    const ty = target.overhead ? target.y + 1.3 : Math.max(floor + 1.5, Math.min(target.y + 1.2, surfaceY(tx, tz) + 3));
     const hs = liftSpeed * 2.4, vs = liftSpeed * 1.8;
     const dx = tx - b.x, dz = tz - b.z, dy = ty - b.y;
     const dh = Math.hypot(dx, dz);
     const mh = Math.min(dh, hs * dt);
     if (dh > 1e-3) { b.x += (dx / dh) * mh; b.z += (dz / dh) * mh; }
     b.y += Math.sign(dy) * Math.min(Math.abs(dy), vs * dt);
-    // keep out of walls
+    // keep out of walls: step back toward the open target rather than climbing out of the crater
     const s = volume.sdf(b.x, b.y, b.z);
-    if (s > -0.8) b.y += (s + 0.8);
+    if (s > -0.8 && !target.overhead) {
+      const ox = tx - b.x, oz = tz - b.z, ol = Math.hypot(ox, oz);
+      if (ol > 0.05) { b.x += (ox / ol) * Math.min(ol, 0.05 + (s + 0.8) * 0.5); b.z += (oz / ol) * Math.min(ol, 0.05 + (s + 0.8) * 0.5); }
+      else b.y += (s + 0.8) * 0.5;
+    }
     this.beacon.rotation.y += dt * 0.6;
     this.beam.position.set(b.x, b.y + 0.5, b.z);
     this.beam.material.uniforms.uTime.value = time;

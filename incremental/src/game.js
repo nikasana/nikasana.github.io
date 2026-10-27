@@ -466,7 +466,8 @@ class Game {
     const b = this.works.beaconPos();
     const deep = this.depthAt(this.ctl.pos.x, this.ctl.pos.y, this.ctl.pos.z) > 1.4;
     if (!this.ride) {
-      if (holdJump && this.atBeacon && deep && this.ctl.onGround) {
+      this.liftReady = this.atBeacon && deep;
+      if (holdJump && this.liftReady) {
         this.rideHold = (this.rideHold || 0) + dt;
         if (this.rideHold > 0.5) { this.ride = { t: 0 }; this.rideHold = 0; this.sfx.play('bank', { pos: b, count: 0 }); }
       } else this.rideHold = 0;
@@ -567,6 +568,20 @@ class Game {
       const k = this.treasure;
       // sprite 6 = star glint drawn through the ice (x-ray flag)
       this.particles.add.spawn(6, 6, k.x, k.y, k.z, 0, 0, 0, 0.65, 0.34, 0.05, ...COIN_RGB[k.tier], 0.5, 0, 0, 2);
+    }
+    // every coin frozen in the ice within a few metres of you sparkles through it
+    let n = 0;
+    for (const list of this.coins.embedded.values()) {
+      if (list.cx !== undefined && (list.cx - eye.x) ** 2 + (list.cy - eye.y) ** 2 + (list.cz - eye.z) ** 2 > 14 * 14) continue;
+      for (const k of list) {
+        const d2 = (k.x - eye.x) ** 2 + (k.y - eye.y) ** 2 + (k.z - eye.z) ** 2;
+        if (d2 > 5 * 5) continue;
+        const life = 0.6 + Math.random() * 0.3;
+        this.particles.add.spawn(6, 6, k.x, k.y, k.z, 0, 0, 0, life, 0.5, 0.12, ...COIN_RGB[k.tier], 1, 0, 0, 3);
+        // a solid coloured core so the sparkle also reads against bright ice
+        this.particles.alpha.spawn(6, 4, k.x, k.y, k.z, 0, 0, 0, life, 0.14, 0.1, ...COIN_RGB[k.tier].map((c) => c * 0.8), 0.95, 0, 0, 0);
+        if (++n >= 60) return;
+      }
     }
   }
 
@@ -972,7 +987,7 @@ class Game {
       this.ctl.step(PHYS_STEP, {
         forward: move ? (inp.is('forward') ? 1 : 0) - (inp.is('back') ? 1 : 0) : 0,
         strafe: move ? (inp.is('right') ? 1 : 0) - (inp.is('left') ? 1 : 0) : 0,
-        sprint: move && inp.is('sprint'), jump: move && inp.is('jump'),
+        sprint: move && inp.is('sprint'), jump: move && inp.is('jump') && !this.liftReady,
       });
       this.physAcc -= PHYS_STEP;
     }
@@ -1025,7 +1040,17 @@ class Game {
     const yw = this.ctl.yaw;
     const bt = this.beaconTarget;
     if (!bt || Math.hypot(bt.x - this.ctl.pos.x, bt.z - this.ctl.pos.z) > 3.5 || Math.abs(bt.y - this.ctl.pos.y) > 2) {
-      this.beaconTarget = this.ctl.pos.clone().add(new THREE.Vector3(Math.cos(yw) * 1.5 - Math.sin(yw) * 1.6, 0, -Math.sin(yw) * 1.5 - Math.cos(yw) * 1.6));
+      // park ahead and to the right if there is room; in a narrow shaft fall back to other sides,
+      // and finally to the open shaft right above your head
+      const p = this.ctl.pos, fx = -Math.sin(yw), fz = -Math.cos(yw), rx = Math.cos(yw), rz = -Math.sin(yw);
+      const spots = [[1.5, 1.6], [0, 1.8], [1.8, 0], [-1.8, 0], [-1.5, 1.6], [0, -1.8], [1, 1], [-1, 1]];
+      let pick = null;
+      for (const [r, f] of spots) {
+        const x = p.x + rx * r + fx * f, z = p.z + rz * r + fz * f;
+        if (this.volume.sdf(x, p.y + 1.2, z) < -0.75 && this.volume.sdf(x, p.y + 0.6, z) < -0.3) { pick = new THREE.Vector3(x, p.y, z); break; }
+      }
+      this.beaconTarget = pick || new THREE.Vector3(p.x, p.y + 1.3, p.z);
+      this.beaconTarget.overhead = !pick;
     }
     const target = this.beaconTarget;
     if (!this.ride) this.works.update(dt, this.time, target, st.liftSpeed, this.volume);
