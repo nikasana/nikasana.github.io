@@ -305,6 +305,8 @@ export class Works {
       if (ol > 0.05) { b.x += (ox / ol) * Math.min(ol, 0.05 + (s + 0.8) * 0.5); b.z += (oz / ol) * Math.min(ol, 0.05 + (s + 0.8) * 0.5); }
       else b.y += (s + 0.8) * 0.5;
     }
+    // never above the crater rim: the lift lives in the crater
+    b.y = Math.min(b.y, surfaceY(b.x, b.z) + 4);
     this.beacon.rotation.y += dt * 0.6;
     this.beam.position.set(b.x, b.y + 0.5, b.z);
     this.beam.material.uniforms.uTime.value = time;
