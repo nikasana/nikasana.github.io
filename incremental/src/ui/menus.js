@@ -415,7 +415,7 @@ export class Menus {
     return h('div.start', {},
       h('div.start-left', {},
         h('div.eyebrow', {}, `${g.planet.icon} ${g.planet.name} complete · next world`),
-        h('div.title', {}, next.icon + ' ', h('span', {}, next.name)),
+        h('div.title', {}, 'Next:', h('span', {}, next.name)),
         h('p.lede', {}, `${next.rule}. Your ${g.planet.name} legacy goes with you: ×${opts.legacy.toFixed(2)} income on ${next.name}. Upgrades start over, priced for your legacy, so the first one comes as quickly as it did here.`),
         h('div.eyebrow', {}, 'Choose your pole on the new world.'),
         cards,

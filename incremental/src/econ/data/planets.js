@@ -45,7 +45,7 @@ export const PLANETS = [
     radiusM: 1800, goalDepth: 1200, density: 7.5, depthScale: 9, richExp: 1.34,
     coinTiers: ['copper', 'silver', 'gold', 'gem'],
     // thick, low fog: past a few dozen metres everything is pearl grey unless your lamp cuts it
-    exposure: 0.74, fog: [0.7, 0.71, 0.76], fogDensity: 0.022,
+    exposure: 0.74, fog: [0.7, 0.71, 0.76], fogDensity: 0.022, skyVeil: 0.88, skyVeilBright: 0.9,
     sky: { turbidity: 9, rayleigh: 0.5, mieCoefficient: 0.02, mieDirectionalG: 0.7 },
     sunElevation: 9, dayLength: 720,
     grade: { lift: [0.02, 0.02, 0.03], gain: [0.96, 0.97, 1.0], sat: 0.88, contrast: 1.04 },

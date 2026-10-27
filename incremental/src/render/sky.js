@@ -39,6 +39,23 @@ export class Atmosphere {
     this.envSky = new Sky();
     this.envSky.scale.setScalar(1000);
     this.envScene.add(this.envSky);
+    // a per-planet veil over the sky dome (Mistral's fog hides the sky too)
+    this.veil = { uVeil: { value: 0 }, uVeilColor: { value: new THREE.Color() } };
+    for (const s of [this.sky, this.envSky]) {
+      s.material.onBeforeCompile = (shader) => {
+        Object.assign(shader.uniforms, this.veil);
+        shader.fragmentShader = shader.fragmentShader
+          .replace('void main() {', 'uniform float uVeil;\nuniform vec3 uVeilColor;\nvoid main() {')
+          .replace('gl_FragColor = vec4( texColor, 1.0 );', `gl_FragColor = vec4( texColor, 1.0 );
+            {
+              vec3 dir = normalize( vWorldPosition - cameraPosition );
+              float sunGlow = pow( max( dot( dir, vSunDirection ), 0.0 ), 8.0 );
+              vec3 veil = uVeilColor * ( 1.0 + sunGlow * 0.35 );
+              gl_FragColor.rgb = mix( gl_FragColor.rgb, veil, uVeil * ( 0.75 + 0.25 * ( 1.0 - max( dir.y, 0.0 ) ) ) );
+            }`);
+      };
+      s.material.customProgramCacheKey = () => 'skyVeil';
+    }
     this.pmrem = new THREE.PMREMGenerator(renderer);
     this.envRT = null;
     this.lastEnvSun = new THREE.Vector3();
@@ -65,6 +82,8 @@ export class Atmosphere {
       u.mieDirectionalG.value = p.sky.mieDirectionalG;
       if (u.cloudCoverage) { u.cloudCoverage.value = 0.32; u.cloudDensity.value = 0.45; u.cloudScale.value = 0.00018; u.cloudSpeed.value = 0.00001; u.cloudElevation.value = 0.45; }
     }
+    this.veil.uVeil.value = p.skyVeil || 0;
+    this.veil.uVeilColor.value.setRGB(...p.fog).multiplyScalar(p.skyVeilBright || 1);
     this.scene.fog = new THREE.FogExp2(new THREE.Color(...p.fog), p.fogDensity);
     FOG.uFogParams.value.x = p.fogDensity;
     this.lastEnvSun.set(0, 0, 0);
