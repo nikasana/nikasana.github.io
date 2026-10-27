@@ -6,7 +6,8 @@ import { keyOf } from './volume.js';
 import { rng, hash32 } from '../core/rng.js';
 import { COINS, tierWeights } from '../econ/data/coins.js';
 
-const VIS_R = 11;            // embedded coins drawn within this distance
+const VIS_R = 11;              // embedded coins drawn within this distance
+const NEAR_R2 = 4 * 4;         // loose coins this close get the detailed, shadow-casting model
 const COUNT_PER_M3 = 2.0;   // dense enough that every few swings free a coin
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(1, 1, 1), _p = new THREE.Vector3(), _n = new THREE.Vector3();
 
@@ -188,7 +189,9 @@ export class CoinSystem {
     this.embedded = new Map();       // chunk key -> [{tier, x, y, z, q, id}]
     this.loose = [];                 // {tier, p, v, q, w, sleep, value, id, t}
     this.embMesh = this.lowGeos.map((g, i) => this.mkInst(g, this.mats[i], 7000, false));
-    this.looseMesh = this.geos.map((g, i) => this.mkInst(g, this.mats[i], 2500));
+    // loose coins: full detail with shadows close to the eye, the plain disc further away
+    this.looseMesh = this.geos.map((g, i) => this.mkInst(g, this.mats[i], 400));
+    this.looseFar = this.lowGeos.map((g, i) => this.mkInst(g, this.mats[i], 2500, false));
     this.lastBuild = new THREE.Vector3(1e9, 0, 0);
     this.dirty = true;
     this.planetCtx = null;
@@ -349,19 +352,22 @@ export class CoinSystem {
       }
       if (c.p.y < -2000) this.loose.splice(i, 1);
     }
-    this.drawLoose();
+    this.drawLoose(camPos);
     if (this.dirty || this.lastBuild.distanceToSquared(camPos) > 0.6) this.drawEmbedded(camPos);
   }
 
-  drawLoose() {
-    const n = [0, 0, 0];
+  drawLoose(camPos) {
+    const n = [0, 0, 0], f = [0, 0, 0];
     for (const c of this.loose) {
-      const m = this.looseMesh[c.tier];
-      if (n[c.tier] >= m.instanceMatrix.count) continue;
+      const near = c.p.distanceToSquared(camPos) < NEAR_R2 && n[c.tier] < 60;
+      const m = near ? this.looseMesh[c.tier] : this.looseFar[c.tier];
+      const cnt = near ? n : f;
+      if (cnt[c.tier] >= m.instanceMatrix.count) continue;
       _m.compose(c.p, c.q, _s);
-      m.setMatrixAt(n[c.tier]++, _m);
+      m.setMatrixAt(cnt[c.tier]++, _m);
     }
     this.looseMesh.forEach((m, i) => { m.count = n[i]; m.instanceMatrix.needsUpdate = true; });
+    this.looseFar.forEach((m, i) => { m.count = f[i]; m.instanceMatrix.needsUpdate = true; });
   }
 
   drawEmbedded(camPos) {
