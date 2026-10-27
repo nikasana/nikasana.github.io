@@ -1,10 +1,51 @@
 // Coins: embedded in the ice (deterministic per chunk), freed by edits, then loose with simple
 // physics until collected. Rendered with one instanced mesh per tier for each state.
 import * as THREE from 'three';
-import { CHUNK_M, ISO, richness, surfaceY } from './field.js';
+import { CHUNK_M, ISO, richness, surfaceY, sampleHeightmap } from './field.js';
 import { keyOf } from './volume.js';
 import { rng, hash32 } from '../core/rng.js';
 import { COINS, tierWeights } from '../econ/data/coins.js';
+import { LAYERS } from '../render/graphics.js';
+
+// Frozen coins are drawn after the ice, tested against its depth: a coin up to SEE_DEPTH behind
+// an ice face shows through it, tinted and fading with depth; deeper coins stay hidden.
+const SEE_DEPTH = 1.3;
+function frozenCoinMaterial(tier, gfx) {
+  const c = COINS[tier];
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      tDepth: { value: gfx.rtMain.depthTexture }, uResolution: { value: gfx.size },
+      uNearFar: { value: new THREE.Vector2(gfx.camera.near, gfx.camera.far) },
+      uColor: { value: new THREE.Color(...c.color) }, uLight: { value: 1 }, uTime: { value: 0 },
+    },
+    vertexShader: `varying vec3 vN; varying float vDepth; varying vec3 vW;
+      void main() {
+        vec4 w = modelMatrix * instanceMatrix * vec4( position, 1.0 );
+        vW = w.xyz;
+        vN = normalize( mat3( modelMatrix * instanceMatrix ) * normal );
+        vec4 mv = viewMatrix * w;
+        vDepth = -mv.z;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `uniform sampler2D tDepth; uniform vec2 uResolution; uniform vec2 uNearFar; uniform vec3 uColor; uniform float uLight; uniform float uTime;
+      varying vec3 vN; varying float vDepth; varying vec3 vW;
+      float linDepth( float d ) { float n = uNearFar.x, f = uNearFar.y; float z = d * 2.0 - 1.0; return 2.0 * n * f / ( f + n - z * ( f - n ) ); }
+      void main() {
+        float scene = linDepth( texture2D( tDepth, gl_FragCoord.xy / uResolution ).x );
+        float behind = vDepth - scene;            // how far behind the nearest surface this coin is
+        if ( behind > ${SEE_DEPTH.toFixed(2)} ) discard;
+        float vis = 1.0 - smoothstep( 0.05, ${SEE_DEPTH.toFixed(2)}, behind );
+        vec3 n = normalize( vN );
+        float lit = 0.55 + 0.45 * abs( n.y ) + 0.35 * pow( abs( n.z ), 4.0 );
+        float sparkle = pow( max( 0.0, sin( dot( vW, vec3( 7.0, 11.0, 5.0 ) ) + uTime * 2.5 ) ), 24.0 );
+        vec3 col = uColor * lit * uLight * 1.25 + sparkle * 0.8;
+        // seen through ice: shifted toward the ice colour with depth
+        col = mix( col, col * vec3( 0.55, 0.8, 0.95 ) + vec3( 0.02, 0.05, 0.07 ), smoothstep( 0.0, ${SEE_DEPTH.toFixed(2)}, behind ) * 0.7 );
+        gl_FragColor = vec4( col, behind > 0.02 ? vis * 0.92 : 1.0 );
+      }`,
+    transparent: true, depthTest: false, depthWrite: false,
+  });
+}
 
 const VIS_R = 11;              // embedded coins drawn within this distance
 const NEAR_R2 = 4 * 4;         // loose coins this close get the detailed, shadow-casting model
@@ -191,6 +232,7 @@ export class CoinSystem {
     // frozen coins glow faintly in their own colour so they read through the ice
     this.embMats = this.mats.map((m, i) => { const e = m.clone(); e.emissive = new THREE.Color(...COINS[i].color).multiplyScalar(0.35); atmo.register(e, `coinEmb${i}`); return e; });
     this.embMesh = this.lowGeos.map((g, i) => this.mkInst(g, this.embMats[i], 7000, false));
+    this.frozenMats = null;
     // loose coins: full detail with shadows close to the eye, the plain disc further away
     this.looseMesh = this.geos.map((g, i) => this.mkInst(g, this.mats[i], 400));
     this.looseFar = this.lowGeos.map((g, i) => this.mkInst(g, this.mats[i], 2500, false));
@@ -216,6 +258,19 @@ export class CoinSystem {
   }
 
   setContext(ctx) { this.planetCtx = ctx; }
+
+  // Switch frozen coins to the see-through-ice pass (needs the main depth buffer).
+  useIcePass(gfx) {
+    this.frozenMats = this.embMesh.map((m, i) => {
+      const mat = frozenCoinMaterial(i, gfx);
+      m.material = mat;
+      m.layers.set(LAYERS.FX);
+      m.renderOrder = 0;
+      return mat;
+    });
+  }
+
+  setLight(light, time) { if (this.frozenMats) for (const m of this.frozenMats) { m.uniforms.uLight.value = light; m.uniforms.uTime.value = time; } }
 
   // Deterministic coins for a freshly generated chunk; coins already in carved space are skipped.
   spawnChunk(c) {
@@ -310,7 +365,7 @@ export class CoinSystem {
       let target = null, best = Infinity;
       for (const col of collectors) {
         const d = col.pos.distanceTo(c.p);
-        if ((d < col.range || c.magnet) && d < best && col.canTake(c)) { best = d; target = col; }
+        if (c.t > 0.8 && (d < col.range || c.magnet) && d < best && col.canTake(c)) { best = d; target = col; }
       }
       if (!target && autoCollect > 0 && c.t > 0.6 && !c.magnet && Math.random() < autoCollect * dt) c.magnet = true;
       if (c.magnet && !target && collectors.length) target = collectors[0];
@@ -383,6 +438,8 @@ export class CoinSystem {
       for (const k of list) {
         const dx = k.x - camPos.x, dy = k.y - camPos.y, dz = k.z - camPos.z;
         if (dx * dx + dy * dy + dz * dz > R2) continue;
+        // just under untouched snow: keep hidden (snow is opaque); dug ground shows them
+        if (k.depth < 1.2 && sampleHeightmap(this.volume.hm, k.x, k.z) < 0.3) continue;
         const m = this.embMesh[k.tier];
         if (n[k.tier] >= 7000) continue;
         _p.set(k.x, k.y, k.z);
