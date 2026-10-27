@@ -36,10 +36,19 @@ export function surfaceY(x, z) {
 }
 
 // Richness (0..1): veins of coin-rich ice running through the volume.
+// The Outfitter's hut stands on a pad of ground that cannot be dug away.
+export const OUTFITTER = { x: -5.5, z: 9.5, r: 3.6 };
+export const protectedAt = (x, y, z) => Math.hypot(x - OUTFITTER.x, z - OUTFITTER.z) < OUTFITTER.r && y > surfaceY(OUTFITTER.x, OUTFITTER.z) - 6;
+
 export function richness(x, y, z) {
   const v = noise.fbm3(x * 0.07, y * 0.09, z * 0.07, 3);
   const vein = 1 - Math.abs(noise.n3(x * 0.035 + 11, y * 0.05, z * 0.035 - 7));
-  return clamp(0.5 + v * 0.55 + (vein - 0.75) * 1.2, 0, 1);
+  // coins gather in horizontal seams about every 5.5 m that wander up and down a little:
+  // following a seam sideways pays better than digging straight down through the barren ice between
+  const band = -y / 5.5 + noise.n3(x * 0.04, 3.7, z * 0.04) * 0.6;
+  const f = band - Math.floor(band) - 0.5;
+  const seam = Math.exp(-(f * f) / (2 * 0.075 * 0.075));
+  return clamp(0.12 + v * 0.3 + (vein - 0.75) * 0.5 + seam * 0.8, 0, 1);
 }
 
 // Heightmap of carved depth below the original surface, HM_RES x HM_RES over [-HALF, HALF).

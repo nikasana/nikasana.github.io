@@ -70,7 +70,7 @@ export class Menus {
     const k = (a) => keyLabel(g.input.code(a));
     const nav = [
       ['Resume', 'Esc', () => { this.close(); g.input.lock(); }],
-      ['Upgrades', k('upgrades'), () => this.show('upgrades')],
+      ['Upgrades', k('upgrades'), () => { if (g.canUpgrade()) this.show('upgrades'); else { this.close(); g.input.lock(); g.upgradeAway(); } }],
       ['Planet view', k('planet'), () => { this.close(); g.togglePlanet(true); }],
       ['Notebook', k('collections'), () => this.show('collections')],
       ['Crew', k('coop'), () => this.show('crew')],

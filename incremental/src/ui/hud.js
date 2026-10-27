@@ -109,7 +109,7 @@ export class Hud {
         this.goalId = s.goal.id;
         clear(this.goalName).append(h('span', {}, n.icon), h('span', { style: { color: TREE_COLOR[n.tree] } }, n.name));
       }
-      this.goalCost.textContent = s.goalReady ? `Ready · press ${keyLabel(g.input.code('upgrades'))}` : `${format(s.goal.cost)} coins`;
+      this.goalCost.textContent = s.goalReady ? (g.atOutfitter() ? `Ready · press ${keyLabel(g.input.code('upgrades'))}` : 'Ready · go to the Outfitter ▣') : `${format(s.goal.cost)} coins`;
       this.goal.classList.toggle('ready', s.goalReady);
       const p = Math.min(1, s.goalProgress);
       this.goalGlow.style.opacity = String(Math.pow(p, 3) * 0.95);

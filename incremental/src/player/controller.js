@@ -77,6 +77,13 @@ export class Controller {
       const l = Math.hypot(ox, oz);
       if (l > 1e-3 && wish.lengthSq() < 0.01) { this.vel.x += (ox / l) * 6 * dt; this.vel.z += (oz / l) * 6 * dt; }
     }
+    // standing still on solid ground: no drift or jitter from contact push-outs
+    const still = this.onGround && wish.lengthSq() < 0.01 && !input.jump && !this.overGap(null);
+    if (still) {
+      const k = Math.max(0, 1 - 24 * dt);
+      this.vel.x *= k; this.vel.z *= k;
+      if (Math.hypot(this.vel.x, this.vel.z) < 0.08) { this.vel.x = 0; this.vel.z = 0; }
+    }
     const accel = this.onGround ? 14 : 3.2;
     const target = wish.multiplyScalar(speed);
     this.vel.x += (target.x - this.vel.x) * Math.min(1, accel * dt);
@@ -93,6 +100,10 @@ export class Controller {
     for (let i = 0; i < n; i++) {
       this.pos.addScaledVector(this.vel, dt / n);
       this.resolve();
+    }
+    if (still && this.onGround && Math.hypot(this.pos.x - this.prev.x, this.pos.z - this.prev.z) < 0.03 && Math.abs(this.pos.y - this.prev.y) < 0.03) {
+      this.pos.copy(this.prev);
+      this.vel.set(0, 0, 0);
     }
     if (this.onGround && !wasGround && fallSpeed < -6) this.emit('land', -fallSpeed);
     if (this.onGround) {
@@ -149,7 +160,8 @@ export class Controller {
   overGap(n) {
     if (n && n.y > 0.97) return false;
     const vol = this.volume, p = this.pos;
-    return vol.sdf(p.x, p.y - 0.12, p.z) < -0.05 && vol.sdf(p.x, p.y - 0.45, p.z) < -0.05;
+    // a real hole at least 0.9 m deep, not just the curved floor of the shaft you stand in
+    return vol.sdf(p.x, p.y - 0.12, p.z) < -0.05 && vol.sdf(p.x, p.y - 0.45, p.z) < -0.05 && vol.sdf(p.x, p.y - 0.9, p.z) < -0.05;
   }
 
   pushBox(c) {

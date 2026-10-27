@@ -35,7 +35,7 @@ import * as Save from './save/save.js';
 
 const SIM_STEP = 1 / 30;
 const PHYS_STEP = 1 / 60;
-const COINS_PER_M3 = 1.6;     // expected embedded coins per m³ (see coins.js spawn)
+const COINS_PER_M3 = 0.58;    // expected embedded coins per m³ (see coins.js spawn: 2.0 tries x 1.6 x mean seam acceptance 0.18)
 const COIN_RGB = [[1, 0.62, 0.45], [0.9, 0.95, 1], [1, 0.82, 0.35]];
 
 const DEFAULT_SETTINGS = {
@@ -131,8 +131,9 @@ class Game {
       this.suppressPause = false;
     });
     inp.on('key', (code) => this.onKey(code));
-    addEventListener('mousedown', () => this.startAudio());
-    addEventListener('keydown', () => this.startAudio());
+    addEventListener('mousedown', () => { this.startAudio(); if (this.wantsLock()) inp.lock(); });
+    // if the browser refused the lock (it can right after a menu or alt-tab), any game key takes it back
+    addEventListener('keydown', (e) => { this.startAudio(); if (e.code !== 'Escape' && this.wantsLock()) inp.lock(); });
 
     this.tools.on('strike', (s) => this.onStrike(s));
     this.tools.on('melt', (m) => this.onMelt(m));
@@ -197,6 +198,7 @@ class Game {
     if (menuKey) {
       if (this.view !== 'fp') return;
       if (this.menus.cur === menuKey) { this.menus.close(); inp.lock(); return; }
+      if (menuKey === 'upgrades' && !this.canUpgrade()) { this.upgradeAway(); return; }
       this.suppressPause = true;
       inp.unlock();
       this.menus.show(menuKey);
@@ -217,8 +219,14 @@ class Game {
     this.input.blockGame = !!name;
     this.hud.visible = !name && (this.view === 'fp' || this.view === 'fpIn');
     this.clickPlay.hidden = true;
-    if (!name && this.started && this.view === 'fp' && !this.input.locked) this.clickPlay.hidden = false;
+    if (!name && this.started && this.view === 'fp' && !this.input.locked) {
+      // back to play: take the mouse again straight away (menus close from a key or click, which allows it)
+      this.input.lock();
+      this.clickPlay.hidden = false;
+    }
   }
+
+  wantsLock() { return this.started && this.view === 'fp' && !this.menus.open && !this.input.locked && !this.input.capture; }
 
   // ---------- planets ----------
 
@@ -258,6 +266,14 @@ class Game {
     this.save();
   }
 
+  // Upgrades are bought at the Outfitter's hut on the surface.
+  atOutfitter() { return this.works.outfitterPos && this.ctl.pos.distanceTo(this.works.outfitterPos) < 4.2; }
+  canUpgrade() { return this.atOutfitter() || this.dev; }
+  upgradeAway() {
+    this.sfx.play('deny');
+    this.hud.notice("Upgrades are at the Outfitter's hut", `Ride the lift up and walk to the blue hut ▣ on the surface near where you started, then press ${this.keyName('upgrades')}.`, '', 7000);
+  }
+
   placeStart() {
     this.ctl.teleport(2.4, surfaceY(2.4, 5.6) + 0.2, 5.6);
     this.ctl.yaw = 0.25; this.ctl.pitch = -0.42;
@@ -285,6 +301,7 @@ class Game {
     this.water.clear();
     this.particles.clear();
     this.volume.load(data.world?.hm);
+    this.volume.loadEdits(data.world?.ed);
     this.works.resetPile();
     this.setupPlanet(this.econ.planet, this.econ.pole);
     this.frozen.setup(this.planet, this.econ.pole, this.planet.seed, this.state);
@@ -706,13 +723,13 @@ class Game {
   }
 
   crewSnapshot() {
-    return { econ: Save.econToJSON(this.econ), hm: this.volume.serialize(), state: { capsules: this.state.capsules, needle: this.state.needle }, beacon: this.works.beaconPos().toArray() };
+    return { econ: Save.econToJSON(this.econ), hm: this.volume.serialize(), ed: this.volume.serializeEdits(), state: { capsules: this.state.capsules, needle: this.state.needle }, beacon: this.works.beaconPos().toArray() };
   }
 
   crewLoad(snap) {
     this.save();
     this.slot = `crew.${this.crew.code}`;
-    this.loadState({ econ: snap.econ, world: { hm: snap.hm }, state: { ...snap.state }, beacon: snap.beacon });
+    this.loadState({ econ: snap.econ, world: { hm: snap.hm, ed: snap.ed }, state: { ...snap.state }, beacon: snap.beacon });
     const b = this.works.beaconPos();
     const x = b.x + 1.5;
     this.ctl.teleport(x, this.volume.floorBelow(x, b.y + 2, b.z, 80) + 0.3, b.z);
@@ -788,7 +805,7 @@ class Game {
     const p = this.ctl.pos;
     return {
       econ: Save.econToJSON(this.econ),
-      world: { hm: this.volume.serialize() },
+      world: { hm: this.volume.serialize(), ed: this.volume.serializeEdits() },
       state: this.state,
       player: { pos: [p.x, p.y, p.z], yaw: this.ctl.yaw, pitch: this.ctl.pitch },
       beacon: this.works.beaconPos().toArray(),
@@ -926,7 +943,7 @@ class Game {
       if (!join) this.menus.show('start', (pole) => {
         this.newCampaign(pole, this.slot);
         begin();
-        this.hud.notice('Welcome to Frostara', `Hold left mouse on the ice to dig. Coins go in your pack; stay near the glowing lift beacon to bank them. Press ${this.keyName('upgrades')} for upgrades.`, '', 14000);
+        this.hud.notice('Welcome to Frostara', `Hold left mouse on the ice to dig. Coins go in your pack; stay near the glowing lift beacon to bank them. Buy upgrades at the blue Outfitter's hut ▣ nearby (press ${this.keyName('upgrades')} there).`, '', 14000);
       });
     }
     if (join) setTimeout(() => this.crewJoin(join), 300);

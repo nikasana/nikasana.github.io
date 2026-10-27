@@ -41,6 +41,7 @@ export class Navigation {
     const g = this.game, out = [];
     const b = g.works.beaconPos();
     out.push({ x: b.x, z: b.z, col: COL.glacier, shape: 'diamond', label: 'LIFT' });
+    if (g.works.outfitterPos) { const o = g.works.outfitterPos; out.push({ x: o.x, z: o.z, col: '#7fd4ff', shape: 'square', label: 'OUTFITTER' }); }
     const v = g.works.vaultCenter();
     out.push({ x: v.x, z: v.z, col: COL.brass, shape: 'square', label: 'VAULT' });
     if (g.crew && g.crew.active && g.avatars) for (const a of g.avatars.map.values()) out.push({ x: a.root.position.x, z: a.root.position.z, col: COL.violet, shape: 'dot', label: '' });

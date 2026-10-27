@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import {
   VOXEL, CHUNK, CHUNK_M, DOMAIN_CHUNKS, HALF, MARGIN, HM_RES, ISO, GRAD,
-  surfaceY, generateChunk, sampleHeightmap, inDomain, setFieldSeed, fieldNoise, idx,
+  surfaceY, generateChunk, sampleHeightmap, inDomain, setFieldSeed, fieldNoise, idx, protectedAt,
 } from './field.js';
 import { P, PAD } from './mesher.js';
 import { clamp } from '../core/rng.js';
@@ -11,6 +11,7 @@ export const LAYER_ICE = 1;
 
 const C3 = CHUNK * CHUNK * CHUNK;
 export const keyOf = (cx, cy, cz) => ((cx + 512) * 1024 + (cz + 512)) * 8192 + (cy + 4096);
+const unkey = (k) => { const cy = (k % 8192) - 4096, r = Math.floor(k / 8192); return [Math.floor(r / 1024) - 512, cy, (r % 1024) - 512]; };
 const occ = (d) => clamp((d - ISO) / GRAD + 0.5, 0, 1);
 
 export class IceVolume {
@@ -28,6 +29,7 @@ export class IceVolume {
     this.inflight = new Map();
     this.nextJob = 1;
     this.listeners = { load: [], drop: [], edit: [] };
+    this.edited = new Map();   // chunk key -> exact density of every chunk ever edited (survives unloading and saves)
     this.window = { cyMin: -2, cyMax: 1 };
     this.keepMeshDist = 170;
     this.maxDepthDug = 0;
@@ -60,9 +62,9 @@ export class IceVolume {
       c = { key: k, cx, cy, cz, data: null, solid: 0, mesh: null, dirty: true, version: 0, meshedVersion: -1, inDomain: IceVolume.chunkInDomain(cx, cz) };
       this.chunks.set(k, c);
     }
-    const g = generateChunk(cx, cy, cz, this.hm);
-    c.data = g.data;
-    c.solid = g.solid;
+    const kept = this.edited.get(k);
+    if (kept) { c.data = kept; c.edited = true; recount(c); }
+    else { const g = generateChunk(cx, cy, cz, this.hm); c.data = g.data; c.solid = g.solid; }
     c.version++;
     c.dirty = true;
     if (c.inDomain) this.emit('load', c);
@@ -78,6 +80,8 @@ export class IceVolume {
       if (c && c.data) this._last = c;
     }
     if (c && c.data) return c.data[idx(gi - cx * CHUNK, gj - cy * CHUNK, gk - cz * CHUNK)];
+    const kept = this.edited.get(keyOf(cx, cy, cz));
+    if (kept) return kept[idx(gi - cx * CHUNK, gj - cy * CHUNK, gk - cz * CHUNK)];
     // not loaded: analytic from heightmap
     const x = gi * VOXEL, y = gj * VOXEL, z = gk * VOXEL;
     const top = surfaceY(x, z) - (inDomain(x, z, MARGIN) ? sampleHeightmap(this.hm, x, z) : 0);
@@ -161,6 +165,7 @@ export class IceVolume {
           const old = c.data[li];
           const x = gi * VOXEL, y = gj * VOXEL, z = gk * VOXEL;
           const dx = x - op.x, dy = y - op.y, dz = z - op.z;
+          if (op.kind !== 'fill' && protectedAt(x, y, z)) continue;
           let nd = old;
           if (op.kind === 'dig') {
             if (old === 0) continue;
@@ -194,7 +199,7 @@ export class IceVolume {
         for (let gj = gj0 - 1; gj <= gj1 + 1; gj++) for (let gk = gk0 - 1; gk <= gk1 + 1; gk++) for (let gi = gi0 - 1; gi <= gi1 + 1; gi++) {
           if (Math.abs(gi * VOXEL) > lim || Math.abs(gk * VOXEL) > lim) continue;
           const v = this.densityAtVoxel(gi, gj, gk);
-          if (v < ISO) continue;
+          if (v < ISO || protectedAt(gi * VOXEL, gj * VOXEL, gk * VOXEL)) continue;
           const xm = this.densityAtVoxel(gi - 1, gj, gk) < ISO, xp = this.densityAtVoxel(gi + 1, gj, gk) < ISO;
           const ym = this.densityAtVoxel(gi, gj - 1, gk) < ISO, yp = this.densityAtVoxel(gi, gj + 1, gk) < ISO;
           const zm = this.densityAtVoxel(gi, gj, gk - 1) < ISO, zp = this.densityAtVoxel(gi, gj, gk + 1) < ISO;
@@ -226,6 +231,7 @@ export class IceVolume {
     const cx = c.cx, cy = c.cy, cz = c.cz;
     const lx = gi - cx * CHUNK, ly = gj - cy * CHUNK, lz = gk - cz * CHUNK;
     c.data[idx(lx, ly, lz)] = v;
+    if (!c.edited) { c.edited = true; this.edited.set(c.key, c.data); }
     touched.add(c);
     // samples near a chunk face live in a neighbour's padding too
     if (lx < PAD || lx >= CHUNK - PAD || ly < PAD || ly >= CHUNK - PAD || lz < PAD || lz >= CHUNK - PAD) {
@@ -377,7 +383,7 @@ export class IceVolume {
       if (cache.has(k)) return cache.get(k);
       let ch = this.chunks.get(k);
       let d = ch && ch.data;
-      if (!d) d = generateChunk(cx, cy, cz, this.hm).data;
+      if (!d) d = this.edited.get(k) || generateChunk(cx, cy, cz, this.hm).data;
       cache.set(k, d);
       return d;
     };
@@ -457,6 +463,29 @@ export class IceVolume {
     this.craterDepth();
   }
 
+  // Exact edited chunks, run-length encoded: [cx, cy, cz, base64] per chunk.
+  serializeEdits() {
+    const out = [];
+    for (const [k, d] of this.edited) {
+      const c = this.chunks.get(k);
+      const [cx, cy, cz] = c ? [c.cx, c.cy, c.cz] : unkey(k);
+      out.push([cx, cy, cz, rleEncode(d)]);
+    }
+    return out;
+  }
+
+  loadEdits(list) {
+    if (!Array.isArray(list)) return;
+    for (const [cx, cy, cz, b64] of list) {
+      const d = rleDecode(b64, CHUNK * CHUNK * CHUNK);
+      if (!d) continue;
+      const k = keyOf(cx, cy, cz);
+      this.edited.set(k, d);
+      const c = this.chunks.get(k);
+      if (c && c.data) { c.data = d; c.edited = true; recount(c); c.version++; c.dirty = true; this.queue.add(c); }
+    }
+  }
+
   reset() {
     for (const c of this.chunks.values()) { if (c.data && c.inDomain) this.emit('drop', c); this.disposeMesh(c); }
     this.chunks.clear();
@@ -465,6 +494,7 @@ export class IceVolume {
     this.inflight.clear();
     for (const w of this.workers) w.busy = false;
     this.hm.fill(0);
+    this.edited.clear();
     this.maxDepthDug = 0;
   }
 
@@ -508,4 +538,32 @@ function b64ToU16(s) {
     else out.push(rl[i]);
   }
   return new Uint16Array(out);
+}
+
+function rleEncode(d) {
+  const out = [];
+  for (let i = 0; i < d.length;) {
+    const v = d[i];
+    let n = 1;
+    while (i + n < d.length && d[i + n] === v && n < 255) n++;
+    out.push(v, n);
+    i += n;
+  }
+  let bin = '';
+  for (const b of out) bin += String.fromCharCode(b);
+  return btoa(bin);
+}
+
+function rleDecode(b64, len) {
+  try {
+    const bin = atob(b64);
+    const d = new Uint8Array(len);
+    let o = 0;
+    for (let i = 0; i + 1 < bin.length; i += 2) {
+      const v = bin.charCodeAt(i), n = bin.charCodeAt(i + 1);
+      d.fill(v, o, Math.min(len, o + n));
+      o += n;
+    }
+    return o === len ? d : null;
+  } catch { return null; }
 }

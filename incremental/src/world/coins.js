@@ -287,7 +287,7 @@ export class CoinSystem {
       if (y > top - 0.42) continue; // the smoothed mesh sits a little below the analytic surface
       if (Math.abs(x) > 30 || Math.abs(z) > 30) continue;
       const rich = richness(x, y, z);
-      if (a > (0.25 + rich * 1.1) / 1.6) continue;
+      if (a > (0.06 + Math.pow(rich, 1.6) * 1.45) / 1.6) continue;
       const depth = top - y;
       const id = hash32(ctx.seed, c.cx, c.cy, c.cz, i);
       if (this.collectedIds.has(id)) continue;

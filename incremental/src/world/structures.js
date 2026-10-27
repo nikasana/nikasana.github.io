@@ -1,7 +1,7 @@
 // Surface works: an overhead gantry crane spanning the crater, whose trolley lowers the lift beacon
 // to wherever the digging is, and the coin vault at the rim where banked coins pile up.
 import * as THREE from 'three';
-import { HALF, surfaceY } from './field.js';
+import { HALF, surfaceY, OUTFITTER } from './field.js';
 import { COINS } from '../econ/data/coins.js';
 import { rng } from '../core/rng.js';
 
@@ -189,6 +189,24 @@ export class Works {
     this.group.add(posts);
     for (const [w, d, x, z] of [[VAULT.w + 2.2, 0.05, 0, -VAULT.d / 2 - 1.1], [VAULT.w + 2.2, 0.05, 0, VAULT.d / 2 + 1.1], [0.05, VAULT.d + 2.2, -VAULT.w / 2 - 1.1, 0], [0.05, VAULT.d + 2.2, VAULT.w / 2 + 1.1, 0]]) {
       this.group.add(box(w, 0.05, d, paint, VAULT.x + x, vy + 1.05, VAULT.z + z));
+    }
+    // the Outfitter's hut: where upgrades are bought, a short walk from the start
+    {
+      const hx = OUTFITTER.x, hz = OUTFITTER.z, hy = surfaceY(hx, hz);
+      const wall = steel(atmo, 0x2f6f86, 0.65, 0.15, 'outfitter');
+      this.group.add(box(3.6, 2.5, 3.0, wall, hx, hy + 1.2, hz));
+      this.group.add(box(4.0, 0.2, 3.4, dark, hx, hy + 2.55, hz));
+      this.group.add(box(1.0, 1.9, 0.08, dark, hx + 0.6, hy + 0.95, hz + 1.52));      // door
+      this.group.add(box(4.6, 0.15, 4.0, paint, hx, hy + 0.02, hz));                 // apron
+      const sign = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.42, 0.06), this.ringMat);
+      sign.position.set(hx, hy + 2.95, hz + 1.3);
+      this.group.add(sign);
+      this.outfitterSign = sign;
+      this.outfitterLight = new THREE.PointLight(0x9fe6ff, 4, 9, 1.8);
+      this.outfitterLight.position.set(hx, hy + 2.4, hz + 2.2);
+      this.group.add(this.outfitterLight);
+      this.colliders.push({ min: new THREE.Vector3(hx - 1.85, hy - 1, hz - 1.6), max: new THREE.Vector3(hx + 1.85, hy + 2.6, hz + 1.6) });
+      this.outfitterPos = new THREE.Vector3(hx, hy, hz + 2.3);
     }
     // a little survey hut by the vault, for scale
     this.group.add(box(3.2, 2.4, 2.6, steel(atmo, 0xb24d22, 0.7, 0.1, 'hut'), VAULT.x + VAULT.w / 2 + 4.6, vy + 1.15, VAULT.z + 0.4));
