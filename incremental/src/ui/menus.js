@@ -9,6 +9,7 @@ import { THEMES } from '../audio/themes.js';
 import { PRESETS } from '../render/graphics.js';
 import { ACTION_LABELS, keyLabel } from '../player/input.js';
 import * as M from '../econ/model.js';
+import { MUTANTS, MUTANT_BY_ID } from '../econ/data/mutants.js';
 
 const TREE = Object.fromEntries(TREES.map((t) => [t.id, t]));
 
@@ -142,12 +143,23 @@ export class Menus {
           h('p', {}, done[c.id] ? c.contents.lore : `Frozen somewhere around ${c.depth} m down.`))),
           h(`div.card${g.state.needle ? '' : '.blank'}`, {}, h('h4', {}, g.state.needle ? 'The Golden Needle' : 'Golden Needle'),
             h('p', {}, g.state.needle ? 'Found. One per planet, and this one is yours.' : 'One is hidden on every planet. Needle Sense helps you feel for it.'))));
+      } else if (t === 'mutations') {
+        body.append(h('p', { style: { color: 'var(--haze)', maxWidth: '64ch', marginTop: 0 } },
+          'Rare pockets of strange ice hide in the crater walls. Every kind you dig into is written here, with the DNA it unlocks.'));
+        const found = g.profile.mutations || {};
+        body.append(h('div.coll', {}, MUTANTS.map((m) => {
+          const ok = found[m.id] !== undefined;
+          return h(`div.card${ok ? '' : '.blank'}`, { style: ok ? { borderColor: `rgb(${m.color.map((c) => Math.round(c * 200)).join(',')})` } : {} },
+            h('h4', {}, ok ? m.name : '? ? ? ? ?'),
+            h('p', {}, ok ? m.desc : `A silhouette in the ice. Found on ${m.planet[0].toUpperCase() + m.planet.slice(1)}.`),
+            ok ? h('p', { style: { color: 'var(--moss)' } }, m.perk) : '');
+        })));
       } else if (t === 'milestones') {
         body.append(h('div.coll', {}, MILESTONES.map((m) => h(`div.card${e.milestones[m.id] !== undefined ? '' : '.blank'}`, {},
           h('h4', {}, `${m.icon} ${m.name}`), h('p', {}, e.milestones[m.id] !== undefined ? `Reached at ${formatTime(e.milestones[m.id])}. Paid ${m.bonusSec} s of income.` : `Pays ${m.bonusSec} s of income.`)))));
       }
     };
-    for (const [id, l] of [['resonance', 'Resonance notebook'], ['capsules', 'Capsules & needle'], ['milestones', 'Milestones']]) {
+    for (const [id, l] of [['resonance', 'Resonance notebook'], ['mutations', 'Mutation log'], ['capsules', 'Capsules & needle'], ['milestones', 'Milestones']]) {
       const b = h('button.tab', { onclick: () => setTab(id) }, l);
       b.dataset.t = id;
       tabs.append(b);
@@ -503,7 +515,8 @@ class TreeView {
     // tree labels
     for (const t of TREES) {
       const [ox, oy] = t.origin;
-      const lab = h('div.tree-label', { style: { left: `${ox * 520}px`, top: `${oy > 0 ? oy * 70 + 690 : -790}px`, '--tc': t.color } }, `${t.name}`);
+      const [lx, ly] = t.label || [ox * 520, oy > 0 ? oy * 70 + 690 : -790];
+      const lab = h('div.tree-label', { style: { left: `${lx}px`, top: `${ly}px`, '--tc': t.color } }, `${t.name}`);
       this.canvas.appendChild(lab);
     }
     // the planet at the centre
@@ -577,6 +590,7 @@ class TreeView {
       M.isMaxed(e, id) ? h('div.eff', { html: '<b>Maxed</b>' }) :
         h('div.eff', { html: `<div>Cost <span style="color:var(--brass)">${format(cost)}</span>${!M.isUnlocked(e, id) ? ' · locked' : e.coins.gte(cost) ? ' · <b>affordable</b>' : ` · about ${formatTime(wait)}`}</div>` }),
       lock ? h('p', { style: { color: 'var(--ember)' } }, `Closed: you chose ${lock.name}.`)
+        : n.mutation && !(e.mutations || {})[n.mutation] ? h('p', { style: { color: 'var(--moss)' } }, `Needs ${MUTANT_BY_ID[n.mutation].name}: find this mutant ice to unlock it.`)
         : !M.isUnlocked(e, id) ? h('p', {}, `Needs ${n.parents.map((p) => NODE_BY_ID[p].name).join(' and ')}.`) : '',
       rival && !lock && lvl < 1 ? h('p', { style: { color: 'var(--brass)' } }, `Choose one: buying this closes ${rival} for this planet.`) : '',
     );
@@ -660,6 +674,7 @@ class TreeView {
 const KIND_LABEL = { mech: 'Mechanic', choice: 'Choose one', hybrid: 'Cross-tree', cap: 'Capstone' };
 
 const STAT_NAMES = {
+  nightVision: 'Night vision', walkSpeed: 'Walking speed', hands: 'More hands',
   shock: 'Thermal shock (warm ice digs wider)', seep: 'Crack seep (cracked ice melts faster)', heatLinger: 'Warm time', heavyMult: 'Heavy blow', richCrit: 'Clean breaks on rich seams',
   steamBurst: 'Steam burst', pipes: 'Heat pipes (auto-dig from auto-melt)',
   digRadius: 'Bite radius', digRate: 'Strikes per second', digYield: 'Extraction', crit: 'Clean-break chance', critMult: 'Clean-break size', reach: 'Reach',
@@ -670,7 +685,7 @@ const STAT_NAMES = {
 };
 function statName(s) { return STAT_NAMES[s] || s; }
 function fmtV(v, stat) {
-  if (['digYield', 'crit', 'vision', 'collect', 'autoCollect', 'bank', 'offline', 'valueMult', 'meltEff', 'critMult', 'shock', 'seep', 'heatLinger', 'richCrit', 'pipes'].includes(stat)) return `${(v * 100).toFixed(1)}%`;
+  if (['digYield', 'crit', 'vision', 'collect', 'autoCollect', 'bank', 'offline', 'valueMult', 'meltEff', 'critMult', 'shock', 'seep', 'heatLinger', 'richCrit', 'pipes', 'nightVision', 'walkSpeed'].includes(stat)) return `${(v * 100).toFixed(1)}%`;
   if (stat === 'heavyMult') return `×${v.toFixed(2)}`;
   if (['digRadius', 'meltRadius', 'reach', 'collectRange'].includes(stat)) return `${v.toFixed(3)} m`;
   if (['autoDig', 'autoMelt', 'meltPower'].includes(stat)) return `${v.toFixed(3)} m³/s`;

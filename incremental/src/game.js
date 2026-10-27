@@ -17,6 +17,8 @@ import { surfaceY, richness } from './world/field.js';
 import { Controller } from './player/controller.js';
 import { Input, DEFAULT_BINDINGS } from './player/input.js';
 import { Tools, FAMILIES } from './player/tools.js';
+import { mutantPockets, MUTANT_BY_ID } from './econ/data/mutants.js';
+import { MAX_MUT } from './world/iceMaterial.js';
 import { AudioEngine } from './audio/engine.js';
 import { Sfx } from './audio/sfx.js';
 import { Music } from './audio/music.js';
@@ -152,7 +154,12 @@ class Game {
       this.sfx.play('splash', { pos: at, gain: Math.min(1, 0.4 + w.depth) });
       this.particles.chips(at, new THREE.Vector3(0, 1, 0), 0.35, [0.72, 0.86, 0.95]);
     });
-    this.ctl.on('land', () => this.sfx.play('land'));
+    this.ctl.on('land', () => {
+      this.sfx.play('land');
+      // springice throws you back up
+      const p = this.ctl.pos, m = this.mutantAt(new THREE.Vector3(p.x, p.y - 0.25, p.z), 0.2);
+      if (m && m.type === 'springice') { this.ctl.vel.y = 9.5; this.ctl.onGround = false; this.sfx.play('splash', { pos: p, gain: 0.5 }); this.discoverMutant(m); }
+    });
     this.coins.onFreed = (list, op) => {
       if (op.auto) {
         // the stakes send their coins straight up the cable
@@ -240,6 +247,41 @@ class Game {
 
   wantsLock() { return this.started && this.view === 'fp' && !this.menus.open && !this.input.locked && !this.input.capture; }
 
+  // ---------- mutant ice ----------
+
+  mutantAt(p, pad = 0) {
+    for (const m of this.mutants || []) if (Math.hypot(m.x - p.x, m.y - p.y, m.z - p.z) < m.r + pad) return m;
+    return null;
+  }
+
+  discoverMutant(m) {
+    const t = MUTANT_BY_ID[m.type];
+    const fresh = !(this.profile.mutations || {})[m.type];
+    (this.profile.mutations ||= {})[m.type] = Date.now();
+    this.writeProfile();
+    if (!(this.econ.mutations ||= {})[m.type]) { this.econ.mutations[m.type] = true; this.statsDirty = true; }
+    if (fresh) {
+      this.music.cue('resonance');
+      this.hud.notice(`🧬 Mutant ice: ${t.name}`, `${t.desc} New DNA unlocked: ${t.perk}`, 'resonance', 10000);
+    }
+  }
+
+  // nearest pockets to the shader, a few times a second
+  updateMutants(dt, eye) {
+    this.mutT -= dt;
+    if (this.mutT > 0 || !this.mutants) return;
+    this.mutT = 0.4;
+    const u = this.iceMat.userData.uniforms;
+    const near = this.mutants.map((m) => [Math.hypot(m.x - eye.x, m.y - eye.y, m.z - eye.z), m]).sort((a, b) => a[0] - b[0]).slice(0, MAX_MUT);
+    for (let i = 0; i < MAX_MUT; i++) {
+      const m = near[i] && near[i][0] < 60 ? near[i][1] : null;
+      if (!m) { u.uMut.value[i].set(0, -1e5, 0, 0); continue; }
+      const t = MUTANT_BY_ID[m.type];
+      u.uMut.value[i].set(m.x, m.y, m.z, m.r);
+      u.uMutCol.value[i].set(t.color[0], t.color[1], t.color[2], t.glow);
+    }
+  }
+
   // ---------- planets ----------
 
   get planet() { return PLANET_BY_ID[this.econ.planet]; }
@@ -260,6 +302,10 @@ class Game {
     }
     this.coins.setContext({ seed: p.seed, coinValue: (tier, depth) => this.coinValue(tier, depth) });
     this.coins.tiers = p.coinTiers.slice();
+    // mutant ice pockets for this planet and pole; types already found stay unlocked for DNA
+    this.mutants = mutantPockets(p, pole, surfaceY);
+    this.mutT = 0;
+    if (this.econ) for (const id of Object.keys(this.profile.mutations || {})) (this.econ.mutations ||= {})[id] = true;
     if (!(this.profile.visited ||= {})[p.id]) { this.profile.visited[p.id] = Date.now(); this.writeProfile(); }
     this.planetView.setPlanet(p, pole);
     this.music.setTheme(this.settings.theme || p.theme);
@@ -450,6 +496,17 @@ class Game {
 
   onStrike(s) {
     const st = this.stats;
+    const mut = this.mutantAt(s.point, 0.3);
+    if (mut) {
+      this.discoverMutant(mut);
+      if (mut.type === 'tarfrost') s.removed *= 2;   // holds twice the coins
+      if (mut.type === 'chimeice') {
+        this.sfx.play('shatter', { pos: s.point, pitch: 1.6, gain: 0.8 });
+        this.music.cue('motif', 2);
+        this.revealUntil = this.time + 25;
+        this.hud.notice('Chimeice rings', 'The echo shows the finds around you on the minimap for a while.', '', 4000);
+      }
+    }
     const wet = this.water.depthAt(s.point.x, s.point.y, s.point.z);
     if (wet) { this.sfx.play('splash', { pos: s.point }); this.particles.chips(s.point, new THREE.Vector3(0, 1, 0), 0.6, [0.7, 0.85, 0.95]); }
     this.sfx.play(s.heavy ? 'crack' : 'chip', { pos: s.point, pitch: s.drill ? 1.2 : 1, gain: s.drill ? 0.5 : 1 });
@@ -460,6 +517,8 @@ class Game {
   }
 
   onMelt(m) {
+    const mut = this.mutantAt(m.point, 0.3);
+    if (mut) this.discoverMutant(mut);
     this.addDust(m.removed, m.depth, 1);
     if (m.removed > 0) this.water.add(m.point, m.removed);
   }
@@ -1032,6 +1091,18 @@ class Game {
   devCrewMilestone(id) { this.profile.crewMilestones = { ...(this.profile.crewMilestones || {}), [id]: Date.now() }; this.onCrewMilestones(this.profile.crewMilestones, [id]); }
   devResonance(id) { if (this.econ.found[id] !== undefined) return; this.econ.found[id] = this.econ.time; this.onResonance(SYNERGY_BY_ID[id]); }
   devOffline(sec) { this.showOffline(sec); }
+  // move a mutant-ice pocket of the next unfound type (or any) into the ice in front of you
+  devMutant() {
+    if (!this.mutants || !this.mutants.length) return;
+    const found = this.profile.mutations || {};
+    const m = this.mutants.find((x) => !found[x.type]) || this.mutants[0];
+    const e = this.ctl.eye(1), f = this.ctl.forward();
+    const hit = this.volume.raycast(e, f, 8);
+    const p = hit.hit ? hit.point.addScaledVector(f, m.r * 0.6) : e.clone().addScaledVector(f, 3);
+    m.x = p.x; m.y = p.y; m.z = p.z;
+    this.mutT = 0;
+    return m.type;
+  }
 
   showOffline(sec) {
     const r = M.offlineGain(this.econ, sec);
@@ -1210,6 +1281,8 @@ class Game {
     this.needleHint = this.frozen.update(dt, this.time, this.ctl.pos, st.hint);
     this.updateTreasure(dt, eye);
     this.particles.update(dt, this.volume);
+    this.updateMutants(dt, eye);
+    this.ctl.walkSpeed = 4.4 * (st.walkSpeed || 1);
     if (this.volume.maskDirty) { this.volume.maskDirty = false; this.terrain.userData.maskTex.needsUpdate = true; }
     // vision cuts fog (Mistral) and the X-ray shows coins deeper in the ice while the lamp is focused
     const vt = st.visionTier || 0, focusing = FAMILIES[this.tools.family].id === 'vision' && this.tools.using;

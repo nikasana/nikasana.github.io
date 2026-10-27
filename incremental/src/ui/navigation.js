@@ -42,7 +42,7 @@ export class Navigation {
     const b = g.works.beaconPos();
     out.push({ x: b.x, z: b.z, col: COL.glacier, shape: 'diamond', label: 'LIFT' });
     if (g.works.outfitterPos) { const o = g.works.outfitterPos; out.push({ x: o.x, z: o.z, col: '#7fd4ff', shape: 'square', label: 'OUTFITTER' }); }
-    if ((g.stats.visionTier || 0) >= 3) {
+    if ((g.stats.visionTier || 0) >= 3 || (g.revealUntil || 0) > g.time) {
       for (const it of g.frozen.items) {
         if (it.kind !== 'find' || it.done) continue;
         const p = it.mesh.position;

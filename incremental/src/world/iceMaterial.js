@@ -6,6 +6,7 @@ import * as THREE from 'three';
 
 export const MAX_HEAT = 8;
 export const MAX_CRACK = 10;
+export const MAX_MUT = 12;     // nearest mutant-ice pockets passed to the shader
 export const MAX_STRATA = 8;
 
 export function createIceMaterial() {
@@ -23,6 +24,8 @@ export function createIceMaterial() {
     uHeat: { value: Array.from({ length: MAX_HEAT }, () => new THREE.Vector4(0, -1e5, 0, 0)) },
     uHeatI: { value: new Float32Array(MAX_HEAT) },
     uCrack: { value: Array.from({ length: MAX_CRACK }, () => new THREE.Vector4(0, -1e5, 0, 0)) },
+    uMut: { value: Array.from({ length: MAX_MUT }, () => new THREE.Vector4(0, -1e5, 0, 0)) },
+    uMutCol: { value: Array.from({ length: MAX_MUT }, () => new THREE.Vector4(0, 0, 0, 0)) },
     uCrackA: { value: new Float32Array(MAX_CRACK) },
     uStrataY: { value: new Float32Array(MAX_STRATA).fill(-1e5) },
     uStrataCol: { value: Array.from({ length: MAX_STRATA }, () => new THREE.Color(0.6, 0.85, 0.95)) },
@@ -80,6 +83,8 @@ uniform float uTime;
 uniform vec4 uHeat[ ${MAX_HEAT} ];
 uniform float uHeatI[ ${MAX_HEAT} ];
 uniform vec4 uCrack[ ${MAX_CRACK} ];
+uniform vec4 uMut[ ${MAX_MUT} ];       // pocket centre and radius
+uniform vec4 uMutCol[ ${MAX_MUT} ];    // pocket colour and glow
 uniform float uCrackA[ ${MAX_CRACK} ];
 uniform float uStrataY[ ${MAX_STRATA} ];
 uniform vec3 uStrataCol[ ${MAX_STRATA} ];
@@ -285,6 +290,17 @@ const ICE_COMPOSE = /* glsl */`
   float cosv = clamp( dot( nV, V ), 0.0, 1.0 );
   float F = 0.018 + 0.982 * pow( 1.0 - cosv, 5.0 );
   vec3 col = body * ( 1.0 - F );
+
+  // mutant ice pockets: tinted, some glowing from inside
+  for ( int i = 0; i < ${MAX_MUT}; i ++ ) {
+    vec4 m = uMut[ i ];
+    if ( m.w <= 0.0 ) continue;
+    float d = length( vWPos - m.xyz );
+    if ( d > m.w * 1.4 ) continue;
+    float a = 1.0 - smoothstep( m.w * 0.75, m.w * 1.15, d );
+    vec3 mc = uMutCol[ i ].rgb;
+    col = mix( col, mc * ( litW * 0.75 + 0.12 ), a * 0.6 ) + mc * uMutCol[ i ].a * a * ( 0.6 + 0.4 * sin( uTime * 1.7 + d * 4.0 ) );
+  }
 
   // frost, snow and crushed ice are opaque scatterers
   // match the outer snowfield's shading (terrain.js): bright in sun, cold blue in shade

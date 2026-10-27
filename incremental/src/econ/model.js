@@ -27,6 +27,7 @@ export function createEcon(planetId = 'frostara', pole = 'N', opts = {}) {
     volume: 0,                // m³ removed
     melted: 0,                // m³ melted (drives sea level)
     actions: { meltThenDig: 0, richDig: 0 },
+    mutations: {},            // mutant ice types found (unlock DNA nodes)
     found: {},                // synergyId -> time discovered
     burstUntil: 0,
     milestones: {},
@@ -48,7 +49,7 @@ export function lockedBy(e, id) {
 
 export function isUnlocked(e, id) {
   const n = NODE_BY_ID[id];
-  return n.parents.every((p) => level(e, p) >= 1) && !lockedBy(e, id);
+  return n.parents.every((p) => level(e, p) >= 1) && !lockedBy(e, id) && (!n.mutation || !!(e.mutations || {})[n.mutation]);
 }
 
 export function isMaxed(e, id) { return level(e, id) >= NODE_BY_ID[id].max; }

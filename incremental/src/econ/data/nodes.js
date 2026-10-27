@@ -14,6 +14,7 @@ export const TREES = [
   { id: 'melt', name: 'Melt', icon: '🔥', color: '#ff7a45', origin: [1, -1] },
   { id: 'vision', name: 'Vision', icon: '👁️', color: '#7fd4ff', origin: [-1, 1] },
   { id: 'auto', name: 'Automation', icon: '🤖', color: '#b9a4ff', origin: [1, 1] },
+  { id: 'dna', name: 'DNA', icon: '🧬', color: '#7dffb2', origin: [0, 1], label: [0, 1040] },
 ];
 
 const N = (tree, id, name, icon, desc, c0, max, parents, effects, gx, gy, extra = {}) =>
@@ -110,6 +111,15 @@ export const NODES = [
   N('melt', 'hy_kiln', 'Kiln Stakes', '🧱', 'Melt + Automation. Your torch heat lingers in the stakes, and stake craters are warm for your pick.', 30000, 8, ['hy_pipes', 'melt_boil'], [['autoDig', 'mul', 0.05], ['heatLinger', 'add', 0.1]], 0, 0, { kind: 'hybrid', join: ['melt', 'auto'], at: [680, 0] }),
   N('vision', 'hy_sort', 'Sorting Lens', '🔬', 'Vision + Automation. The lift sorts as it hauls: banking pays more.', 160, 8, ['vis_glint', 'auto_magnet'], [['bank', 'add', 0.02], ['valueMult', 'add', 0.01]], 0, 0, { kind: 'hybrid', join: ['vision', 'auto'], at: [0, 300] }),
   N('auto', 'hy_drones', 'Survey Drones', '🛸', 'Vision + Automation. Drones sweep the floor for coins and treasure.', 40000, 1, ['hy_sort', 'vis_strata', 'auto_vac'], [['autoCollect', 'add', 0.15], ['hint', 'add', 1]], 0, 0, { kind: 'hybrid', join: ['vision', 'auto'], at: [0, 470] }),
+
+  // 🧬 DNA: unlocked by the mutant ice you have found (mutation), and twice the price of comparable nodes
+  N('dna', 'dna_eyes', 'Night Eyes', '🌙', 'Glowice DNA. Your lamp reaches farther and the deep ice is brighter.', 300, 5, [], [['nightVision', 'add', 0.25]], 0, 0, { root: true, mutation: 'glowice', at: [-230, 640] }),
+  N('dna', 'dna_legs', 'Spring Legs', '🦘', 'Springice DNA. You walk and climb faster.', 240, 8, [], [['walkSpeed', 'add', 0.06]], 0, 0, { root: true, mutation: 'springice', at: [0, 640] }),
+  N('dna', 'dna_arms', 'Long Arms', '💪', 'Springice DNA. Reach farther with every tool.', 1600, 6, ['dna_legs'], [['reach', 'add', 0.3]], 0, 0, { mutation: 'springice', at: [0, 790] }),
+  N('dna', 'dna_cold', 'Cold Blood', '🧊', 'Glowice DNA. The cold bothers you less: digging and melting both work a little harder.', 2400, 8, ['dna_eyes'], [['digRate', 'mul', 0.03], ['meltPower', 'mul', 0.04]], 0, 0, { mutation: 'glowice', at: [-230, 790] }),
+  N('dna', 'dna_steady', 'Steady Hands', '🖐️', 'Tarfrost DNA. Faster, cleaner digging.', 5200, 10, [], [['digRate', 'mul', 0.05], ['digYield', 'add', 0.04]], 0, 0, { root: true, mutation: 'tarfrost', at: [230, 640] }),
+  N('dna', 'dna_echo', 'Echo Sense', '📯', 'Chimeice DNA. Feel for treasure, and pull coins in from farther away.', 9000, 5, ['dna_steady'], [['hint', 'add', 1], ['collectRange', 'add', 0.4]], 0, 0, { mutation: 'chimeice', at: [230, 790] }),
+  N('dna', 'dna_hands', 'More Hands', '🙌', 'Capstone. Two tools at once: every strike lands twice, and the second hit opens its own crater.', 120000, 1, ['dna_arms', 'dna_steady'], [['hands', 'set', 1], ['digRate', 'mul', 0.1]], 0, 0, { kind: 'cap', mutation: 'tarfrost', at: [115, 930] }),
 ];
 
 export const NODE_BY_ID = Object.fromEntries(NODES.map((n) => [n.id, n]));
@@ -125,4 +135,6 @@ export const BASE_STATS = {
   valueMult: 1,
   // tool interplay: warmed ice digs out wider (shock), cracked ice melts faster (seep)
   shock: 0.6, seep: 0.5, heatLinger: 1, heavyMult: 1.55, richCrit: 0, steamBurst: 0, pipes: 0,
+  // DNA
+  nightVision: 0, walkSpeed: 1, hands: 0,
 };

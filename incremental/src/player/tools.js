@@ -321,6 +321,8 @@ export class Tools {
     // thermal shock: ice warmed by the torch a moment ago blows out a bigger crater
     const pre = this.lastMeltAt.some((m) => m.p.distanceTo(h.point) < r + 1.2);
     if (pre) r *= Math.cbrt(1 + st.shock);
+    const mut = g.mutantAt ? g.mutantAt(h.point, 0.3) : null;
+    if (mut && mut.type === 'tarfrost') r *= 0.75;      // thick, slow to cut
     r = Math.max(0.36, r);  // never narrower than the player can follow down
     const c = h.point.clone().addScaledVector(h.normal, -r * 0.35);
     const op = { kind: 'dig', x: c.x, y: c.y, z: c.z, r, seed: (Math.random() * 1000) | 0 };
@@ -332,6 +334,12 @@ export class Tools {
       const b = g.applyOp({ kind: 'dig', x: c.x, y: c.y, z: c.z, r: r * 1.7, seed: (Math.random() * 1000) | 0 }, 'local');
       res.removed += b.removed;
       for (let i = 0; i < 4; i++) g.particles.steam(h.point, h.normal, 3);
+    }
+    // More Hands (DNA): a second strike lands beside the first
+    if (st.hands >= 1) {
+      const side = new THREE.Vector3().crossVectors(h.normal, new THREE.Vector3(0, 1, 0.3)).normalize().multiplyScalar(r * 0.7);
+      const b = g.applyOp({ kind: 'dig', x: c.x + side.x, y: c.y + side.y, z: c.z + side.z, r: r * 0.8, seed: (Math.random() * 1000) | 0 }, 'local');
+      res.removed += b.removed;
     }
     this.cracks.unshift({ p: h.point.clone(), r: r * 1.3, t: 0 });
     if (this.cracks.length > MAX_CRACK) this.cracks.length = MAX_CRACK;
@@ -404,9 +412,9 @@ export class Tools {
     const base = this.lampOn ? (lampTier >= 1 ? 26 : 9) : 0;
     const focus = vision && this.using ? 2.2 : 1;
     const deep = Math.min(1, Math.max(0, ctx.depthAt(ctx.eye.y) / 8));
-    this.spot.intensity = base * focus * (0.25 + 0.75 * deep);
+    this.spot.intensity = base * focus * (0.25 + 0.75 * deep) * (1 + (st.nightVision || 0));
     this.spot.angle = vision && this.using ? 0.3 : 0.55;
-    this.spot.distance = lampTier >= 1 ? 40 : 22;
+    this.spot.distance = (lampTier >= 1 ? 40 : 22) * (1 + (st.nightVision || 0) * 0.5);
     this.spot.position.copy(ctx.eye).addScaledVector(ctx.dir, 0.2).add(new THREE.Vector3(0, -0.15, 0));
     this.spot.target.position.copy(ctx.eye).addScaledVector(ctx.dir, 10);
     const u = g.iceMat.userData.uniforms;
