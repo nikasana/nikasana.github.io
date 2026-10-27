@@ -147,10 +147,10 @@ function slope(xs, ys) {
   return den ? num / den : 0;
 }
 
-export function runBot(planetId, pole, botName, seed) {
+export function runBot(planetId, pole, botName, seed, opts = {}) {
   RANDOM_HORIZON = SIMCFG.horizon;
   const r = rng(seed * 7919 + botName.length);
-  const e = M.createEcon(planetId, pole);
+  const e = M.createEcon(planetId, pole, opts);
   const choose = bots[botName](r);
   const p = PLANETS.find((x) => x.id === planetId);
   const waits = [], growths = [], times = [];
@@ -191,7 +191,7 @@ export function runBot(planetId, pole, botName, seed) {
     peak: Math.max(...waits), p95: [...waits].sort((a, b) => a - b)[Math.floor(waits.length * 0.95)] ?? 0,
     goalMin: goalAt !== null ? goalAt / 60 : null, depth: e.depth, synergies: Object.keys(e.found).length,
     sea: M.seaLevelCm(e), milestones: Object.keys(e.milestones),
-    waveShare: waveShare(waits), activeCount, waits,
+    waveShare: waveShare(waits), activeCount, waits, econ: e,
   };
 }
 
@@ -248,6 +248,27 @@ function main() {
       verdicts.push(order && flat && first);
     }
   }
+  // planet travel: finish Frostara, carry the legacy to the next planet, check the first wait there
+  L('## Planet travel and re-scaling');
+  L();
+  L('Each bot finishes Frostara (North), travels with the legacy it earned, and plays the next planet (North) with re-scaled costs.');
+  L();
+  L('| bot | legacy | cost scale | first wait there | early median there | goal there (min) |');
+  L('|---|---|---|---|---|---|');
+  let travelOk = true;
+  for (const b of Object.keys(bots)) {
+    const one = runBot('frostara', 'N', b, 1);
+    const next = M.nextPlanet(one.econ);
+    if (!next) continue;
+    const opts = M.travelOpts(one.econ, next.id);
+    const two = runBot(next.id, 'N', b, 2, opts);
+    L(`| ${b} | ×${fmt(opts.legacy, 2)} | ×${fmt(opts.scale, 2)} | ${fmt(two.first, 2)} | ${fmt(two.early)} | ${two.goalMin !== null ? fmt(two.goalMin) : '—'} |`);
+    if (!(two.first <= 3)) travelOk = false;
+  }
+  L();
+  L(`- First upgrade after travel about as quick as on planet 1: **${travelOk ? 'PASS' : 'FAIL'}**`);
+  L();
+  verdicts.push(travelOk);
   L(`Overall: **${verdicts.every(Boolean) ? 'PASS' : 'FAIL'}**`);
   if (WRITE) {
     const here = dirname(fileURLToPath(import.meta.url));

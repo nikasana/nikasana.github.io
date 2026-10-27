@@ -16,7 +16,7 @@ function frozenCoinMaterial(tier, gfx) {
     uniforms: {
       tDepth: { value: gfx.rtMain.depthTexture }, uResolution: { value: gfx.size },
       uNearFar: { value: new THREE.Vector2(gfx.camera.near, gfx.camera.far) },
-      uColor: { value: new THREE.Color(...c.color) }, uLight: { value: 1 }, uTime: { value: 0 },
+      uColor: { value: new THREE.Color(...c.color) }, uLight: { value: 1 }, uTime: { value: 0 }, uSee: { value: SEE_DEPTH },
     },
     vertexShader: `varying vec3 vN; varying float vDepth; varying vec3 vW;
       void main() {
@@ -27,20 +27,20 @@ function frozenCoinMaterial(tier, gfx) {
         vDepth = -mv.z;
         gl_Position = projectionMatrix * mv;
       }`,
-    fragmentShader: `uniform sampler2D tDepth; uniform vec2 uResolution; uniform vec2 uNearFar; uniform vec3 uColor; uniform float uLight; uniform float uTime;
+    fragmentShader: `uniform sampler2D tDepth; uniform vec2 uResolution; uniform vec2 uNearFar; uniform vec3 uColor; uniform float uLight; uniform float uTime; uniform float uSee;
       varying vec3 vN; varying float vDepth; varying vec3 vW;
       float linDepth( float d ) { float n = uNearFar.x, f = uNearFar.y; float z = d * 2.0 - 1.0; return 2.0 * n * f / ( f + n - z * ( f - n ) ); }
       void main() {
         float scene = linDepth( texture2D( tDepth, gl_FragCoord.xy / uResolution ).x );
         float behind = vDepth - scene;            // how far behind the nearest surface this coin is
-        if ( behind > ${SEE_DEPTH.toFixed(2)} ) discard;
-        float vis = 1.0 - smoothstep( 0.05, ${SEE_DEPTH.toFixed(2)}, behind );
+        if ( behind > uSee ) discard;
+        float vis = 1.0 - smoothstep( 0.05, uSee, behind );
         vec3 n = normalize( vN );
         float lit = 0.55 + 0.45 * abs( n.y ) + 0.35 * pow( abs( n.z ), 4.0 );
         float sparkle = pow( max( 0.0, sin( dot( vW, vec3( 7.0, 11.0, 5.0 ) ) + uTime * 2.5 ) ), 24.0 );
         vec3 col = uColor * lit * uLight * 1.25 + sparkle * 0.8;
         // seen through ice: shifted toward the ice colour with depth
-        col = mix( col, col * vec3( 0.55, 0.8, 0.95 ) + vec3( 0.02, 0.05, 0.07 ), smoothstep( 0.0, ${SEE_DEPTH.toFixed(2)}, behind ) * 0.7 );
+        col = mix( col, col * vec3( 0.55, 0.8, 0.95 ) + vec3( 0.02, 0.05, 0.07 ), smoothstep( 0.0, uSee, behind ) * 0.7 );
         gl_FragColor = vec4( col, behind > 0.02 ? vis * 0.92 : 1.0 );
       }`,
     transparent: true, depthTest: false, depthWrite: false,
@@ -54,8 +54,16 @@ const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vect
 
 // ---------- coin art ----------
 
+// Gems are cut crystals, not discs.
+function gemGeometry(r, detail = 0) {
+  const g = new THREE.OctahedronGeometry(r, detail).scale(0.8, 1.15, 0.8);
+  g.computeVertexNormals();
+  return g.toNonIndexed();
+}
+
 function coinGeometry(tier, segs) {
   const c = COINS[tier];
+  if (c.id === 'gem') { const g = gemGeometry(c.radius * 0.9, 0); g.computeVertexNormals(); return g; }
   const r = c.radius, t = c.thick;
   // lathe profile: raised rim, recessed field, raised centre boss
   const pts = [];
@@ -202,6 +210,11 @@ function engravingMaps(tier) {
 
 export function coinMaterial(atmo, tier) {
   const c = COINS[tier];
+  if (c.id === 'gem') {
+    const gem = new THREE.MeshStandardMaterial({ color: new THREE.Color(...c.color), metalness: 0.1, roughness: 0.04, envMapIntensity: 2.2, emissive: new THREE.Color(0.08, 0.22, 0.3), flatShading: true });
+    atmo.register(gem, 'coinGem');
+    return gem;
+  }
   const maps = engravingMaps(tier);
   const mat = new THREE.MeshStandardMaterial({
     color: new THREE.Color(...c.color), metalness: 1, roughness: c.rough * 2.2,
@@ -218,15 +231,16 @@ export class CoinSystem {
     this.scene = scene;
     this.volume = volume;
     this.tiers = tiersUnlocked;
-    this.geos = COINS.slice(0, 3).map((_, i) => coinGeometry(i));
+    this.geos = COINS.slice(0, 4).map((_, i) => coinGeometry(i));
     // seen blurred through the ice: a plain low-poly disc is enough
-    this.lowGeos = COINS.slice(0, 3).map((c) => {
+    this.lowGeos = COINS.slice(0, 4).map((c) => {
+      if (c.id === 'gem') return gemGeometry(c.radius * 0.9, 0);
       const g = new THREE.CylinderGeometry(c.radius, c.radius, c.thick, 10, 1).rotateX(Math.PI / 2);
       const uv = g.attributes.uv;
       for (let i = 0; i < uv.count; i++) { const x = g.attributes.position.getX(i), y = g.attributes.position.getY(i); uv.setXY(i, x / (c.radius * 2) + 0.5, y / (c.radius * 2) + 0.5); }
       return g;
     });
-    this.mats = COINS.slice(0, 3).map((_, i) => coinMaterial(atmo, i));
+    this.mats = COINS.slice(0, 4).map((_, i) => coinMaterial(atmo, i));
     this.embedded = new Map();       // chunk key -> [{tier, x, y, z, q, id}]
     this.loose = [];                 // {tier, p, v, q, w, sleep, value, id, t}
     // frozen coins glow faintly in their own colour so they read through the ice
@@ -270,7 +284,8 @@ export class CoinSystem {
     });
   }
 
-  setLight(light, time) { if (this.frozenMats) for (const m of this.frozenMats) { m.uniforms.uLight.value = light; m.uniforms.uTime.value = time; } }
+  // see: how deep into the ice frozen coins show (X-ray extends it)
+  setLight(light, time, see = SEE_DEPTH) { if (this.frozenMats) for (const m of this.frozenMats) { m.uniforms.uLight.value = light; m.uniforms.uTime.value = time; m.uniforms.uSee.value = see; } }
 
   // Deterministic coins for a freshly generated chunk; coins already in carved space are skipped.
   spawnChunk(c) {
@@ -294,7 +309,7 @@ export class CoinSystem {
       const w = tierWeights(depth, this.tiers);
       let tier = 0, acc = 0;
       for (let t = 0; t < w.length; t++) { acc += w[t]; if (tierRoll <= acc) { tier = t; break; } }
-      tier = Math.min(tier, 2);
+      tier = Math.min(tier, 3);
       _q.setFromEuler(new THREE.Euler(b * 6.28, cc * 6.28, a * 6.28));
       list.push({ tier, x, y, z, q: _q.clone(), id, depth });
     }

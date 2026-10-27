@@ -72,6 +72,8 @@ export const NODES = [
   N('vision', 'vis_prospect', "Prospector's Eye", '⛏️', 'Commit to rich ice: strikes on rich seams break clean far more often. Locks Sweeper\'s Eye.', 220, 1, ['vis_gradient'], [['richCrit', 'add', 0.3], ['vision', 'mul', 0.08]], 3, 0, { kind: 'choice', excl: 'vis_style' }),
   N('vision', 'vis_sweep', "Sweeper's Eye", '🧹', 'Commit to the haul: a huge pickup radius and coins slide in on their own. Locks Prospector\'s Eye.', 220, 1, ['vis_magnet'], [['collectRange', 'add', 1.4], ['autoCollect', 'add', 0.05]], 0, 3, { kind: 'choice', excl: 'vis_style' }),
   N('vision', 'vis_depth', 'Depth Lens', '🔍', 'Read deeper layers.', 2800, 10, ['vis_gradient'], [['vision', 'add', 0.03]], 2, 1),
+  N('vision', 'vis_xray', 'X-ray', '🩻', 'Tool tier 2: while you focus the lamp, coins show through up to 4 m of ice and finds glow from far away.', 2600, 1, ['vis_depth'], [['visionTier', 'set', 2], ['vision', 'add', 0.05]], 3, 2, { gate: true, kind: 'mech' }),
+  N('vision', 'vis_radar', 'Satellite Radar', '🛰️', 'Tool tier 3: a satellite scans the ice from orbit and marks every find near you on the minimap.', 260000, 1, ['vis_vein', 'vis_xray'], [['visionTier', 'set', 3], ['vision', 'add', 0.08]], 3, 3, { gate: true, kind: 'mech' }),
   N('vision', 'vis_halo', 'Halo Light', '😇', 'A wide collection halo.', 7500, 10, ['vis_magnet'], [['collectRange', 'add', 0.3]], 1, 3),
   N('vision', 'vis_prism', 'Prism Optics', '🔺', 'Split light, split value.', 24000, 10, ['vis_depth'], [['valueMult', 'add', 0.03]], 2, 2),
   N('vision', 'vis_strata', 'Strata Reader', '📜', 'Spot capsules in the crater wall.', 16000, 5, ['vis_depth', 'vis_magnet'], [['hint', 'add', 1], ['vision', 'add', 0.025]], 1, 2, { kind: 'mech' }),

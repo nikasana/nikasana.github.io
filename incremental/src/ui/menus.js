@@ -71,6 +71,7 @@ export class Menus {
     const nav = [
       ['Resume', 'Esc', () => { this.close(); g.input.lock(); }],
       ['Saves & new game', '', () => this.show('start')],
+      ...(g.state.complete && M.nextPlanet(g.econ) ? [[`Travel to ${M.nextPlanet(g.econ).name}`, '', () => this.show('travel')]] : []),
       ['Upgrades', k('upgrades'), () => { if (g.canUpgrade()) this.show('upgrades'); else { this.close(); g.input.lock(); g.upgradeAway(); } }],
       ['Planet view', k('planet'), () => { this.close(); g.togglePlanet(true); }],
       ['Notebook', k('collections'), () => this.show('collections')],
@@ -391,6 +392,40 @@ export class Menus {
     };
     render();
     return wrap;
+  }
+
+  // Travel to the next planet: pick a pole there; the legacy carries over.
+  build_travel() {
+    const g = this.game, e = g.econ;
+    const next = M.nextPlanet(e);
+    if (!next) return this.frame('Travel', h('p', {}, 'No further planet is ready yet.'));
+    const opts = M.travelOpts(e, next.id);
+    let pole = 'N';
+    const cards = h('div.poles');
+    const render = () => {
+      clear(cards);
+      for (const k of ['N', 'S']) {
+        const P = next.poles[k];
+        cards.append(h(`button.pole${pole === k ? '.on' : ''}`, { onclick: () => { pole = k; render(); g.sfx.play('click'); } },
+          h('span.nm', {}, k === 'N' ? 'North pole' : 'South pole'), h('h3', {}, P.name), h('p', {}, P.desc),
+          h('div.strata', {}, P.strata.slice(0, 5).map((s) => h('i', { style: { background: `rgb(${s.color.map((c) => Math.round(c * 255)).join(',')})` } })))));
+      }
+    };
+    render();
+    return h('div.start', {},
+      h('div.start-left', {},
+        h('div.eyebrow', {}, `${g.planet.icon} ${g.planet.name} complete · next world`),
+        h('div.title', {}, next.icon + ' ', h('span', {}, next.name)),
+        h('p.lede', {}, `${next.rule}. Your ${g.planet.name} legacy goes with you: ×${opts.legacy.toFixed(2)} income on ${next.name}. Upgrades start over, priced for your legacy, so the first one comes as quickly as it did here.`),
+        h('div.eyebrow', {}, 'Choose your pole on the new world.'),
+        cards,
+        h('div.start-actions', {},
+          h('button.btn.primary', { onclick: () => { this.close(); g.travelTo(next.id, pole); } }, `Travel to ${next.name}`),
+          h('button.btn', { onclick: () => { this.close(); g.input.lock(); } }, `Stay on ${g.planet.name} for now`)),
+        h('div.start-foot', {}, 'You can travel later from the pause menu.'),
+      ),
+      h('div'),
+    );
   }
 
   build_offline(r) {

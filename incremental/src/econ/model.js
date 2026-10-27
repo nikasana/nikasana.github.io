@@ -330,6 +330,30 @@ export function offlineGain(e, seconds) {
   return { seconds: t, coins, volume: r.autoVol * t * Math.min(1, st.offline) };
 }
 
+// ---------- planet travel ----------
+
+// Legacy carried to the next planet: grows with coins earned, depth reached and time spent here.
+export function legacyFor(e) {
+  const p = planetOf(e);
+  const total = e.total.toNumber ? e.total.toNumber() : Number(e.total);
+  const k = 1 + 0.15 * Math.log10(1 + total) + 0.4 * Math.min(1, e.depth / p.goalDepth) + 0.2 * Math.min(1, e.time / 3600);
+  return e.legacy * k;
+}
+
+// Arrival on a new planet: income carries the legacy; costs are re-scaled to it (and to the planet's
+// coin density), so the first upgrade there is about as quick as the first upgrade on planet 1.
+export function travelOpts(e, nextId) {
+  const legacy = legacyFor(e);
+  const next = PLANET_BY_ID[nextId], first = PLANET_BY_ID.frostara;
+  return { legacy, scale: legacy * (next.density / first.density) };
+}
+
+export function nextPlanet(e) {
+  const list = Object.values(PLANET_BY_ID);
+  const i = list.findIndex((p) => p.id === e.planet);
+  return list.slice(i + 1).find((p) => p.available) || null;
+}
+
 // Next-goal helper: the cheapest affordable-soon node.
 export function nextGoal(e) {
   const red = reductions(activeSynergies(e));

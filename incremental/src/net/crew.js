@@ -211,6 +211,12 @@ export class Crew {
     }
   }
 
+  // host: send the whole crew a fresh snapshot (after travelling to a new planet)
+  resync() {
+    if (!this.t || !this.isHost) return;
+    this.t.send(null, { t: 'welcome', snap: this.game.crewSnapshot(), crew: { progress: this.progress, done: this.done } });
+  }
+
   relay(from, m) {
     for (const p of this.members.keys()) if (p !== from) this.t.send(p, m);
   }

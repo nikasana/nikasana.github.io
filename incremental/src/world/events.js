@@ -236,7 +236,7 @@ export class FrozenThings {
       if (it.done) continue;
       const p = it.mesh.position;
       const dPlayer = Math.min(p.distanceTo(playerPos), Math.hypot(p.x - playerPos.x, p.y - playerPos.y - 1.1, p.z - playerPos.z));
-      it.mesh.visible = dPlayer < (it.kind === 'find' ? 25 : 60);
+      it.mesh.visible = dPlayer < (it.kind === 'find' ? (this.findRange || 25) : 60);
       if (it.kind === 'fossil') continue;
       if (!it.freed && dPlayer < 30) it.freed = this.volume.sample(p.x, p.y, p.z) < ISO - 10;
       if (it.kind === 'capsule') it.mesh.userData.seam.emissiveIntensity = 1.4 + Math.sin(time * 2.2) * 0.6;

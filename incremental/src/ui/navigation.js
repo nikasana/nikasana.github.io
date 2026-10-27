@@ -42,6 +42,13 @@ export class Navigation {
     const b = g.works.beaconPos();
     out.push({ x: b.x, z: b.z, col: COL.glacier, shape: 'diamond', label: 'LIFT' });
     if (g.works.outfitterPos) { const o = g.works.outfitterPos; out.push({ x: o.x, z: o.z, col: '#7fd4ff', shape: 'square', label: 'OUTFITTER' }); }
+    if ((g.stats.visionTier || 0) >= 3) {
+      for (const it of g.frozen.items) {
+        if (it.kind !== 'find' || it.done) continue;
+        const p = it.mesh.position;
+        if (Math.hypot(p.x - g.ctl.pos.x, p.z - g.ctl.pos.z) < 60) out.push({ x: p.x, z: p.z, col: '#' + it.find.glow.toString(16).padStart(6, '0'), shape: 'dot', label: '', mapOnly: true });
+      }
+    }
     const v = g.works.vaultCenter();
     out.push({ x: v.x, z: v.z, col: COL.brass, shape: 'square', label: 'VAULT' });
     if (g.crew && g.crew.active && g.avatars) for (const a of g.avatars.map.values()) out.push({ x: a.root.position.x, z: a.root.position.z, col: COL.violet, shape: 'dot', label: '' });
@@ -88,6 +95,7 @@ export class Navigation {
     }
     // markers along the strip
     for (const m of marks) {
+      if (m.mapOnly) continue;
       const dx = m.x - p.x, dz = m.z - p.z;
       if (Math.hypot(dx, dz) < 1.2) continue;
       const r = rel(bearingOf(dx, dz));

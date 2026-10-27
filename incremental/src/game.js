@@ -36,7 +36,7 @@ import * as Save from './save/save.js';
 const SIM_STEP = 1 / 30;
 const PHYS_STEP = 1 / 60;
 const COINS_PER_M3 = 0.58;    // expected embedded coins per m³ (see coins.js spawn: 2.0 tries x 1.6 x mean seam acceptance 0.18)
-const COIN_RGB = [[1, 0.62, 0.45], [0.9, 0.95, 1], [1, 0.82, 0.35]];
+const COIN_RGB = [[1, 0.62, 0.45], [0.9, 0.95, 1], [1, 0.82, 0.35], [0.55, 0.9, 1]];
 
 const DEFAULT_SETTINGS = {
   preset: 'high', ...PRESETS.high, shadowQ: 'high', fov: 78, vsync: true, fpsCap: 0, grade: true, grain: true, vignette: true,
@@ -259,15 +259,17 @@ class Game {
       u.uStrataHard.value[i] = s.hard;
     }
     this.coins.setContext({ seed: p.seed, coinValue: (tier, depth) => this.coinValue(tier, depth) });
+    this.coins.tiers = p.coinTiers.slice();
+    if (!(this.profile.visited ||= {})[p.id]) { this.profile.visited[p.id] = Date.now(); this.writeProfile(); }
     this.planetView.setPlanet(p, pole);
     this.music.setTheme(this.settings.theme || p.theme);
   }
 
   freshState() { return { capsules: {}, needle: false, carried: { count: 0, value: 0, ids: [] }, played: 0, created: Date.now() }; }
 
-  newCampaign(pole, slot = 'solo') {
+  newCampaign(pole, slot = 'solo', planetId = 'frostara', opts = {}) {
     this.slot = slot;
-    this.econ = M.createEcon('frostara', pole);
+    this.econ = M.createEcon(planetId, pole, opts);
     M.applyCrewBonuses(this.econ, this.profile.crewMilestones || {});
     this.state = this.freshState();
     this.resetWorld();
@@ -357,7 +359,7 @@ class Game {
     return M.valueMult(this.econ, st) * Math.max(1, M.collectEff(st)) * Math.max(1, M.bankEff(st));
   }
 
-  tierMix(depth) { const w = tierWeights(depth, this.planet.coinTiers); return [w[0], w[1], w[2]]; }
+  tierMix(depth) { const w = tierWeights(depth, this.planet.coinTiers); return [w[0], w[1], w[2], w[3]]; }
 
   depthAt(x, y, z) { return surfaceY(x, z) - y; }
 
@@ -593,6 +595,33 @@ class Game {
       this.music.cue('motif', m.motif ?? i);
       if (this.crew.isHost) this.crew.event({ k: 'ms', id: m.id, bonus: bonus.toJSON() });
     });
+    if (!this.state.complete && this.econ.depth >= this.planet.goalDepth) this.completePlanet();
+  }
+
+  // ---------- planets ----------
+
+  completePlanet() {
+    this.state.complete = Date.now();
+    (this.profile.completed ||= {})[this.planet.id] = Date.now();
+    this.writeProfile();
+    this.music.cue('stinger');
+    this.hud.notice(`${this.planet.icon} ${this.planet.name} is melted through`, 'Your crater has reached the goal depth. A new world is waiting.', 'money', 9000);
+    this.save();
+    if (M.nextPlanet(this.econ)) { this.suppressPause = true; this.input.unlock(); this.menus.show('travel'); }
+  }
+
+  // Leave for the next planet: the economy starts fresh there, carrying this planet's Legacy.
+  travelTo(planetId, pole) {
+    const opts = M.travelOpts(this.econ, planetId);
+    const from = this.planet;
+    this.save();
+    this.newCampaign(pole, this.slot, planetId, opts);
+    this.settings.theme = this.planet.theme; this.saveSettings();
+    this.music.setTheme(this.planet.theme);
+    this.music.cue('swell');
+    this.enterPlay();
+    this.hud.notice(`${this.planet.icon} Welcome to ${this.planet.name}`, `${this.planet.rule}. Your ${from.name} legacy: ×${opts.legacy.toFixed(2)} income here.`, 'money', 12000);
+    if (this.crew.active && this.crew.isHost) this.crew.resync();
   }
 
   onCrewMilestones(done, fresh) {
@@ -962,7 +991,7 @@ class Game {
     if (!first) this.saveSettings();
   }
 
-  unlockedThemes() { return ['frostara']; }
+  unlockedThemes() { return ['frostara', ...Object.keys(this.profile.visited || {})]; }
 
   // ---------- dev hooks ----------
 
@@ -1182,7 +1211,11 @@ class Game {
     this.updateTreasure(dt, eye);
     this.particles.update(dt, this.volume);
     if (this.volume.maskDirty) { this.volume.maskDirty = false; this.terrain.userData.maskTex.needsUpdate = true; }
-    this.coins.setLight(0.35 + 0.65 * this.atmo.depthDim, this.time);
+    // vision cuts fog (Mistral) and the X-ray shows coins deeper in the ice while the lamp is focused
+    const vt = st.visionTier || 0, focusing = FAMILIES[this.tools.family].id === 'vision' && this.tools.using;
+    if (this.settings.fog) FOG.uFogParams.value.x = this.planet.fogDensity / (1 + 0.5 * vt + (focusing ? 1.5 : 0));
+    this.coins.setLight(0.35 + 0.65 * this.atmo.depthDim, this.time, vt >= 2 && focusing ? 4 : 1.3);
+    this.frozen.findRange = vt >= 2 && focusing ? 45 : 25;
     if (this.crew.active) { this.avatars.sync(this.crew.members); this.avatars.update(dt); }
     this.updateView(dt);
 
