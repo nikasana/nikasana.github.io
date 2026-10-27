@@ -34,8 +34,11 @@ void main() {
   // sea ice is thinner and breaks up first
   ice *= mix( 0.75, 1.0, land );
   vec3 iceCol = mix( uDeepIce, uIce, 0.6 + 0.4 * pf( q * 6.0 ) );
-  // crevasse streaks flowing off the pole
-  iceCol *= 0.92 + 0.08 * smoothstep( 0.45, 0.55, pn( vec3( lat * 40.0, atan( p.z, p.x ) * 3.0, 0.0 ) ) );
+  // ice flows off the pole: streaks radiate along longitude, with broad drainage basins
+  float lon = atan( p.z, p.x );
+  float flow = pn( vec3( lon * 14.0, abs( lat ) * 2.5, 3.0 ) ) * 0.6 + pn( vec3( lon * 41.0, abs( lat ) * 6.0, 7.0 ) ) * 0.4;
+  iceCol *= 0.9 + 0.1 * flow;
+  iceCol = mix( iceCol, iceCol * vec3( 0.86, 0.93, 1.0 ), smoothstep( 0.55, 0.8, pf( q * 1.5 + 4.0 ) ) );
   col = mix( col, iceCol, ice );
   // your pole: heat rings spreading out, a melted fringe and the crater with its glowing core
   vec3 poleV = vec3( 0.0, uPole, 0.0 );
