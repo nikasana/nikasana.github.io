@@ -29,7 +29,7 @@ export class Controller {
     this.landed = 0;
     this.footstep = 0;
     this.listeners = {};
-    this.limitRadius = 420;
+    this.limitRadius = 390;   // just inside the open-ice limit (volume.js WORLD_LIM)
   }
 
   on(ev, fn) { (this.listeners[ev] ||= []).push(fn); }

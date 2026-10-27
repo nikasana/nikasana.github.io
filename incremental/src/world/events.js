@@ -197,11 +197,13 @@ export class FrozenThings {
       this.items.push({ kind: 'needle', data: nd, mesh: m, freed: false });
     }
     // finds: lost gear, supplies and relics, set in the coin seams across the claim; which kind depends on depth
-    for (let i = 0; i < 60; i++) {
+    // 60 inside the claim, 90 more scattered across the open ice out to 160 m
+    for (let i = 0; i < 150; i++) {
       const id = `find${i}`;
       const seam = 1 + Math.floor(Math.pow(r(), 1.5) * 24);          // seams every 5.5 m
       let x = 0, z = 0;
-      for (let t = 0; t < 8; t++) { x = (r() * 2 - 1) * lim; z = (r() * 2 - 1) * lim; if (Math.hypot(x - 2.4, z - 5.6) > 5) break; }
+      if (i < 60) { for (let t = 0; t < 8; t++) { x = (r() * 2 - 1) * lim; z = (r() * 2 - 1) * lim; if (Math.hypot(x - 2.4, z - 5.6) > 5) break; } }
+      else { const a = r() * Math.PI * 2, d = 34 + Math.sqrt(r()) * 126; x = Math.cos(a) * d; z = Math.sin(a) * d; }
       const depth = (seam - 0.5) * 5.5;
       const find = findForDepth(depth, r());
       const rx = (r() - 0.5) * 0.6, ry = r() * 6.28, rz = (r() - 0.5) * 0.6;

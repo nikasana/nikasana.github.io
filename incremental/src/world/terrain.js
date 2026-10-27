@@ -1,13 +1,15 @@
 // The ice sheet beyond the dig domain: square rings of snow out to the horizon ridges,
 // and the survey stake line that marks the crater claim.
 import * as THREE from 'three';
-import { HALF, surfaceY } from './field.js';
+import { HALF, surfaceY, CHUNK_M } from './field.js';
+import { MASK_N } from './volume.js';
 
-export function buildTerrain(atmo) {
+export function buildTerrain(atmo, volume) {
   const SEG = 512;          // vertices around each square ring
   const rings = [];
-  let s = HALF - 1.0;       // overlap the untouched margin of the volume
-  while (s < 3400) { rings.push(s); s += Math.max(0.6, (s - HALF + 1) * 0.075); }
+  // from the centre out: ice can be dug anywhere, and the snow hides itself where ice meshes are (see below)
+  let s = 0.5;
+  while (s < 3400) { rings.push(s); s += Math.max(0.6, (s - 40) * 0.075); }
   const pos = new Float32Array(rings.length * SEG * 3);
   const idx = [];
   for (let r = 0; r < rings.length; r++) {
@@ -40,12 +42,25 @@ export function buildTerrain(atmo) {
   }
 
   const mat = new THREE.MeshStandardMaterial({ color: 0xf4f8fb, roughness: 0.82, metalness: 0, envMapIntensity: 0.9 });
+  // chunk columns that have an ice mesh: the snow is not drawn there
+  const maskTex = new THREE.DataTexture(volume.ownedMask, MASK_N, MASK_N, THREE.RedFormat, THREE.UnsignedByteType);
+  maskTex.magFilter = maskTex.minFilter = THREE.NearestFilter;
+  maskTex.needsUpdate = true;
+  const maskU = { tOwned: { value: maskTex }, uMaskScale: { value: 1 / (CHUNK_M * MASK_N) } };
   atmo.register(mat, 'snow', (shader) => {
+    Object.assign(shader.uniforms, maskU);
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vSnowW;\nvarying vec3 vSnowN;')
       .replace('#include <fog_vertex>', '#include <fog_vertex>\nvSnowW = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;\nvSnowN = normalize( mat3( modelMatrix ) * objectNormal );');
     shader.fragmentShader = shader.fragmentShader
+      .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+        {
+          vec2 muv = vSnowW.xz * uMaskScale + 0.5;
+          if ( muv.x > 0.0 && muv.y > 0.0 && muv.x < 1.0 && muv.y < 1.0 && texture2D( tOwned, muv ).r > 0.5 ) discard;
+        }`)
       .replace('#include <common>', `#include <common>
+        uniform sampler2D tOwned;
+        uniform float uMaskScale;
         varying vec3 vSnowW;
         varying vec3 vSnowN;
         float sh31( vec3 p ) { p = fract( p * 0.1031 ); p += dot( p, p.zyx + 31.32 ); return fract( ( p.x + p.y ) * p.z ); }
@@ -91,6 +106,7 @@ export function buildTerrain(atmo) {
   mesh.castShadow = false;
   mesh.name = 'terrain';
   mesh.frustumCulled = false;
+  mesh.userData.maskTex = maskTex;
   return mesh;
 }
 

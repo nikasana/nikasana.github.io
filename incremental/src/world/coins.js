@@ -285,7 +285,6 @@ export class CoinSystem {
       const a = r(), b = r(), cc = r(), tierRoll = r();
       const top = surfaceY(x, z);
       if (y > top - 0.42) continue; // the smoothed mesh sits a little below the analytic surface
-      if (Math.abs(x) > 30 || Math.abs(z) > 30) continue;
       const rich = richness(x, y, z);
       if (a > (0.06 + Math.pow(rich, 1.6) * 1.45) / 1.6) continue;
       const depth = top - y;
@@ -439,7 +438,7 @@ export class CoinSystem {
         const dx = k.x - camPos.x, dy = k.y - camPos.y, dz = k.z - camPos.z;
         if (dx * dx + dy * dy + dz * dz > R2) continue;
         // just under untouched snow: keep hidden (snow is opaque); dug ground shows them
-        if (k.depth < 1.2 && sampleHeightmap(this.volume.hm, k.x, k.z) < 0.3) continue;
+        if (k.depth < 1.2 && !this.volume.edited.has(keyOf(Math.floor(k.x / CHUNK_M), Math.floor(k.y / CHUNK_M), Math.floor(k.z / CHUNK_M)))) continue;
         const m = this.embMesh[k.tier];
         if (n[k.tier] >= 7000) continue;
         _p.set(k.x, k.y, k.z);

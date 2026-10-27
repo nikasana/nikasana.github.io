@@ -213,7 +213,8 @@ export class Works {
     this.group.add(box(3.5, 0.18, 2.9, dark, VAULT.x + VAULT.w / 2 + 4.6, vy + 2.42, VAULT.z + 0.4));
     this.colliders.push({ min: new THREE.Vector3(VAULT.x + VAULT.w / 2 + 3.0, vy - 1, VAULT.z - 0.9), max: new THREE.Vector3(VAULT.x + VAULT.w / 2 + 6.2, vy + 2.5, VAULT.z + 1.7) });
     this.colliders.push({ min: new THREE.Vector3(VAULT.x - VAULT.w / 2 - 0.25, vy - 1, VAULT.z - VAULT.d / 2 - 0.25), max: new THREE.Vector3(VAULT.x + VAULT.w / 2 + 0.25, this.vaultY + VAULT.depth + 0.6, VAULT.z + VAULT.d / 2 + 0.25) });
-    for (const sx of [-1, 1]) this.colliders.push({ min: new THREE.Vector3(sx * RAIL_X - 0.3, -100, -1e4), max: new THREE.Vector3(sx * RAIL_X + 0.3, surfaceY(sx * RAIL_X, 0) + 0.3, 1e4) });
+    // rail beds: a low kerb on the snow (tunnels can pass under it)
+    for (const sx of [-1, 1]) this.colliders.push({ min: new THREE.Vector3(sx * RAIL_X - 0.3, surfaceY(sx * RAIL_X, 0) - 0.6, -HALF - 14), max: new THREE.Vector3(sx * RAIL_X + 0.3, surfaceY(sx * RAIL_X, 0) + 0.3, HALF + 14) });
 
     // coin pile: a settling height field of coin instances
     this.pileRes = 0.12;
@@ -305,8 +306,8 @@ export class Works {
   // Beacon follows the player down the crater at lift speed.
   update(dt, time, target, liftSpeed, volume) {
     const b = this.beacon.position;
-    const lim = HALF - 2.2;
-    const tx = Math.max(-lim, Math.min(lim, target.x)), tz = Math.max(-lim, Math.min(lim, target.z));
+    // the lift goes wherever you dig; the gantry only carries it over the claim
+    const tx = target.x, tz = target.z;
     // hover above the floor at the target, never inside the ice
     const floor = volume.floorBelow(tx, target.y + 2.5, tz, 60);
     const ty = target.overhead ? target.y + 1.3 : Math.max(floor + 1.5, Math.min(target.y + 1.2, surfaceY(tx, tz) + 3));
@@ -330,8 +331,10 @@ export class Works {
     this.beam.material.uniforms.uTime.value = time;
     this.beam.material.uniforms.uPulse.value = this.pulse;
 
-    this.bridge.position.z = b.z;
-    this.trolley.position.set(b.x, 0, b.z);
+    const onRails = Math.abs(b.x) < RAIL_X - 0.5 && Math.abs(b.z) < HALF + 12;
+    this.bridge.position.z = Math.max(-HALF - 12, Math.min(HALF + 12, b.z));
+    this.trolley.position.set(Math.max(-RAIL_X + 1, Math.min(RAIL_X - 1, b.x)), 0, this.bridge.position.z);
+    this.cable.visible = this.trolley.visible = onRails;
     this.drum.rotation.x = -b.y * 1.5;
     const top = new THREE.Vector3(b.x, BRIDGE_Y + 0.2, b.z);
     const bot = new THREE.Vector3(b.x, b.y + 0.7, b.z);

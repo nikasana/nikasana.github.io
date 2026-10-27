@@ -12,6 +12,12 @@ export const LAYER_ICE = 1;
 const C3 = CHUNK * CHUNK * CHUNK;
 export const keyOf = (cx, cy, cz) => ((cx + 512) * 1024 + (cz + 512)) * 8192 + (cy + 4096);
 const unkey = (k) => { const cy = (k % 8192) - 4096, r = Math.floor(k / 8192); return [Math.floor(r / 1024) - 512, cy, (r % 1024) - 512]; };
+// Open ice: you can dig anywhere within WORLD_LIM of the claim centre. Chunks stream in a window
+// around the player; the snowfield (terrain.js) hides itself over columns that have an ice mesh.
+export const WORLD_LIM = 400;
+export const WIN_H = 5;                  // horizontal window radius in chunks (40 m)
+export const MASK_N = 128;               // owned-column mask covers MASK_N chunks per side, centred on 0
+const colIndex = (cx, cz) => { const i = cx + MASK_N / 2, k = cz + MASK_N / 2; return i < 0 || k < 0 || i >= MASK_N || k >= MASK_N ? -1 : k * MASK_N + i; };
 const occ = (d) => clamp((d - ISO) / GRAD + 0.5, 0, 1);
 
 export class IceVolume {
@@ -32,6 +38,10 @@ export class IceVolume {
     this.edited = new Map();   // chunk key -> exact density of every chunk ever edited (survives unloading and saves)
     this.window = { cyMin: -2, cyMax: 1 };
     this.keepMeshDist = 170;
+    // how many ice meshes each chunk column has: the snowfield is hidden where this is non-zero
+    this.colMeshes = new Uint16Array(MASK_N * MASK_N);
+    this.ownedMask = new Uint8Array(MASK_N * MASK_N);
+    this.maskDirty = true;
     this.maxDepthDug = 0;
     const n = Math.max(2, Math.min(4, (navigator.hardwareConcurrency || 4) - 1));
     this.workers = [];
@@ -49,8 +59,8 @@ export class IceVolume {
   // ---------- chunks ----------
 
   static chunkInDomain(cx, cz) {
-    const h = DOMAIN_CHUNKS / 2;
-    return cx >= -h && cx < h && cz >= -h && cz < h;
+    const lim = WORLD_LIM / CHUNK_M;
+    return cx >= -lim && cx < lim && cz >= -lim && cz < lim;
   }
 
   getChunk(cx, cy, cz, create = true) {
@@ -140,7 +150,7 @@ export class IceVolume {
   applyOp(op) {
     const r = op.r;
     const pad = r + VOXEL * 2;
-    const lim = HALF - MARGIN;
+    const lim = WORLD_LIM - CHUNK_M;
     const x0 = Math.max(-lim, op.x - pad), x1 = Math.min(lim, op.x + pad);
     const z0 = Math.max(-lim, op.z - pad), z1 = Math.min(lim, op.z + pad);
     const y0 = op.y - pad, y1 = op.y + pad;
@@ -289,11 +299,13 @@ export class IceVolume {
     const cyMin = pcy - 3, cyMax = Math.max(pcy + 4, nearSurface ? 0 : -1e9);
     const cyLo = nearSurface ? Math.min(cyMin, -2) : cyMin;
     this.window = { cyMin: cyLo, cyMax };
-    const h = DOMAIN_CHUNKS / 2;
+    const pcx = Math.floor(camPos.x / CHUNK_M), pcz = Math.floor(camPos.z / CHUNK_M);
+    this.window.pcx = pcx; this.window.pcz = pcz;
     const t0 = performance.now();
     // load in-window chunks nearest first
     const want = [];
-    for (let cy = cyLo; cy <= cyMax; cy++) for (let cz = -h; cz < h; cz++) for (let cx = -h; cx < h; cx++) {
+    for (let cy = cyLo; cy <= cyMax; cy++) for (let cz = pcz - WIN_H; cz <= pcz + WIN_H; cz++) for (let cx = pcx - WIN_H; cx <= pcx + WIN_H; cx++) {
+      if (!IceVolume.chunkInDomain(cx, cz)) continue;
       const c = this.chunks.get(keyOf(cx, cy, cz));
       if (c && c.data) continue;
       const dy = (cy + 0.5) * CHUNK_M - camPos.y, dx = (cx + 0.5) * CHUNK_M - camPos.x, dz = (cz + 0.5) * CHUNK_M - camPos.z;
@@ -307,7 +319,8 @@ export class IceVolume {
     }
     // drop data outside the window; dispose far meshes
     for (const c of this.chunks.values()) {
-      const out = c.cy < cyLo - 1 || c.cy > cyMax + 1;
+      const hd = Math.max(Math.abs(c.cx - pcx), Math.abs(c.cz - pcz));
+      const out = c.cy < cyLo - 1 || c.cy > cyMax + 1 || hd > WIN_H + 1;
       if (out && c.data && !this.inflightChunk(c)) {
         this.emit('drop', c);
         c.data = null;
@@ -316,7 +329,8 @@ export class IceVolume {
       }
       if (c.mesh) {
         const dy = Math.abs((c.cy + 0.5) * CHUNK_M - camPos.y);
-        if (dy > this.keepMeshDist) this.disposeMesh(c);
+        // meshes stay a while after their data is dropped, so a crater still reads from a distance
+        if (dy > this.keepMeshDist || hd > WIN_H + 7) this.disposeMesh(c);
         c.mesh && (c.mesh.visible = dy < this.keepMeshDist);
       }
       if (!c.data && !c.mesh) this.chunks.delete(c.key);
@@ -433,11 +447,21 @@ export class IceVolume {
       m.updateMatrix();
       c.mesh = m;
       this.group.add(m);
+      this.markColumn(c, 1);
     }
+  }
+
+  markColumn(c, d) {
+    const i = colIndex(c.cx, c.cz);
+    if (i < 0) return;
+    const was = this.colMeshes[i] > 0;
+    this.colMeshes[i] = Math.max(0, this.colMeshes[i] + d);
+    if (was !== this.colMeshes[i] > 0) { this.ownedMask[i] = this.colMeshes[i] > 0 ? 255 : 0; this.maskDirty = true; }
   }
 
   disposeMesh(c) {
     if (!c.mesh) return;
+    this.markColumn(c, -1);
     this.group.remove(c.mesh);
     c.mesh.geometry.dispose();
     c.mesh = null;
@@ -495,6 +519,7 @@ export class IceVolume {
     for (const w of this.workers) w.busy = false;
     this.hm.fill(0);
     this.edited.clear();
+    this.colMeshes.fill(0); this.ownedMask.fill(0); this.maskDirty = true;
     this.maxDepthDug = 0;
   }
 
