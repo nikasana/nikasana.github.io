@@ -211,6 +211,16 @@ export class Graphics {
     this.composer.addPass(this.gtao);
     this.fxPass = new FXPass(this);
     this.composer.addPass(this.fxPass);
+    // Any NaN/Inf pixel from a shader would be smeared into black blocks by AO and bloom: scrub them here.
+    this.sanitize = new ShaderPass({
+      uniforms: { tDiffuse: { value: null } },
+      vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 ); }',
+      fragmentShader: `uniform sampler2D tDiffuse; varying vec2 vUv;
+        void main() { vec4 c = texture2D( tDiffuse, vUv );
+          if ( any( isnan( c ) ) || any( isinf( c ) ) ) c = vec4( 0.0, 0.0, 0.0, 1.0 );
+          gl_FragColor = vec4( clamp( c.rgb, 0.0, 64.0 ), 1.0 ); }`,
+    });
+    this.composer.addPass(this.sanitize);
     this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.32, 0.55, 0.92);
     this.composer.addPass(this.bloom);
     this.output = new OutputPass();

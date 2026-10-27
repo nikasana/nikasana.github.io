@@ -233,7 +233,8 @@ export class Tools {
     const F = FAMILIES[this.family];
     const tier = this.tierOf(st);
     const ok = this.available(st, this.family);
-    const reach = F.id === 'melt' ? st.reach * 1.45 : st.reach;
+    // looking down you can bend and reach the floor of the hole you are standing in
+    const reach = (F.id === 'melt' ? st.reach * 1.45 : st.reach) + Math.max(0, -ctx.dir.y) * 1.5;
     const hit = g.volume.raycast(ctx.eye, ctx.dir, reach + 0.2);
     this.hit = hit.hit && hit.dist <= reach ? hit : null;
     const lmb = input.is('use') && ok;
@@ -310,7 +311,7 @@ export class Tools {
     const perHit = digVolumeRate({ ...st, crit: 0 }) / Math.max(0.2, st.digRate);
     let r = Math.cbrt((perHit / hard) / ((4 / 3) * Math.PI * 0.5));
     r *= Math.cbrt(scale * scale * scale) * (crit ? Math.cbrt(st.critMult) : 1);
-    r = Math.max(0.28, r);
+    r = Math.max(0.33, r);  // never narrower than the player can follow down
     const c = h.point.clone().addScaledVector(h.normal, -r * 0.35);
     const pre = this.lastMeltAt.some((m) => m.p.distanceTo(h.point) < r + 1.2);
     const rich = richness(h.point.x, h.point.y, h.point.z);

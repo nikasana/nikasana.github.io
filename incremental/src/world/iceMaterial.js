@@ -235,6 +235,10 @@ const ICE_COMPOSE = /* glsl */`
   vec3 T = exp( -uAbsorb * thick * density );
   float lod = clamp( log2( 1.0 + thick * 5.0 ) * 1.5, 0.0, 7.0 );
   vec3 behind = texture2DLodEXT( tOpaque, ruv, lod ).rgb;
+  // one bad pixel behind the ice would spread through the blurred mips into a black block
+  if ( any( isnan( behind ) ) || any( isinf( behind ) ) ) behind = texture2DLodEXT( tOpaque, ruv, 0.0 ).rgb;
+  if ( any( isnan( behind ) ) || any( isinf( behind ) ) ) behind = litW * 0.3;
+  behind = min( behind, vec3( 64.0 ) );
 
   // in-scatter: the ice body glows with the light it has absorbed, tinted by its strata
   vec3 tint = ice.strata;
@@ -300,6 +304,8 @@ const ICE_COMPOSE = /* glsl */`
   // pit walls cannot see the open sky: occlude reflections with depth and cavity
   float specOcc = mix( 1.0, 0.15, smoothstep( 0.3, 4.0, ice.depth ) ) * ( 1.0 - smoothstep( 0.35, 0.8, ice.cav ) * 0.8 );
   outgoingLight = col + spec * specOcc * ( 1.0 - ice.snow * 0.35 );
+  if ( any( isnan( outgoingLight ) ) || any( isinf( outgoingLight ) ) ) outgoingLight = vec3( 0.0 );
+  outgoingLight = clamp( outgoingLight, 0.0, 64.0 );
   if ( uDebug > 0.5 ) {
     if ( uDebug < 1.5 ) outgoingLight = vec3( 1.0, 0.0, 0.0 );
     else if ( uDebug < 2.5 ) outgoingLight = litW;

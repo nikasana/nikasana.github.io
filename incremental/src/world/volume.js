@@ -181,19 +181,30 @@ export class IceVolume {
           }
           nd = nd | 0;
           if (nd === old) continue;
-          c.data[li] = nd;
           const dv = occ(old) - occ(nd);
           if (dv > 0) removed += dv; else added -= dv;
-          touched.add(c);
-          // samples near a chunk face live in a neighbour's padding too
-          const lx = gi - cx * CHUNK, ly = gj - cy * CHUNK, lz = gk - cz * CHUNK;
-          if (lx < PAD || lx >= CHUNK - PAD || ly < PAD || ly >= CHUNK - PAD || lz < PAD || lz >= CHUNK - PAD) {
-            for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (let e = -1; e <= 1; e++) {
-              if ((a && !(a < 0 ? lx < PAD : lx >= CHUNK - PAD)) || (b && !(b < 0 ? ly < PAD : ly >= CHUNK - PAD)) || (e && !(e < 0 ? lz < PAD : lz >= CHUNK - PAD))) continue;
-              const nc = this.chunks.get(keyOf(cx + a, cy + b, cz + e));
-              if (nc) touched.add(nc);
-            }
-          }
+          this.writeVoxel(c, gi, gj, gk, nd, touched);
+        }
+      }
+    }
+    // Overlapping craters leave one-voxel ridges and plates that are hard to see, aim at or break:
+    // erode any solid sample that has open space on both sides along an axis, or almost no solid neighbours.
+    if (op.kind === 'dig' || op.kind === 'melt') {
+      for (let pass = 0; pass < 2; pass++) {
+        for (let gj = gj0 - 1; gj <= gj1 + 1; gj++) for (let gk = gk0 - 1; gk <= gk1 + 1; gk++) for (let gi = gi0 - 1; gi <= gi1 + 1; gi++) {
+          if (Math.abs(gi * VOXEL) > lim || Math.abs(gk * VOXEL) > lim) continue;
+          const v = this.densityAtVoxel(gi, gj, gk);
+          if (v < ISO) continue;
+          const xm = this.densityAtVoxel(gi - 1, gj, gk) < ISO, xp = this.densityAtVoxel(gi + 1, gj, gk) < ISO;
+          const ym = this.densityAtVoxel(gi, gj - 1, gk) < ISO, yp = this.densityAtVoxel(gi, gj + 1, gk) < ISO;
+          const zm = this.densityAtVoxel(gi, gj, gk - 1) < ISO, zp = this.densityAtVoxel(gi, gj, gk + 1) < ISO;
+          const open = xm + xp + ym + yp + zm + zp;
+          if (!((xm && xp) || (ym && yp) || (zm && zp) || open >= 5)) continue;
+          const cx = Math.floor(gi / CHUNK), cy = Math.floor(gj / CHUNK), cz = Math.floor(gk / CHUNK);
+          const c = this.getChunk(cx, cy, cz);
+          const nd = ISO - 30;
+          removed += occ(v) - occ(nd);
+          this.writeVoxel(c, gi, gj, gk, nd, touched);
         }
       }
     }
@@ -209,6 +220,21 @@ export class IceVolume {
     const res = { removed, added, bounds: { x0, x1, y0, y1, z0, z1 } };
     this.emit('edit', op, res);
     return res;
+  }
+
+  writeVoxel(c, gi, gj, gk, v, touched) {
+    const cx = c.cx, cy = c.cy, cz = c.cz;
+    const lx = gi - cx * CHUNK, ly = gj - cy * CHUNK, lz = gk - cz * CHUNK;
+    c.data[idx(lx, ly, lz)] = v;
+    touched.add(c);
+    // samples near a chunk face live in a neighbour's padding too
+    if (lx < PAD || lx >= CHUNK - PAD || ly < PAD || ly >= CHUNK - PAD || lz < PAD || lz >= CHUNK - PAD) {
+      for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (let e = -1; e <= 1; e++) {
+        if ((a && !(a < 0 ? lx < PAD : lx >= CHUNK - PAD)) || (b && !(b < 0 ? ly < PAD : ly >= CHUNK - PAD)) || (e && !(e < 0 ? lz < PAD : lz >= CHUNK - PAD))) continue;
+        const nc = this.chunks.get(keyOf(cx + a, cy + b, cz + e));
+        if (nc) touched.add(nc);
+      }
+    }
   }
 
   // Recompute carved depth for heightmap columns in a box (first solid voxel from the top).

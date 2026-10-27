@@ -50,7 +50,8 @@ void main() {
   float skin = smoothstep( 1.0 - uFrozen * 1.1, 1.05 - uFrozen * 1.1, r + n2( vW.xz * 6.0 ) * 0.15 );
   col = mix( col, vec3( 0.78, 0.9, 0.96 ) * uLight, skin * 0.7 );
   float edge = smoothstep( 0.82, 1.0, r );
-  gl_FragColor = vec4( col, ( 0.88 - edge * 0.6 ) );
+  if ( any( isnan( col ) ) ) discard;
+  gl_FragColor = vec4( min( col, vec3( 64.0 ) ), ( 0.88 - edge * 0.6 ) );
 }`;
 
 export class Water {

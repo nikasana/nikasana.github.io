@@ -2,7 +2,7 @@
 // (which also covers the snow surface outside the dig domain) and simple boxes.
 import * as THREE from 'three';
 
-const R = 0.32;
+const R = 0.25;
 const HEIGHT = 1.78;
 const EYE = 1.64;
 const SPHERES = [R, 0.9, HEIGHT - R];
@@ -110,8 +110,12 @@ export class Controller {
         const pen = R + s;
         if (pen > 0) {
           vol.normalAt(cx, cy, cz, _n);
-          // feet: prefer pushing up so slopes are walkable
-          if (h === R && _n.y > 0.45) _n.set(_n.x * 0.25, 1, _n.z * 0.25).normalize();
+          // Carved space is a union of crater spheres, whose field under-reports the distance at the
+          // necks between them: only collide if the sphere's side facing the surface is really in ice.
+          if (vol.sdf(cx - _n.x * R, cy - _n.y * R, cz - _n.z * R) < -0.04) continue;
+          // feet: on real slopes prefer pushing up so they stay walkable, but not on the lip of a hole:
+          // there the push follows the true normal and the player slides in instead of hovering over it
+          if (h === R && _n.y > 0.45 && !this.overGap(_n)) _n.set(_n.x * 0.25, 1, _n.z * 0.25).normalize();
           this.pos.addScaledVector(_n, pen * 0.9);
           const vn = this.vel.dot(_n);
           if (vn < 0) this.vel.addScaledVector(_n, -vn);
@@ -126,8 +130,15 @@ export class Controller {
     // ground probe for stable footing on gentle slopes
     if (!this.onGround && this.vel.y <= 0.5) {
       const s = vol.sdf(this.pos.x, this.pos.y + R - 0.08, this.pos.z);
-      if (s > -R) { this.onGround = true; }
+      if (s > -R && !this.overGap(null)) { this.onGround = true; }
     }
+  }
+
+  // Is there open space straight under the feet (a dug hole), with support only from its rim?
+  overGap(n) {
+    if (n && n.y > 0.97) return false;
+    const vol = this.volume, p = this.pos;
+    return vol.sdf(p.x, p.y - 0.12, p.z) < -0.05 && vol.sdf(p.x, p.y - 0.45, p.z) < -0.05;
   }
 
   pushBox(c) {

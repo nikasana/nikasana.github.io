@@ -94,7 +94,8 @@ void main() {
   if ( xray ) fade = max( fade, 0.55 );
   float a = t.a * vCol.a * fade;
   if ( a < 0.003 ) discard;
-  gl_FragColor = vec4( vCol.rgb * t.rgb, a );
+  vec3 pc = vCol.rgb * t.rgb; if ( any( isnan( pc ) ) || isnan( a ) ) discard;
+  gl_FragColor = vec4( min( pc, vec3( 64.0 ) ), clamp( a, 0.0, 1.0 ) );
 }`;
 
 export const P = { SHARD: 1, DUST: 2, STEAM: 3, SPARK: 4, DRIP: 5, GLINT: 6, MOTE: 7, CHIP: 8, FLAME: 9 };

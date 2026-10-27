@@ -1,5 +1,12 @@
 # Changelog
 
+## Batch 1 fixes, round 1 (playtest feedback)
+- Fixed black rectangles that could cover part of the screen: one invalid (NaN) pixel was being spread by the bloom blur into a large block. A cleanup pass now scrubs invalid pixels before bloom, and the ice, particle and water shaders guard their own output.
+- Fixed hovering over freshly dug holes: the collision field reported phantom floors where crater spheres overlap. Contacts are now checked against real ice, and the player drops down the shaft as it is dug.
+- The player is slightly slimmer, and the smallest pick crater is wide enough to follow down.
+- Looking down extends your reach, so you can always hit the floor of the hole you are standing in.
+- Digging and melting now erode the thin one-voxel ridges and plates left between overlapping craters, so no hard-to-hit slivers of ice remain.
+
 ## Batch 1 (MVP): Frostara and co-op
 
 ### World and graphics
