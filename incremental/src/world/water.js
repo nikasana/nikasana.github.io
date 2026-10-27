@@ -110,7 +110,8 @@ export class Water {
         p.frozen = Math.min(1, p.frozen + dt / (10 * this.antiRefreeze));
         if (p.frozen >= 1) {
           // refreeze: the pool becomes a flat lens of clear new ice
-          this.volume.applyOp({ kind: 'fill', x: p.x, y: p.level, z: p.z, r: p.r * 0.95, level: p.level, seed: 0 });
+          const op = { kind: 'fill', x: p.x, y: p.level, z: p.z, r: p.r * 0.95, level: p.level, seed: 0 };
+          if (this.applyFill) this.applyFill(op); else this.volume.applyOp(op);
           if (this.onRefreeze) this.onRefreeze(p);
           p.mesh.removeFromParent();
           p.mesh.material.dispose();

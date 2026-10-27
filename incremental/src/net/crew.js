@@ -192,7 +192,8 @@ export class Crew {
         if (!this.isHost) { g.crewEcon(m.e); this.progress = m.p || this.progress; }
         break;
       case 'event':
-        g.crewEvent(m.ev);
+        g.crewEvent(m.ev, !this.isHost ? null : from);
+        if (this.isHost) this.relay(from, m);
         break;
       case 'crewms':
         this.done = m.done;
@@ -241,7 +242,8 @@ export class Crew {
 
   action(a, n = 1) { if (this.t && !this.isHost && !this.lostHost) this.t.send(null, { t: 'act', a, n }); }
   buy(id) { if (this.t && !this.isHost && !this.lostHost) this.t.send(null, { t: 'buy', id }); }
-  event(ev) { if (this.t && this.isHost) this.t.send(null, { t: 'event', ev }); }
+  // host: tell everyone; member: tell the host, who applies it and passes it on
+  event(ev) { if (this.t && (this.isHost || !this.lostHost)) this.t.send(null, { t: 'event', ev }); }
 
   tick(dt) {
     if (!this.t) return;

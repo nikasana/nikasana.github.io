@@ -270,6 +270,12 @@ export class FrozenThings {
     step();
   }
 
+  // a crewmate took this one: drop it here too
+  removeFind(id) {
+    const it = this.items.find((i) => i.kind === 'find' && i.id === id && !i.done);
+    if (it) { it.done = true; this.animateOut(it); }
+  }
+
   // dev: move an item right in front of the player and free it
   devBring(kind, pos) {
     const it = this.items.find((i) => i.kind === kind && !i.done);

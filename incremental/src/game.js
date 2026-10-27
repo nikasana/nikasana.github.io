@@ -156,6 +156,8 @@ class Game {
       this.sfx.play('clink', { tier: t, pos: new THREE.Vector3(op.x, op.y, op.z) });
       for (const c of list) if (c.tier >= 1) this.particles.glint(new THREE.Vector3(c.x, c.y, c.z), COIN_RGB[c.tier], 0.3);
     };
+    // in a crew only the host freezes pools into ice and sends the edit, so everyone keeps the same ice
+    this.water.applyFill = (op) => { if (!this.crew.active || this.crew.isHost) this.applyOp(op, 'local'); };
     this.water.onRefreeze = (p) => {
       this.sfx.play('creak', { pos: new THREE.Vector3(p.x, p.level, p.z) });
       this.hud.notice('Meltwater refroze', 'A pool you left behind froze into clear ice. Anti-Refreeze buys you more time.', '', 3800);
@@ -541,7 +543,10 @@ class Game {
     this.music.cue('capsule');
     this.sfx.play('bank', { pos: it.mesh.position, count: 10, tier: 2 });
     this.hud.notice(`${f.icon} ${f.name}`, `+${format(bonus)} coins${extra}${f.relic || f.buff ? '' : ` · ${f.desc}`}`, 'money', 7000);
-    if (this.crew.active) this.crew.event({ k: 'find', id: it.id, name: f.name, bonus });
+    if (this.crew.active) {
+      this.crew.event({ k: 'find', id: it.id, name: f.name, bonus, relic: f.relic || 0 });
+      if (!this.crew.isHost) this.crew.bank(bonus, []);   // the host credits the shared vault
+    }
     this.save();
   }
 
@@ -787,12 +792,14 @@ class Game {
 
   crewCredit(v) { M.earn(this.econ, Big.fromNumber(v)); }
 
-  crewEvent(ev) {
+  crewEvent(ev, from = null) {
     if (ev.k === 'res') { const s = SYNERGY_BY_ID[ev.id]; if (s) { this.hud.notice('Resonance', `${s.name}. The crew found it.`, 'resonance'); this.music.cue('resonance'); } }
     else if (ev.k === 'ms') { const m = MILESTONES.find((x) => x.id === ev.id); if (m) { this.hud.notice(`${m.icon} Milestone: ${m.name}`, `+${format(Big.parse(ev.bonus))} coins for the crew.`, 'money'); this.music.cue('motif', m.motif); } }
     else if (ev.k === 'capsule') { this.state.capsules[ev.id] = Date.now(); this.hud.notice('Time capsule opened', `+${format(ev.bonus)} coins for the crew.`, 'money'); }
     else if (ev.k === 'needle') { this.state.needle = true; this.music.cue('stinger'); this.hud.notice('The Golden Needle', 'A crewmate found it.', 'money'); }
-    else if (ev.k === 'find') { (this.state.finds ||= {})[ev.id] = Date.now(); this.hud.notice(ev.name || 'A find', `A crewmate dug it out: +${format(ev.bonus)} coins for the crew.`, 'money'); }
+    else if (ev.k === 'find') {
+      (this.state.finds ||= {})[ev.id] = Date.now(); this.frozen.removeFind(ev.id);
+      if (from && ev.relic) { this.econ.legacy *= ev.relic; this.statsDirty = true; } this.hud.notice(ev.name || 'A find', `A crewmate dug it out: +${format(ev.bonus)} coins for the crew.`, 'money'); }
     else if (ev.k === 'buy') { this.sfx.play('buy', { step: this.econ.purchases }); }
   }
 
@@ -819,12 +826,64 @@ class Game {
     this.save();
     this.crew.leave();
     this.avatars.clear();
-    const data = Save.readSlot('solo');
-    this.slot = 'solo';
-    if (data) this.loadState(data); else this.newCampaign(this.econ.pole, 'solo');
+    const solo = this.profile.lastSolo || 'solo';
+    const data = Save.readSlot(solo);
+    this.slot = solo;
+    if (data) this.loadState(data); else this.newCampaign(this.econ.pole, solo);
   }
 
   crewSlots() { return Save.listSlots().filter((s) => s.startsWith('crew.')).map((s) => s.slice(5)); }
+
+  // ---------- saved playthroughs ----------
+
+  listSaves() {
+    const out = [];
+    for (const slot of Save.listSlots()) {
+      const d = Save.readSlot(slot);
+      if (!d || !d.econ) continue;
+      const crew = slot.startsWith('crew.') ? slot.slice(5) : null;
+      let coins = '0';
+      try { coins = format(Save.econFromJSON(d.econ).coins); } catch { /* old save */ }
+      out.push({ slot, crew, pole: d.econ.pole, depth: d.econ.depth || 0, coins, purchases: d.econ.purchases || 0, savedAt: d.savedAt || 0 });
+    }
+    return out.sort((a, b) => b.savedAt - a.savedAt);
+  }
+
+  continueSave(slot) {
+    if (this.started && this.slot !== slot) this.save();
+    if (slot.startsWith('crew.')) { this.crewResume(slot.slice(5)).then(() => this.enterPlay()); return; }
+    if (this.crew.active) { this.crew.leave(true); this.avatars.clear(); }
+    const data = Save.readSlot(slot);
+    if (!data) return;
+    this.slot = slot;
+    this.loadState(data);
+    this.profile.lastSolo = slot; this.writeProfile();
+    this.enterPlay();
+    const away = (Date.now() - (data.savedAt || Date.now())) / 1000;
+    if (away > 90) this.showOffline(away);
+  }
+
+  newSave(pole) {
+    if (this.started) this.save();
+    if (this.crew.active) { this.crew.leave(true); this.avatars.clear(); }
+    const slot = `solo-${Date.now().toString(36)}`;
+    this.profile.lastSolo = slot; this.writeProfile();
+    this.newCampaign(pole, slot);
+    this.enterPlay();
+    this.hud.notice('Welcome to Frostara', `Hold left mouse on the ice to dig. Coins go in your pack; stand by the glowing lift beacon to bank them. Buy upgrades at the blue Outfitter's hut ▣ nearby (press ${this.keyName('upgrades')} there).`, '', 14000);
+  }
+
+  deleteSave(slot) {
+    Save.deleteSlot(slot);
+    if (slot === this.slot) this.started = false;
+  }
+
+  enterPlay() {
+    this.started = true;
+    this.hideLoading();
+    this.menus.close();
+    this.clickPlay.hidden = false;
+  }
 
   // ---------- save ----------
 
@@ -948,7 +1007,8 @@ class Game {
   start() {
     const join = this.qs.get('join');
     if (this.slotOverride) this.slot = this.slotOverride;
-    const data = Save.readSlot(this.slot);
+    // with saves present (and no slot named in the link) the start screen lists them to continue or start anew
+    const data = this.slotOverride ? Save.readSlot(this.slot) : null;
     const begin = () => {
       this.started = true;
       this.hideLoading();
@@ -968,6 +1028,7 @@ class Game {
       this.ctl.pitch = -0.08;
       this.hideLoading();
       if (!join) this.menus.show('start', (pole) => {
+        if (!this.slotOverride) { this.newSave(pole); return; }
         this.newCampaign(pole, this.slot);
         begin();
         this.hud.notice('Welcome to Frostara', `Hold left mouse on the ice to dig. Coins go in your pack; stay near the glowing lift beacon to bank them. Buy upgrades at the blue Outfitter's hut ▣ nearby (press ${this.keyName('upgrades')} there).`, '', 14000);
@@ -1057,6 +1118,7 @@ class Game {
     const depthHere = this.depthAt(eye.x, eye.y, eye.z);
 
     const toolInput = playing && inp.locked ? inp : { is: () => false, was: () => false };
+    this.tools.view.visible = this.started && this.menus.cur !== 'start';
     this.tools.update(dt, toolInput, {
       eye, dir, st, move: this.ctl.vel.lengthSq() > 0.5,
       hardness: (d) => M.hardnessAt(this.econ, Math.max(0, d)), depthAt: (y) => surfaceY(eye.x, eye.z) - y,

@@ -70,6 +70,7 @@ export class Menus {
     const k = (a) => keyLabel(g.input.code(a));
     const nav = [
       ['Resume', 'Esc', () => { this.close(); g.input.lock(); }],
+      ['Saves & new game', '', () => this.show('start')],
       ['Upgrades', k('upgrades'), () => { if (g.canUpgrade()) this.show('upgrades'); else { this.close(); g.input.lock(); g.upgradeAway(); } }],
       ['Planet view', k('planet'), () => { this.close(); g.togglePlanet(true); }],
       ['Notebook', k('collections'), () => this.show('collections')],
@@ -356,14 +357,40 @@ export class Menus {
       h('div.start-left', {},
         h('div.eyebrow', {}, `Planet 1 of 7 · ${p.name}`),
         h('div.title', {}, 'Melt the', h('span', {}, 'Planet')),
-        h('p.lede', {}, `${p.name} is frozen to the core. Pick a pole and dig straight down. The deeper the ice, the richer the coins, and the lift beacon follows you all the way.`),
+        h('p.lede', {}, `${p.name} is frozen to the core. Pick a pole and dig. Coins lie in seams through the ice and stranger things are frozen deeper down; the lift beacon follows you, and the Outfitter's hut on the surface sells upgrades.`),
         h('div.eyebrow', {}, 'Choose your pole. You stay there for the whole planet.'),
         cards,
-        h('div.start-actions', {}, h('button.btn.primary', { onclick: () => { this.close(); onBegin(pole); } }, 'Begin the survey')),
-        h('div.start-foot', {}, 'Mouse and keyboard. WASD to move, left mouse to use your tool, U for upgrades, Esc to pause.'),
+        h('div.start-actions', {}, h('button.btn.primary', { onclick: () => { this.close(); if (onBegin) onBegin(pole); else g.newSave(pole); } }, 'Begin a new survey'),
+          g.started ? h('button.btn', { onclick: () => { this.close(); g.input.lock(); } }, 'Back to the ice') : ''),
+        h('div.start-foot', {}, 'Mouse and keyboard. WASD to move, left mouse to use your tool, U at the Outfitter for upgrades, Esc to pause.'),
       ),
-      h('div'),
+      this.savesList(),
     );
+  }
+
+  // Saved playthroughs: continue, resume or rejoin a crew, or delete.
+  savesList() {
+    const g = this.game;
+    const wrap = h('div.saves');
+    const render = () => {
+      clear(wrap);
+      const list = g.listSaves();
+      wrap.append(h('div.eyebrow', {}, list.length ? 'Your surveys' : 'No saved surveys yet'));
+      for (const s of list) {
+        const when = s.savedAt ? `${formatTime((Date.now() - s.savedAt) / 1000)} ago` : '';
+        const title = s.crew ? `Crew ${s.crew}` : `Solo · ${s.pole === 'S' ? 'South' : 'North'} pole`;
+        const current = g.started && g.slot === s.slot;
+        const actions = s.crew
+          ? [h('button.btn.primary', { onclick: () => g.continueSave(s.slot) }, 'Resume as host'), h('button.btn', { onclick: () => { this.close(); g.crewJoin(s.crew); } }, 'Rejoin')]
+          : [h('button.btn.primary', { onclick: () => (current ? (this.close(), g.input.lock()) : g.continueSave(s.slot)) }, current ? 'Playing' : 'Continue')];
+        actions.push(h('button.btn.danger', { onclick: () => this.confirm('Delete this survey?', `${title} will be gone for good.`, 'Delete', () => { g.deleteSave(s.slot); render(); }) }, 'Delete'));
+        wrap.append(h('div.save-row', {},
+          h('div.save-t', {}, h('b', {}, title), h('span', {}, `${s.depth.toFixed(1)} m deep · ${s.coins} in the vault · ${s.purchases} upgrades${when ? ` · ${when}` : ''}`)),
+          h('div.save-a', {}, actions)));
+      }
+    };
+    render();
+    return wrap;
   }
 
   build_offline(r) {

@@ -171,7 +171,7 @@ async function solo(browser) {
   // saves: autosave, export, import
   await ev(page, () => window.__game.save());
   const code = await ev(page, () => window.__game.exportSave());
-  check('Save code exports', typeof code === 'string' && code.startsWith('MTP1'), `${code.length} chars`);
+  check('Save code exports', typeof code === 'string' && /^MTP\d+[zr]:/.test(code), `${code.length} chars`);
   const before = await ev(page, () => window.__game.econ.purchases);
   await ev(page, async (c) => { await window.__game.importSave(c); }, code);
   check('Save code imports', (await ev(page, () => window.__game.econ.purchases)) === before);
