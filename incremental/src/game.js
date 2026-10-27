@@ -1054,6 +1054,10 @@ class Game {
       this.beaconTarget.overhead = !pick;
     }
     const target = this.beaconTarget;
+    // a lift that has fallen far behind (or got lost) is called straight to you
+    if (!this.ride && this.works.beaconPos().distanceTo(this.ctl.pos) > 20) {
+      this.works.beaconPos().set(target.x, target.overhead ? target.y + 1.3 : target.y + 1.2, target.z);
+    }
     if (!this.ride) this.works.update(dt, this.time, target, st.liftSpeed, this.volume);
     else this.works.update(dt, this.time, this.works.beaconPos().clone(), 0, this.volume);
     this.updateBanking(dt, eye);
