@@ -88,7 +88,7 @@ class Game {
     this.gfx.scene.add(this.stakes);
     this.volume = new IceVolume(this.gfx.scene, this.iceMat, 1701);
     this.coins = new CoinSystem(this.gfx.scene, this.volume, this.atmo, ['copper', 'silver', 'gold']);
-    this.works = new Works(this.gfx.scene, this.atmo, this.coins.geos, this.coins.mats);
+    this.works = new Works(this.gfx.scene, this.atmo, this.coins.lowGeos, this.coins.mats);
     this.water = new Water(this.gfx, this.volume);
     this.frozen = new FrozenThings(this.gfx.scene, this.atmo, this.volume);
     this.avatars = new Avatars(this.gfx.scene, this.atmo);
@@ -459,6 +459,45 @@ class Game {
     this.sfx.loop('hum', this.audio.ready, { level: Math.max(0, 1 - chest.distanceTo(bp) / 10) });
   }
 
+  // ---------- riding the lift ----------
+
+  // Hold jump at the beacon to ride the lift to the surface; you step off on the nearest solid rim.
+  updateRide(dt, holdJump) {
+    const b = this.works.beaconPos();
+    const deep = this.depthAt(this.ctl.pos.x, this.ctl.pos.y, this.ctl.pos.z) > 1.4;
+    if (!this.ride) {
+      if (holdJump && this.atBeacon && deep && this.ctl.onGround) {
+        this.rideHold = (this.rideHold || 0) + dt;
+        if (this.rideHold > 0.5) { this.ride = { t: 0 }; this.rideHold = 0; this.sfx.play('bank', { pos: b, count: 0 }); }
+      } else this.rideHold = 0;
+      return;
+    }
+    // haul up with the beacon
+    const top = surfaceY(b.x, b.z) + 3;
+    const speed = Math.max(4, this.stats.liftSpeed * 4);
+    b.y = Math.min(top, b.y + speed * dt);
+    this.ctl.teleport(b.x, b.y - 1.35, b.z + 0.01);
+    this.works.pulse = 0.4;
+    if (b.y >= top - 0.01) {
+      // step off on the nearest column that is not dug out
+      const spot = this.nearestRim(b.x, b.z);
+      this.ctl.teleport(spot.x, surfaceY(spot.x, spot.z) + 0.25, spot.z);
+      this.ride = null;
+    }
+  }
+
+  nearestRim(x, z) {
+    for (let r = 1.5; r < 40; r += 1) {
+      for (let k = 0; k < 24; k++) {
+        const a = (k / 24) * Math.PI * 2;
+        const px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r;
+        const top = surfaceY(px, pz);
+        if (this.volume.sdf(px, top - 0.6, pz) > 0.05) return { x: px, z: pz };
+      }
+    }
+    return { x: 0, z: 36 };
+  }
+
   // ---------- events ----------
 
   openCapsule(it) {
@@ -822,7 +861,7 @@ class Game {
     this.statsDirty = true;
     this.menus.refresh();
   }
-  devBring(kind) { const e = this.ctl.eye(1), f = this.ctl.forward(); const p = e.clone().addScaledVector(f, 2.2); p.y -= 0.6; if (!this.frozen.devBring(kind, p)) this.hud.notice('Dev', `No ${kind} left on this planet.`); }
+  devBring(kind) { const e = this.ctl.eye(1), f = this.ctl.forward(); f.y = 0; f.normalize(); const p = e.clone().addScaledVector(f, 1.2); p.y -= 0.7; if (!this.frozen.devBring(kind, p)) this.hud.notice('Dev', `No ${kind} left on this planet.`); }
   devRevealNeedle() { const it = this.frozen.items.find((i) => i.kind === 'needle' && !i.done); if (it) { this.ctl.noclip = true; this.ctl.teleport(it.mesh.position.x + 1.2, it.mesh.position.y - 1, it.mesh.position.z); } }
   devMilestone(id) {
     const m = MILESTONES.find((x) => x.id === id);
@@ -927,8 +966,9 @@ class Game {
     }
     // physics at 60 Hz
     this.physAcc += dt;
-    const move = playing && inp.locked;
-    while (this.physAcc >= PHYS_STEP) {
+    const move = playing && inp.locked && !this.ride;
+    this.updateRide(dt, playing && inp.locked && inp.is('jump'));
+    while (this.physAcc >= PHYS_STEP && !this.ride) {
       this.ctl.step(PHYS_STEP, {
         forward: move ? (inp.is('forward') ? 1 : 0) - (inp.is('back') ? 1 : 0) : 0,
         strafe: move ? (inp.is('right') ? 1 : 0) - (inp.is('left') ? 1 : 0) : 0,
@@ -936,6 +976,7 @@ class Game {
       });
       this.physAcc -= PHYS_STEP;
     }
+    if (this.ride) this.physAcc = 0;
     // simulation at 30 Hz (scaled by dev fast-time)
     this.simAcc += dt * this.timeScale;
     let steps = 0;
@@ -979,9 +1020,16 @@ class Game {
     this.water.carry(this.coins, dt);
     this.water.antiRefreeze = st.meltEff;
     this.water.update(dt, this.time, this.atmo.sunDir, this.atmo.sunColor, this.atmo.depthDim);
-    // the beacon hovers a step to your right
-    const target = this.ctl.pos.clone().add(new THREE.Vector3(Math.cos(this.ctl.yaw) * 1.9, 0, -Math.sin(this.ctl.yaw) * 1.9));
-    this.works.update(dt, this.time, target, st.liftSpeed, this.volume);
+    // the beacon hovers ahead and to your right, at the edge of your view
+    // it stays parked until you move away from it, then re-parks
+    const yw = this.ctl.yaw;
+    const bt = this.beaconTarget;
+    if (!bt || Math.hypot(bt.x - this.ctl.pos.x, bt.z - this.ctl.pos.z) > 3.5 || Math.abs(bt.y - this.ctl.pos.y) > 2) {
+      this.beaconTarget = this.ctl.pos.clone().add(new THREE.Vector3(Math.cos(yw) * 1.5 - Math.sin(yw) * 1.6, 0, -Math.sin(yw) * 1.5 - Math.cos(yw) * 1.6));
+    }
+    const target = this.beaconTarget;
+    if (!this.ride) this.works.update(dt, this.time, target, st.liftSpeed, this.volume);
+    else this.works.update(dt, this.time, this.works.beaconPos().clone(), 0, this.volume);
     this.updateBanking(dt, eye);
     this.needleHint = this.frozen.update(dt, this.time, this.ctl.pos, st.hint);
     this.updateTreasure(dt, eye);
@@ -1037,7 +1085,9 @@ class Game {
     const sp = strataProps(this.planet, e.pole, Math.max(0, depthHere));
     const visionUse = FAMILIES[this.tools.family].id === 'vision' && this.tools.using && this.tools.hit;
     let prompt = null;
-    if (c.count >= st.carry - 0.01) prompt = 'Pack full · bank at the lift beacon';
+    if (this.ride) prompt = 'Riding the lift up';
+    else if (this.atBeacon && this.depthAt(this.ctl.pos.x, this.ctl.pos.y, this.ctl.pos.z) > 1.4) prompt = `Hold ${this.keyName('jump')} to ride the lift up`;
+    if (prompt) { /* lift prompts take priority */ } else if (c.count >= st.carry - 0.01) prompt = 'Pack full · bank at the lift beacon';
     else if (!this.tools.available(st, this.tools.family)) prompt = FAMILIES[this.tools.family].id === 'planet' ? 'Planet tools arrive with later planets' : 'Locked · buy this tree\'s first upgrade';
     this.hud.update({
       coins: e.coins, rate: this.measuredRate(), carried: c.count, carryCap: st.carry, carriedValue: c.value * this.bankMult(),

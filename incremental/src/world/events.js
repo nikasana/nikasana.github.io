@@ -143,7 +143,7 @@ export class FrozenThings {
     for (const it of this.items) {
       if (it.done) continue;
       const p = it.mesh.position;
-      const dPlayer = p.distanceTo(playerPos);
+      const dPlayer = Math.min(p.distanceTo(playerPos), Math.hypot(p.x - playerPos.x, p.y - playerPos.y - 1.1, p.z - playerPos.z));
       it.mesh.visible = dPlayer < 60;
       if (it.kind === 'fossil') continue;
       if (!it.freed && dPlayer < 30) it.freed = this.volume.sample(p.x, p.y, p.z) < ISO - 10;
@@ -156,7 +156,7 @@ export class FrozenThings {
           if (dPlayer < range) hint = { dir: p.clone().sub(playerPos).normalize(), strength: 1 - dPlayer / range, dist: dPlayer };
         }
       }
-      if (it.freed && dPlayer < 1.8) {
+      if (it.freed && dPlayer < 2.0) {
         it.done = true;
         this.emit(it.kind, it);
         this.animateOut(it);

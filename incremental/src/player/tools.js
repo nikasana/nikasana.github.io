@@ -174,6 +174,7 @@ export class Tools {
     };
     for (const m of Object.values(this.models)) { m.visible = false; this.view.add(m); }
     this.models.pick.scale.setScalar(0.62);
+    for (const k of ['drill', 'torch', 'lance', 'lamp', 'remote']) this.models[k].scale.setScalar(0.55);
     // lights for the held tool
     const vs = game.gfx.viewScene;
     this.viewSun = new THREE.DirectionalLight(0xffffff, 1.6);
@@ -411,7 +412,7 @@ export class Tools {
     const moving = ctx.move;
     this.bob += dt * (moving ? 9 : 2);
     const by = Math.sin(this.bob) * (moving ? 0.012 : 0.004), bx = Math.cos(this.bob * 0.5) * (moving ? 0.01 : 0.003);
-    m.position.set(0.3 + bx, -0.27 + by, -0.55);
+    m.position.set(0.24 + bx, -0.2 + by, -0.5);
     m.rotation.set(0, 0, 0);
     if (name === 'pick') {
       m.position.set(0.36 + bx, -0.3 + by, -0.66);
@@ -431,7 +432,7 @@ export class Tools {
       m.rotation.set(0.05, -0.12, 0);
       if (this.melting) m.position.z += 0.01 * Math.sin(this.time * 40);
     } else if (name === 'lamp') {
-      m.position.set(0.28 + bx, -0.25 + by, -0.5);
+      m.position.set(0.22 + bx, -0.19 + by, -0.46);
       m.rotation.set(0.02, -0.08, 0);
     }
   }

@@ -42,15 +42,25 @@ export function buildTerrain(atmo) {
   const mat = new THREE.MeshStandardMaterial({ color: 0xf4f8fb, roughness: 0.82, metalness: 0, envMapIntensity: 0.9 });
   atmo.register(mat, 'snow', (shader) => {
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vSnowW;')
-      .replace('#include <fog_vertex>', '#include <fog_vertex>\nvSnowW = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;');
+      .replace('#include <common>', '#include <common>\nvarying vec3 vSnowW;\nvarying vec3 vSnowN;')
+      .replace('#include <fog_vertex>', '#include <fog_vertex>\nvSnowW = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;\nvSnowN = normalize( mat3( modelMatrix ) * objectNormal );');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
         varying vec3 vSnowW;
+        varying vec3 vSnowN;
         float sh31( vec3 p ) { p = fract( p * 0.1031 ); p += dot( p, p.zyx + 31.32 ); return fract( ( p.x + p.y ) * p.z ); }
         float svn( vec3 p ) { vec3 i = floor( p ), f = fract( p ); f = f * f * ( 3.0 - 2.0 * f );
           return mix( mix( mix( sh31( i ), sh31( i + vec3( 1, 0, 0 ) ), f.x ), mix( sh31( i + vec3( 0, 1, 0 ) ), sh31( i + vec3( 1, 1, 0 ) ), f.x ), f.y ),
                       mix( mix( sh31( i + vec3( 0, 0, 1 ) ), sh31( i + vec3( 1, 0, 1 ) ), f.x ), mix( sh31( i + vec3( 0, 1, 1 ) ), sh31( i + vec3( 1, 1, 1 ) ), f.x ), f.y ), f.z ); }`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        {
+          // exposed granite on the steep faces of the far ridges, with snow caught on the ledges
+          float steep = 1.0 - normalize( vSnowN ).y;
+          float ledge = svn( vSnowW * vec3( 0.05, 0.3, 0.05 ) );
+          float rock = smoothstep( 0.32, 0.5, steep + ( ledge - 0.5 ) * 0.25 ) * smoothstep( 25.0, 60.0, vSnowW.y );
+          vec3 granite = mix( vec3( 0.16, 0.16, 0.17 ), vec3( 0.3, 0.28, 0.27 ), svn( vSnowW * 0.08 ) );
+          diffuseColor.rgb = mix( diffuseColor.rgb, granite, rock );
+        }`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         {
           // wind-carved ripples, finer near the viewer

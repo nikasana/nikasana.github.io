@@ -180,7 +180,7 @@ export class Menus {
             h('div.members', {}, g.crewSlots().map((code) => h('div', {}, h('span', {}, code), h('span', {},
               h('button.btn', { style: { padding: '4px 8px' }, onclick: async () => { await g.crewJoin(code); render(); } }, 'Rejoin'), ' ',
               h('button.btn', { style: { padding: '4px 8px' }, onclick: async () => { await g.crewResume(code); render(); } }, 'Host'))))))
-            : null);
+            : '');
       } else {
         const link = c.link();
         left.append(h('div.eyebrow', {}, c.isHost ? 'You host this crew' : 'Crew'), h('div.code', {}, c.code),
@@ -394,15 +394,27 @@ class TreeView {
     wrap.parentElement.appendChild(h('div.tree-hud', {}, h('div.eyebrow', {}, 'Vault'), this.wallet, this.walletSub));
     wrap.parentElement.appendChild(this.tip);
     wrap.parentElement.appendChild(h('div.tree-zoom', {},
-      h('button.btn', { onclick: () => this.zoomBy(1.2) }, '+'), h('button.btn', { onclick: () => this.zoomBy(1 / 1.2) }, '−'), h('button.btn', { onclick: () => this.center() }, 'Centre')));
+      h('button.btn', { onclick: () => this.zoomBy(1.2) }, '+'), h('button.btn', { onclick: () => this.zoomBy(1 / 1.2) }, '−'), h('button.btn', { onclick: () => this.fit() }, 'Fit')));
     this.nodes = {};
     this.pos = {};
     this.layout();
     this.scale = 0.85;
     this.ox = 0; this.oy = 0;
-    this.center();
     this.bind();
     this.refresh();
+    // fit once the menu has been laid out
+    requestAnimationFrame(() => requestAnimationFrame(() => this.fit()));
+  }
+
+  fit() {
+    const r = this.wrap.getBoundingClientRect();
+    if (!r.width) return;
+    const b = this.bounds;
+    const bw = b.maxX - b.minX, bh = b.maxY - b.minY;
+    this.scale = Math.max(0.35, Math.min(1, Math.min(r.width / bw, (r.height - 40) / bh) * 0.98));
+    this.ox = r.width / 2 - ((b.minX + b.maxX) / 2) * this.scale;
+    this.oy = r.height / 2 - ((b.minY + b.maxY) / 2) * this.scale;
+    this.apply();
   }
 
   layout() {
@@ -491,7 +503,7 @@ class TreeView {
       h('div.eff', { html: `<div>Level <b>${lvl}</b> / ${n.max}</div>` }),
       M.isMaxed(e, id) ? h('div.eff', { html: '<b>Maxed</b>' }) :
         h('div.eff', { html: `<div>Cost <span style="color:var(--brass)">${format(cost)}</span>${!M.isUnlocked(e, id) ? ' · locked' : e.coins.gte(cost) ? ' · <b>affordable</b>' : ` · about ${formatTime(wait)}`}</div>` }),
-      !M.isUnlocked(e, id) ? h('p', {}, `Needs ${n.parents.map((p) => NODE_BY_ID[p].name).join(' and ')}.`) : null,
+      !M.isUnlocked(e, id) ? h('p', {}, `Needs ${n.parents.map((p) => NODE_BY_ID[p].name).join(' and ')}.`) : '',
     );
     this.tip.hidden = false;
   }

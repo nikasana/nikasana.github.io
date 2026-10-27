@@ -191,7 +191,11 @@ export class Works {
       im.count = 0;
       im.castShadow = true;
       im.receiveShadow = true;
-      im.frustumCulled = false;
+      // cull the whole pile when the vault is off screen
+      im.frustumCulled = true;
+      im.geometry = g.clone();
+      im.geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(VAULT.x, this.vaultY + 1, VAULT.z), Math.hypot(VAULT.w, VAULT.d) / 2 + 2);
+      im.boundingSphere = im.geometry.boundingSphere.clone();
       this.group.add(im);
       return im;
     });

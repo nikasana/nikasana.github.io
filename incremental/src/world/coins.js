@@ -2,6 +2,7 @@
 // physics until collected. Rendered with one instanced mesh per tier for each state.
 import * as THREE from 'three';
 import { CHUNK_M, ISO, richness, surfaceY } from './field.js';
+import { keyOf } from './volume.js';
 import { rng, hash32 } from '../core/rng.js';
 import { COINS, tierWeights } from '../econ/data/coins.js';
 
@@ -11,7 +12,7 @@ const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vect
 
 // ---------- coin art ----------
 
-function coinGeometry(tier) {
+function coinGeometry(tier, segs) {
   const c = COINS[tier];
   const r = c.radius, t = c.thick;
   // lathe profile: raised rim, recessed field, raised centre boss
@@ -32,7 +33,7 @@ function coinGeometry(tier) {
   pts.push(new THREE.Vector2(r * 0.42, -t * 0.38));
   pts.push(new THREE.Vector2(hole, -t * 0.35));
   if (hole) pts.push(new THREE.Vector2(hole, t * 0.35));
-  const g = new THREE.LatheGeometry(pts.map((p) => new THREE.Vector2(p.x, p.y)), tier === 1 ? 40 : 28);
+  const g = new THREE.LatheGeometry(pts.map((p) => new THREE.Vector2(p.x, p.y)), segs ?? (tier === 1 ? 32 : 22));
   g.rotateX(Math.PI / 2); // face along z
   if (tier === 1) {
     // milled edge on silver
@@ -176,10 +177,17 @@ export class CoinSystem {
     this.volume = volume;
     this.tiers = tiersUnlocked;
     this.geos = COINS.slice(0, 3).map((_, i) => coinGeometry(i));
+    // seen blurred through the ice: a plain low-poly disc is enough
+    this.lowGeos = COINS.slice(0, 3).map((c) => {
+      const g = new THREE.CylinderGeometry(c.radius, c.radius, c.thick, 10, 1).rotateX(Math.PI / 2);
+      const uv = g.attributes.uv;
+      for (let i = 0; i < uv.count; i++) { const x = g.attributes.position.getX(i), y = g.attributes.position.getY(i); uv.setXY(i, x / (c.radius * 2) + 0.5, y / (c.radius * 2) + 0.5); }
+      return g;
+    });
     this.mats = COINS.slice(0, 3).map((_, i) => coinMaterial(atmo, i));
     this.embedded = new Map();       // chunk key -> [{tier, x, y, z, q, id}]
     this.loose = [];                 // {tier, p, v, q, w, sleep, value, id, t}
-    this.embMesh = this.geos.map((g, i) => this.mkInst(g, this.mats[i], 7000));
+    this.embMesh = this.lowGeos.map((g, i) => this.mkInst(g, this.mats[i], 7000, false));
     this.looseMesh = this.geos.map((g, i) => this.mkInst(g, this.mats[i], 2500));
     this.lastBuild = new THREE.Vector3(1e9, 0, 0);
     this.dirty = true;
@@ -191,12 +199,12 @@ export class CoinSystem {
     volume.on('edit', (op, res) => this.onEdit(op, res));
   }
 
-  mkInst(g, m, n) {
+  mkInst(g, m, n, shadows = true) {
     const im = new THREE.InstancedMesh(g, m, n);
     im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     im.count = 0;
     im.frustumCulled = false;
-    im.castShadow = true;
+    im.castShadow = shadows;
     im.receiveShadow = true;
     this.scene.add(im);
     return im;
@@ -216,7 +224,7 @@ export class CoinSystem {
       const x = ox + r() * CHUNK_M, y = oy + r() * CHUNK_M, z = oz + r() * CHUNK_M;
       const a = r(), b = r(), cc = r(), tierRoll = r();
       const top = surfaceY(x, z);
-      if (y > top - 0.12) continue;
+      if (y > top - 0.42) continue; // the smoothed mesh sits a little below the analytic surface
       if (Math.abs(x) > 30 || Math.abs(z) > 30) continue;
       const rich = richness(x, y, z);
       if (a > (0.25 + rich * 1.1) / 1.6) continue;
@@ -234,7 +242,7 @@ export class CoinSystem {
     // the first metre under the starting spot holds a small frozen hoard, so the first swing pays
     if (c.cy === -1 && c.cx === 0 && c.cz === 0) {
       for (let i = 0; i < 26; i++) {
-        const x = 1.2 + r() * 2.2, z = 1.5 + r() * 2.2, y = surfaceY(x, z) - 0.15 - r() * 0.7;
+        const x = 1.2 + r() * 2.2, z = 1.5 + r() * 2.2, y = surfaceY(x, z) - 0.42 - r() * 0.6;
         const id = hash32(ctx.seed, 7, i);
         if (this.collectedIds.has(id) || this.volume.sample(x, y, z) < ISO + 20) continue;
         _q.setFromEuler(new THREE.Euler(r() * 6.28, r() * 6.28, r() * 6.28));
@@ -249,7 +257,15 @@ export class CoinSystem {
   onEdit(op, res) {
     const b = res.bounds;
     const freed = [];
-    for (const [key, list] of this.embedded) {
+    // only the chunks the edit's bounds overlap
+    const lists = [];
+    for (let cx = Math.floor(b.x0 / CHUNK_M); cx <= Math.floor(b.x1 / CHUNK_M); cx++)
+      for (let cy = Math.floor(b.y0 / CHUNK_M); cy <= Math.floor(b.y1 / CHUNK_M); cy++)
+        for (let cz = Math.floor(b.z0 / CHUNK_M); cz <= Math.floor(b.z1 / CHUNK_M); cz++) {
+          const l = this.embedded.get(keyOf(cx, cy, cz));
+          if (l) lists.push(l);
+        }
+    for (const list of lists) {
       for (let i = list.length - 1; i >= 0; i--) {
         const k = list[i];
         if (k.x < b.x0 || k.x > b.x1 || k.y < b.y0 || k.y > b.y1 || k.z < b.z0 || k.z > b.z1) continue;

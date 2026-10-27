@@ -79,12 +79,12 @@ export class Atmosphere {
     this.csm = new CSM({
       maxFar: cfg.far, cascades: cfg.cascades, shadowMapSize: cfg.size, mode: 'practical',
       parent: this.scene, camera: this.camera, lightDirection: this.sunDir.clone().negate(),
-      lightIntensity: this.sunIntensity, lightNear: 1, lightFar: 900, lightMargin: 120, shadowBias: -0.00012,
+      lightIntensity: this.sunIntensity, lightNear: 1, lightFar: 900, lightMargin: 120, shadowBias: -0.0004,
     });
     this.csm.fade = true;
     for (const l of this.csm.lights) {
       l.shadow.camera.layers.enable(1); // ice casts shadows too
-      l.shadow.normalBias = 0.04;
+      l.shadow.normalBias = 0.22; // the polar sun grazes the snow: needs a generous normal bias
       l.shadow.radius = 3;
       l.color.copy(this.sunColor);
     }
@@ -138,9 +138,9 @@ export class Atmosphere {
     }
 
     // dim sky light deep in the crater (the shaft only lets in a small disc of sky)
-    const dim = 1 / (1 + Math.max(0, depthBelow) / 22);
+    const dim = 1 / (1 + Math.max(0, depthBelow) / 10);
     this.depthDim = dim;
-    this.scene.environmentIntensity = 0.35 + 0.65 * dim;
+    this.scene.environmentIntensity = 0.12 + 0.88 * dim;
 
     this.envTimer -= dt;
     if (this.envTimer <= 0 && this.sunDir.angleTo(this.lastEnvSun) > 0.02) {

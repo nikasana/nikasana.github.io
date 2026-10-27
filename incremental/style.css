@@ -231,7 +231,8 @@ textarea.code { width: 100%; min-height: 110px; background: rgba(0,0,0,0.35); co
 .tree-zoom { position: absolute; right: var(--edge); top: 16px; display: flex; gap: 2px; z-index: 4; }
 
 /* collections */
-.coll { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1px; background: var(--line); }
+.coll { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1px; }
+.coll .card { box-shadow: 0 0 0 1px var(--line); }
 .coll .card { background: rgba(6, 17, 24, 0.95); padding: 16px; display: grid; gap: 8px; align-content: start; min-height: 132px; }
 .coll .card h4 { margin: 0; font: 700 var(--t-lg)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
 .coll .card p { margin: 0; color: var(--haze); font-size: var(--t-sm); }
@@ -333,3 +334,9 @@ textarea.code { width: 100%; min-height: 110px; background: rgba(0,0,0,0.35); co
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
 }
+
+/* legibility over bright snow: soft shadows on all HUD text, frosted backing behind corner readouts */
+.hud, .notices, .floaters { text-shadow: 0 1px 2px rgba(2, 8, 12, 0.6), 0 0 14px rgba(2, 8, 12, 0.35); }
+.hud-stats, .hud-keys { background: linear-gradient(to top, rgba(6, 18, 26, 0.55), rgba(6, 18, 26, 0.28)); padding: 10px 12px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.hud-wallet .rate, .hud-wallet .carry, .hud-goal .label, .hud-depth .labels { color: #c4d7de; }
+.hud-goal { background: radial-gradient(ellipse at 50% 40%, rgba(6, 18, 26, 0.42), transparent 72%); padding: 6px 30px 10px; }

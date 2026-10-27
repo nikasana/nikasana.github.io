@@ -10,7 +10,7 @@ import { clamp } from '../core/rng.js';
 export const LAYER_ICE = 1;
 
 const C3 = CHUNK * CHUNK * CHUNK;
-const keyOf = (cx, cy, cz) => ((cx + 512) * 1024 + (cz + 512)) * 8192 + (cy + 4096);
+export const keyOf = (cx, cy, cz) => ((cx + 512) * 1024 + (cz + 512)) * 8192 + (cy + 4096);
 const occ = (d) => clamp((d - ISO) / GRAD + 0.5, 0, 1);
 
 export class IceVolume {

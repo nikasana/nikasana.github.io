@@ -177,8 +177,8 @@ IceState iceState() {
     vec4 c = uCrack[ i ];
     if ( c.w <= 0.0 ) continue;
     float d = length( vWPos - c.xyz );
-    if ( d > c.w * 2.2 ) continue;
-    float k = ( 1.0 - smoothstep( c.w * 0.6, c.w * 2.2, d ) ) * uCrackA[ i ];
+    if ( d > c.w * 1.6 ) continue;
+    float k = ( 1.0 - smoothstep( c.w * 0.5, c.w * 1.6, d ) ) * uCrackA[ i ];
     float e = voroEdge( ( vWPos - c.xyz ) * ( 2.4 / max( c.w, 0.2 ) ) + float( i ) * 3.1 );
     line = max( line, k * ( 1.0 - smoothstep( 0.0, 0.07, e ) ) );
     crack = max( crack, k * 0.6 );

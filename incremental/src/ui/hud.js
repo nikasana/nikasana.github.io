@@ -155,7 +155,7 @@ export class Hud {
 
     // lift beacon chevron when you are carrying coins and it is off to the side
     const cam = g.gfx.camera;
-    if (s.carried > 0 && !s.atBeacon) {
+    if (s.carried > 0 && !s.atBeacon && !this.el.hidden) {
       const bp = g.works.beaconPos().clone();
       const v = bp.clone().project(cam);
       const behind = bp.clone().sub(cam.position).dot(cam.getWorldDirection(new THREE.Vector3())) < 0;
@@ -170,7 +170,7 @@ export class Hud {
     } else this.lift.hidden = true;
 
     // needle sense: a faint arc pointing toward the hidden needle
-    if (s.needleHint) {
+    if (s.needleHint && !this.el.hidden) {
       const hint = s.needleHint;
       const local = hint.dir.clone().applyQuaternion(cam.quaternion.clone().invert());
       const ang = Math.atan2(local.x, local.y) * 180 / Math.PI;

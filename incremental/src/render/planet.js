@@ -58,8 +58,8 @@ void main() {
   float lit = smoothstep( -0.15, 0.35, ndl );
   vec3 V = normalize( cameraPosition - vW );
   float spec = pow( max( dot( reflect( -normalize( uSun ), N ), V ), 0.0 ), 40.0 ) * ( ice * 0.25 + ( 1.0 - land ) * ( 1.0 - ice ) * 0.6 );
-  vec3 outc = col * ( 0.05 + 1.05 * lit ) + spec * lit;
-  outc += glow + vec3( 1.0, 0.55, 0.25 ) * rings * 0.6;
+  vec3 outc = col * ( 0.04 + 0.82 * lit ) + spec * lit * 0.8;
+  outc += glow + vec3( 1.0, 0.5, 0.2 ) * rings * 1.1;
   // night side: the crater still glows
   gl_FragColor = vec4( outc, 1.0 );
 }`;
