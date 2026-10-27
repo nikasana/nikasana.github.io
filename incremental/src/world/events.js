@@ -91,8 +91,7 @@ function findMesh(atmo, look, glowHex) {
       add(new THREE.BoxGeometry(0.1, 0.12, 0.04), glow, 0, 0.18, 0.27);
       for (const x of [-0.3, 0.3]) add(new THREE.BoxGeometry(0.05, 0.5, 0.55), iron, x);
   }
-  g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
-  g.userData.glow = glow;
+  g.userData.glow = glow;   // no shadows: finds sit inside the ice
   return g;
 }
 
@@ -237,7 +236,7 @@ export class FrozenThings {
       if (it.done) continue;
       const p = it.mesh.position;
       const dPlayer = Math.min(p.distanceTo(playerPos), Math.hypot(p.x - playerPos.x, p.y - playerPos.y - 1.1, p.z - playerPos.z));
-      it.mesh.visible = dPlayer < 60;
+      it.mesh.visible = dPlayer < (it.kind === 'find' ? 25 : 60);
       if (it.kind === 'fossil') continue;
       if (!it.freed && dPlayer < 30) it.freed = this.volume.sample(p.x, p.y, p.z) < ISO - 10;
       if (it.kind === 'capsule') it.mesh.userData.seam.emissiveIntensity = 1.4 + Math.sin(time * 2.2) * 0.6;

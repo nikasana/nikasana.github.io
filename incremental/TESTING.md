@@ -98,6 +98,11 @@ How to reach and check every feature. Each batch adds a section; earlier section
 | Crew milestones | `C` screen, or dev **Crew:** buttons | Progress bars. Completing one gives every member a permanent bonus that also applies solo. |
 | Host leaves | Close the host tab | The member sees "Host left", keeps playing from their copy and retries automatically. **Resume as host** on the crew screen re-opens the same code. |
 
+### Batch 1.2 checks
+1. Walk 60 m or more past the stake line and dig: the ice opens there like in the claim, the snow around the hole has no seam, and the hole is still there after walking away and back. The lift follows you out.
+2. Melt a lot of ice in a narrow hole: the water rises in the hole. Walk in: wading is slower and splashes; in water deeper than your chest you swim (Space rises), and with your head under the view turns green-blue.
+3. Performance (High, start view): about 235 draw calls and 210k triangles in the overlay.
+
 ### Round 2 checks
 1. Dig a narrow shaft 10 m down with a side tunnel, ride the lift up, walk away, come back: the shaft and tunnel are exactly as dug. Reload the page: still exact.
 2. Press U away from the blue Outfitter's hut: a notice sends you there; at the hut, U opens the upgrades. The hut shows as ▣ on the compass and minimap, and its ground cannot be dug.
