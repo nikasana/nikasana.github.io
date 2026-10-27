@@ -88,6 +88,7 @@ class Game {
     this.gfx.scene.add(this.stakes);
     this.volume = new IceVolume(this.gfx.scene, this.iceMat, 1701);
     this.coins = new CoinSystem(this.gfx.scene, this.volume, this.atmo, ['copper', 'silver', 'gold']);
+    this.coins.useIcePass(this.gfx);
     this.works = new Works(this.gfx.scene, this.atmo, this.coins.lowGeos, this.coins.mats);
     this.water = new Water(this.gfx, this.volume);
     this.frozen = new FrozenThings(this.gfx.scene, this.atmo, this.volume);
@@ -1059,6 +1060,7 @@ class Game {
     this.needleHint = this.frozen.update(dt, this.time, this.ctl.pos, st.hint);
     this.updateTreasure(dt, eye);
     this.particles.update(dt, this.volume);
+    this.coins.setLight(0.35 + 0.65 * this.atmo.depthDim, this.time);
     if (this.crew.active) { this.avatars.sync(this.crew.members); this.avatars.update(dt); }
     this.updateView(dt);
 

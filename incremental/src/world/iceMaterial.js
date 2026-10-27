@@ -233,7 +233,7 @@ const ICE_COMPOSE = /* glsl */`
 
   float density = mix( 0.7, 1.35, clamp( ( ice.hard - 0.7 ) / 0.7, 0.0, 1.0 ) );
   vec3 T = exp( -uAbsorb * thick * density );
-  float lod = clamp( log2( 1.0 + thick * 5.0 ) * 1.5, 0.0, 7.0 );
+  float lod = clamp( log2( 1.0 + thick * 1.6 ) * 1.2, 0.0, 6.0 );   // thin ice stays clear enough to see coins in it
   vec3 behind = texture2DLodEXT( tOpaque, ruv, lod ).rgb;
   // one bad pixel behind the ice would spread through the blurred mips into a black block
   if ( any( isnan( behind ) ) || any( isinf( behind ) ) ) behind = texture2DLodEXT( tOpaque, ruv, 0.0 ).rgb;
