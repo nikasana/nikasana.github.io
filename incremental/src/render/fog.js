@@ -14,18 +14,10 @@ const PARS_V = `
   varying vec3 vFogWorld;
 #endif
 `;
+// World position from the view-space position every shader with fog has (sprites have no 'transformed').
 const VERT = `
 #ifdef USE_FOG
-  {
-    vec4 fw = vec4( transformed, 1.0 );
-    #ifdef USE_BATCHING
-      fw = batchingMatrix * fw;
-    #endif
-    #ifdef USE_INSTANCING
-      fw = instanceMatrix * fw;
-    #endif
-    vFogWorld = ( modelMatrix * fw ).xyz;
-  }
+  vFogWorld = ( inverse( viewMatrix ) * vec4( mvPosition.xyz, 1.0 ) ).xyz;
 #endif
 `;
 const PARS_F = `

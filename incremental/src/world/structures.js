@@ -134,7 +134,11 @@ export class Works {
     const cap = box(1.1, 0.16, 1.1, dark, 0, 0.62, 0);
     const basket = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.45, 0.25, 6), dark);
     basket.position.y = -0.55;
-    this.beacon.add(bars, ring, ring2, cap, basket);
+    // a glowing lantern dome on top so the lift reads from far away and from below
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.22, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), this.ringMat);
+    dome.position.y = 0.7;
+    this.beacon.add(bars, ring, ring2, cap, basket, dome);
+    this.beacon.scale.setScalar(0.72);
     this.light = new THREE.PointLight(0x9fe6ff, 8, 14, 1.6);
     this.light.position.y = -0.2;
     this.beacon.add(this.light);
