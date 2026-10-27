@@ -21,6 +21,24 @@ function capsuleMesh(atmo) {
   return g;
 }
 
+// A surveyor's supply chest: dark iron-bound box with glowing amber seams that show through the ice.
+function chestMesh(atmo, relic) {
+  const g = new THREE.Group();
+  const wood = atmo.register(new THREE.MeshStandardMaterial({ color: 0x3b2a1e, roughness: 0.8, metalness: 0.05 }), 'chestWood');
+  const iron = atmo.register(new THREE.MeshStandardMaterial({ color: 0x2b2f33, roughness: 0.45, metalness: 0.9 }), 'chestIron');
+  const glow = new THREE.MeshStandardMaterial({ color: 0x1a0f05, emissive: relic ? 0x9fe6ff : 0xffb347, emissiveIntensity: 2.4 });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.46, 0.52), wood);
+  const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.8, 16, 1, false, 0, Math.PI).rotateZ(Math.PI / 2), wood);
+  lid.position.y = 0.23;
+  const seam = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.035, 0.54), glow); seam.position.y = 0.23;
+  const lock = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 0.04), glow); lock.position.set(0, 0.18, 0.27);
+  g.add(body, lid, seam, lock);
+  for (const x of [-0.3, 0.3]) { const band = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.5, 0.55), iron); band.position.x = x; g.add(band); }
+  g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  g.userData.glow = glow;
+  return g;
+}
+
 function needleMesh() {
   const g = new THREE.Group();
   const gold = new THREE.MeshStandardMaterial({ color: 0xffd27a, metalness: 1, roughness: 0.12, emissive: 0x6a4200, emissiveIntensity: 0.6 });
@@ -94,7 +112,7 @@ export class FrozenThings {
   on(ev, fn) { (this.listeners[ev] ||= []).push(fn); }
   emit(ev, ...a) { for (const f of this.listeners[ev] || []) f(...a); }
 
-  // done: { capsules: {id: true}, needle: bool }
+  // done: { capsules: {id: true}, needle: bool, chests: {id: true} }
   setup(planet, pole, seed, done) {
     this.group.clear();
     this.items = [];
@@ -120,6 +138,20 @@ export class FrozenThings {
       m.rotation.set(r() * 3, r() * 3, r() * 3);
       this.group.add(m);
       this.items.push({ kind: 'needle', data: nd, mesh: m, freed: false });
+    }
+    // supply chests, set in the coin seams and spread across the claim (rarely right under the start)
+    for (let i = 0; i < 44; i++) {
+      const id = `chest${i}`;
+      const seam = 1 + Math.floor(Math.pow(r(), 1.5) * 22);          // seams every 5.5 m
+      let x = 0, z = 0;
+      for (let t = 0; t < 8; t++) { x = (r() * 2 - 1) * lim; z = (r() * 2 - 1) * lim; if (Math.hypot(x - 2.4, z - 5.6) > 5) break; }
+      const relic = r() < 0.22;
+      if (done.chests?.[id]) continue;
+      const m = chestMesh(this.atmo, relic);
+      m.position.set(x, surfaceY(x, z) - (seam - 0.5) * 5.5, z);
+      m.rotation.set((r() - 0.5) * 0.5, r() * 6.28, (r() - 0.5) * 0.5);
+      this.group.add(m);
+      this.items.push({ kind: 'chest', id, relic, depth: (seam - 0.5) * 5.5, mesh: m, freed: false });
     }
     // fossils down the strata
     const geos = [0, 1, 2].map((k) => fossilGeometry(k));
@@ -148,6 +180,7 @@ export class FrozenThings {
       if (it.kind === 'fossil') continue;
       if (!it.freed && dPlayer < 30) it.freed = this.volume.sample(p.x, p.y, p.z) < ISO - 10;
       if (it.kind === 'capsule') it.mesh.userData.seam.emissiveIntensity = 1.4 + Math.sin(time * 2.2) * 0.6;
+      if (it.kind === 'chest') it.mesh.userData.glow.emissiveIntensity = 2.0 + Math.sin(time * 3 + p.x) * 0.9;
       if (it.kind === 'needle') {
         it.mesh.rotation.y += dt * 0.5;
         it.mesh.userData.glow.intensity = 0.4 + Math.sin(time * 5) * 0.3;

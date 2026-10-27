@@ -162,6 +162,7 @@ class Game {
     };
     this.frozen.on('capsule', (it) => this.openCapsule(it));
     this.frozen.on('needle', (it) => this.foundNeedle(it));
+    this.frozen.on('chest', (it) => this.openChest(it));
     this.crew.on('notice', (t) => this.hud.notice('Crew', t));
     this.crew.on('crewMilestones', (done, fresh) => this.onCrewMilestones(done, fresh));
     this.crew.on('hostLost', () => this.hud.notice('Host left', 'You keep playing from your copy of the crew. Rejoining automatically, or resume as host from the crew screen.', 'heat', 7000));
@@ -519,6 +520,20 @@ class Game {
 
   // ---------- events ----------
 
+  // Supply chest: a burst of coins scaled to your income and its depth; relic chests also add +3% income for good.
+  openChest(it) {
+    (this.state.chests ||= {})[it.id] = Date.now();
+    const sec = 45 + it.depth * 1.6;
+    const bonus = Math.max(30, this.measuredRate() * sec);
+    this.earn(bonus);
+    if (it.relic) { this.econ.legacy *= 1.03; this.statsDirty = true; }
+    this.music.cue('capsule');
+    this.sfx.play('bank', { pos: it.mesh.position, count: 10, tier: 2 });
+    this.hud.notice(it.relic ? 'Relic chest' : 'Supply chest', `+${format(bonus)} coins${it.relic ? ' and a relic: +3% income for good' : ''}.`, 'money', 7000);
+    if (this.crew.active) this.crew.event({ k: 'chest', id: it.id, bonus });
+    this.save();
+  }
+
   openCapsule(it) {
     const c = it.data;
     const bonus = Math.max(50, this.measuredRate() * c.contents.coinsSec);
@@ -766,6 +781,7 @@ class Game {
     else if (ev.k === 'ms') { const m = MILESTONES.find((x) => x.id === ev.id); if (m) { this.hud.notice(`${m.icon} Milestone: ${m.name}`, `+${format(Big.parse(ev.bonus))} coins for the crew.`, 'money'); this.music.cue('motif', m.motif); } }
     else if (ev.k === 'capsule') { this.state.capsules[ev.id] = Date.now(); this.hud.notice('Time capsule opened', `+${format(ev.bonus)} coins for the crew.`, 'money'); }
     else if (ev.k === 'needle') { this.state.needle = true; this.music.cue('stinger'); this.hud.notice('The Golden Needle', 'A crewmate found it.', 'money'); }
+    else if (ev.k === 'chest') { (this.state.chests ||= {})[ev.id] = Date.now(); this.hud.notice('Supply chest', `A crewmate opened one: +${format(ev.bonus)} coins for the crew.`, 'money'); }
     else if (ev.k === 'buy') { this.sfx.play('buy', { step: this.econ.purchases }); }
   }
 
