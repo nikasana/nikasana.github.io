@@ -66,6 +66,15 @@ export class Sfx {
 
   // --- one-shots ---
 
+  // water: a wet slap with a short spray of droplets
+  s_splash(t, o) {
+    const out = this.e.out('sfx', o.pos, 0.25);
+    out.gain.value = (o.gain ?? 1) * 0.8;
+    this.burst(out, t, vary(700, 0.2), 0.8, 0.6, 0.12, 'lowpass');
+    this.burst(out, t + 0.01, vary(2400, 0.3), 1.2, 0.3, 0.09);
+    for (let i = 0; i < 5; i++) this.burst(out, t + 0.04 + i * vary(0.03, 0.5), vary(3600, 0.4), 4, 0.12, 0.025);
+  }
+
   s_chip(t, o) {
     const out = this.e.out('sfx', o.pos, 0.3);
     out.gain.value = (o.gain ?? 1) * 0.9;

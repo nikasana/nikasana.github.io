@@ -1,5 +1,10 @@
 # Changelog
 
+## Batch 1.2: open ice and water
+- Dig anywhere: the ice streams in a window around you out to 400 m from the claim; holes anywhere persist exactly. The snowfield hides itself over ice that has been meshed, so there is no seam. The lift follows you anywhere.
+- 90 more finds are scattered across the open ice out to 160 m.
+- Water you can work in: meltwater fills the hole it lies in (up to about chest height) instead of spreading thin. Wading slows you; deeper water makes you swim with your head above the surface (Space to rise). Steps and strikes in water splash, and the view turns green-blue under water.
+
 ## Batch 1 fixes, round 2 (playtest feedback)
 - Holes stay exactly as dug: every edited chunk keeps its exact ice, through streaming, saves and co-op joins. Before, far chunks were rebuilt from a smoothed depth map and narrow shafts partly filled back in.
 - Upgrades are bought at the Outfitter's hut, a blue hut on undiggable ground a short walk from the start. Pressing U elsewhere points you there; it is marked on the compass and minimap.

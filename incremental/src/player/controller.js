@@ -55,7 +55,10 @@ export class Controller {
     const sin = Math.sin(this.yaw), cos = Math.cos(this.yaw);
     const wish = new THREE.Vector3(-sin * fw + cos * st, 0, -cos * fw - sin * st);
     if (wish.lengthSq() > 1) wish.normalize();
-    const speed = this.walkSpeed * (input.sprint ? this.sprintMul : 1);
+    // wading slows you; deep water makes you swim (see below)
+    const wet = this.water ? this.water(this.pos) : null;
+    this.wading = wet ? wet.depth : 0;
+    const speed = this.walkSpeed * (input.sprint ? this.sprintMul : 1) * (wet ? Math.max(0.45, 1 - wet.depth * 0.4) : 1);
 
     if (this.noclip) {
       const f = this.forward();
@@ -90,6 +93,12 @@ export class Controller {
     this.vel.z += (target.z - this.vel.z) * Math.min(1, accel * dt);
     if (this.onGround && input.jump) { this.vel.y = this.jumpV; this.onGround = false; this.emit('jump'); }
     this.vel.y -= GRAV * dt;
+    if (wet && wet.depth > 1.25) {
+      // swimming: float with the head out of the water, Space to rise
+      const want = wet.level - 1.4;
+      this.vel.y = this.vel.y * 0.85 + (want - this.pos.y) * 6 * dt + (input.jump ? 4 * dt : 0) + GRAV * dt * 0.95;
+      this.swimming = true;
+    } else this.swimming = false;
     if (this.vel.y < -40) this.vel.y = -40;
 
     const fallSpeed = this.vel.y;
@@ -111,7 +120,7 @@ export class Controller {
       this.distWalked += h * dt;
       this.footstep += h * dt;
       const stride = input.sprint ? 2.1 : 1.7;
-      if (this.footstep > stride) { this.footstep = 0; this.emit('step', this.groundNormal.y, h); }
+      if (this.footstep > stride) { this.footstep = 0; this.emit(this.wading > 0.05 ? 'wade' : 'step', this.groundNormal.y, h); }
     }
     // soft limit on how far the claim extends
     const r = Math.hypot(this.pos.x, this.pos.z);

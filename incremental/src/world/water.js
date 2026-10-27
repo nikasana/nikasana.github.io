@@ -88,7 +88,7 @@ export class Water {
     let p = this.pools.find((q) => Math.hypot(q.x - point.x, q.z - point.z) < q.r + 1.2 && Math.abs(q.floor - floor) < 1.2);
     if (!p) {
       if (this.pools.length >= MAX_POOLS) this.pools.sort((a, b) => a.vol - b.vol).shift()?.mesh.removeFromParent();
-      p = { x: point.x, z: point.z, floor, vol: 0, r: 0.3, level: floor, idle: 0, frozen: 0, mesh: this.makeMesh() };
+      p = { x: point.x, z: point.z, floor, vol: 0, r: 0.3, level: floor, idle: 0, frozen: 0, mesh: this.makeMesh(), maxR: this.holeRadius(point.x, floor + 0.3, point.z) };
       this.pools.push(p);
     }
     p.vol += volume * 0.55; // part of it soaks into the snow or steams off
@@ -101,8 +101,9 @@ export class Water {
       const p = this.pools[i];
       p.idle += dt;
       // a shallow lens: radius grows with the square root of the volume
-      p.r = Math.min(4.5, Math.max(0.35, Math.sqrt(p.vol / (Math.PI * 0.12))));
-      p.level = p.floor + Math.min(0.32, p.vol / (Math.PI * p.r * p.r) + 0.03);
+      // a pool spreads to the walls of the hole it lies in, then rises (up to about chest height)
+      p.r = Math.min(p.maxR || 4.5, Math.max(0.35, Math.sqrt(p.vol / (Math.PI * 0.12))));
+      p.level = p.floor + Math.min(1.6, p.vol / (Math.PI * p.r * p.r) + 0.03);
       // let it settle onto the actual floor as the crater changes
       if (Math.random() < dt) p.floor = this.volume.floorBelow(p.x, p.level + 0.4, p.z, 30);
       const grace = 14 * this.antiRefreeze;
@@ -146,6 +147,26 @@ export class Water {
         c.sleep = Math.min(c.sleep, 0.9);
       }
     }
+  }
+
+  // How far the hole around a point extends before hitting a wall (so pools fill shafts instead of spreading thin).
+  holeRadius(x, y, z) {
+    let best = 4.5;
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2;
+      for (let d = 0.3; d < 4.5; d += 0.25) if (this.volume.sdf(x + Math.cos(a) * d, y, z + Math.sin(a) * d) > 0) { best = Math.min(best, Math.max(0.6, d)); break; }
+    }
+    return best;
+  }
+
+  // Water above a point: { depth, level, pool } or null.
+  depthAt(x, y, z) {
+    for (const p of this.pools) {
+      if (p.frozen > 0.85) continue;
+      if (Math.hypot(p.x - x, p.z - z) > p.r || y > p.level || y < p.floor - 0.6) continue;
+      return { depth: p.level - y, level: p.level, pool: p };
+    }
+    return null;
   }
 
   steamAt(point) {

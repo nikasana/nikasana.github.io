@@ -143,6 +143,15 @@ class Game {
       if (!ok) this.hud.notice(`${FAMILIES[f].name} tools`, FAMILIES[f].id === 'planet' ? 'Satellite mirrors and the heat pipe arrive with later planets.' : 'Buy the first upgrade in this tree to unlock the tool.');
     });
     this.ctl.on('step', () => this.sfx.play('step', { ice: this.feetOnIce() }));
+    // water: wading, swimming and splashes
+    this.ctl.water = (pos) => this.water.depthAt(pos.x, pos.y, pos.z);
+    this.ctl.on('wade', () => {
+      const p = this.ctl.pos, w = this.water.depthAt(p.x, p.y, p.z);
+      if (!w) return;
+      const at = new THREE.Vector3(p.x, w.level, p.z);
+      this.sfx.play('splash', { pos: at, gain: Math.min(1, 0.4 + w.depth) });
+      this.particles.chips(at, new THREE.Vector3(0, 1, 0), 0.35, [0.72, 0.86, 0.95]);
+    });
     this.ctl.on('land', () => this.sfx.play('land'));
     this.coins.onFreed = (list, op) => {
       if (op.auto) {
@@ -439,6 +448,8 @@ class Game {
 
   onStrike(s) {
     const st = this.stats;
+    const wet = this.water.depthAt(s.point.x, s.point.y, s.point.z);
+    if (wet) { this.sfx.play('splash', { pos: s.point }); this.particles.chips(s.point, new THREE.Vector3(0, 1, 0), 0.6, [0.7, 0.85, 0.95]); }
     this.sfx.play(s.heavy ? 'crack' : 'chip', { pos: s.point, pitch: s.drill ? 1.2 : 1, gain: s.drill ? 0.5 : 1 });
     if (s.crit) this.sfx.play('shatter', { pos: s.point, gain: 0.6 });
     this.addDust(s.removed, s.depth, st.digYield);
@@ -1183,7 +1194,10 @@ class Game {
     FOG.uFogSurfaceY.value = 0;
     this.tools.viewSun.color.copy(this.atmo.sunColor);
     this.gfx.viewScene.environment = this.gfx.scene.environment;
-    this.gfx.grade.uniforms.uFlash.value.set(0.86, 0.94, 1.0, this.gfx.flash);
+    // under the water the view turns cold green-blue
+    const under = this.water.depthAt(eye.x, eye.y, eye.z);
+    if (under && this.gfx.flash < 0.05) this.gfx.grade.uniforms.uFlash.value.set(0.06, 0.3, 0.36, Math.min(0.55, 0.3 + under.depth * 0.3));
+    else this.gfx.grade.uniforms.uFlash.value.set(0.86, 0.94, 1.0, this.gfx.flash);
 
     this.audio.setListener(eye, dir);
     this.audio.setDepth(Math.max(0, depthHere));
