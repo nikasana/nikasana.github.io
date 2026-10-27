@@ -6,8 +6,8 @@ import { keyOf } from './volume.js';
 import { rng, hash32 } from '../core/rng.js';
 import { COINS, tierWeights } from '../econ/data/coins.js';
 
-const VIS_R = 15;            // embedded coins drawn within this distance
-const COUNT_PER_M3 = 0.42;
+const VIS_R = 11;            // embedded coins drawn within this distance
+const COUNT_PER_M3 = 2.0;   // dense enough that every few swings free a coin
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(1, 1, 1), _p = new THREE.Vector3(), _n = new THREE.Vector3();
 
 // ---------- coin art ----------
@@ -249,6 +249,7 @@ export class CoinSystem {
         list.push({ tier: 0, x, y, z, q: _q.clone(), id, depth: 0.5, hoard: true });
       }
     }
+    list.cx = ox + CHUNK_M / 2; list.cy = oy + CHUNK_M / 2; list.cz = oz + CHUNK_M / 2;
     this.embedded.set(c.key, list);
     this.dirty = true;
   }
@@ -368,7 +369,9 @@ export class CoinSystem {
     this.dirty = false;
     const n = [0, 0, 0];
     const R2 = VIS_R * VIS_R;
+    const RC = (VIS_R + CHUNK_M) ** 2;
     for (const list of this.embedded.values()) {
+      if (list.cx !== undefined && (list.cx - camPos.x) ** 2 + (list.cy - camPos.y) ** 2 + (list.cz - camPos.z) ** 2 > RC) continue;
       for (const k of list) {
         const dx = k.x - camPos.x, dy = k.y - camPos.y, dz = k.z - camPos.z;
         if (dx * dx + dy * dy + dz * dz > R2) continue;

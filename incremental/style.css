@@ -72,6 +72,8 @@ button { font: inherit; color: inherit; }
 .hud-wallet .carry .bar { width: 140px; height: 3px; background: var(--line); position: relative; }
 .hud-wallet .carry .bar i { position: absolute; inset: 0 auto 0 0; background: var(--brass); transition: width 120ms linear; }
 .hud-wallet .carry.full .bar i { background: var(--ember); }
+.hud-wallet .carry-hint { font: 500 var(--t-xs)/1.2 var(--mono); color: var(--glacier); min-height: 1.2em; }
+.hud-wallet .carry.full { color: var(--ember); }
 .hud-wallet .carry.full { color: var(--ember); }
 
 .hud-goal { position: absolute; top: var(--edge); left: 50%; transform: translateX(-50%); display: grid; justify-items: center; gap: 6px; min-width: 260px; }

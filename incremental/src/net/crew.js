@@ -7,6 +7,7 @@ import { CREW_MILESTONES } from '../econ/data/milestones.js';
 
 const ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const MAX_CREW = 4;
+const DROP_MS = 25000;   // a crewmate silent this long is gone (connection 'leave' events act sooner)
 
 export function newCode() {
   let s = '';
@@ -33,6 +34,12 @@ export class Crew {
     this.retryT = 0;
     this.name = 'Surveyor';
     this.listeners = {};
+    // A hidden tab stops drawing frames, which would silence it and make crewmates drop its
+    // avatar. Keep the crew ticking from a timer while the page is hidden.
+    this.lastTick = performance.now();
+    setInterval(() => { if (this.t && performance.now() - this.lastTick > 400) this.tick(0.5); }, 500);
+    // closing the tab says goodbye at once instead of leaving crewmates to time it out
+    addEventListener('pagehide', () => { if (this.t) try { this.t.send(null, { t: 'bye' }); } catch { /* closed */ } });
   }
 
   on(ev, fn) { (this.listeners[ev] ||= []).push(fn); }
@@ -120,13 +127,16 @@ export class Crew {
         this.members.delete(p);
         if (m) this.emit('notice', `${m.name} left the crew.`);
         this.emit('members');
-      } else if (this.role === 'member') {
-        this.lostHost = true;
-        this.retryT = 3;
-        this.setStatus('The host left. Playing on from your copy; rejoining automatically. You can also resume as host.', 'bad');
-        this.emit('hostLost');
-      }
+      } else if (this.role === 'member') this.hostGone();
     });
+  }
+
+  hostGone() {
+    if (this.lostHost) return;
+    this.lostHost = true;
+    this.retryT = 3;
+    this.setStatus('The host left. Playing on from your copy; rejoining automatically. You can also resume as host.', 'bad');
+    this.emit('hostLost');
   }
 
   onMessage(from, m) {
@@ -189,7 +199,12 @@ export class Crew {
         this.emit('crewMilestones', this.done, m.fresh);
         break;
       case 'bye':
-        if (this.isHost) { this.members.delete(from); this.emit('members'); }
+        if (this.isHost) {
+          const mem = this.members.get(from);
+          this.members.delete(from);
+          if (mem) this.emit('notice', `${mem.name} left the crew.`);
+          this.emit('members');
+        } else if (this.role === 'member') this.hostGone();
         break;
       default:
     }
@@ -230,6 +245,7 @@ export class Crew {
 
   tick(dt) {
     if (!this.t) return;
+    this.lastTick = performance.now();
     const g = this.game;
     this.sendT -= dt;
     if (this.sendT <= 0) {
@@ -250,7 +266,7 @@ export class Crew {
     }
     // drop silent members
     const now = performance.now();
-    for (const [p, m] of this.members) if (now - m.seen > 8000) { this.members.delete(p); this.emit('members'); }
+    for (const [p, m] of this.members) if (now - m.seen > DROP_MS) { this.members.delete(p); this.emit('members'); }
   }
 
   async tryRejoin() {

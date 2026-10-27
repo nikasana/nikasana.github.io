@@ -2,7 +2,7 @@
 // (which also covers the snow surface outside the dig domain) and simple boxes.
 import * as THREE from 'three';
 
-const R = 0.25;
+const R = 0.22;
 const HEIGHT = 1.78;
 const EYE = 1.64;
 const SPHERES = [R, 0.9, HEIGHT - R];
@@ -66,6 +66,17 @@ export class Controller {
       return;
     }
 
+    // standing over a hole you dug: drift toward its open side so you drop into the shaft
+    if (this.overGap(null)) {
+      let ox = 0, oz = 0;
+      for (let k = 0; k < 8; k++) {
+        const a = (k / 8) * Math.PI * 2, dx = Math.cos(a), dz = Math.sin(a);
+        const open = -this.volume.sdf(this.pos.x + dx * 0.35, this.pos.y - 0.3, this.pos.z + dz * 0.35);
+        if (open > 0) { ox += dx * open; oz += dz * open; }
+      }
+      const l = Math.hypot(ox, oz);
+      if (l > 1e-3 && wish.lengthSq() < 0.01) { this.vel.x += (ox / l) * 6 * dt; this.vel.z += (oz / l) * 6 * dt; }
+    }
     const accel = this.onGround ? 14 : 3.2;
     const target = wish.multiplyScalar(speed);
     this.vel.x += (target.x - this.vel.x) * Math.min(1, accel * dt);

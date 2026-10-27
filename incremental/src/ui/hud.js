@@ -17,8 +17,9 @@ export class Hud {
     this.rate = h('div.rate', {}, '');
     this.carryBar = h('i');
     this.carryTxt = h('span', {}, '');
-    this.carry = h('div.carry', {}, h('span', {}, 'PACK'), h('div.bar', {}, this.carryBar), this.carryTxt);
-    this.el.appendChild(h('div.hud-wallet', {}, h('div.coins', {}, h('span.unit'), this.coins), this.rate, this.carry));
+    this.carry = h('div.carry', { title: 'Coins you have freed but not banked yet. Stand next to the lift beacon to bank them.' }, h('span', {}, 'PACK'), h('div.bar', {}, this.carryBar), this.carryTxt);
+    this.carryHint = h('div.carry-hint');
+    this.el.appendChild(h('div.hud-wallet', {}, h('div.coins', {}, h('span.unit'), this.coins), this.rate, this.carry, this.carryHint));
 
     this.goalName = h('div.name');
     this.goalCost = h('div.cost');
@@ -88,10 +89,11 @@ export class Hud {
   update(s) {
     const g = this.game;
     this.coins.textContent = format(s.coins);
-    this.rate.innerHTML = `<b>+${format(s.rate)}</b>/s &nbsp;·&nbsp; ${format(s.carriedValue)} carried`;
+    this.rate.innerHTML = `<b>+${format(s.rate)}</b>/s into the vault`;
     const fill = Math.min(1, s.carried / s.carryCap);
     this.carryBar.style.width = `${fill * 100}%`;
-    this.carryTxt.textContent = `${Math.floor(s.carried)} / ${Math.floor(s.carryCap)}`;
+    this.carryTxt.textContent = `${Math.floor(s.carried)}/${Math.floor(s.carryCap)}${s.carriedValue > 0 ? ` · ${format(s.carriedValue)} to bank` : ''}`;
+    this.carryHint.textContent = s.carried > 0.5 && !s.atBeacon ? 'Bank it at the lift beacon ◆' : '';
     this.carry.classList.toggle('full', fill >= 1);
 
     // next goal + hidden wait meter: the glow grows as you get close to affording it

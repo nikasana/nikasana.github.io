@@ -35,7 +35,7 @@ import * as Save from './save/save.js';
 
 const SIM_STEP = 1 / 30;
 const PHYS_STEP = 1 / 60;
-const COINS_PER_M3 = 0.336;   // expected embedded coins per m³ (see coins.js spawn)
+const COINS_PER_M3 = 1.6;     // expected embedded coins per m³ (see coins.js spawn)
 const COIN_RGB = [[1, 0.62, 0.45], [0.9, 0.95, 1], [1, 0.82, 0.35]];
 
 const DEFAULT_SETTINGS = {
@@ -1085,9 +1085,17 @@ class Game {
     const sp = strataProps(this.planet, e.pole, Math.max(0, depthHere));
     const visionUse = FAMILIES[this.tools.family].id === 'vision' && this.tools.using && this.tools.hit;
     let prompt = null;
+    const deep = this.depthAt(this.ctl.pos.x, this.ctl.pos.y, this.ctl.pos.z) > 1.4;
+    const full = c.count >= st.carry - 0.01;
+    const jump = this.keyName('jump');
     if (this.ride) prompt = 'Riding the lift up';
-    else if (this.atBeacon && this.depthAt(this.ctl.pos.x, this.ctl.pos.y, this.ctl.pos.z) > 1.4) prompt = `Hold ${this.keyName('jump')} to ride the lift up`;
-    if (prompt) { /* lift prompts take priority */ } else if (c.count >= st.carry - 0.01) prompt = 'Pack full · bank at the lift beacon';
+    else if (this.atBeacon && deep) prompt = c.value > 0 ? `Banking your pack · hold ${jump} to ride the lift up` : `Hold ${jump} to ride the lift up and out of the crater`;
+    else if (full) prompt = 'Pack full · walk to the glowing lift beacon ◆ to bank it';
+    else if (deep && this.time - (this.liftHintAt || -99) < 6) prompt = `Stand by the glowing lift beacon ◆ and hold ${jump} to ride up`;
+    // first-time explanations
+    const tips = this.state.tips || (this.state.tips = {});
+    if (full && !tips.full) { tips.full = 1; this.hud.notice('Your pack is full', 'Coins you free go into your pack first. They only count once banked: stand next to the glowing lift beacon ◆ (it follows you around) and the pack empties into the vault.', '', 12000); }
+    if (deep && !tips.deep && this.craterDepth() > 2.5) { tips.deep = 1; this.liftHintAt = this.time; this.hud.notice('Getting out of the crater', `The lift beacon ◆ follows you down. Stand next to it and hold ${jump} to ride it up to the rim.`, '', 12000); }
     else if (!this.tools.available(st, this.tools.family)) prompt = FAMILIES[this.tools.family].id === 'planet' ? 'Planet tools arrive with later planets' : 'Locked · buy this tree\'s first upgrade';
     this.hud.update({
       coins: e.coins, rate: this.measuredRate(), carried: c.count, carryCap: st.carry, carriedValue: c.value * this.bankMult(),

@@ -6,6 +6,10 @@
 - The player is slightly slimmer, and the smallest pick crater is wide enough to follow down.
 - Looking down extends your reach, so you can always hit the floor of the hole you are standing in.
 - Digging and melting now erode the thin one-voxel ridges and plates left between overlapping craters, so no hard-to-hit slivers of ice remain.
+- Hovering over a hole now steers you toward its open side, so you drop into the shaft you dig.
+- Many more coins frozen in the ice (each worth proportionally less), so every few swings free a visible coin.
+- The HUD explains the pack: coins wait in your pack until banked at the lift beacon, which follows you. First-time tips explain a full pack and riding the lift out of the crater.
+- Co-op: a crewmate in a background or slow tab no longer vanishes. Hidden tabs keep sending their position, the timeout is longer, and closing a tab says goodbye at once.
 
 ## Batch 1 (MVP): Frostara and co-op
 

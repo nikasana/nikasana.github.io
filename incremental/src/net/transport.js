@@ -89,7 +89,7 @@ export class LocalTransport extends Emitter {
     this.seen = new Map();
     this.watch = setInterval(() => {
       const now = Date.now();
-      for (const [p, t] of this.seen) if (now - t > 3500) { this.seen.delete(p); this.peers.delete(p); this.emit('leave', p); }
+      for (const [p, t] of this.seen) if (now - t > 15000) { this.seen.delete(p); this.peers.delete(p); this.emit('leave', p); }
     }, 1000);
   }
 
