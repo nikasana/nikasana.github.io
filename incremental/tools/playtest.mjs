@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Scripted play session with Playwright: dig, collect, bank, buy, open every screen, planet view,
 // dev-menu features, and a two-tab co-op test (?coopdebug=1). Screenshots go to tools/shots/<batch>/.
-// Usage: node incremental/tools/playtest.mjs [--batch batch1] [--port 8123] [--preset low] [--skip-coop] [--out dir]
+// Usage: node incremental/tools/playtest.mjs [--batch batch1] [--port 8123] [--preset low] [--skip-coop | --coop-only] [--out dir]
 // Needs a static server on the incremental/ folder (python3 -m http.server 8123).
 import { createRequire } from 'node:module';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -24,8 +24,9 @@ const W = 960, H = 540;
 
 function check(name, ok, detail = '') { results.push({ name, ok: !!ok, detail }); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? '  ' + detail : ''}`); }
 
-async function open(browser, query, label) {
-  const page = await browser.newPage({ viewport: { width: W, height: H } });
+async function open(browser, query, label, context = null) {
+  // co-op tabs must share one browser context, like two tabs in one real browser
+  const page = context ? await context.newPage() : await browser.newPage({ viewport: { width: W, height: H } });
   page.on('console', (m) => { if (m.type() === 'error') errors.push(`[${label}] ${m.text()}`.slice(0, 400)); });
   page.on('pageerror', (e) => errors.push(`[${label}] pageerror ${e.message}`.slice(0, 400)));
   await page.goto(`${base}?force&preset=${PRESET}&${query}`);
@@ -56,6 +57,13 @@ async function begin(page) {
 
 async function main() {
   const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
+  if (!args.includes('--coop-only')) await solo(browser);
+  if (!args.includes('--skip-coop')) await coop(browser);
+  await browser.close();
+  finish();
+}
+
+async function solo(browser) {
   const page = await open(browser, 'dev=1&slot=playtest', 'solo');
   await begin(page);
   await wait(page, 3000);
@@ -176,10 +184,9 @@ async function main() {
   check('Offline summary shown', await ev(page, () => window.__game.menus.cur === 'offline'));
   await ev(page, () => window.__game.menus.close());
   await page.close();
+}
 
-  if (!args.includes('--skip-coop')) await coop(browser);
-  await browser.close();
-
+function finish() {
   const failed = results.filter((r) => !r.ok);
   const report = [`# Playtest ${BATCH}`, '', `Preset ${PRESET}, ${W}x${H}, software WebGL. ${results.length - failed.length}/${results.length} checks passed.`, '',
     ...results.map((r) => `- ${r.ok ? 'PASS' : 'FAIL'} ${r.name}${r.detail ? ` (${r.detail})` : ''}`), '',
@@ -191,15 +198,15 @@ async function main() {
 
 async function coop(browser) {
   // two tabs in one browser share a BroadcastChannel: host creates, member joins by link
-  const host = await open(browser, 'coopdebug=1&dev=1&slot=coophost', 'host');
+  const ctx = await browser.newContext({ viewport: { width: W, height: H } });
+  const host = await open(browser, 'coopdebug=1&dev=1&slot=coophost', 'host', ctx);
   await begin(host);
   await ev(host, async () => { await window.__game.crewCreate(); });
   const code = await ev(host, () => window.__game.crew.code);
   check('Crew created with a room code', /^[A-Z0-9]{6}$/.test(code || ''), code);
   const link = await ev(host, () => window.__game.crew.link());
   check('Join link carries the code', link.includes(`join=${code}`), link);
-  const member = await open(browser, `coopdebug=1&dev=1&slot=coopmember&join=${code}`, 'member');
-  await ev(member, () => { localStorage.removeItem('mtp.save.solo'); });
+  const member = await open(browser, `coopdebug=1&dev=1&slot=coopmember&join=${code}`, 'member', ctx);
   const joined = await until(member, () => window.__game.crew.active && window.__game.started && window.__game.slot.startsWith('crew.'), 90000);
   check('Member joins through the link', joined);
   // host digs, member sees the edit; member banks, host vault grows
