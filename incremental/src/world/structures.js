@@ -144,6 +144,19 @@ export class Works {
     this.beacon.add(this.light);
     this.beacon.position.set(1.5, surfaceY(1.5, 3) + 1.7, 3);
     this.group.add(this.beacon);
+    // a soft column of light rising from the beacon, so you can find it from anywhere in the crater
+    const beamGeo = new THREE.CylinderGeometry(0.16, 0.34, 60, 16, 1, true).translate(0, 30, 0);
+    this.beam = new THREE.Mesh(beamGeo, new THREE.ShaderMaterial({
+      uniforms: { uTime: { value: 0 }, uPulse: { value: 0 } },
+      vertexShader: 'varying float vH; varying vec3 vN; varying vec3 vV; void main() { vH = position.y / 60.0; vec4 w = modelMatrix * vec4( position, 1.0 ); vN = normalize( mat3( modelMatrix ) * normal ); vV = normalize( cameraPosition - w.xyz ); gl_Position = projectionMatrix * viewMatrix * w; }',
+      fragmentShader: `uniform float uTime; uniform float uPulse; varying float vH; varying vec3 vN; varying vec3 vV;
+        void main() { float rim = pow( 1.0 - abs( dot( vN, vV ) ), 1.5 );
+          float a = ( 1.0 - rim ) * pow( 1.0 - vH, 2.2 ) * ( 0.32 + 0.08 * sin( vH * 40.0 - uTime * 3.0 ) + uPulse * 0.5 );
+          gl_FragColor = vec4( vec3( 0.45, 0.85, 1.0 ) * a, a ); }`,
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+    }));
+    this.beam.frustumCulled = false;
+    this.group.add(this.beam);
     this.beaconVel = new THREE.Vector3();
     this.pulse = 0;
 
@@ -289,6 +302,9 @@ export class Works {
     const s = volume.sdf(b.x, b.y, b.z);
     if (s > -0.8) b.y += (s + 0.8);
     this.beacon.rotation.y += dt * 0.6;
+    this.beam.position.set(b.x, b.y + 0.5, b.z);
+    this.beam.material.uniforms.uTime.value = time;
+    this.beam.material.uniforms.uPulse.value = this.pulse;
 
     this.bridge.position.z = b.z;
     this.trolley.position.set(b.x, 0, b.z);

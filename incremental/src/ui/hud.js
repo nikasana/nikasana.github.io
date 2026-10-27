@@ -51,7 +51,7 @@ export class Hud {
     this.floaters = h('div.floaters');
     root.appendChild(this.floaters);
     // lift beacon chevron and needle compass
-    this.lift = h('div', { style: { position: 'absolute', font: '600 11px/1 var(--mono)', color: 'var(--glacier)', letterSpacing: '0.1em', whiteSpace: 'nowrap', transform: 'translate(-50%,-50%)', textShadow: '0 1px 4px #000' }, hidden: true });
+    this.lift = h('div', { style: { position: 'absolute', font: '600 12px/1 var(--mono)', color: 'var(--glacier)', letterSpacing: '0.1em', whiteSpace: 'nowrap', transform: 'translate(-50%,-50%)', textShadow: '0 1px 4px #000', padding: '5px 8px', background: 'rgba(6,18,26,0.55)', border: '1px solid rgba(143,214,236,0.45)', pointerEvents: 'none' }, hidden: true });
     root.appendChild(this.lift);
     this.needle = h('div', { style: { position: 'absolute', left: '50%', top: '50%', width: '120px', height: '120px', marginLeft: '-60px', marginTop: '-60px', borderRadius: '50%', pointerEvents: 'none' }, hidden: true });
     root.appendChild(this.needle);
@@ -117,8 +117,8 @@ export class Hud {
       FAMILIES.forEach((F, i) => {
         const tier = s.tiers[i];
         const ok = F.id === 'dig' || tier >= 1;
-        const name = F.id === 'planet' ? 'Arrives on Cinderice' : ok ? F.tiers[Math.max(0, tier - 1)] : 'Locked';
-        this.tools.append(h(`div.slot${i === g.tools.family ? '.on' : ''}${ok ? '' : '.locked'}`, {},
+        const name = F.id === 'planet' ? 'Next planet' : ok ? F.tiers[Math.max(0, tier - 1)] : 'Locked';
+        this.tools.append(h(`div.slot${i === g.tools.family ? '.on' : ''}${ok ? '' : '.locked'}`, { title: F.id === 'planet' ? 'Planet tools arrive on Cinderice, the next planet' : '' },
           h('span.key', {}, keyLabel(g.input.code(F.key))), h('span.nm', {}, F.name), h('span.tier', {}, name)));
       });
     }
@@ -155,20 +155,28 @@ export class Hud {
     this.cross.classList.toggle('far', !s.hit);
     if (s.prompt) { this.prompt.hidden = false; this.prompt.textContent = s.prompt; } else this.prompt.hidden = true;
 
-    // lift beacon chevron when you are carrying coins and it is off to the side
+    // lift beacon marker: always shown, above the beacon when in view, at the screen edge when not
     const cam = g.gfx.camera;
-    if (s.carried > 0 && !s.atBeacon && !this.el.hidden) {
+    if (!this.el.hidden) {
       const bp = g.works.beaconPos().clone();
-      const v = bp.clone().project(cam);
-      const behind = bp.clone().sub(cam.position).dot(cam.getWorldDirection(new THREE.Vector3())) < 0;
-      let x = v.x, y = v.y;
-      if (behind) { x = -x; y = -y; }
-      const m = Math.max(Math.abs(x), Math.abs(y));
-      if (m > 0.9 || behind) { x = (x / m) * 0.9; y = (y / m) * 0.9; }
+      const top = bp.clone().add(new THREE.Vector3(0, 0.9, 0));
+      const v = top.clone().project(cam);
+      const behind = top.clone().sub(cam.position).dot(cam.getWorldDirection(new THREE.Vector3())) < 0;
+      const d = bp.distanceTo(cam.position);
+      let x = v.x, y = v.y, edge = '';
+      if (behind || Math.abs(x) > 0.92 || Math.abs(y) > 0.8) {
+        // off screen: pin to the left or right edge, at the height it would be
+        if (behind) x = x > 0 ? -1 : 1;
+        edge = x > 0 ? 'right' : 'left';
+        x = x > 0 ? 0.9 : -0.9;
+        y = behind ? 0 : Math.max(-0.6, Math.min(0.6, y));
+      }
       this.lift.hidden = false;
       this.lift.style.left = `${(x * 0.5 + 0.5) * innerWidth}px`;
       this.lift.style.top = `${(-y * 0.5 + 0.5) * innerHeight}px`;
-      this.lift.textContent = `◆ LIFT ${bp.distanceTo(cam.position).toFixed(0)} m`;
+      const what = s.atBeacon ? (s.carried > 0 ? 'BANKING' : 'LIFT · here') : `LIFT ${d.toFixed(0)} m${s.carried > 0.5 ? ' · bank here' : ''}`;
+      this.lift.textContent = edge === 'left' ? `◀ ◆ ${what}` : edge === 'right' ? `◆ ${what} ▶` : `◆ ${what}`;
+      this.lift.style.opacity = edge || d > 2.2 || s.carried > 0 ? '1' : '0.55';
     } else this.lift.hidden = true;
 
     // needle sense: a faint arc pointing toward the hidden needle

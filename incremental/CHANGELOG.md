@@ -8,6 +8,7 @@
 - Digging and melting now erode the thin one-voxel ridges and plates left between overlapping craters, so no hard-to-hit slivers of ice remain.
 - Hovering over a hole now steers you toward its open side, so you drop into the shaft you dig.
 - Many more coins frozen in the ice (each worth proportionally less), so every few swings free a visible coin.
+- The lift beacon is easy to find: a column of light rises from it, and a marker always shows where it is (pinned to the screen edge when it is out of view), with its distance and whether you are banking.
 - The HUD explains the pack: coins wait in your pack until banked at the lift beacon, which follows you. First-time tips explain a full pack and riding the lift out of the crater.
 - Co-op: a crewmate in a background or slow tab no longer vanishes. Hidden tabs keep sending their position, the timeout is longer, and closing a tab says goodbye at once.
 
