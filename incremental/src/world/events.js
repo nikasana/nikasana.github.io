@@ -232,6 +232,7 @@ export class FrozenThings {
   // Check for freed items and proximity pickup. Returns hint info for the needle.
   update(dt, time, playerPos, hintLevel) {
     let hint = null;
+    this.sealedNear = null;
     for (const it of this.items) {
       if (it.done) continue;
       const p = it.mesh.position;
@@ -249,13 +250,29 @@ export class FrozenThings {
           if (dPlayer < range) hint = { dir: p.clone().sub(playerPos).normalize(), strength: 1 - dPlayer / range, dist: dPlayer };
         }
       }
-      if (it.freed && dPlayer < 2.0) {
+      // a sealed capsule waits for its trick (warmth or lamplight), then opens like any other
+      const sealed = it.kind === 'capsule' && it.data.puzzle && (it.progress || 0) < it.data.puzzle.need;
+      if (sealed && dPlayer < 3.5) this.sealedNear = it;
+      if (it.freed && dPlayer < 2.0 && !sealed) {
         it.done = true;
         this.emit(it.kind, it);
         this.animateOut(it);
       }
     }
     return hint;
+  }
+
+  // puzzle input from the game: melting next to a capsule, or the focused lamp on it
+  warm(point, dt) { this.puzzle('heat', point, dt, 1.8); }
+  light(point, dt) { this.puzzle('light', point, dt, 1.0); }
+  puzzle(kind, point, dt, range) {
+    for (const it of this.items) {
+      if (it.kind !== 'capsule' || it.done || !it.data.puzzle || it.data.puzzle.kind !== kind) continue;
+      if (it.mesh.position.distanceTo(point) > range) continue;
+      it.progress = Math.min(it.data.puzzle.need, (it.progress || 0) + dt);
+      it.mesh.userData.seam.emissiveIntensity = 3 + 4 * (it.progress / it.data.puzzle.need);
+      if (it.progress >= it.data.puzzle.need && !it.solvedSaid) { it.solvedSaid = true; this.emit('unsealed', it); }
+    }
   }
 
   animateOut(it) {

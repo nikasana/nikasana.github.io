@@ -21,3 +21,12 @@ export const THEMES = [
 ];
 
 export const THEME_BY_ID = Object.fromEntries(THEMES.map((t) => [t.id, t]));
+
+// Variations (Audio tree): applied on top of any theme.
+export const VARIATIONS = [
+  { id: 'base', name: 'As written', node: null, desc: 'The theme as it is.' },
+  { id: 'night', name: 'Night variation', node: 'aud_night', desc: 'Slower and darker, for long digs.', mod: { bpm: 0.8, bright: 0.6, glass: 0.8 } },
+  { id: 'glass', name: 'Glass variation', node: 'aud_glass', desc: 'Quicker, brighter, more bells.', mod: { bpm: 1.15, bright: 1.4, glass: 1.5 } },
+  { id: 'choir', name: 'Wind choir', node: 'aud_choir', desc: 'An ambient layer of slow bowed voices.', mod: { bowed: 1.8, bright: 0.9 } },
+];
+export const VARIATION_BY_ID = Object.fromEntries(VARIATIONS.map((v) => [v.id, v]));

@@ -2,7 +2,7 @@
 // Layers enter with crater depth: surface (pads, glass harmonica, ice grains), mid (mallet pulse,
 // drone), deep (bowed metal, soft brass, low pulse), core approach (full, faster, urgent).
 import { rng } from '../core/rng.js';
-import { THEME_BY_ID } from './themes.js';
+import { THEME_BY_ID, VARIATION_BY_ID } from './themes.js';
 
 const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
 const LAYERS = ['pad', 'glass', 'grain', 'mallet', 'drone', 'bowed', 'brass', 'perc'];
@@ -44,7 +44,14 @@ export class Music {
     this.updateMix(true);
   }
 
-  setTheme(id) { if (THEME_BY_ID[id] && !THEME_BY_ID[id].locked) this.theme = THEME_BY_ID[id]; }
+  setTheme(id) { if (THEME_BY_ID[id] && !THEME_BY_ID[id].locked) { this.baseTheme = THEME_BY_ID[id]; this.applyVariation(); } }
+
+  // A variation (Audio tree) reshapes the current theme: tempo, brightness and layer weights.
+  setVariation(id) { this.variation = VARIATION_BY_ID[id] ? id : 'base'; this.applyVariation(); }
+  applyVariation() {
+    const b = this.baseTheme || this.theme, m = (VARIATION_BY_ID[this.variation || 'base'] || {}).mod || {};
+    this.theme = { ...b, bpm: b.bpm.map((x) => x * (m.bpm || 1)), bright: b.bright * (m.bright || 1), glass: b.glass * (m.glass || 1), bowed: b.bowed * (m.bowed || 1) };
+  }
 
   setEnabled(on) {
     this.enabled = on;

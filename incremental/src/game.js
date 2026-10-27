@@ -181,6 +181,7 @@ class Game {
     this.frozen.on('capsule', (it) => this.openCapsule(it));
     this.frozen.on('needle', (it) => this.foundNeedle(it));
     this.frozen.on('find', (it) => this.openFind(it));
+    this.frozen.on('unsealed', (it) => { this.sfx.play('creak', { pos: it.mesh.position }); this.hud.notice('The seal gives', `${it.data.name} is open. Walk up to it.`, 'money', 5000); });
     this.crew.on('notice', (t) => this.hud.notice('Crew', t));
     this.crew.on('crewMilestones', (done, fresh) => this.onCrewMilestones(done, fresh));
     this.crew.on('hostLost', () => this.hud.notice('Host left', 'You keep playing from your copy of the crew. Rejoining automatically, or resume as host from the crew screen.', 'heat', 7000));
@@ -309,6 +310,7 @@ class Game {
     if (!(this.profile.visited ||= {})[p.id]) { this.profile.visited[p.id] = Date.now(); this.writeProfile(); }
     this.planetView.setPlanet(p, pole);
     this.music.setTheme(this.settings.theme || p.theme);
+    this.music.setVariation(this.settings.variation || 'base');
   }
 
   freshState() { return { capsules: {}, needle: false, carried: { count: 0, value: 0, ids: [] }, played: 0, created: Date.now() }; }
@@ -509,7 +511,8 @@ class Game {
     }
     const wet = this.water.depthAt(s.point.x, s.point.y, s.point.z);
     if (wet) { this.sfx.play('splash', { pos: s.point }); this.particles.chips(s.point, new THREE.Vector3(0, 1, 0), 0.6, [0.7, 0.85, 0.95]); }
-    this.sfx.play(s.heavy ? 'crack' : 'chip', { pos: s.point, pitch: s.drill ? 1.2 : 1, gain: s.drill ? 0.5 : 1 });
+    this.sfx.play(s.heavy ? 'crack' : 'chip', { pos: s.point, pitch: (s.drill ? 1.2 : 1) * (st.audioPack ? 1.3 : 1), gain: s.drill ? 0.5 : 1 });
+    if (st.audioPack && !s.drill) this.sfx.play('clink', { pos: s.point, tier: 3, gain: 0.35 });   // Crystal Picks
     if (s.crit) this.sfx.play('shatter', { pos: s.point, gain: 0.6 });
     this.addDust(s.removed, s.depth, st.digYield);
     if (s.pre) this.countAction('meltThenDig');
@@ -517,6 +520,7 @@ class Game {
   }
 
   onMelt(m) {
+    this.frozen.warm(m.point, m.dt || 0.016);
     const mut = this.mutantAt(m.point, 0.3);
     if (mut) this.discoverMutant(mut);
     this.addDust(m.removed, m.depth, 1);
@@ -1342,6 +1346,7 @@ class Game {
     const c = this.state.carried;
     const sp = strataProps(this.planet, e.pole, Math.max(0, depthHere));
     const visionUse = FAMILIES[this.tools.family].id === 'vision' && this.tools.using && this.tools.hit;
+    if (visionUse) this.frozen.light(this.tools.hit.point, 0.1);   // updateHud runs every 0.1 s
     let prompt = null;
     const deep = this.depthAt(this.ctl.pos.x, this.ctl.pos.y, this.ctl.pos.z) > 1.4;
     const full = c.count >= st.carry - 0.01;
@@ -1349,6 +1354,10 @@ class Game {
     if (this.ride) prompt = 'Riding the lift up';
     else if (this.atBeacon && deep) prompt = c.value > 0 ? `Banking your pack · hold ${jump} to ride the lift up` : `Hold ${jump} to ride the lift up and out of the crater`;
     else if (full) prompt = 'Pack full · walk to the glowing lift beacon ◆ to bank it';
+    else if (this.frozen.sealedNear) {
+      const it = this.frozen.sealedNear, P = it.data.puzzle;
+      prompt = `${it.data.name} · ${P.kind === 'heat' ? 'frozen shut: melt the ice right next to it' : 'fog-sealed: hold your focused lamp on it'} (${Math.round(100 * (it.progress || 0) / P.need)}%)`;
+    }
     else if (deep && this.time - (this.liftHintAt || -99) < 6) prompt = `Stand by the glowing lift beacon ◆ and hold ${jump} to ride up`;
     // first-time explanations
     const tips = this.state.tips || (this.state.tips = {});

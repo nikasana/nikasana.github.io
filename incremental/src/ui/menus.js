@@ -5,7 +5,7 @@ import { format, formatTime, numberFormat } from '../core/big.js';
 import { TREES, NODES, NODE_BY_ID } from '../econ/data/nodes.js';
 import { SYNERGIES } from '../econ/data/synergies.js';
 import { MILESTONES, CREW_MILESTONES, CAPSULES } from '../econ/data/milestones.js';
-import { THEMES } from '../audio/themes.js';
+import { THEMES, VARIATIONS } from '../audio/themes.js';
 import { PRESETS } from '../render/graphics.js';
 import { ACTION_LABELS, keyLabel } from '../player/input.js';
 import * as M from '../econ/model.js';
@@ -245,11 +245,23 @@ export class Menus {
       });
     };
     render();
+    // variations unlocked in the Audio tree
+    const vars = h('div.music-list', { style: { marginTop: '18px' } });
+    const renderVars = () => {
+      clear(vars);
+      for (const v of VARIATIONS) {
+        const owned = !v.node || M.level(g.econ, v.node) >= 1;
+        const on = (g.settings.variation || 'base') === v.id;
+        vars.append(h(`button${on ? '.on' : ''}${owned ? '' : '.locked'}`, { onclick: () => { if (!owned) return; g.settings.variation = v.id; g.saveSettings(); g.music.setVariation(v.id); renderVars(); } },
+          h('span.ix', {}, '~'), h('span.nm', {}, v.name, h('small', {}, owned ? v.desc : 'Unlock it in the Audio tree.')), h('span.eyebrow', {}, on ? 'On' : owned ? '' : 'Locked')));
+      }
+    };
+    renderVars();
     const tog = h(`button.toggle${g.settings.musicOn ? '.on' : ''}`, { 'aria-label': 'Music on', onclick: () => { g.settings.musicOn = !g.settings.musicOn; tog.classList.toggle('on', g.settings.musicOn); g.music.setEnabled(g.settings.musicOn); g.saveSettings(); } });
     body.append(h('p', { style: { color: 'var(--haze)', maxWidth: '64ch', marginTop: 0 } },
       'The score is played live and never repeats exactly. New layers enter as the crater deepens: sparse at the surface, a pulse in the middle depths, weight and brass deep down, and everything near the core.'),
       h('div.set-row', { style: { maxWidth: '760px', marginBottom: '16px' } }, h('div.lbl', {}, 'Music'), h('div.ctl', {}, tog)),
-      list);
+      list, h('div.eyebrow', { style: { marginTop: '22px' } }, 'Variations'), vars);
     return this.frame('Music', body);
   }
 

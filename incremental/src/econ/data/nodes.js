@@ -14,6 +14,7 @@ export const TREES = [
   { id: 'melt', name: 'Melt', icon: '🔥', color: '#ff7a45', origin: [1, -1] },
   { id: 'vision', name: 'Vision', icon: '👁️', color: '#7fd4ff', origin: [-1, 1] },
   { id: 'auto', name: 'Automation', icon: '🤖', color: '#b9a4ff', origin: [1, 1] },
+  { id: 'audio', name: 'Audio', icon: '🎼', color: '#f2c9ff', origin: [-1, 0], label: [-1000, -230] },
   { id: 'dna', name: 'DNA', icon: '🧬', color: '#7dffb2', origin: [0, 1], label: [0, 1040] },
 ];
 
@@ -112,6 +113,12 @@ export const NODES = [
   N('vision', 'hy_sort', 'Sorting Lens', '🔬', 'Vision + Automation. The lift sorts as it hauls: banking pays more.', 160, 8, ['vis_glint', 'auto_magnet'], [['bank', 'add', 0.02], ['valueMult', 'add', 0.01]], 0, 0, { kind: 'hybrid', join: ['vision', 'auto'], at: [0, 300] }),
   N('auto', 'hy_drones', 'Survey Drones', '🛸', 'Vision + Automation. Drones sweep the floor for coins and treasure.', 40000, 1, ['hy_sort', 'vis_strata', 'auto_vac'], [['autoCollect', 'add', 0.15], ['hint', 'add', 1]], 0, 0, { kind: 'hybrid', join: ['vision', 'auto'], at: [0, 470] }),
 
+  // 🎼 AUDIO: music variations, an ambient layer and a sound pack (no income; for the ears)
+  N('audio', 'aud_choir', 'Wind Choir', '🌬️', 'An ambient layer of slow bowed voices under the music. Pick it in the Music screen.', 40, 1, [], [['audioChoir', 'set', 1]], 0, 0, { root: true, kind: 'mech', at: [-900, -120] }),
+  N('audio', 'aud_night', 'Night Variation', '🌙', 'A slower, darker version of every theme.', 120, 1, ['aud_choir'], [['audioNight', 'set', 1]], 0, 0, { kind: 'mech', at: [-1110, -120] }),
+  N('audio', 'aud_glass', 'Glass Variation', '🔔', 'A quicker, brighter version of every theme, heavy on bells.', 900, 1, ['aud_night'], [['audioGlass', 'set', 1]], 0, 0, { kind: 'mech', at: [-1110, 30] }),
+  N('audio', 'aud_pack', 'Crystal Picks', '💎', 'Sound pack: your pick rings like glass.', 2500, 1, ['aud_choir'], [['audioPack', 'set', 1]], 0, 0, { kind: 'mech', at: [-900, 30] }),
+
   // 🧬 DNA: unlocked by the mutant ice you have found (mutation), and twice the price of comparable nodes
   N('dna', 'dna_eyes', 'Night Eyes', '🌙', 'Glowice DNA. Your lamp reaches farther and the deep ice is brighter.', 300, 5, [], [['nightVision', 'add', 0.25]], 0, 0, { root: true, mutation: 'glowice', at: [-230, 640] }),
   N('dna', 'dna_legs', 'Spring Legs', '🦘', 'Springice DNA. You walk and climb faster.', 240, 8, [], [['walkSpeed', 'add', 0.06]], 0, 0, { root: true, mutation: 'springice', at: [0, 640] }),
@@ -137,4 +144,6 @@ export const BASE_STATS = {
   shock: 0.6, seep: 0.5, heatLinger: 1, heavyMult: 1.55, richCrit: 0, steamBurst: 0, pipes: 0,
   // DNA
   nightVision: 0, walkSpeed: 1, hands: 0,
+  // Audio
+  audioChoir: 0, audioNight: 0, audioGlass: 0, audioPack: 0,
 };
