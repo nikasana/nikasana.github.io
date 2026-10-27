@@ -26,6 +26,10 @@ export class Menus {
     if (!this.el) return;
     const el = this.el;
     el.classList.add('closing');
+    // stop catching input at once; the fade-out is purely visual
+    el.classList.remove('interactive');
+    el.style.pointerEvents = 'none';
+    for (const n of el.querySelectorAll('*')) n.style.pointerEvents = 'none';
     setTimeout(() => el.remove(), 170);
     if (this.cur === 'upgrades' && this.tree) { this.tree.destroy(); this.tree = null; }
     this.el = null;
@@ -35,6 +39,7 @@ export class Menus {
 
   show(name, ...args) {
     if (this.el) { this.el.remove(); if (this.tree) { this.tree.destroy(); this.tree = null; } }
+    for (const stale of this.root.querySelectorAll('.menu.closing')) stale.remove();
     this.cur = name;
     this.el = this[`build_${name}`](...args);
     this.el.classList.add('interactive');
