@@ -12,9 +12,9 @@
 - PASS "Every rule" milestone pays out on Omega
 - PASS The core wakes in the final 15%: storms fall silent and a gold aurora hangs over the crater ({"on":true,"aurora":true,"ambient":0.75,"melt":1,"weather":"calm","core":true,"notice":true})
 - PASS "The core wakes" milestone pays out
-- PASS During the climax auroras and sky coins come thick ({"gap":42.702826882534474,"lone":22})
+- PASS During the climax auroras and sky coins come thick ({"gap":36.55087397417258,"lone":22})
 - PASS Planet view names Omega as planet 7 of 7 (Planet 7 of 7 · Every rule combined)
-- PASS Omega save code exported for the fixtures (3378 chars)
+- PASS Omega save code exported for the fixtures (3402 chars)
 
 ## Console errors
 
