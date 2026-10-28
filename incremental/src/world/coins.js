@@ -441,6 +441,8 @@ export class CoinSystem {
   // Free embedded coins whose ice is gone.
   onEdit(op, res) {
     const b = res.bounds;
+    // loose coins resting on ice that was just dug away fall again instead of hanging in the air
+    for (const c of this.loose) if (c.sleep > 0 && c.p.x > b.x0 - 1 && c.p.x < b.x1 + 1 && c.p.y > b.y0 - 1 && c.p.y < b.y1 + 1.5 && c.p.z > b.z0 - 1 && c.p.z < b.z1 + 1) c.sleep = 0;
     const freed = [];
     // only the chunks the edit's bounds overlap
     const lists = [];
@@ -555,9 +557,15 @@ export class CoinSystem {
       }
       if (c.sleep > 1) continue;
       c.v.y -= 16 * dt;
-      c.p.addScaledVector(c.v, dt);
       const rad = Math.max(0.07, COINS[c.tier].thick * GIANT * (c.s || 1) * 0.5);   // a giant coin rests on its face; gems and relics are thicker
-      const s = vol.sdf(c.p.x, c.p.y, c.p.z);
+      // move in short steps so a fast coin cannot pass through a thin ledge or floor in one frame
+      const steps = Math.min(8, Math.max(1, Math.ceil((c.v.length() * dt) / 0.1)));
+      let s = 0;
+      for (let k = 0; k < steps; k++) {
+        c.p.addScaledVector(c.v, dt / steps);
+        s = vol.sdf(c.p.x, c.p.y, c.p.z);
+        if (s > -rad) break;
+      }
       if (s > -rad) {
         vol.normalAt(c.p.x, c.p.y, c.p.z, _n);
         c.p.addScaledVector(_n, s + rad);

@@ -1,5 +1,12 @@
 # Changelog
 
+## Needle fix, centimetre readout, frosted floors, coins that stay on the floor
+- Fixed: the Golden Needle could stay stuck in the ice after you dug right up to it (it only counted as free when its exact centre was in open air, and it is thin). Now any dig or melt that reaches it knocks it free, mostly-dug-out also counts, and once free it drifts to you through open air and is taken from 2.6 m. It is also bigger and glows brighter.
+- Close to the needle a prompt says it is right here and how much of it is dug clear; when you take it, a notice says what comes next (dig on to the GOAL depth to finish the planet, spend your coins at the hut).
+- The needle readout is precise to the centimetre: "✦ Needle 1.43 m · ← left 1.20 m · dig down 35 cm" (under a metre it reads in cm).
+- Fixed: dug floors looked like shiny, see-through glass. Ice floors you walk on are now frosted (matte and solid-looking) and no longer mirror the sky; walls stay clear ice.
+- Fixed: loose coins could pass through a thin ledge or floor when falling fast (they now move in short steps), and coins resting on ice that you dig away fall again instead of hanging in the air.
+
 ## A clearer upgrade screen
 - Branch tabs along the top (All, Dig, Melt, Vision, …), each with a green count of upgrades you can buy there; picking one flies to that branch and dims the rest.
 - A "Ready to buy" list on the left: everything you can afford now, best value first (★ Best value is the one that adds the most income per coin), each with its own buy button; under it "Coming up" shows the next few and how long until you can afford them. The vault and your income sit on top.
