@@ -53,6 +53,8 @@ export class Navigation {
         if (Math.hypot(p.x - g.ctl.pos.x, p.z - g.ctl.pos.z) < 60) out.push({ x: p.x, z: p.z, col: safe ? SAFE.find : '#' + it.find.glow.toString(16).padStart(6, '0'), shape: 'star', label: '', mapOnly: true });
       }
     }
+    // the Golden Needle, once you are down at its depth (see Game.updateHud)
+    if (g.needleGuide) out.push({ x: g.needleGuide.x, z: g.needleGuide.z, col: '#ffd27a', shape: 'star', label: 'NEEDLE' });
     if (g.works.depotPos) { const d = g.works.depotPos; out.push({ x: d.x, z: d.z, col: safe ? SAFE.depot : COL.brass, shape: 'hexagon', label: 'DEPOT' }); }
     const v = g.works.vaultCenter();
     out.push({ x: v.x, z: v.z, col: safe ? SAFE.vault : COL.brass, shape: 'square', label: 'VAULT' });

@@ -267,6 +267,12 @@ export class FrozenThings {
     return hint;
   }
 
+  // where the Golden Needle still waits (null once found)
+  needlePosition() {
+    const it = this.items.find((i) => i.kind === 'needle' && !i.done);
+    return it ? it.mesh.position : null;
+  }
+
   // puzzle input from the game: melting next to a capsule, or the focused lamp on it
   warm(point, dt) { this.puzzle('heat', point, dt, 1.8); }
   light(point, dt) { this.puzzle('light', point, dt, 1.0); }
