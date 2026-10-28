@@ -176,6 +176,7 @@ export class Hud {
         edge = x > 0 ? 'right' : 'left';
         x = x > 0 ? 0.8 : -0.9;
         y = behind ? 0 : Math.max(-0.6, Math.min(0.6, y));
+        if (edge === 'left') y = Math.min(y, -0.15);   // stay below the notices on the left
       }
       this.lift.hidden = false;
       this.lift.style.left = `${(x * 0.5 + 0.5) * innerWidth}px`;

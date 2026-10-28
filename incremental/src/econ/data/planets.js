@@ -199,7 +199,49 @@ export const PLANETS = [
       },
     },
   },
-  { id: 'auralis', name: 'Auralis', icon: '🌌', rule: 'Aurora world with rare sky coins', available: false },
+  {
+    id: 'auralis', name: 'Auralis', icon: '🌌', rule: 'Aurora world with rare sky coins', available: true,
+    radiusM: 3200, goalDepth: 1700, density: 6.4, depthScale: 9, richExp: 1.42,
+    coinTiers: ['copper', 'silver', 'gold', 'gem', 'relic'],
+    // a world of long twilight: the ice is poorer, but the sky pays. Auroras come often, and between
+    // them a lone sky coin drifts down now and then. Catching sky coins one after another builds the Aurora Chain.
+    exposure: 0.8, fog: [0.26, 0.3, 0.42], fogDensity: 0.0016,
+    sky: { turbidity: 1.6, rayleigh: 0.7, mieCoefficient: 0.004, mieDirectionalG: 0.82 },
+    sunElevation: 5, dayLength: 720,
+    grade: { lift: [0.01, 0.0, 0.03], gain: [0.96, 1.0, 1.04], sat: 1.12, contrast: 1.1 },
+    ice: { tint: [0.55, 0.85, 0.9], deep: [0.12, 0.1, 0.32], snow: [0.86, 0.9, 0.98] },
+    ocean: [0.05, 0.08, 0.2], land: [0.24, 0.24, 0.3], seed: 8803,
+    theme: 'auralis',
+    clouds: 0.04,   // clear twilight skies, so the aurora reads
+    // every: seconds between auroras; skyEvery: seconds between lone sky coins; share: income from the sky
+    aurora: { N: { every: [70, 110], skyEvery: [25, 45], share: 0.34 }, S: { every: [110, 160], skyEvery: [40, 70], share: 0.2 }, dur: 50, coins: 18 },
+    poles: {
+      N: {
+        name: 'Crown of Lights', desc: 'Auroras almost every minute and a sky full of coins, over thin, poor ice.',
+        strata: [
+          { d: 0, name: 'Star frost', color: [0.88, 0.92, 0.98], hard: 0.8, rich: 0.95 },
+          { d: 5, name: 'Glimmer firn', color: [0.7, 0.86, 0.94], hard: 0.9, rich: 1.0 },
+          { d: 24, name: 'Ribbon ice', color: [0.52, 0.82, 0.8], hard: 1.0, rich: 1.08 },
+          { d: 90, name: 'Veil ice', color: [0.46, 0.6, 0.86], hard: 1.12, rich: 1.16 },
+          { d: 280, name: 'Twilight glass', color: [0.38, 0.4, 0.78], hard: 1.28, rich: 1.26 },
+          { d: 760, name: 'Night ice', color: [0.24, 0.2, 0.56], hard: 1.42, rich: 1.38 },
+          { d: 1400, name: 'Heart of light', color: [0.62, 0.9, 0.78], hard: 1.6, rich: 1.62 },
+        ],
+      },
+      S: {
+        name: 'Quiet Pole', desc: 'Rarer auroras, but deeper, richer ice to fall back on.',
+        strata: [
+          { d: 0, name: 'Quiet snow', color: [0.9, 0.92, 0.97], hard: 0.85, rich: 1.0 },
+          { d: 6, name: 'Glimmer firn', color: [0.7, 0.86, 0.94], hard: 0.95, rich: 1.06 },
+          { d: 34, name: 'Ribbon ice', color: [0.52, 0.82, 0.8], hard: 1.05, rich: 1.14 },
+          { d: 110, name: 'Veil ice', color: [0.46, 0.6, 0.86], hard: 1.15, rich: 1.22 },
+          { d: 320, name: 'Twilight glass', color: [0.38, 0.4, 0.78], hard: 1.3, rich: 1.32 },
+          { d: 800, name: 'Night ice', color: [0.24, 0.2, 0.56], hard: 1.44, rich: 1.44 },
+          { d: 1400, name: 'Heart of light', color: [0.62, 0.9, 0.78], hard: 1.6, rich: 1.68 },
+        ],
+      },
+    },
+  },
   { id: 'omega', name: 'Omega', icon: '🔮', rule: 'Every rule combined', available: false },
 ];
 

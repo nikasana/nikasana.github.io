@@ -1,5 +1,6 @@
 // Crewmate avatars: full body in a survey parka, current tool in hand, walk cycle, name tag.
 import * as THREE from 'three';
+import { ROLE_BY_ID } from '../econ/data/milestones.js';
 
 const PARKAS = [0xc8692c, 0x2f7f9e, 0x8a5bd6, 0x3f9a5c];
 
@@ -133,7 +134,7 @@ export class Avatars {
       seen.add(id);
       let a = this.map.get(id);
       if (!a) { a = new Avatar(this.atmo, i, m.name); this.map.set(id, a); this.scene.add(a.root); }
-      a.setName(m.name);
+      a.setName(m.st.r && ROLE_BY_ID[m.st.r] ? `${ROLE_BY_ID[m.st.r].icon} ${m.name}` : m.name);
       a.apply(m.st);
       i++;
     }

@@ -384,10 +384,11 @@ export class CoinSystem {
 
   // Physics, magnet and collection. `collectors`: [{ pos: Vector3 (chest), range, canTake(coin) }]
   // Aurora sky coins: they drift down and hover above the snow until caught.
-  spawnSky(p, tier, value, floorY) {
+  // life: seconds before an uncaught sky coin fades (onSkyMiss is called then).
+  spawnSky(p, tier, value, floorY, life = 1e9) {
     this.skyId = (this.skyId || 0) - 1;
     this.loose.push({ tier, id: this.skyId, p: p.clone(), v: new THREE.Vector3(), q: new THREE.Quaternion(), w: new THREE.Vector3(0, 2.5, 0),
-      sleep: 0, t: 0, value, depth: 0, magnet: false, sky: true, floorY });
+      sleep: 0, t: 0, value, depth: 0, magnet: false, sky: true, floorY, life });
   }
 
   update(dt, camPos, collectors, autoCollect = 0) {
@@ -428,7 +429,8 @@ export class CoinSystem {
         c.sleep = Math.min(c.sleep, 0.5);
       }
       if (c.sky) {
-        c.p.y = Math.max(c.floorY + 1.3 + Math.sin(c.t * 2 + c.id) * 0.15, c.p.y - 0.8 * dt);
+        if (c.t > c.life) { this.loose.splice(i, 1); if (this.onSkyMiss) this.onSkyMiss(c); continue; }
+        c.p.y = Math.max(c.floorY + 1.3 + Math.sin(c.t * 2 + c.id) * 0.15, c.p.y - 1.6 * dt);
         _q.setFromEuler(new THREE.Euler(0, 2.5 * dt, 0));
         c.q.multiply(_q);
         continue;
