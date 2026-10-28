@@ -23,6 +23,7 @@ Automated: `node incremental/tools/polish2.mjs` (screenshots and report in `tool
 | Chests | Dig a few hundred coins (dev: Dig shaft 60 m) | About 1 in 100 is a wooden chest; it fills much of the pack and pays a lot |
 | Depot | Fill the pack, ride up, walk to the shed by the hut (hexagon on the map) | The pack pours in at a steady pace with streaks and a +coins floater; away from it nothing is delivered |
 | Depot upgrades | Buy Depot Conveyor (outer column on the Automation side) | The pack empties faster at the depot |
+| Upgrade screen | Open the upgrades in the hut | Tabs with green counts; Ready to buy list (★ Best value first); click a node: details with before → after and a green BUY; click again or BUY buys; Buy max; type in the search box: matches outlined |
 | Milestones | Open the tree; buy a node to level 4 | A ★ on the node; its tip says the next level is a milestone and costs more |
 | Depth gauge | Dig down, then climb out | The YOU dot moves with you; a notch stays at the deepest point; every mark has a depth; GOAL at the bottom |
 | Needle | Dig to 35-60 m on Frostara | The gold band on the gauge lights up; a gold ★ NEEDLE marker shows on the compass and minimap and a readout says how far and which way (left, right, ahead, behind) |

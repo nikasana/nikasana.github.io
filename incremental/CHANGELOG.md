@@ -1,5 +1,14 @@
 # Changelog
 
+## A clearer upgrade screen
+- Branch tabs along the top (All, Dig, Melt, Vision, …), each with a green count of upgrades you can buy there; picking one flies to that branch and dims the rest.
+- A "Ready to buy" list on the left: everything you can afford now, best value first (★ Best value is the one that adds the most income per coin), each with its own buy button; under it "Coming up" shows the next few and how long until you can afford them. The vault and your income sit on top.
+- A details panel: what the upgrade does as before → after numbers (for example Bite radius 0.526 m → 0.534 m) and how much it raises your income, a level bar, a big green BUY button with the price (or why you can't: not enough coins and how long, or what it still needs, with a button that shows that upgrade), and Buy max for several levels at once.
+- Click a node to select it, click it again (or BUY, or press B) to buy, so a stray click never spends coins; the way from the core to the selected node lights up. M buys max, F shows the whole tree, / searches.
+- Search: type a name and the matches are outlined, everything else dims; Enter flies to the first.
+- Clearer node states: green glowing nodes with a BUY tag can be bought, 🔒 marks locked ones, maxed ones turn gold with ✓ MAX. A legend explains them.
+- The screen opens at a readable zoom (and where you left it), not zoomed out over the whole tree. On phones the list folds behind a 🛒 button and the details sit bottom right.
+
 ## Needle guide
 - Once you are down at the Golden Needle's depth (inside its gold band on the depth gauge), you are guided across to it: a gold ★ NEEDLE marker appears on the compass strip and the minimap, and a readout under the crosshair says how far it is and which way to go ("✦ Needle 22 m ← to your left", "↑ ahead", "→ to your right", "↓ behind you", plus "a little deeper/higher" when needed). Close up, Needle Sense's arc and readout take over as before.
 
