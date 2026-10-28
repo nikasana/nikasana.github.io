@@ -584,12 +584,16 @@ class Game {
   // redraw the terminal's screen twice a second while you are near the hut
   updateTerminal(dt) {
     this.termT = (this.termT || 0) - dt;
-    if (this.termT > 0 || !this.works.terminalPos || this.ctl.pos.distanceTo(this.works.terminalPos) > 16) return;
+    if (this.termT > 0 || !this.works.terminalPos || this.ctl.pos.distanceTo(this.works.terminalPos) > 9) return;
     this.termT = 0.5;
     const e = this.econ, t = M.costTable(e);
     const list = M.available(e).map((n) => ({ n: skinNode(n, e.reverse), cost: t[n.id].cost })).sort((a, b) => (a.cost.lt(b.cost) ? -1 : 1)).slice(0, 5)
       .map(({ n, cost }) => ({ icon: n.icon, name: n.name, cost: format(cost), can: e.coins.gte(cost) }));
-    this.works.drawTerminal({ coins: format(e.coins), list, ready: list.some((x) => x.can), aimed: this.aimTerminal, reverse: e.reverse, touch: this.touch });
+    const info = { coins: format(e.coins), list, ready: list.some((x) => x.can), aimed: this.aimTerminal, reverse: e.reverse, touch: this.touch };
+    const key = JSON.stringify(info);
+    if (key === this.termKey) return;   // redraw (and re-upload the screen texture) only when it changes
+    this.termKey = key;
+    this.works.drawTerminal(info);
   }
   canUpgrade() { return this.atOutfitter() || this.dev; }
   upgradeAway() {

@@ -320,11 +320,14 @@ export class IceVolume {
       want.push([dx * dx + dy * dy * 2 + dz * dz, cx, cy, cz]);
     }
     want.sort((a, b) => a[0] - b[0]);
+    let loaded = 0;
     for (const [, cx, cy, cz] of want) {
       const c = this.getChunk(cx, cy, cz);
       this.queue.add(c);
+      loaded++;
       if (performance.now() - t0 > budgetMs) break;
     }
+    this.wantLeft = want.length - loaded;   // chunks in the window still waiting to load
     // drop data outside the window; dispose far meshes
     for (const c of this.chunks.values()) {
       const hd = Math.max(Math.abs(c.cx - pcx), Math.abs(c.cz - pcz));
