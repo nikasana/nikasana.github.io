@@ -25,7 +25,12 @@ export const THEMES = [
     root: 55, mode: [0, 2, 4, 5, 7, 9, 10], prog: [0, 6, 3, 4, 0, 5, 6, 4],
     bpm: [60, 100], bright: 1.1, glass: 1.1, mallet: 1.4, brass: 0.6, bowed: 1.0, perc: 0.7,
   },
-  { id: 'gale', name: 'Pressure Front', planet: 'gale', desc: 'Gale. Driving percussion and wind.', locked: true },
+  {
+    id: 'gale', name: 'Pressure Front', planet: 'gale',
+    desc: 'Gale. Driving percussion and wind: an aeolian pulse that opens up in the calms.',
+    root: 50, mode: [0, 2, 3, 5, 7, 8, 10], prog: [0, 5, 6, 4, 0, 3, 6, 5],
+    bpm: [72, 118], bright: 0.9, glass: 0.8, mallet: 1.1, brass: 1.0, bowed: 0.9, perc: 1.5,
+  },
   { id: 'auralis', name: 'Sky Choir', planet: 'auralis', desc: 'Auralis. Shimmering choir pads.', locked: true },
   { id: 'omega', name: 'All Rivers', planet: 'omega', desc: 'Omega. Every theme at once.', locked: true },
 ];

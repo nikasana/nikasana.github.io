@@ -10,6 +10,7 @@ import { PRESETS } from '../render/graphics.js';
 import { ACTION_LABELS, keyLabel } from '../player/input.js';
 import * as M from '../econ/model.js';
 import { PLANETS } from '../econ/data/planets.js';
+import { FINDS } from '../econ/data/finds.js';
 import { MUTANTS, MUTANT_BY_ID } from '../econ/data/mutants.js';
 
 const TREE = Object.fromEntries(TREES.map((t) => [t.id, t]));
@@ -137,11 +138,17 @@ export class Menus {
             h('p', {}, found ? s.desc : `“${s.hint}”`),
             found ? h('span.when', {}, `Found at ${formatTime(e.found[s.id])}`) : null);
         })));
+      } else if (t === 'finds') {
+        const seen = g.profile.findTypes || {};
+        body.append(h('p', { style: { color: 'var(--haze)', maxWidth: '64ch', marginTop: 0 } }, 'Things frozen in the ice. Shallow ice keeps lost gear; deeper down are supplies, relics and stranger things.'));
+        body.append(h('div.coll', {}, FINDS.map((f) => h(`div.card${seen[f.id] ? '' : '.blank'}`, {},
+          h('h4', {}, seen[f.id] ? `${f.icon} ${f.name}` : '? ? ? ? ?'),
+          h('p', {}, seen[f.id] ? f.desc : `Somewhere between ${f.min} and ${f.max === 400 ? 'the deepest ice' : `${f.max} m`}.`)))));
       } else if (t === 'capsules') {
-        const done = g.state.capsules || {};
+        const done = { ...(g.profile.capsules || {}), ...(g.state.capsules || {}) };
         body.append(h('div.coll', {}, CAPSULES.map((c) => h(`div.card${done[c.id] ? '' : '.blank'}`, {},
           h('h4', {}, done[c.id] ? c.name : 'Unopened capsule'),
-          h('p', {}, done[c.id] ? c.contents.lore : `Frozen somewhere around ${c.depth} m down.`))),
+          h('p', {}, done[c.id] ? c.contents.lore : `${c.planet[0].toUpperCase() + c.planet.slice(1)}, frozen around ${c.depth} m down.${c.puzzle ? (c.puzzle.kind === 'heat' ? ' Frost-sealed.' : ' Fog-sealed.') : ''}`))),
           h(`div.card${g.state.needle ? '' : '.blank'}`, {}, h('h4', {}, g.state.needle ? 'The Golden Needle' : 'Golden Needle'),
             h('p', {}, g.state.needle ? 'Found. One per planet, and this one is yours.' : 'One is hidden on every planet. Needle Sense helps you feel for it.'))));
       } else if (t === 'mutations') {
@@ -170,7 +177,7 @@ export class Menus {
           h('h4', {}, `${m.icon} ${m.name}`), h('p', {}, e.milestones[m.id] !== undefined ? `Reached at ${formatTime(e.milestones[m.id])}. Paid ${m.bonusSec} s of income.` : `Pays ${m.bonusSec} s of income.`)))));
       }
     };
-    for (const [id, l] of [['resonance', 'Resonance notebook'], ['mutations', 'Mutation log'], ['capsules', 'Capsules & needle'], ['milestones', 'Milestones'], ['postcards', 'Postcards']]) {
+    for (const [id, l] of [['resonance', 'Resonance notebook'], ['mutations', 'Mutation log'], ['finds', 'Finds'], ['capsules', 'Capsules & needle'], ['milestones', 'Milestones'], ['postcards', 'Postcards']]) {
       const b = h('button.tab', { onclick: () => setTab(id) }, l);
       b.dataset.t = id;
       tabs.append(b);
@@ -502,7 +509,11 @@ class TreeView {
     wrap.parentElement.appendChild(h('div.tree-hud', {}, h('div.eyebrow', {}, 'Vault'), this.wallet, this.walletSub));
     wrap.parentElement.appendChild(this.tip);
     wrap.parentElement.appendChild(h('div.tree-zoom', {},
-      h('button.btn', { onclick: () => this.zoomBy(1.2) }, '+'), h('button.btn', { onclick: () => this.zoomBy(1 / 1.2) }, '−'), h('button.btn', { onclick: () => this.fit() }, 'Fit')));
+      h('button.btn', { onclick: () => this.zoomBy(1.2) }, '+'), h('button.btn', { onclick: () => this.zoomBy(1 / 1.2) }, '−'), h('button.btn', { onclick: () => this.fit() }, 'Fit'),
+      ...[['autoBuy', 'Quartermaster'], ['autoTool', 'Auto Swing']].filter(([k]) => game.stats[k] >= 1).map(([k, label]) => {
+        const b = h(`button.btn${game.settings[k] !== false ? '.primary' : ''}`, { onclick: () => { game.settings[k] = game.settings[k] === false; b.classList.toggle('primary', game.settings[k] !== false); b.textContent = `${label}: ${game.settings[k] !== false ? 'on' : 'off'}`; game.saveSettings(); } }, `${label}: ${game.settings[k] !== false ? 'on' : 'off'}`);
+        return b;
+      })));
     this.nodes = {};
     this.pos = {};
     this.layout();

@@ -304,6 +304,38 @@ class Game {
     this.hud.notice('Lava burst', scorch ? 'The lava flooded the hole and froze into basalt. It scorched part of your pack.' : 'The lava flooded the hole and froze. Heat Skin kept your pack safe.', 'heat', 6000);
   }
 
+  // Gale weather: long storms weaken melting; short calm windows make melting pay double (Wind Windows).
+  updateWeather(dt, eye) {
+    const W = this.planet.weather, w = this.weather;
+    if (!W || !w) { this.tools.meltFactor = 1; this.calmBonus = 1; return; }
+    w.left -= dt;
+    if (w.left <= 0) {
+      const toCalm = w.state === 'storm';
+      w.state = toCalm ? 'calm' : 'storm';
+      const [a, b] = toCalm ? W.calm : W.storm;
+      w.left = a + Math.random() * (b - a);
+      if (toCalm) { this.hud.notice('Wind window', `The wind drops for ${Math.round(w.left)} s. Melting pays double until it returns.`, 'money', 4000); this.music.cue('swell'); }
+      else this.hud.notice('Storm', 'The wind is back: it steals the heat from your torch.', 'heat', 3000);
+    }
+    const st = this.stats;
+    const storm = w.state === 'storm';
+    const base = this.econ.pole === 'S' ? (W.meltInStorm + 1) / 2 : W.meltInStorm;   // the South pole is sheltered
+    this.tools.meltFactor = storm ? base + (1 - base) * Math.min(1, st.stormShield || 0) : 1;
+    this.calmBonus = storm ? 1 : W.calmBonus;
+    if (this.settings.fog) FOG.uFogParams.value.x *= storm ? 2.2 : 0.7;
+    // blowing snow on the surface during storms
+    if (storm && eye.y > surfaceY(eye.x, eye.z) - 3) {
+      this.snowT = (this.snowT || 0) - dt;
+      if (this.snowT <= 0) {
+        this.snowT = 0.05;
+        for (let k = 0; k < 4; k++) {
+          const x = eye.x - 12 + Math.random() * 6, z = eye.z + (Math.random() - 0.5) * 24, y = eye.y - 1 + Math.random() * 4;
+          this.particles.alpha.spawn(2, 0, x, y, z, 14 + Math.random() * 6, -0.6, (Math.random() - 0.5) * 2, 1.6, 0.05, 0.03, 0.95, 0.97, 1, 0.6, 0, 0, 0);
+        }
+      }
+    }
+  }
+
   currentAt(x, z) {
     const c = this.planet.current;
     if (!c) return [0, 0];
@@ -314,11 +346,11 @@ class Game {
 
   // Aurora (first version): curtains in the sky and coins drifting down around you for a minute.
   startAurora() {
-    this.auroraT = 300 + Math.random() * 240;
+    this.auroraT = (300 + Math.random() * 240) / (1 + (this.stats.auroraRate || 0));
     this.aurora.start(60);
     const p = this.ctl.pos, value = Math.max(5, this.measuredRate() * 12);
     const tier = this.planet.coinTiers.includes('gem') ? 3 : 2;
-    for (let k = 0; k < 14; k++) {
+    for (let k = 0, n = Math.round(14 * (1 + (this.stats.auroraCoins || 0))); k < n; k++) {
       const a = Math.random() * Math.PI * 2, d = 4 + Math.random() * 18;
       const x = p.x + Math.cos(a) * d, z = p.z + Math.sin(a) * d;
       const floorY = Math.max(surfaceY(x, z), this.volume.floorBelow(x, surfaceY(x, z) + 2, z, 40));
@@ -371,6 +403,9 @@ class Game {
     this.terrain.material.color.setRGB(...p.ice.snow);   // the snowfield takes the planet's colour (ash on Cinderice)
     // Tidalis: a slowly turning current field under the ice (Current Reading)
     this.coins.current = p.current ? (x, z) => this.currentAt(x, z) : null;
+    // Gale: the weather cycle starts in a storm
+    this.weather = p.weather ? { state: 'storm', left: p.weather.storm[0] } : null;
+    this.tools.meltFactor = 1;
     // mutant ice pockets for this planet and pole; types already found stay unlocked for DNA
     this.mutants = mutantPockets(p, pole, surfaceY);
     (this.lava ||= new Lava()).setup(p, pole, surfaceY);
@@ -615,7 +650,7 @@ class Game {
       this.discoverMutant(mut);
       if (mut.type === 'emberice') { this.veinCombo = Math.max(this.veinCombo || 0, 2.5); this.veinT = this.time; }
     }
-    this.addDust(m.removed, m.depth, m.lavaMult || 1);
+    this.addDust(m.removed, m.depth, (m.lavaMult || 1) * (this.calmBonus || 1));
     if (m.removed > 0) this.water.add(m.point, m.removed);
   }
 
@@ -703,7 +738,8 @@ class Game {
   openFind(it) {
     const f = it.find;
     (this.state.finds ||= {})[it.id] = Date.now();
-    const bonus = Math.max(20, this.measuredRate() * (f.sec + it.depth * 1.6));
+    const bonus = Math.max(20, this.measuredRate() * (f.sec + it.depth * 1.6)) * (1 + (this.stats.findMult || 0));
+    (this.profile.findTypes ||= {})[f.id] = Date.now(); this.writeProfile();
     this.earn(bonus);
     let extra = '';
     if (f.relic) { this.econ.legacy *= f.relic; this.statsDirty = true; extra = ` · +${Math.round((f.relic - 1) * 100)}% income for good`; }
@@ -720,7 +756,8 @@ class Game {
 
   openCapsule(it) {
     const c = it.data;
-    const bonus = Math.max(50, this.measuredRate() * c.contents.coinsSec);
+    const bonus = Math.max(50, this.measuredRate() * c.contents.coinsSec) * (1 + (this.stats.capsuleMult || 0));
+    (this.profile.capsules ||= {})[c.id] = Date.now(); this.writeProfile();
     this.earn(bonus);
     this.state.capsules[c.id] = Date.now();
     this.sfx.play('capsule', { pos: it.mesh.position });
@@ -1438,11 +1475,25 @@ class Game {
     }
     this.ctl.walkSpeed = 4.4 * (st.walkSpeed || 1);
     this.applyStyle(st);
+    // Auto Swing: standing still and aiming at ice, the tool works by itself
+    this.tools.autoUse = st.autoTool >= 1 && this.settings.autoTool !== false && !this.ctl.vel.lengthSq() && !!this.tools.hit;
+    // Quartermaster: buys the cheapest upgrade under a quarter of the vault every few seconds
+    if (st.autoBuy >= 1 && this.settings.autoBuy !== false && !(this.crew.active && !this.crew.isHost)) {
+      this.autoBuyT = (this.autoBuyT || 0) - dt;
+      if (this.autoBuyT <= 0) {
+        this.autoBuyT = 3;
+        const t = M.costTable(this.econ);
+        let best = null;
+        for (const n of M.available(this.econ)) if (n.kind !== 'choice' && (!best || t[n.id].cost.lt(t[best.id].cost))) best = n;
+        if (best && this.econ.coins.gte(t[best.id].cost.mul(Big.fromNumber(4)))) this.buy(best.id);
+      }
+    }
     if (this.volume.maskDirty) { this.volume.maskDirty = false; this.terrain.userData.maskTex.needsUpdate = true; }
     // vision cuts fog (Mistral) and the X-ray shows coins deeper in the ice while the lamp is focused
     const vt = st.visionTier || 0, focusing = FAMILIES[this.tools.family].id === 'vision' && this.tools.using;
     if (this.settings.fog) FOG.uFogParams.value.x = this.planet.fogDensity / (1 + 0.5 * vt + (focusing ? 1.5 : 0));
     this.coins.setLight(0.35 + 0.65 * this.atmo.depthDim, this.time, vt >= 2 && focusing ? 4 : 1.3);
+    this.updateWeather(dt, eye);
     this.frozen.findRange = vt >= 2 && focusing ? 45 : 25;
     if (this.crew.active) { this.avatars.sync(this.crew.members); this.avatars.update(dt); }
     this.updateView(dt);
@@ -1506,6 +1557,7 @@ class Game {
     if (this.ride) prompt = 'Riding the lift up';
     else if (this.atBeacon && deep) prompt = c.value > 0 ? `Banking your pack · hold ${jump} to ride the lift up` : `Hold ${jump} to ride the lift up and out of the crater`;
     else if (full) prompt = 'Pack full · walk to the glowing lift beacon ◆ to bank it';
+    else if (this.weather && FAMILIES[this.tools.family].id === 'melt') prompt = this.weather.state === 'calm' ? `Wind window · ${Math.ceil(this.weather.left)} s · melting pays double` : `Storm · melting is weak · calm in about ${Math.ceil(this.weather.left)} s`;
     else if (this.lavaHeat > 0.25) prompt = `Heat ${Math.round(this.lavaHeat * 100)}% · lava below: ease off the torch or it bursts`;
     else if (this.veinCombo > 1) prompt = `Heat vein ×${this.veinCombo.toFixed(1)}`;
     else if (this.frozen.sealedNear) {

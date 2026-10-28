@@ -1,5 +1,14 @@
 # Changelog
 
+## Batch 5: Gale
+- Gale: wind-scoured grey-blue ice, North (Howling Shelf: long storms, short calms that pay double) and South (Lee Basin: sheltered, gentler storms). Theme: Pressure Front.
+- Weather: storms of 55-85 s cut melting to 40% with blowing snow and thick fog; calm Wind Windows of 12-20 s between them make melting pay double. The HUD shows the phase and time left.
+- Climate tree: Storm Shields (5 levels) give back part of the heat a storm steals.
+- Automation completed: Auto Swing keeps your dig or melt tool working while you stand still aiming at ice; Quartermaster buys the cheapest upgrade under a quarter of your vault every few seconds (never a choose-one node). Both switch on and off in the upgrade screen.
+- Luck & Secrets tree: Lucky Seals, Aurora Charm, Needle Whisper, Treasure Nose and the Hidden Ledger capstone.
+- Notebook: a Finds page with silhouettes for the ones not found yet, and a Capsules page that remembers every capsule across planets with its planet and seal.
+- Dev menu: Next weather phase.
+
 ## Batch 4: Tidalis
 - Tidalis: green-blue ocean ice, North (Pack Ice, strong current, gems shallow) and South (Shelf Front, slow current, relics deeper), theme Undertow.
 - Current Reading: a slowly turning current carries loose coins along the ice at up to 0.9 m/s; drifting motes show where it runs, so you can catch coins downstream.

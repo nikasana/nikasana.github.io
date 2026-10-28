@@ -11,7 +11,7 @@
 - PASS X-ray (Vision tier 2) can be bought
 - PASS Completing Frostara opens the travel screen
 - PASS A postcard of Frostara is saved
-- PASS Arrived on Mistral with legacy and re-scaled costs ({"planet":"mistral","legacy":2.571637855165842,"scale":2.571637855165842,"gem":true,"theme":"mistral"})
+- PASS Arrived on Mistral with legacy and re-scaled costs ({"planet":"mistral","legacy":2.5716471144251014,"scale":2.5716471144251014,"gem":true,"theme":"mistral"})
 - PASS Mistral has gem coins and its own theme
 - PASS Postcard shows in the gallery
 - PASS Mistral save code exported for the fixtures (566 chars)
