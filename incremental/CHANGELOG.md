@@ -1,5 +1,12 @@
 # Changelog
 
+## Feedback round after Batch 8
+- Fixed: the snow and ice surface was drawn over everything standing in front of it below the horizon (the lower part of buildings, posts, the hut's interior). The depth copy before the ice pass never wrote depth, because WebGL skips depth writes when the depth test is off; it now always passes the test and writes.
+- The camp is flat: no wind ridges or rolling ground within about 55 m of the claim centre, so nothing low hides behind a ridge; buildings stand on the highest ground under their footprint.
+- The overhead gantry, its rails, trolley and cable are gone: the lift beacon flies on its own, so the station had no purpose.
+- The Outfitter's hut is a room you walk into, with a doorway facing the claim, a wooden floor and a warm light. Its upgrade terminal on the back wall shows your vault and the five cheapest upgrades (ready ones highlighted); aim at it and click to open the upgrade tree. Pressing U inside the hut still works.
+- Giant coins: about 0.8 m across (gems and relics bigger), six times fewer, each worth six times more, so the value per cubic metre is unchanged. A coin only comes free once you have dug most of the way around it (its centre and 9 of 10 points on its rim and faces in open air); a giant coin takes six pack slots, so the pack fills at the same pace.
+
 ## Batch 8: Reverse Mode "Make It Snow" and final polish
 - Reverse Mode, unlocked once Omega is melted through (start screen, or the travel screen after Omega): a separate survey that freezes the seven worlds back, from Frostara on.
 - The torch becomes the Frost Wand (Cryo Lance, Orbital Frost Beam): it grows new ice where you aim, never inside you. Every cubic metre frozen pays like one melted, there is no meltwater, and the sea level falls instead of rising. It always snows gently around you.

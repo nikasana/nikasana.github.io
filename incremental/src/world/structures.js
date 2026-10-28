@@ -1,12 +1,10 @@
-// Surface works: an overhead gantry crane spanning the crater, whose trolley lowers the lift beacon
-// to wherever the digging is, and the coin vault at the rim where banked coins pile up.
+// Surface works: the lift beacon that follows you (it flies on its own, so there is no crane), the coin
+// vault at the rim where banked coins pile up, and the Outfitter's hut with its upgrade terminal.
 import * as THREE from 'three';
 import { HALF, surfaceY, OUTFITTER } from './field.js';
 import { COINS } from '../econ/data/coins.js';
 import { rng } from '../core/rng.js';
 
-const RAIL_X = HALF + 2.6;
-const BRIDGE_Y = 10.5;
 const VAULT = { x: 0, z: -(HALF + 10.5), w: 7.5, d: 5, depth: 1.6 };
 
 function steel(atmo, color, rough, metal, key) {
@@ -21,28 +19,11 @@ function box(w, h, d, mat, x, y, z) {
   return m;
 }
 
-// A lattice girder from (x0) to (x1) along x: top and bottom chords plus diagonal web.
-function girder(len, h, mat, webMat) {
-  const g = new THREE.Group();
-  g.add(box(len, 0.22, 0.32, mat, 0, h / 2, 0));
-  g.add(box(len, 0.22, 0.32, mat, 0, -h / 2, 0));
-  const n = Math.round(len / h);
-  const step = len / n;
-  const geo = new THREE.BoxGeometry(0.09, Math.hypot(step, h), 0.09);
-  const web = new THREE.InstancedMesh(geo, webMat, n * 2);
-  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
-  const ang = Math.atan2(step, h);
-  for (let i = 0; i < n; i++) {
-    const x = -len / 2 + step * (i + 0.5);
-    q.setFromAxisAngle(new THREE.Vector3(0, 0, 1), i % 2 ? ang : -ang);
-    m4.compose(new THREE.Vector3(x, 0, 0.12), q, new THREE.Vector3(1, 1, 1));
-    web.setMatrixAt(i * 2, m4);
-    m4.compose(new THREE.Vector3(x, 0, -0.12), q, new THREE.Vector3(1, 1, 1));
-    web.setMatrixAt(i * 2 + 1, m4);
-  }
-  web.castShadow = true;
-  g.add(web);
-  return g;
+// a building's footing: the highest ground under its footprint, so no corner is buried
+function padY(x, z, w, d) {
+  let y = -Infinity;
+  for (const [a, b] of [[0, 0], [-1, -1], [1, -1], [-1, 1], [1, 1]]) y = Math.max(y, surfaceY(x + a * w / 2, z + b * d / 2));
+  return y;
 }
 
 export class Works {
@@ -55,65 +36,6 @@ export class Works {
     const dark = steel(atmo, 0x22272b, 0.42, 0.8, 'darkSteel');
     const galv = steel(atmo, 0x8a949a, 0.35, 0.9, 'galv');
     this.colliders = [];
-
-    // rails on the east and west rims
-    const railLen = HALF * 2 + 26;
-    for (const sx of [-1, 1]) {
-      const x = sx * RAIL_X;
-      const y = surfaceY(x, 0);
-      this.group.add(box(0.5, 0.35, railLen, dark, x, y + 0.1, -6));
-      const sleepers = new THREE.InstancedMesh(new THREE.BoxGeometry(1.4, 0.18, 0.32), galv, 40);
-      const m4 = new THREE.Matrix4();
-      for (let i = 0; i < 40; i++) { const z = -6 - railLen / 2 + (i + 0.5) * railLen / 40; m4.makeTranslation(x, surfaceY(x, z) - 0.02, z); sleepers.setMatrixAt(i, m4); }
-      sleepers.receiveShadow = true;
-      this.group.add(sleepers);
-    }
-
-    // the bridge: two girders, end trucks with legs
-    this.bridge = new THREE.Group();
-    const span = RAIL_X * 2 + 1.2;
-    const gA = girder(span, 1.3, paint, paint); gA.position.set(0, BRIDGE_Y, -0.9);
-    const gB = girder(span, 1.3, paint, paint); gB.position.set(0, BRIDGE_Y, 0.9);
-    this.bridge.add(gA, gB);
-    for (const sx of [-1, 1]) {
-      const x = sx * RAIL_X;
-      const legs = new THREE.Group();
-      const base = surfaceY(x, 0);
-      for (const sz of [-1, 1]) {
-        const leg = box(0.42, BRIDGE_Y - base, 0.42, paint, x, base + (BRIDGE_Y - base) / 2, sz * 1.8);
-        leg.rotation.x = -sz * 0.1;
-        legs.add(leg);
-      }
-      legs.add(box(0.9, 0.6, 5.0, dark, x, base + 0.55, 0));        // truck
-      legs.add(box(0.7, 0.7, 2.8, paint, x, BRIDGE_Y + 0.1, 0));    // saddle
-      legs.add(box(1.2, 1.0, 1.6, dark, x + sx * 0.6, BRIDGE_Y + 1.0, 0)); // motor house
-      this.bridge.add(legs);
-    }
-    // warning lamp on each saddle
-    this.lamps = [];
-    for (const sx of [-1, 1]) {
-      const l = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffa040 }));
-      l.position.set(sx * (RAIL_X + 0.6), BRIDGE_Y + 1.65, 0);
-      this.bridge.add(l);
-      this.lamps.push(l);
-    }
-    this.group.add(this.bridge);
-
-    // trolley rides the bridge
-    this.trolley = new THREE.Group();
-    this.trolley.add(box(1.7, 0.8, 2.4, dark, 0, BRIDGE_Y + 0.95, 0));
-    const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 1.3, 20), galv);
-    drum.rotation.z = Math.PI / 2;
-    drum.position.set(0, BRIDGE_Y + 0.25, 0);
-    drum.castShadow = true;
-    this.trolley.add(drum);
-    this.drum = drum;
-    this.group.add(this.trolley);
-
-    // cable: a thin cylinder stretched each frame
-    this.cable = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 1, 6), dark);
-    this.cable.castShadow = true;
-    this.group.add(this.cable);
 
     // the beacon: hexagonal cage with a glowing collection ring
     this.beacon = new THREE.Group();
@@ -161,7 +83,7 @@ export class Works {
     this.pulse = 0;
 
     // vault: a lined bin at the north rim with a railing around its apron
-    const vy = surfaceY(VAULT.x, VAULT.z);
+    const vy = padY(VAULT.x, VAULT.z, VAULT.w + 2.4, VAULT.d + 2.4);
     this.vaultY = vy + 0.15; // a walled bin standing on the snow
     const liner = steel(atmo, 0x3a4248, 0.6, 0.7, 'vaultLiner');
     this.group.add(box(VAULT.w + 0.4, 0.3, VAULT.d + 0.4, liner, VAULT.x, this.vaultY - 0.15, VAULT.z));
@@ -190,31 +112,64 @@ export class Works {
     for (const [w, d, x, z] of [[VAULT.w + 2.2, 0.05, 0, -VAULT.d / 2 - 1.1], [VAULT.w + 2.2, 0.05, 0, VAULT.d / 2 + 1.1], [0.05, VAULT.d + 2.2, -VAULT.w / 2 - 1.1, 0], [0.05, VAULT.d + 2.2, VAULT.w / 2 + 1.1, 0]]) {
       this.group.add(box(w, 0.05, d, paint, VAULT.x + x, vy + 1.05, VAULT.z + z));
     }
-    // the Outfitter's hut: where upgrades are bought, a short walk from the start
+    // the Outfitter's hut: a room you walk into, a short walk from the start. Its doorway faces the claim,
+    // and the upgrade terminal stands against the back wall: aim at it and click to buy upgrades.
     {
-      const hx = OUTFITTER.x, hz = OUTFITTER.z, hy = surfaceY(hx, hz);
+      const hx = OUTFITTER.x, hz = OUTFITTER.z, W = 4.6, D = 3.8, H = 2.8, T = 0.16, DOOR = 1.5;
+      const hy = padY(hx, hz, W, D);
       const wall = steel(atmo, 0x2f6f86, 0.65, 0.15, 'outfitter');
-      this.group.add(box(3.6, 2.5, 3.0, wall, hx, hy + 1.2, hz));
-      this.group.add(box(4.0, 0.2, 3.4, dark, hx, hy + 2.55, hz));
-      this.group.add(box(1.0, 1.9, 0.08, dark, hx + 0.6, hy + 0.95, hz + 1.52));      // door
-      this.group.add(box(4.6, 0.15, 4.0, paint, hx, hy + 0.02, hz));                 // apron
+      const trim = steel(atmo, 0xd8e2e6, 0.5, 0.2, 'outfitterTrim');
+      // matte inside: metal here would mirror the bright snow sky and read as a snow bank
+      const floorMat = steel(atmo, 0x6e4c33, 0.9, 0.0, 'outfitterFloor');     // wooden planks
+      const deskMat = steel(atmo, 0x262c31, 0.75, 0.05, 'outfitterDesk');
+      const lining = steel(atmo, 0xb9c6cc, 0.85, 0.0, 'outfitterLining');
+      const zb = hz + D / 2, zf = hz - D / 2, side = (W - DOOR) / 2;
+      const walls = [
+        [W, H, T, hx, zb - T / 2],                                  // back
+        [T, H, D, hx - W / 2 + T / 2, hz], [T, H, D, hx + W / 2 - T / 2, hz],   // sides
+        [side, H, T, hx - W / 2 + side / 2, zf + T / 2], [side, H, T, hx + W / 2 - side / 2, zf + T / 2],   // front, either side of the door
+      ];
+      for (const [w, h, d, x, z] of walls) {
+        this.group.add(box(w, h + 0.6, d, wall, x, hy + h / 2 - 0.3, z));   // 0.3 m of footing below the snow
+        this.colliders.push({ min: new THREE.Vector3(x - w / 2 - 0.05, hy - 1, z - d / 2 - 0.05), max: new THREE.Vector3(x + w / 2 + 0.05, hy + h, z + d / 2 + 0.05) });
+      }
+      this.group.add(box(DOOR, H - 2.25, T, wall, hx, hy + 2.25 + (H - 2.25) / 2, zf + T / 2));   // lintel over the door
+      this.group.add(box(W - 2 * T - 0.02, H - 0.05, 0.02, lining, hx, hy + H / 2, zb - T - 0.011));            // inner lining
+      for (const sx of [-1, 1]) this.group.add(box(0.02, H - 0.05, D - 2 * T - 0.02, lining, hx + sx * (W / 2 - T - 0.011), hy + H / 2, hz));
+      this.group.add(box(W + 0.4, 0.2, D + 0.4, dark, hx, hy + H + 0.1, hz));                       // roof
+      this.group.add(box(W - 0.1, 0.06, D - 0.1, floorMat, hx, hy + 0.02, hz));                     // floor
+      for (const sx of [-1, 1]) this.group.add(box(0.08, 2.25, 0.2, trim, hx + sx * (DOOR / 2 + 0.04), hy + 1.12, zf));   // door frame
+      this.group.add(box(W - 0.2, 0.12, 2.2, paint, hx, hy + 0.0, zf - 1.1));                      // apron in front of the door
       const sign = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.42, 0.06), this.ringMat);
-      sign.position.set(hx, hy + 2.95, hz + 1.3);
+      sign.position.set(hx, hy + H + 0.45, zf - 0.05);
       this.group.add(sign);
       this.outfitterSign = sign;
-      this.outfitterLight = new THREE.PointLight(0x9fe6ff, 4, 9, 1.8);
-      this.outfitterLight.position.set(hx, hy + 2.4, hz + 2.2);
+      // the upgrade terminal: a desk console and a big screen on the back wall
+      const desk = box(2.0, 0.9, 0.7, deskMat, hx, hy + 0.45, zb - T - 0.4);
+      this.group.add(desk);
+      this.colliders.push({ min: new THREE.Vector3(hx - 1.05, hy - 1, zb - T - 0.8), max: new THREE.Vector3(hx + 1.05, hy + 0.95, zb) });
+      this.group.add(box(1.9, 1.1, 0.08, deskMat, hx, hy + 1.75, zb - T - 0.04));   // screen bezel
+      this.termCanvas = document.createElement('canvas');
+      this.termCanvas.width = 1024; this.termCanvas.height = 576;
+      this.termTex = new THREE.CanvasTexture(this.termCanvas);
+      this.termTex.colorSpace = THREE.SRGBColorSpace;
+      this.screen = new THREE.Mesh(new THREE.PlaneGeometry(1.76, 0.99), new THREE.MeshBasicMaterial({ map: this.termTex, toneMapped: false }));
+      this.screen.position.set(hx, hy + 1.75, zb - T - 0.09);
+      this.screen.rotation.y = Math.PI;   // faces the doorway
+      this.group.add(this.screen);
+      this.drawTerminal(null);
+      this.outfitterLight = new THREE.PointLight(0xffe8c8, 2.2, 7, 1.6);   // a warm room light
+      this.outfitterLight.position.set(hx, hy + H - 0.3, hz);
       this.group.add(this.outfitterLight);
-      this.colliders.push({ min: new THREE.Vector3(hx - 1.85, hy - 1, hz - 1.6), max: new THREE.Vector3(hx + 1.85, hy + 2.6, hz + 1.6) });
-      this.outfitterPos = new THREE.Vector3(hx, hy, hz + 2.3);
+      this.hut = { x0: hx - W / 2, x1: hx + W / 2, z0: zf, z1: zb, y: hy };
+      this.outfitterPos = new THREE.Vector3(hx, hy, hz);
+      this.terminalPos = new THREE.Vector3(hx, hy + 1.2, zb - T - 0.4);
     }
     // a little survey hut by the vault, for scale
     this.group.add(box(3.2, 2.4, 2.6, steel(atmo, 0xb24d22, 0.7, 0.1, 'hut'), VAULT.x + VAULT.w / 2 + 4.6, vy + 1.15, VAULT.z + 0.4));
     this.group.add(box(3.5, 0.18, 2.9, dark, VAULT.x + VAULT.w / 2 + 4.6, vy + 2.42, VAULT.z + 0.4));
     this.colliders.push({ min: new THREE.Vector3(VAULT.x + VAULT.w / 2 + 3.0, vy - 1, VAULT.z - 0.9), max: new THREE.Vector3(VAULT.x + VAULT.w / 2 + 6.2, vy + 2.5, VAULT.z + 1.7) });
     this.colliders.push({ min: new THREE.Vector3(VAULT.x - VAULT.w / 2 - 0.25, vy - 1, VAULT.z - VAULT.d / 2 - 0.25), max: new THREE.Vector3(VAULT.x + VAULT.w / 2 + 0.25, this.vaultY + VAULT.depth + 0.6, VAULT.z + VAULT.d / 2 + 0.25) });
-    // rail beds: a low kerb on the snow (tunnels can pass under it)
-    for (const sx of [-1, 1]) this.colliders.push({ min: new THREE.Vector3(sx * RAIL_X - 0.3, surfaceY(sx * RAIL_X, 0) - 0.6, -HALF - 14), max: new THREE.Vector3(sx * RAIL_X + 0.3, surfaceY(sx * RAIL_X, 0) + 0.3, HALF + 14) });
 
     // coin pile: a settling height field of coin instances
     this.pileRes = 0.12;
@@ -306,7 +261,7 @@ export class Works {
   // Beacon follows the player down the crater at lift speed.
   update(dt, time, target, liftSpeed, volume) {
     const b = this.beacon.position;
-    // the lift goes wherever you dig; the gantry only carries it over the claim
+    // the lift flies to wherever you dig
     const tx = target.x, tz = target.z;
     // hover above the floor at the target, never inside the ice
     const floor = volume.floorBelow(tx, target.y + 2.5, tz, 60);
@@ -331,21 +286,10 @@ export class Works {
     this.beam.material.uniforms.uTime.value = time;
     this.beam.material.uniforms.uPulse.value = this.pulse;
 
-    const onRails = Math.abs(b.x) < RAIL_X - 0.5 && Math.abs(b.z) < HALF + 12;
-    this.bridge.position.z = Math.max(-HALF - 12, Math.min(HALF + 12, b.z));
-    this.trolley.position.set(Math.max(-RAIL_X + 1, Math.min(RAIL_X - 1, b.x)), 0, this.bridge.position.z);
-    this.cable.visible = this.trolley.visible = onRails;
-    this.drum.rotation.x = -b.y * 1.5;
-    const top = new THREE.Vector3(b.x, BRIDGE_Y + 0.2, b.z);
-    const bot = new THREE.Vector3(b.x, b.y + 0.7, b.z);
-    const len = top.distanceTo(bot);
-    this.cable.position.copy(top).add(bot).multiplyScalar(0.5);
-    this.cable.scale.set(1, len, 1);
 
     this.pulse = Math.max(0, this.pulse - dt * 2.5);
     this.ringMat.emissiveIntensity = 1.8 + Math.sin(time * 3) * 0.3 + this.pulse * 6;
     this.light.intensity = 6 + this.pulse * 18;
-    for (const l of this.lamps) l.material.color.setHSL(0.08, 1, 0.45 + 0.25 * (Math.sin(time * 4) > 0 ? 1 : 0));
 
     // coins dropping into the vault
     for (let i = this.falling.length - 1; i >= 0; i--) {
@@ -356,6 +300,46 @@ export class Works {
       f.m.setMatrixAt(f.idx, new THREE.Matrix4().compose(new THREE.Vector3(f.to.x, f.y, f.to.z), f.q, new THREE.Vector3(1, 1, 1)));
       f.m.instanceMatrix.needsUpdate = true;
     }
+  }
+
+  // inside the Outfitter's hut (on its floor)
+  insideHut(p) { const h = this.hut; return !!h && p.x > h.x0 && p.x < h.x1 && p.z > h.z0 && p.z < h.z1 && p.y < h.y + 3; }
+
+  // is the player aiming at the upgrade terminal (screen or desk), within reach?
+  terminalHit(eye, dir, reach = 3.2) {
+    if (!this.screen) return false;
+    (this._ray ||= new THREE.Raycaster()).set(eye, dir);
+    this._ray.far = reach;
+    return this._ray.intersectObject(this.screen, false).length > 0 || (eye.distanceTo(this.terminalPos) < 1.6 && dir.dot(this.terminalPos.clone().sub(eye).normalize()) > 0.8);
+  }
+
+  // the terminal's screen: the vault, and the cheapest upgrades you can buy next
+  drawTerminal(info) {
+    const c = this.termCanvas, x = c.getContext('2d'), W = c.width, H = c.height;
+    const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0b2230'); g.addColorStop(1, '#06121a');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    x.strokeStyle = 'rgba(143,214,236,0.35)'; x.lineWidth = 4; x.strokeRect(10, 10, W - 20, H - 20);
+    x.fillStyle = '#8fd6ec'; x.font = "700 40px 'Big Shoulders Display', sans-serif";
+    x.fillText(info?.reverse ? "OUTFITTER · FREEZE WORKS" : "OUTFITTER · UPGRADES", 40, 72);
+    if (!info) { x.fillStyle = '#9fb8c2'; x.font = "500 28px 'IBM Plex Mono', monospace"; x.fillText('Starting up…', 40, 140); this.termTex.needsUpdate = true; return; }
+    x.textAlign = 'right'; x.fillStyle = '#e2b25e'; x.font = "700 40px 'IBM Plex Mono', monospace";
+    x.fillText(`${info.coins} coins`, W - 40, 72);
+    x.textAlign = 'left';
+    x.font = "500 26px 'IBM Plex Mono', monospace";
+    info.list.slice(0, 5).forEach((n, i) => {
+      const y = 140 + i * 72;
+      x.fillStyle = n.can ? 'rgba(143,214,236,0.16)' : 'rgba(255,255,255,0.04)';
+      x.fillRect(32, y - 44, W - 64, 62);
+      x.fillStyle = n.can ? '#e6f1f4' : '#7f98a3';
+      x.font = "600 30px 'IBM Plex Mono', monospace";
+      x.fillText(`${n.icon}  ${n.name}`, 48, y);
+      x.textAlign = 'right'; x.fillStyle = n.can ? '#e2b25e' : '#7f98a3';
+      x.fillText(n.can ? `${n.cost} · ready` : n.cost, W - 48, y);
+      x.textAlign = 'left';
+    });
+    x.fillStyle = info.ready ? '#e6f1f4' : '#9fb8c2'; x.font = "600 28px 'IBM Plex Mono', monospace";
+    x.fillText(info.aimed ? '▶ Click to open the upgrade tree' : 'Aim at this screen and click to open the upgrade tree', 40, H - 36);
+    this.termTex.needsUpdate = true;
   }
 
   beaconPos() { return this.beacon.position; }

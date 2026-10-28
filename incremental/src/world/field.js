@@ -22,8 +22,11 @@ export function fieldNoise() { return noise; }
 // rising toward distant ridges.
 export function surfaceY(x, z) {
   const r = Math.hypot(x, z);
-  const sas = noise.fbm2(x * 0.11 + 3.1, z * 0.035 - 1.7, 3) * 0.22;   // elongated wind ridges
-  const roll = noise.fbm2(x * 0.008, z * 0.008, 4) * 3.5 * clamp((r - 24) / 90, 0, 1);
+  // the camp (claim, vault, Outfitter's hut) stands on a flat, wind-packed field so nothing low is hidden
+  // behind a ridge; the wind ridges and rolling ground start beyond it
+  const camp = clamp((r - 55) / 25, 0, 1);
+  const sas = noise.fbm2(x * 0.11 + 3.1, z * 0.035 - 1.7, 3) * 0.22 * (0.25 + 0.75 * camp);   // elongated wind ridges
+  const roll = noise.fbm2(x * 0.008, z * 0.008, 4) * 3.5 * clamp((r - 55) / 90, 0, 1);
   // a far range of broad, ridged massifs
   const t = clamp((r - 700) / 1100, 0, 1);
   let mount = 0;
