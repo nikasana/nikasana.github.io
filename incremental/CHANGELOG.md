@@ -7,6 +7,7 @@
 - The HUD shows "Ice rebuilt" against the goal; the saves list marks Reverse surveys and shows each save's planet.
 - Accessibility (Settings > Accessibility): colour-safe markers (Okabe-Ito palette), captions for musical cues, and reduced flashing. Every map and compass marker now has its own shape (the Outfitter a triangle, finds a star), so colour is never the only cue.
 - Key rebinding review: the HUD key hints and tool-bar keys now follow a rebind straight away (they kept the old keys before); the controls page explains swaps, lists the fixed Esc pause key, names "Notebook" as everywhere else, and says "Freeze tools" in Reverse Mode.
+- In Reverse Mode the glow where the wand works is ice-blue instead of heat-orange.
 - Sim: a Reverse Mode section checks that it is easier for every bot and that strategy still matters.
 - Dev menu: Make It Snow (Reverse Mode).
 

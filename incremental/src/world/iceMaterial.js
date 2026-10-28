@@ -23,6 +23,7 @@ export function createIceMaterial() {
     uTime: { value: 0 },
     uHeat: { value: Array.from({ length: MAX_HEAT }, () => new THREE.Vector4(0, -1e5, 0, 0)) },
     uHeatI: { value: new Float32Array(MAX_HEAT) },
+    uHeatCol: { value: new THREE.Color(1.0, 0.42, 0.12) },   // ice-blue frost in Reverse Mode
     uCrack: { value: Array.from({ length: MAX_CRACK }, () => new THREE.Vector4(0, -1e5, 0, 0)) },
     uMut: { value: Array.from({ length: MAX_MUT }, () => new THREE.Vector4(0, -1e5, 0, 0)) },
     uMutCol: { value: Array.from({ length: MAX_MUT }, () => new THREE.Vector4(0, 0, 0, 0)) },
@@ -82,6 +83,7 @@ uniform vec3 uAbsorb;
 uniform float uTime;
 uniform vec4 uHeat[ ${MAX_HEAT} ];
 uniform float uHeatI[ ${MAX_HEAT} ];
+uniform vec3 uHeatCol;
 uniform vec4 uCrack[ ${MAX_CRACK} ];
 uniform vec4 uMut[ ${MAX_MUT} ];       // pocket centre and radius
 uniform vec4 uMutCol[ ${MAX_MUT} ];    // pocket colour and glow
@@ -315,7 +317,7 @@ const ICE_COMPOSE = /* glsl */`
   col *= 1.0 - ice.cav * 0.35 * ( 1.0 - ice.snow );
 
   // the glowing, softening edge of a melt
-  col += vec3( 1.0, 0.42, 0.12 ) * ice.heat * 2.4;
+  col += uHeatCol * ice.heat * 2.4;
 
   // pit walls cannot see the open sky: occlude reflections with depth and cavity
   float specOcc = mix( 1.0, 0.15, smoothstep( 0.3, 4.0, ice.depth ) ) * ( 1.0 - smoothstep( 0.35, 0.8, ice.cav ) * 0.8 );

@@ -54,6 +54,7 @@ await shot('01-start-make-it-snow');
 await ev(() => [...document.querySelectorAll('button')].find((b) => b.textContent.includes('Make It Snow')).click());
 await page.waitForFunction(() => window.__game.started && window.__game.econ.reverse, null, { timeout: 90000 });
 await ev(() => { const g = window.__game; g.input.locked = true; g.clickPlay.hidden = true; });
+await until(() => [...document.querySelectorAll('.hud-tool .slot .nm')].map((x) => x.textContent)[1] === 'Freeze', 30000);   // the HUD redraws every tenth of a second of game time
 const rev = await ev(() => {
   const g = window.__game, e = g.econ;
   return { planet: e.planet, reverse: e.reverse, scale: e.scale, slot: g.slot, goal: window.__game.planet.goalDepth, frost: g.particles.frost,
@@ -64,8 +65,8 @@ check('Make It Snow starts a Reverse Mode survey on Frostara (cheaper upgrades, 
 // the Freeze tree is the Melt tree under other names
 await ev(() => { const g = window.__game; g.devLevel('melt_torch', 1); g.econ.coins = g.econ.coins.constructor.fromNumber(1e6); g.menus.show('upgrades'); });
 await wait(8000);
-const tree = await ev(() => ({ labels: [...document.querySelectorAll('.tree-label')].map((x) => x.textContent), names: [...document.querySelectorAll('.node .nm')].map((x) => x.textContent) }));
-check('The Melt tree reads as the Freeze tree', tree.labels.includes('Freeze') && !tree.labels.includes('Melt') && tree.names.includes('Frost Wand') && tree.names.includes('Colder Breath') && !tree.names.includes('Torch'), `${tree.labels.join(',')}`);
+const tree = await ev(() => ({ labels: [...document.querySelectorAll('.tree-label')].map((x) => x.textContent), names: [...document.querySelectorAll('.tnode .nm')].map((x) => x.textContent) }));
+check('The Melt tree reads as the Freeze tree', tree.labels.includes('Freeze') && !tree.labels.includes('Melt') && tree.names.includes('Frost Wand') && tree.names.includes('Colder Breath') && !tree.names.includes('Torch'), `${tree.labels.join(',')} · ${tree.names.filter((t) => /Torch|Frost|Breath|Flame/.test(t)).join(',')}`);
 await ev(() => { const t = window.__game.menus.tree; t.scale = 0.7; t.ox = 300; t.oy = 520; t.apply(); });
 await wait(1000);
 await shot('02-freeze-tree');
@@ -129,8 +130,10 @@ check('Reduce flashing removes the Golden Needle flash', flash.flash === 0 && !(
 const keys = await ev(async () => {
   const g = window.__game, cap = (code) => { const f = g.input.capture; f(code); };
   g.input.rebind('upgrades', (b) => { g.settings.bindings = { ...b }; g.saveSettings(); g.hud.invalidateKeys(); }); cap('KeyC');
-  await new Promise((r) => setTimeout(r, 1500));
-  const hint = [...document.querySelectorAll('.hud-keys span')].map((s) => s.textContent);
+  const t0 = performance.now();
+  const read = () => [...document.querySelectorAll('.hud-keys span')].map((s) => s.textContent);
+  while (!read().some((t) => t.startsWith('C') && t.includes('Upgrades')) && performance.now() - t0 < 20000) await new Promise((r) => setTimeout(r, 300));
+  const hint = read();
   return { upgrades: g.input.bindings.upgrades, coop: g.input.bindings.coop, hint };
 });
 check('Rebinding to a used key swaps the two, and the key hints update', keys.upgrades === 'KeyC' && keys.coop === 'KeyU' && keys.hint.some((t) => t.startsWith('C') && t.includes('Upgrades')), JSON.stringify(keys));

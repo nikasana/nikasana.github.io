@@ -521,6 +521,7 @@ class Game {
     // Gale: the weather cycle starts in a storm
     this.weather = p.weather ? { state: 'storm', left: p.weather.storm[0] } : null;
     this.tools.setReverse(!!this.econ?.reverse);
+    this.iceMat.userData.uniforms.uHeatCol.value.setRGB(...(this.econ?.reverse ? [0.45, 0.8, 1.0] : [1.0, 0.42, 0.12]));
     // Auralis: a faint standing aurora and lone sky coins between auroras
     this.aurora.ambient = p.aurora ? 0.22 : 0;
     this.chain = { n: 0, t: 0 };
