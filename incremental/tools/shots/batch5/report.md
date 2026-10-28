@@ -6,7 +6,7 @@
 - PASS In a storm melting is weakened ({"melt":0.4,"bonus":1})
 - PASS A Wind Window opens: full melting that pays double ({"state":"calm","melt":1,"bonus":2})
 - PASS Storm Shields soften the storm (melt x0.85)
-- PASS Auto Swing keeps the tool working while you stand still ({"autoUse":false,"dug":1.5662500000000001})
+- PASS Auto Swing keeps the tool working while you stand still ({"autoUse":true,"dug":1.2037499999999994})
 - PASS Quartermaster buys upgrades on its own (1 bought)
 - PASS Upgrade screen offers the Quartermaster and Auto Swing toggles
 - PASS Lucky Seals raise capsule rewards (x2.50)
