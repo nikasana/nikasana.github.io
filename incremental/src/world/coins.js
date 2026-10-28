@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { CHUNK_M, ISO, richness, surfaceY, sampleHeightmap } from './field.js';
 import { keyOf } from './volume.js';
 import { rng, hash32 } from '../core/rng.js';
-import { COINS, tierWeights } from '../econ/data/coins.js';
+import { COINS, tierWeights, CHEST, chestChance, sizeOf, sizeValue } from '../econ/data/coins.js';
 import { LAYERS } from '../render/graphics.js';
 
 // Frozen coins are drawn after the ice, tested against its depth: a coin up to SEE_DEPTH behind
@@ -54,11 +54,13 @@ const NEAR_R2 = 4 * 4;         // loose coins this close get the detailed, shado
 // each worth six times more, and one only comes free once you have dug most of the way around it.
 export const GIANT = 2.6;
 const COUNT_PER_M3 = 0.32;
-const _sG = new THREE.Vector3(GIANT, GIANT, GIANT);
-const MAX_R = Math.max(...COINS.map((c) => c.radius)) * GIANT;
+const _sv = new THREE.Vector3();
+const MAX_R = Math.max(...COINS.map((c) => c.radius)) * GIANT * 1.5;   // the biggest coin of the biggest kind
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(1, 1, 1), _p = new THREE.Vector3(), _n = new THREE.Vector3();
 
 // ---------- coin art ----------
+// Every type has a shape (disc, square, hex, ring, star, gem, emerald, vase, orb, pebble, bar, shard, chest)
+// and a material kind (engraved metal, gem, stone, glowing, chest). Geometry faces along z, like a coin.
 
 // Gems are cut crystals, not discs.
 function gemGeometry(r, detail = 0) {
@@ -73,17 +75,67 @@ function relicGeometry(r, segs = 18) {
   return new THREE.LatheGeometry(pts, segs);
 }
 
-function coinGeometry(tier, segs) {
-  const c = COINS[tier];
-  if (c.id === 'gem') { const g = gemGeometry(c.radius * 0.9, 0); g.computeVertexNormals(); return g; }
-  if (c.id === 'relic') return relicGeometry(c.radius * 0.7);
+function planarUv(g, r) {
+  const p = g.attributes.position, uv = new Float32Array(p.count * 2);
+  for (let i = 0; i < p.count; i++) { uv[i * 2] = p.getX(i) / (r * 2) + 0.5; uv[i * 2 + 1] = p.getY(i) / (r * 2) + 0.5; }
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  return g;
+}
+
+// a flat 2D outline pushed out to the coin's thickness, with a small bevel
+function extruded(shape, t, r) {
+  const g = new THREE.ExtrudeGeometry(shape, { depth: t * 0.6, bevelEnabled: true, bevelThickness: t * 0.2, bevelSize: Math.min(t * 0.3, r * 0.06), bevelSegments: 1, curveSegments: 8 });
+  g.translate(0, 0, -t * 0.3);
+  g.computeVertexNormals();
+  return planarUv(g, r);
+}
+function polygon(n, r, rot = 0) {
+  const sh = new THREE.Shape();
+  for (let i = 0; i <= n; i++) { const a = rot + (i / n) * Math.PI * 2; sh[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r, Math.sin(a) * r); }
+  return sh;
+}
+function starShape(r) {
+  const sh = new THREE.Shape();
+  for (let i = 0; i <= 10; i++) { const a = Math.PI / 2 + (i / 10) * Math.PI * 2, rr = i % 2 ? r * 0.45 : r; sh[i ? 'lineTo' : 'moveTo'](Math.cos(a) * rr, Math.sin(a) * rr); }
+  return sh;
+}
+function withHole(sh, hr, n = 16) { const hole = new THREE.Path(); for (let i = 0; i <= n; i++) { const a = (i / n) * Math.PI * 2; hole[i ? 'lineTo' : 'moveTo'](Math.cos(a) * hr, Math.sin(a) * hr); } sh.holes.push(hole); return sh; }
+
+// several simple meshes as one (non-indexed) geometry
+function merge(parts) {
+  const list = parts.map((g) => (g.index ? g.toNonIndexed() : g));
+  const n = list.reduce((a, g) => a + g.attributes.position.count, 0);
+  const pos = new Float32Array(n * 3), nrm = new Float32Array(n * 3), uv = new Float32Array(n * 2);
+  let o = 0;
+  for (const g of list) {
+    pos.set(g.attributes.position.array, o * 3); nrm.set(g.attributes.normal.array, o * 3);
+    if (g.attributes.uv) uv.set(g.attributes.uv.array, o * 2);
+    o += g.attributes.position.count;
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  out.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
+  out.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  return out;
+}
+
+// a small treasure chest: a box, a rounded lid and two metal bands
+function chestGeometry(r) {
+  const w = r * 2, d = r * 1.3, hh = r * 1.0;
+  const body = new THREE.BoxGeometry(w, hh, d).translate(0, -hh * 0.2, 0);
+  const lid = new THREE.CylinderGeometry(d / 2, d / 2, w, 10, 1, false, 0, Math.PI).rotateZ(Math.PI / 2).rotateX(-Math.PI / 2).translate(0, hh * 0.3, 0);
+  const bands = [-0.55, 0.55].map((f) => new THREE.BoxGeometry(r * 0.16, hh * 1.15, d * 1.04).translate(f * r, -hh * 0.12, 0));
+  const lock = new THREE.BoxGeometry(r * 0.3, r * 0.34, r * 0.12).translate(0, 0, d / 2 + r * 0.04);
+  return merge([body, lid, ...bands, lock]);
+}
+
+function discGeometry(c, segs) {
   const r = c.radius, t = c.thick;
   // lathe profile: raised rim, recessed field, raised centre boss
   const pts = [];
-  const hole = tier === 0 ? r * 0.22 : 0;
+  const hole = c.shape === 'ring' ? r * 0.45 : c.hole ? r * 0.22 : 0;
   pts.push(new THREE.Vector2(hole, t * 0.35));
-  pts.push(new THREE.Vector2(r * 0.42, t * 0.38));
-  pts.push(new THREE.Vector2(r * 0.48, t * 0.3));
+  if (c.shape !== 'ring') { pts.push(new THREE.Vector2(r * 0.42, t * 0.38)); pts.push(new THREE.Vector2(r * 0.48, t * 0.3)); }
   pts.push(new THREE.Vector2(r * 0.8, t * 0.28));
   pts.push(new THREE.Vector2(r * 0.86, t * 0.5));
   pts.push(new THREE.Vector2(r * 0.97, t * 0.5));
@@ -92,51 +144,57 @@ function coinGeometry(tier, segs) {
   pts.push(new THREE.Vector2(r * 0.97, -t * 0.5));
   pts.push(new THREE.Vector2(r * 0.86, -t * 0.5));
   pts.push(new THREE.Vector2(r * 0.8, -t * 0.28));
-  pts.push(new THREE.Vector2(r * 0.48, -t * 0.3));
-  pts.push(new THREE.Vector2(r * 0.42, -t * 0.38));
+  if (c.shape !== 'ring') { pts.push(new THREE.Vector2(r * 0.48, -t * 0.3)); pts.push(new THREE.Vector2(r * 0.42, -t * 0.38)); }
   pts.push(new THREE.Vector2(hole, -t * 0.35));
   if (hole) pts.push(new THREE.Vector2(hole, t * 0.35));
-  const g = new THREE.LatheGeometry(pts.map((p) => new THREE.Vector2(p.x, p.y)), segs ?? (tier === 1 ? 32 : 22));
+  const g = new THREE.LatheGeometry(pts, segs ?? (c.edge === 'milled' ? 32 : 22));
   g.rotateX(Math.PI / 2); // face along z
-  if (tier === 1) {
-    // milled edge on silver
-    const pos = g.attributes.position;
+  const pos = g.attributes.position;
+  if (c.edge === 'milled') {
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), y = pos.getY(i);
-      const rr = Math.hypot(x, y);
-      if (rr > r * 0.985) {
-        const a = Math.atan2(y, x);
-        const k = 1 + 0.035 * Math.sign(Math.sin(a * 40));
-        pos.setXY(i, x * k, y * k);
-      }
+      if (Math.hypot(x, y) > r * 0.985) { const k = 1 + 0.035 * Math.sign(Math.sin(Math.atan2(y, x) * 40)); pos.setXY(i, x * k, y * k); }
     }
   }
-  if (tier === 2) {
-    // gold: seven-pointed edge, thick and heavy
-    const pos = g.attributes.position;
+  if (c.edge === 'points') {
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), y = pos.getY(i);
-      const rr = Math.hypot(x, y);
-      if (rr > r * 0.84) {
-        const a = Math.atan2(y, x);
-        const k = 1 + 0.06 * Math.cos(a * 7);
-        pos.setXY(i, x * k, y * k);
-      }
+      if (Math.hypot(x, y) > r * 0.84) { const k = 1 + 0.06 * Math.cos(Math.atan2(y, x) * 7); pos.setXY(i, x * k, y * k); }
     }
   }
   g.computeVertexNormals();
-  // planar uv for the engraving map
-  const uv = new Float32Array(g.attributes.position.count * 2);
-  for (let i = 0; i < g.attributes.position.count; i++) {
-    uv[i * 2] = g.attributes.position.getX(i) / (r * 2) + 0.5;
-    uv[i * 2 + 1] = g.attributes.position.getY(i) / (r * 2) + 0.5;
+  return planarUv(g, r);
+}
+
+function coinGeometry(tier, segs, low = false) {
+  const c = COINS[tier], r = c.radius, t = c.thick;
+  switch (c.shape) {
+    case 'gem': { const g = gemGeometry(r * 0.9, 0); g.computeVertexNormals(); return g; }
+    case 'emerald': { const g = new THREE.CylinderGeometry(r * 0.75, r, r * 1.3, 8).rotateX(Math.PI / 2).toNonIndexed(); g.computeVertexNormals(); return g; }
+    case 'vase': return relicGeometry(r * 0.7, low ? 8 : 18);
+    case 'orb': return new THREE.SphereGeometry(r, low ? 8 : 18, low ? 6 : 12);
+    case 'pebble': return new THREE.SphereGeometry(r, low ? 8 : 16, low ? 6 : 10).scale(1, 0.8, 0.45);
+    case 'shard': { const g = new THREE.OctahedronGeometry(r, 0).scale(0.55, 1.7, 0.55).toNonIndexed(); g.computeVertexNormals(); return g; }
+    case 'chest': return chestGeometry(r);
+    case 'square': return extruded(withHole(polygon(4, r * 1.2, Math.PI / 4), r * 0.22), t, r);
+    case 'hex': return extruded(polygon(6, r, Math.PI / 6), t, r);
+    case 'star': return extruded(starShape(r), t, r);
+    case 'bar': { const sh = new THREE.Shape(); sh.moveTo(-r, -r * 0.4); sh.lineTo(r, -r * 0.4); sh.lineTo(r * 0.8, r * 0.4); sh.lineTo(-r * 0.8, r * 0.4); sh.lineTo(-r, -r * 0.4); return extruded(sh, t * 1.6, r); }
+    default: {
+      if (low) {
+        const g = new THREE.CylinderGeometry(r, r, t, 10, 1).rotateX(Math.PI / 2);
+        return planarUv(g, r);
+      }
+      return discGeometry(c, segs);
+    }
   }
-  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-  return g;
 }
 
 // Engraving: a height field drawn on canvas, converted to a normal map, plus a wear roughness map.
+const ENGRAVINGS = {};
 function engravingMaps(tier) {
+  const kind = COINS[tier].engrave || 'sun';
+  if (ENGRAVINGS[kind]) return ENGRAVINGS[kind];
   const S = 256;
   const cv = document.createElement('canvas');
   cv.width = cv.height = S;
@@ -147,7 +205,7 @@ function engravingMaps(tier) {
   x.strokeStyle = '#fff';
   x.fillStyle = '#fff';
   x.lineCap = 'round';
-  if (tier === 0) {
+  if (kind === 'frost') {
     // copper: a six-armed frost crystal around the hole
     x.lineWidth = 7;
     for (let i = 0; i < 6; i++) {
@@ -156,13 +214,24 @@ function engravingMaps(tier) {
       x.beginPath(); x.moveTo(0, 62); x.lineTo(16, 78); x.moveTo(0, 62); x.lineTo(-16, 78); x.stroke();
       x.restore();
     }
-  } else if (tier === 1) {
+  } else if (kind === 'rings') {
     // silver: concentric survey rings and a meridian cross
     x.lineWidth = 5;
     for (const rr of [36, 58, 80]) { x.beginPath(); x.arc(0, 0, rr, 0, Math.PI * 2); x.stroke(); }
     x.lineWidth = 6;
     x.beginPath(); x.moveTo(-86, 0); x.lineTo(86, 0); x.moveTo(0, -86); x.lineTo(0, 86); x.stroke();
     x.beginPath(); x.arc(0, 0, 14, 0, Math.PI * 2); x.fill();
+  } else if (kind === 'wave') {
+    // bronze: three rolling waves under a crescent
+    x.lineWidth = 7;
+    for (const yy of [10, 34, 58]) { x.beginPath(); for (let i = -90; i <= 90; i += 6) x[i === -90 ? 'moveTo' : 'lineTo'](i, yy + Math.sin(i / 14) * 8); x.stroke(); }
+    x.beginPath(); x.arc(0, -40, 30, Math.PI * 0.15, Math.PI * 0.85, true); x.stroke();
+  } else if (kind === 'spiral') {
+    // electrum and storm tokens: a spiral, like wind
+    x.lineWidth = 7;
+    x.beginPath();
+    for (let a = 0; a < Math.PI * 6; a += 0.1) { const rr = 8 + a * 4.2; x[a === 0 ? 'moveTo' : 'lineTo'](Math.cos(a) * rr, Math.sin(a) * rr); }
+    x.stroke();
   } else {
     // gold: a radiant sun over a polar horizon line
     x.lineWidth = 6;
@@ -190,7 +259,7 @@ function engravingMaps(tier) {
     }
     hb[j * S + i] = s / n;
   }
-  const r = rng(77 + tier);
+  const r = rng(77 + kind.length * 7 + kind.charCodeAt(0));
   const nrm = new Uint8Array(S * S * 4);
   const rough = new Uint8Array(S * S * 4);
   for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
@@ -218,27 +287,26 @@ function engravingMaps(tier) {
   rt.needsUpdate = true;
   rt.generateMipmaps = true;
   rt.minFilter = THREE.LinearMipmapLinearFilter;
-  return { normal: nt, rough: rt };
+  return (ENGRAVINGS[kind] = { normal: nt, rough: rt });
 }
 
 export function coinMaterial(atmo, tier) {
   const c = COINS[tier];
-  if (c.id === 'relic') {
-    const relic = new THREE.MeshStandardMaterial({ color: new THREE.Color(...c.color), metalness: 0.35, roughness: 0.45, emissive: new THREE.Color(0.12, 0.05, 0.0) });
-    atmo.register(relic, 'coinRelic');
-    return relic;
+  const col = new THREE.Color(...c.color);
+  const glow = c.glow || 0;
+  let mat;
+  if (c.kind === 'gem') mat = new THREE.MeshStandardMaterial({ color: col, metalness: 0.1, roughness: 0.04, envMapIntensity: 2.2, emissive: col.clone().multiplyScalar(0.22), flatShading: true });
+  else if (c.kind === 'stone') mat = new THREE.MeshStandardMaterial({ color: col, metalness: 0.15, roughness: c.rough + 0.1, emissive: col.clone().multiplyScalar(0.08 + glow * 0.5) });
+  else if (c.kind === 'glow') mat = new THREE.MeshStandardMaterial({ color: col, metalness: 0.2, roughness: c.rough, emissive: col.clone().multiplyScalar(0.4 + glow), flatShading: c.shape === 'shard' });
+  else if (c.kind === 'chest') mat = new THREE.MeshStandardMaterial({ color: col, metalness: 0.35, roughness: 0.55, emissive: new THREE.Color(0.12, 0.08, 0.02) });
+  else {
+    const maps = engravingMaps(tier);
+    mat = new THREE.MeshStandardMaterial({
+      color: col, metalness: 1, roughness: c.rough * 2.2, emissive: col.clone().multiplyScalar(glow * 0.5),
+      normalMap: maps.normal, normalScale: new THREE.Vector2(0.9, 0.9), roughnessMap: maps.rough, envMapIntensity: 1.25,
+    });
   }
-  if (c.id === 'gem') {
-    const gem = new THREE.MeshStandardMaterial({ color: new THREE.Color(...c.color), metalness: 0.1, roughness: 0.04, envMapIntensity: 2.2, emissive: new THREE.Color(0.08, 0.22, 0.3), flatShading: true });
-    atmo.register(gem, 'coinGem');
-    return gem;
-  }
-  const maps = engravingMaps(tier);
-  const mat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(...c.color), metalness: 1, roughness: c.rough * 2.2,
-    normalMap: maps.normal, normalScale: new THREE.Vector2(0.9, 0.9), roughnessMap: maps.rough, envMapIntensity: 1.25,
-  });
-  atmo.register(mat, `coin${tier}`);
+  atmo.register(mat, `coin_${c.id}`);
   return mat;
 }
 
@@ -251,17 +319,10 @@ export class CoinSystem {
     this.scene = scene;
     this.volume = volume;
     this.tiers = tiersUnlocked;
-    this.geos = COINS.slice(0, 5).map((_, i) => coinGeometry(i));
-    // seen blurred through the ice: a plain low-poly disc is enough
-    this.lowGeos = COINS.slice(0, 5).map((c) => {
-      if (c.id === 'gem') return gemGeometry(c.radius * 0.9, 0);
-      if (c.id === 'relic') return relicGeometry(c.radius * 0.7, 8);
-      const g = new THREE.CylinderGeometry(c.radius, c.radius, c.thick, 10, 1).rotateX(Math.PI / 2);
-      const uv = g.attributes.uv;
-      for (let i = 0; i < uv.count; i++) { const x = g.attributes.position.getX(i), y = g.attributes.position.getY(i); uv.setXY(i, x / (c.radius * 2) + 0.5, y / (c.radius * 2) + 0.5); }
-      return g;
-    });
-    this.mats = COINS.slice(0, 5).map((_, i) => coinMaterial(atmo, i));
+    this.geos = COINS.map((_, i) => coinGeometry(i));
+    // seen blurred through the ice (or far away): simpler versions
+    this.lowGeos = COINS.map((_, i) => coinGeometry(i, 10, true));
+    this.mats = COINS.map((_, i) => coinMaterial(atmo, i));
     this.embedded = new Map();       // chunk key -> [{tier, x, y, z, q, id}]
     this.loose = [];                 // {tier, p, v, q, w, sleep, value, id, t}
     // frozen coins glow faintly in their own colour so they read through the ice
@@ -321,7 +382,7 @@ export class CoinSystem {
     const list = [];
     for (let i = 0; i < tries; i++) {
       const x = ox + r() * CHUNK_M, y = oy + r() * CHUNK_M, z = oz + r() * CHUNK_M;
-      const a = r(), b = r(), cc = r(), tierRoll = r();
+      const a = r(), b = r(), cc = r(), tierRoll = r(), sizeRoll = r(), chestRoll = r();
       const top = surfaceY(x, z);
       if (y > top - 0.42 - 0.5) continue; // fully under the snow (the smoothed mesh sits a little below the analytic surface)
       const rich = richness(x, y, z);
@@ -333,9 +394,9 @@ export class CoinSystem {
       const w = tierWeights(depth, this.tiers);
       let tier = 0, acc = 0;
       for (let t = 0; t < w.length; t++) { acc += w[t]; if (tierRoll <= acc) { tier = t; break; } }
-      tier = Math.min(tier, 4);
+      if (chestRoll < chestChance(depth)) tier = CHEST;   // now and then a treasure chest instead
       _q.setFromEuler(new THREE.Euler(b * 6.28, cc * 6.28, a * 6.28));
-      list.push({ tier, x, y, z, q: _q.clone(), id, depth });
+      list.push({ tier, x, y, z, q: _q.clone(), id, depth, s: tier === CHEST ? 1 : sizeOf(sizeRoll) });
     }
     // the first metre under the starting spot holds a small frozen hoard, so the first swing pays
     if (c.cy === -1 && c.cx === 0 && c.cz === 0) {
@@ -344,7 +405,7 @@ export class CoinSystem {
         const id = hash32(ctx.seed, 7, i);
         if (this.collectedIds.has(id) || this.volume.sample(x, y, z) < ISO + 20) continue;
         _q.setFromEuler(new THREE.Euler(r() * 6.28, r() * 6.28, r() * 6.28));
-        list.push({ tier: 0, x, y, z, q: _q.clone(), id, depth: 0.5, hoard: true });
+        list.push({ tier: 0, x, y, z, q: _q.clone(), id, depth: 0.5, hoard: true, s: 1.2 });
       }
     }
     list.cx = ox + CHUNK_M / 2; list.cy = oy + CHUNK_M / 2; list.cz = oz + CHUNK_M / 2;
@@ -411,7 +472,7 @@ export class CoinSystem {
   exposed(k) {
     const v = this.volume;
     if (v.sample(k.x, k.y, k.z) >= ISO - 6) return false;
-    const c = COINS[k.tier], r = c.radius * GIANT * 0.9, t = Math.max(0.04, c.thick * GIANT * 0.6);
+    const c = COINS[k.tier], sc = k.s || 1, r = c.radius * GIANT * sc * 0.9, t = Math.max(0.04, c.thick * GIANT * sc * 0.6);
     let air = 0;
     for (let i = 0; i < 8; i++) {
       const a = (i / 8) * Math.PI * 2;
@@ -432,7 +493,7 @@ export class CoinSystem {
     this.loose.push({
       tier: k.tier, id: k.id, p: new THREE.Vector3(k.x, k.y, k.z), v: dir.multiplyScalar(pop * (0.5 + Math.random())),
       q: k.q.clone(), w: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(18),
-      sleep: 0, t: 0, value: ctx ? ctx.coinValue(k.tier, k.depth) : COINS[k.tier].value, depth: k.depth, magnet: false,
+      sleep: 0, t: 0, value: (ctx ? ctx.coinValue(k.tier, k.depth) : COINS[k.tier].value) * (k.tier === CHEST ? 1 : sizeValue(k.s || 1)), depth: k.depth, magnet: false, s: k.s || 1,
     });
     this.collectedIds.add(k.id);
     if (this.loose.length > 2400) this.loose.shift();
@@ -495,7 +556,7 @@ export class CoinSystem {
       if (c.sleep > 1) continue;
       c.v.y -= 16 * dt;
       c.p.addScaledVector(c.v, dt);
-      const rad = Math.max(0.07, COINS[c.tier].thick * GIANT * 0.5);   // a giant coin rests on its face; gems and relics are thicker
+      const rad = Math.max(0.07, COINS[c.tier].thick * GIANT * (c.s || 1) * 0.5);   // a giant coin rests on its face; gems and relics are thicker
       const s = vol.sdf(c.p.x, c.p.y, c.p.z);
       if (s > -rad) {
         vol.normalAt(c.p.x, c.p.y, c.p.z, _n);
@@ -528,11 +589,11 @@ export class CoinSystem {
       const m = near ? this.looseMesh[c.tier] : this.looseFar[c.tier];
       const cnt = near ? n : f;
       if (cnt[c.tier] >= m.instanceMatrix.count) continue;
-      _m.compose(c.p, c.q, _sG);
+      _m.compose(c.p, c.q, _sv.setScalar(GIANT * (c.s || 1)));
       m.setMatrixAt(cnt[c.tier]++, _m);
     }
-    this.looseMesh.forEach((m, i) => { m.count = n[i]; m.instanceMatrix.needsUpdate = true; });
-    this.looseFar.forEach((m, i) => { m.count = f[i]; m.instanceMatrix.needsUpdate = true; });
+    this.looseMesh.forEach((m, i) => { m.count = n[i]; m.visible = n[i] > 0; if (n[i]) m.instanceMatrix.needsUpdate = true; });
+    this.looseFar.forEach((m, i) => { m.count = f[i]; m.visible = f[i] > 0; if (f[i]) m.instanceMatrix.needsUpdate = true; });
   }
 
   drawEmbedded(camPos) {
@@ -551,11 +612,11 @@ export class CoinSystem {
         const m = this.embMesh[k.tier];
         if (n[k.tier] >= 7000) continue;
         _p.set(k.x, k.y, k.z);
-        _m.compose(_p, k.q, _sG);
+        _m.compose(_p, k.q, _sv.setScalar(GIANT * (k.s || 1)));
         m.setMatrixAt(n[k.tier]++, _m);
       }
     }
-    this.embMesh.forEach((m, i) => { m.count = n[i]; m.instanceMatrix.needsUpdate = true; });
+    this.embMesh.forEach((m, i) => { m.count = n[i]; m.visible = n[i] > 0; if (n[i]) m.instanceMatrix.needsUpdate = true; });   // unused kinds cost no draw call
   }
 
   // nearest embedded coin to a point (for hints/needle sense)

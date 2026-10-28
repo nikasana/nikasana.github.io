@@ -1,4 +1,5 @@
-// Mouse and keyboard input with rebindable actions and pointer lock.
+// Mouse and keyboard input with rebindable actions and pointer lock. On touch screens there is no
+// pointer lock: 'locked' just means "playing", and the touch controls press the same bound codes.
 
 export const DEFAULT_BINDINGS = {
   forward: 'KeyW', back: 'KeyS', left: 'KeyA', right: 'KeyD',
@@ -64,12 +65,23 @@ export class Input {
 
   lock() {
     if (this.locked) return;
+    if (this.touch) { this.locked = true; this.emit('lock', true); return; }
     try {
       const p = this.canvas.requestPointerLock({ unadjustedMovement: true });
       if (p && p.catch) p.catch(() => { try { this.canvas.requestPointerLock(); } catch { /* not available */ } });
     } catch { /* not available */ }
   }
-  unlock() { if (document.pointerLockElement) document.exitPointerLock(); }
+  unlock() {
+    if (this.touch) { if (this.locked) { this.locked = false; this.down.clear(); this.emit('lock', false); } return; }
+    if (document.pointerLockElement) document.exitPointerLock();
+  }
+
+  // touch controls: hold an action, or tap a key as if it had been pressed
+  hold(action, on) {
+    const code = this.bindings[action];
+    if (on) { if (!this.down.has(code)) this.pressed.add(code); this.down.add(code); } else this.down.delete(code);
+  }
+  tapKey(code) { this.pressed.add(code); this.emit('key', code, { preventDefault() {} }); }
 
   onKey(e, isDown) {
     if (this.capture && isDown) {

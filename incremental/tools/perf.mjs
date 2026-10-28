@@ -53,7 +53,7 @@ for (const preset of ['low', 'ultra']) {
     const g = window.__game, t0 = performance.now();
     const near = (c) => ((c.cx + 0.5) * 8 - g.ctl.pos.x) ** 2 + ((c.cy + 0.5) * 8 - g.ctl.pos.y) ** 2 + ((c.cz + 0.5) * 8 - g.ctl.pos.z) ** 2 < 20 ** 2;
     while (performance.now() - t0 < 120000) {
-      if (!g.volume.queue.size && !g.volume.inflight.size && ![...g.coins.pending.values()].some(near)) break;
+      if (!g.volume.wantLeft && !g.volume.queue.size && !g.volume.inflight.size && ![...g.coins.pending.values()].some(near)) break;
       await new Promise((r) => setTimeout(r, 250));
     }
     return (performance.now() - t0) / 1000;

@@ -26,13 +26,14 @@ import { Sfx } from './audio/sfx.js';
 import { Music } from './audio/music.js';
 import { Hud } from './ui/hud.js';
 import { Menus } from './ui/menus.js';
+import { TouchControls, isTouchDevice } from './ui/touch.js';
 import { DevMenu, PerfOverlay } from './ui/devmenu.js';
 import { h } from './ui/dom.js';
 import { Crew } from './net/crew.js';
 import * as M from './econ/model.js';
 import { REVERSE, skinNode } from './econ/data/freeze.js';
 import { PLANETS, PLANET_BY_ID, strataProps } from './econ/data/planets.js';
-import { COINS, tierWeights } from './econ/data/coins.js';
+import { COINS, tierWeights, CHEST, CHEST_VALUE, CHEST_SLOTS, chestChance } from './econ/data/coins.js';
 import { MILESTONES, CREW_MILESTONES } from './econ/data/milestones.js';
 import { SYNERGY_BY_ID } from './econ/data/synergies.js';
 import { Big, format, formatTime, numberFormat } from './core/big.js';
@@ -49,7 +50,14 @@ const CUE_CAPTIONS = {
   swell: '♪ The music swells',
   capsule: '♪ A music-box chime: a capsule opens',
 };
-const COIN_RGB = [[1, 0.62, 0.45], [0.9, 0.95, 1], [1, 0.82, 0.35], [0.55, 0.9, 1], [1, 0.6, 0.35]];
+// the clink a coin makes: copper, silver, gold by worth for metal coins; the glassy ring of a gem or glowing
+// shard; the deep knock of stone, relics and chests
+const clinkTier = (tier) => {
+  const c = COINS[tier] || COINS[0];
+  if (c.kind === 'metal') return c.value < 5 ? 0 : c.value < 50 ? 1 : 2;
+  return c.kind === 'gem' || c.kind === 'glow' ? 3 : 4;
+};
+const COIN_RGB = COINS.map((c) => c.color);
 
 const DEFAULT_SETTINGS = {
   preset: 'high', ...PRESETS.high, shadowQ: 'high', fov: 78, vsync: true, fpsCap: 0, grade: true, grain: true, vignette: true,
@@ -65,6 +73,9 @@ class Game {
     const saved = Save.readSettings() || {};
     this.settings = { ...DEFAULT_SETTINGS, ...saved, volume: { ...DEFAULT_SETTINGS.volume, ...(saved.volume || {}) } };
     if (this.qs.get('preset')) Object.assign(this.settings, PRESETS[this.qs.get('preset')], { preset: this.qs.get('preset'), shadowQ: this.qs.get('preset') });
+    // phones and tablets: touch controls, and on the first run a light preset for their GPUs
+    this.touch = isTouchDevice(this.qs);
+    if (this.touch && !saved.preset && !this.qs.get('preset')) Object.assign(this.settings, PRESETS.low, { preset: 'low', shadowQ: 'low', renderScale: 0.6, fov: 72 });
     numberFormat.scientific = this.settings.scientific;
     this.defaultBindings = { ...DEFAULT_BINDINGS };
     this.timeScale = 1;
@@ -112,6 +123,7 @@ class Game {
     this.avatars = new Avatars(this.gfx.scene, this.atmo);
 
     this.input = new Input(canvas, this.settings.bindings);
+    this.input.touch = this.touch;
     this.ctl = new Controller(this.volume);
     this.ctl.colliders = this.works.colliders;
     this.tools = new Tools(this);
@@ -130,8 +142,14 @@ class Game {
     if (this.dev) this.devMenu = new DevMenu(this.ui, this);
     this.planetUi = h('div.planet-ui', { hidden: true });
     this.ui.appendChild(this.planetUi);
-    this.clickPlay = h('div.click-to-play', { hidden: true }, 'Click to continue');
+    this.clickPlay = h('div.click-to-play', { hidden: true }, this.touch ? 'Tap to continue' : 'Click to continue');
     this.ui.appendChild(this.clickPlay);
+    if (this.touch) {
+      document.body.classList.add('touch');
+      document.body.appendChild(h('div.rotate-hint', {}, 'Turn your device sideways for the best view'));
+      this.touchUi = new TouchControls(this.ui, this);
+      this.clickPlay.addEventListener('pointerdown', () => { this.startAudio(); if (this.wantsLock()) this.input.lock(); });
+    }
 
     this.crew = new Crew(this, this.coopDebug);
     this.crew.name = this.settings.crewName;
@@ -186,8 +204,8 @@ class Game {
         for (const c of list) this.particles.streak(new THREE.Vector3(c.x, c.y, c.z), this.works.beaconPos(), COIN_RGB[c.tier]);
         return;
       }
-      const t = Math.max(...list.map((c) => c.tier));
-      this.sfx.play('clink', { tier: t, pos: new THREE.Vector3(op.x, op.y, op.z) });
+      const t = list.reduce((a, c) => (COINS[c.tier].value > COINS[a].value ? c.tier : a), list[0].tier);
+      this.sfx.play('clink', { tier: clinkTier(t), pos: new THREE.Vector3(op.x, op.y, op.z) });
       for (const c of list) if (c.tier >= 1) this.particles.glint(new THREE.Vector3(c.x, c.y, c.z), COIN_RGB[c.tier], 0.3);
     };
     // in a crew only the host freezes pools into ice and sends the edit, so everyone keeps the same ice
@@ -229,7 +247,7 @@ class Game {
         if (was === 'start') return;
         this.menus.close();
         if (this.started) this.clickPlay.hidden = false;
-      }
+      } else if (inp.touch && this.started && this.view === 'fp') inp.unlock();   // touch: the ☰ button pauses
       return;
     }
     if (!this.started || this.menus.cur === 'start') return;
@@ -261,7 +279,7 @@ class Game {
     if (!name && this.started && this.view === 'fp' && !this.input.locked) {
       // back to play: take the mouse again straight away (menus close from a key or click, which allows it)
       this.input.lock();
-      this.clickPlay.hidden = false;
+      this.clickPlay.hidden = this.input.locked;   // touch resumes at once; a desktop waits for the pointer lock
     }
   }
 
@@ -414,7 +432,7 @@ class Game {
     this.crew.count('crewSky', 1);
     this.countAction('sky');
     this.countMax('chainBest', ch.n);
-    this.sfx.play('clink', { tier: c.tier, gain: 0.9, pitch: 1 + 0.035 * Math.min(ch.n - 1, 20) });
+    this.sfx.play('clink', { tier: clinkTier(c.tier), gain: 0.9, pitch: 1 + 0.035 * Math.min(ch.n - 1, 20) });
     this.particles.glint(at, COIN_RGB[c.tier], 0.3 + 0.02 * Math.min(ch.n, 15));
     if (ch.n >= 3 && ch.n % 5 === 0) { this.hud.notice(`Aurora Chain ${ch.n}`, `Each sky coin is now worth ×${mult.toFixed(1)}. Keep catching.`, 'money', 2500); this.music.cue('motif', 2); }
   }
@@ -573,17 +591,21 @@ class Game {
   // redraw the terminal's screen twice a second while you are near the hut
   updateTerminal(dt) {
     this.termT = (this.termT || 0) - dt;
-    if (this.termT > 0 || !this.works.terminalPos || this.ctl.pos.distanceTo(this.works.terminalPos) > 16) return;
+    if (this.termT > 0 || !this.works.terminalPos || this.ctl.pos.distanceTo(this.works.terminalPos) > 9) return;
     this.termT = 0.5;
     const e = this.econ, t = M.costTable(e);
     const list = M.available(e).map((n) => ({ n: skinNode(n, e.reverse), cost: t[n.id].cost })).sort((a, b) => (a.cost.lt(b.cost) ? -1 : 1)).slice(0, 5)
       .map(({ n, cost }) => ({ icon: n.icon, name: n.name, cost: format(cost), can: e.coins.gte(cost) }));
-    this.works.drawTerminal({ coins: format(e.coins), list, ready: list.some((x) => x.can), aimed: this.aimTerminal, reverse: e.reverse });
+    const info = { coins: format(e.coins), list, ready: list.some((x) => x.can), aimed: this.aimTerminal, reverse: e.reverse, touch: this.touch };
+    const key = JSON.stringify(info);
+    if (key === this.termKey) return;   // redraw (and re-upload the screen texture) only when it changes
+    this.termKey = key;
+    this.works.drawTerminal(info);
   }
   canUpgrade() { return this.atOutfitter() || this.dev; }
   upgradeAway() {
     this.sfx.play('deny');
-    this.hud.notice("Upgrades are at the Outfitter's hut", 'Ride the lift up, walk into the blue hut ▣ on the surface near where you started, and click the upgrade terminal on its back wall.', '', 7000);
+    this.hud.notice("Upgrades are at the Outfitter's hut", `Ride the lift up, walk into the blue hut ▣ on the surface near where you started, and ${this.clickWord()} at the upgrade terminal on its back wall.`, '', 7000);
   }
 
   placeStart() {
@@ -651,7 +673,24 @@ class Game {
     const w = tierWeights(depth, this.planet.coinTiers);
     let e = 0;
     for (let i = 0; i < w.length; i++) e += w[i] * COINS[i].value;
-    return (M.baseValuePerM3(this.econ, depth) * 0.5 / COINS_PER_M3) * COINS[tier].value / Math.max(1e-9, e);
+    // chests take a share of the coin value (so the value per m³ stays the same) and pay CHEST_VALUE coins each
+    const p = chestChance(depth), perCoin = (M.baseValuePerM3(this.econ, depth) * 0.5 / COINS_PER_M3) / (1 + p * (CHEST_VALUE - 1));
+    if (tier === CHEST) return perCoin * CHEST_VALUE * (1 + (this.stats?.chestMult || 0));   // Chest Hunter: chests hold more
+    return perCoin * COINS[tier].value / Math.max(1e-9, e);
+  }
+
+  // the first of each kind of coin (and every chest) gets a notice; kinds found are kept for the Notebook
+  discoverCoin(c) {
+    const C = COINS[c.tier];
+    if (c.tier === CHEST) {
+      this.sfx.play('capsule', { pos: this.ctl.pos });
+      this.hud.notice('🧰 A chest', `Worth ${format(c.value * this.bankMult())} once you deliver it at the depot.`, 'money', 4500);
+    }
+    const seen = (this.profile.coinTypes ||= {});
+    if (seen[C.id]) return;
+    seen[C.id] = Date.now();
+    this.writeProfile();
+    if (c.tier !== CHEST) this.hud.notice(`${C.icon} New coin: ${C.name}`, `${C.planet ? `Found only on ${this.planet.name}. ` : ''}It starts about ${C.minDepth} m down. ${Object.keys(seen).filter((k) => k !== 'chest').length} of ${COINS.filter((x) => !x.special).length} kinds found.`, 'money', 6000);
   }
 
   // multiplier applied when coins reach the vault
@@ -712,8 +751,8 @@ class Game {
     this.sfx.play('buy', { step: this.econ.purchases });
     const n = skinNode(M.NODE_BY_ID[id], this.econ.reverse);
     if (n.gate) this.hud.notice(`New tool: ${n.name}`, n.desc, 'money');
-    if (n.root && n.tree === 'melt') this.hud.notice(this.econ.reverse ? 'Frost Wand unlocked' : 'Torch unlocked', this.econ.reverse ? `Press ${this.keyName('tool2')} to switch to it, aim at the ice and hold left mouse to grow new ice.` : `Press ${this.keyName('tool2')} to switch to it. Warming ice before you dig it frees more.`, 'money');
-    if (n.root && n.tree === 'vision') this.hud.notice('Lamp unlocked', `Press ${this.keyName('tool4')} and hold left mouse to focus it; ${this.keyName('lamp')} switches it on or off.`, 'money');
+    if (n.root && n.tree === 'melt') this.hud.notice(this.econ.reverse ? 'Frost Wand unlocked' : 'Torch unlocked', this.econ.reverse ? `Press ${this.keyName('tool2')} to switch to it, aim at the ice and hold ${this.useWord()} to grow new ice.` : `Press ${this.keyName('tool2')} to switch to it. Warming ice before you dig it frees more.`, 'money');
+    if (n.root && n.tree === 'vision') this.hud.notice('Lamp unlocked', `Press ${this.keyName('tool4')} and hold ${this.useWord()} to focus it; ${this.keyName('lamp')} switches it on or off.`, 'money');
     for (const s of res.fresh) this.onResonance(s);
     if (this.crew.isHost) { this.crew.econT = 0; this.crew.event({ k: 'buy', id }); }
     this.menus.refresh();
@@ -726,7 +765,13 @@ class Game {
     if (this.crew.isHost) this.crew.event({ k: 'res', id: s.id });
   }
 
-  keyName(a) { const c = this.input.code(a) || ''; return c.startsWith('Key') ? c.slice(3) : c.startsWith('Digit') ? c.slice(5) : c; }
+  keyName(a) {
+    if (this.touch) return { use: 'USE', alt: 'ALT', jump: 'JUMP', lamp: 'LAMP', upgrades: '⬆', planet: '🌐', collections: '📓', coop: '👥', music: '🎵', tool1: 'tool 1', tool2: 'tool 2', tool3: 'tool 3', tool4: 'tool 4' }[a] || a;
+    const c = this.input.code(a) || ''; return c.startsWith('Key') ? c.slice(3) : c.startsWith('Digit') ? c.slice(5) : c;
+  }
+  // "left mouse" / "click" on a desktop, the USE button on a touch screen
+  useWord() { return this.touch ? 'USE' : 'left mouse'; }
+  clickWord() { return this.touch ? 'tap USE' : 'click'; }
 
   // ---------- world actions ----------
 
@@ -852,31 +897,41 @@ class Game {
 
   // ---------- banking ----------
 
+  // The depot on the surface: stand at its intake and your pack pours in at the delivery speed (pack slots
+  // a second, upgradable). The lift beacon only carries you up. A late upgrade, the chute, sends a trickle
+  // of the pack up on its own from anywhere.
   updateBanking(dt, eye) {
-    const c = this.state.carried;
-    const bp = this.works.beaconPos();
+    const c = this.state.carried, st = this.stats;
+    const bp = this.works.beaconPos(), dp = this.works.depotPos;
     const chest = eye.clone().add(new THREE.Vector3(0, -0.5, 0));
-    const range = 3.2 + this.stats.bank * 25;
-    this.atBeacon = chest.distanceTo(bp) < range;
-    if (this.atBeacon && c.value > 0) {
+    this.atBeacon = chest.distanceTo(bp) < 3.2;
+    this.atDepot = !!dp && chest.distanceTo(dp) < 3.2 + st.bank * 25;
+    const rate = (this.atDepot ? st.deliver : 0) + (st.chute || 0);
+    if (rate > 0 && c.count > 0.01) {
+      this.deliverAcc = (this.deliverAcc || 0) + rate * dt;
       this.bankT = (this.bankT || 0) - dt;
-      if (this.bankT <= 0) {
-        this.bankT = 0.35;
-        const v = c.value * this.bankMult();
-        const n = Math.round(c.count);
+      if (this.bankT <= 0 && this.deliverAcc > 0) {
+        this.bankT = 0.3;
+        const slots = Math.min(c.count, this.deliverAcc);
+        this.deliverAcc = 0;
+        const frac = Math.min(1, slots / c.count), last = frac >= 0.999;
+        const v = c.value * frac * this.bankMult();
         this.earn(v);
-        if (this.crew.active) this.crew.bank(v, c.ids);
-        this.works.pulse = 1;
-        this.sfx.play('bank', { pos: bp, count: Math.min(10, n), tier: this.tierMix(this.econ.depth)[2] > 0.2 ? 2 : 0 });
-        for (let i = 0; i < Math.min(14, n + 2); i++) this.particles.streak(chest.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.6, Math.random() * 0.4, (Math.random() - 0.5) * 0.6)), bp, [1, 0.8, 0.45]);
-        const sp = bp.clone().project(this.gfx.camera);
-        if (sp.z < 1) this.hud.floater(`+${format(v)}`, (sp.x * 0.5 + 0.5) * innerWidth, (-sp.y * 0.5 + 0.5) * innerHeight - 30);
-        c.count = 0; c.value = 0; c.ids = [];
+        if (this.crew.active) this.crew.bank(v, last ? c.ids : []);
+        c.value *= 1 - frac; c.count -= slots;
+        if (last || c.count < 0.01) { c.count = 0; c.value = 0; c.ids = []; }
+        if (this.atDepot) {
+          this.sfx.play('bank', { pos: dp, count: Math.min(10, Math.round(slots / 6) + 1), tier: this.tierMix(this.econ.depth)[2] > 0.2 ? 2 : 0 });
+          for (let i = 0; i < Math.min(10, Math.round(slots / 4) + 2); i++) this.particles.streak(chest.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.6, Math.random() * 0.4, (Math.random() - 0.5) * 0.6)), dp, [1, 0.8, 0.45]);
+          const sp = dp.clone().project(this.gfx.camera);
+          if (sp.z < 1) this.hud.floater(`+${format(v)}`, (sp.x * 0.5 + 0.5) * innerWidth, (-sp.y * 0.5 + 0.5) * innerHeight - 30);
+          this.works.pulse = 1;
+        }
         const before = this.works.pileCount;
         this.works.syncPile(this.econ.total.toNumber(), this.tierMix(this.econ.depth), true);
         if (this.works.pileCount > before) this.sfx.play('pile', { pos: this.works.vaultCenter() });
       }
-    }
+    } else this.deliverAcc = 0;
     this.sfx.loop('hum', this.audio.ready, { level: Math.max(0, 1 - chest.distanceTo(bp) / 10) });
   }
 
@@ -1315,7 +1370,7 @@ class Game {
     this.profile.lastSolo = slot; this.writeProfile();
     this.newCampaign(pole, slot);
     this.enterPlay();
-    this.hud.notice('Welcome to Frostara', `Hold left mouse on the ice to dig. Coins go in your pack; stand by the glowing lift beacon to bank them. Buy upgrades inside the blue Outfitter's hut ▣ nearby: click the terminal on its back wall.`, '', 14000);
+    this.hud.notice('Welcome to Frostara', `Hold ${this.useWord()} on the ice to dig. Coins go in your pack; deliver them at the depot ⛟ beside the Outfitter\u2019s hut. Buy upgrades inside the blue Outfitter's hut ▣ nearby: ${this.clickWord()} at the terminal on its back wall.`, '', 14000);
   }
 
   // Reverse Mode ("Make It Snow") unlocks once Omega is melted through
@@ -1328,7 +1383,7 @@ class Game {
     this.newCampaign(pole, slot, 'frostara', { reverse: true, scale: REVERSE.scale });
     this.enterPlay();
     this.music.cue('swell');
-    this.hud.notice('❄️ Make It Snow', 'Reverse Mode: freeze the worlds back. Your torch is now a Frost Wand (tool 2): aim at the ice and hold left mouse to grow new ice. Every cubic metre you freeze pays like one melted, and the goals are shorter.', 'money', 15000);
+    this.hud.notice('❄️ Make It Snow', `Reverse Mode: freeze the worlds back. Your torch is now a Frost Wand (tool 2): aim at the ice and hold ${this.useWord()} to grow new ice. Every cubic metre you freeze pays like one melted, and the goals are shorter.`, 'money', 15000);
   }
 
   deleteSave(slot) {
@@ -1512,7 +1567,7 @@ class Game {
         if (!this.slotOverride) { this.newSave(pole); return; }
         this.newCampaign(pole, this.slot);
         begin();
-        this.hud.notice('Welcome to Frostara', `Hold left mouse on the ice to dig. Coins go in your pack; stay near the glowing lift beacon to bank them. Buy upgrades inside the blue Outfitter's hut ▣ nearby: click the terminal on its back wall.`, '', 14000);
+        this.hud.notice('Welcome to Frostara', `Hold ${this.useWord()} on the ice to dig. Coins go in your pack; deliver them at the depot ⛟ beside the Outfitter\u2019s hut. Buy upgrades inside the blue Outfitter's hut ▣ nearby: ${this.clickWord()} at the terminal on its back wall.`, '', 14000);
       });
     }
     if (join) setTimeout(() => this.crewJoin(join), 300);
@@ -1569,12 +1624,13 @@ class Game {
     // physics at 60 Hz
     this.physAcc += dt;
     const move = playing && inp.locked && !this.ride;
-    this.updateRide(dt, playing && inp.locked && inp.is('jump'));
+    // on touch the LIFT button rides and JUMP only jumps; on a keyboard, jump at the beacon rides
+    this.updateRide(dt, playing && inp.locked && (this.touch ? !!this.touchLift : inp.is('jump')));
     while (this.physAcc >= PHYS_STEP && !this.ride) {
       this.ctl.step(PHYS_STEP, {
         forward: move ? (inp.is('forward') ? 1 : 0) - (inp.is('back') ? 1 : 0) : 0,
         strafe: move ? (inp.is('right') ? 1 : 0) - (inp.is('left') ? 1 : 0) : 0,
-        sprint: move && inp.is('sprint'), jump: move && inp.is('jump') && !this.liftReady,
+        sprint: move && inp.is('sprint'), jump: move && inp.is('jump') && (this.touch || !this.liftReady),
       });
       this.physAcc -= PHYS_STEP;
     }
@@ -1598,6 +1654,7 @@ class Game {
     const st = this.stats;
     const depthHere = this.depthAt(eye.x, eye.y, eye.z);
 
+    if (this.touchUi) this.touchUi.update();
     // the upgrade terminal in the Outfitter's hut: aim at it and click
     this.aimTerminal = playing && this.works.terminalHit(eye, dir);
     if (this.aimTerminal && inp.locked && inp.was('use')) this.openUpgrades();
@@ -1616,13 +1673,14 @@ class Game {
     const carried = this.state.carried;
     this.coins.update(dt, eye, [{
       pos: chest, range: st.collectRange,
-      canTake: (c) => c.sky || carried.count + COIN_SLOTS <= st.carry,
+      canTake: (c) => c.sky || carried.count + (c.tier === CHEST ? CHEST_SLOTS : COIN_SLOTS) <= st.carry,
       take: (c) => {
         // aurora coins are caught straight into the vault
         if (c.sky) { this.catchSky(c, chest.clone().addScaledVector(dir, 0.6)); return; }
-        carried.count += COIN_SLOTS; carried.value += c.value; carried.ids.push(c.id);
+        carried.count += c.tier === CHEST ? CHEST_SLOTS : COIN_SLOTS; carried.value += c.value; carried.ids.push(c.id);
+        this.discoverCoin(c);
         if (carried.ids.length > 400) carried.ids.splice(0, carried.ids.length - 400);
-        this.sfx.play('clink', { tier: c.tier, gain: 0.7 });
+        this.sfx.play('clink', { tier: clinkTier(c.tier), gain: 0.7 });
         this.particles.glint(chest.clone().addScaledVector(dir, 0.6), COIN_RGB[c.tier], 0.12);
       },
     }], st.autoCollect);
@@ -1764,11 +1822,12 @@ class Game {
     let prompt = null;
     const deep = this.depthAt(this.ctl.pos.x, this.ctl.pos.y, this.ctl.pos.z) > 1.4;
     const full = c.count >= st.carry - 0.01;
-    const jump = this.keyName('jump');
-    if (this.aimTerminal) prompt = this.canUpgrade() ? 'Upgrade terminal · click to open the upgrade tree' : 'Upgrade terminal';
+    const jump = this.touch ? 'LIFT ▲' : this.keyName('jump');   // on touch the lift has its own button
+    if (this.aimTerminal) prompt = this.canUpgrade() ? `Upgrade terminal · ${this.clickWord()} to open the upgrade tree` : 'Upgrade terminal';
     else if (this.ride) prompt = 'Riding the lift up';
-    else if (this.atBeacon && deep) prompt = c.value > 0 ? `Banking your pack · hold ${jump} to ride the lift up` : `Hold ${jump} to ride the lift up and out of the crater`;
-    else if (full) prompt = 'Pack full · walk to the glowing lift beacon ◆ to bank it';
+    else if (this.atBeacon && deep) prompt = `Hold ${jump} to ride the lift up and out of the crater`;
+    else if (this.atDepot && c.count > 0.01) prompt = `Delivering your pack · ${Math.round(c.count)} slots left · ${Math.round(st.deliver)} a second`;
+    else if (full) prompt = deep ? `Pack full · ride the lift up (hold ${jump} by the beacon ◆) and deliver it at the depot ⛟` : 'Pack full · deliver it at the depot ⛟ by the Outfitter\u2019s hut';
     else if (this.chain.n > 0 && this.coins.loose.some((k) => k.sky)) prompt = `Aurora Chain ${this.chain.n} · sky coins worth ×${Math.min(4, 1 + 0.2 * this.chain.n).toFixed(1)}`;
     else if (this.climaxOn && this.time % 40 < 6) prompt = 'The core wakes · the storms are silent · catch the falling coins';
     else if (this.weather && !this.climaxOn && FAMILIES[this.tools.family].id === 'melt') prompt = this.weather.state === 'calm' ? `Wind window · ${Math.ceil(this.weather.left)} s · melting pays double` : `Storm · melting is weak · calm in about ${Math.ceil(this.weather.left)} s`;
@@ -1781,7 +1840,7 @@ class Game {
     else if (deep && this.time - (this.liftHintAt || -99) < 6) prompt = `Stand by the glowing lift beacon ◆ and hold ${jump} to ride up`;
     // first-time explanations
     const tips = this.state.tips || (this.state.tips = {});
-    if (full && !tips.full) { tips.full = 1; this.hud.notice('Your pack is full', 'Coins you free go into your pack first. They only count once banked: stand next to the glowing lift beacon ◆ (it follows you around) and the pack empties into the vault.', '', 12000); }
+    if (full && !tips.full) { tips.full = 1; this.hud.notice('Your pack is full', 'Coins you free go into your pack first. They only count once delivered: ride the lift up and stand at the depot ⛟ next to the Outfitter\u2019s hut, and the pack pours into the vault. Bigger packs and a faster depot are upgrades.', '', 12000); }
     if (deep && !tips.deep && this.craterDepth() > 2.5) { tips.deep = 1; this.liftHintAt = this.time; this.hud.notice('Getting out of the crater', `The lift beacon ◆ follows you down. Stand next to it and hold ${jump} to ride it up to the rim.`, '', 12000); }
     else if (!this.tools.available(st, this.tools.family)) prompt = FAMILIES[this.tools.family].id === 'planet' ? 'Locked · buy Satellite Mirrors in the Planet tree' : 'Locked · buy this tree\'s first upgrade';
     this.hud.update({
@@ -1790,7 +1849,9 @@ class Game {
       tiers: [st.digTier, st.meltTier, 0, st.visionTier].map((x) => Math.round(x)),
       crater: this.craterDepth(), radius: this.planet.radiusM, depth: Math.max(0, depthHere), stratum: sp.name,
       hard: M.hardnessAt(e, Math.max(0, depthHere)), reading: visionUse ? richness(this.tools.hit.point.x, this.tools.hit.point.y, this.tools.hit.point.z) : null,
-      sea: e.reverse ? -M.seaLevelCm({ melted: e.frozen || 0 }) : M.seaLevelCm(e), rebuilt: e.reverse ? e.depth : undefined, rebuiltGoal: M.goalDepthOf(e), resonances: Object.keys(e.found).length, hit: !!this.tools.hit, prompt, atBeacon: this.atBeacon, needleHint: this.needleHint,
+      sea: e.reverse ? -M.seaLevelCm({ melted: e.frozen || 0 }) : M.seaLevelCm(e), rebuilt: e.reverse ? e.depth : undefined, rebuiltGoal: M.goalDepthOf(e), resonances: Object.keys(e.found).length, hit: !!this.tools.hit, prompt, atBeacon: this.atBeacon, atDepot: this.atDepot, needleHint: this.needleHint,
+      needle: !this.state.needle && this.frozen.needleDepth != null ? { band: this.frozen.needleBand, depth: this.frozen.needleDepth, sense: st.hint > 0 } : null,
+      goalDepth: M.goalDepthOf(e),
     });
   }
 }

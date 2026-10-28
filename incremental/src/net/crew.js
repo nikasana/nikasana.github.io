@@ -129,7 +129,7 @@ export class Crew {
         this.members.delete(p);
         if (m) this.emit('notice', `${m.name} left the crew.`);
         this.emit('members');
-      } else if (this.role === 'member') this.hostGone();
+      } else if (this.role === 'member' && (!this.hostPeer || p === this.hostPeer || p === this.t?.hostPeer)) this.hostGone();   // another member going quiet is not the host leaving
     });
   }
 
@@ -224,7 +224,7 @@ export class Crew {
           this.members.delete(from);
           if (mem) this.emit('notice', `${mem.name} left the crew.`);
           this.emit('members');
-        } else if (this.role === 'member') this.hostGone();
+        } else if (this.role === 'member' && (!this.hostPeer || from === this.hostPeer)) this.hostGone();
         break;
       default:
     }

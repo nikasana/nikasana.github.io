@@ -41,7 +41,10 @@ export function surfaceY(x, z) {
 // Richness (0..1): veins of coin-rich ice running through the volume.
 // The Outfitter's hut stands on a pad of ground that cannot be dug away.
 export const OUTFITTER = { x: -5.5, z: 9.5, r: 3.6 };
-export const protectedAt = (x, y, z) => Math.hypot(x - OUTFITTER.x, z - OUTFITTER.z) < OUTFITTER.r && y > surfaceY(OUTFITTER.x, OUTFITTER.z) - 6;
+// The depot, where you deliver your pack, stands next to it on its own pad.
+export const DEPOT = { x: -12.2, z: 9.0, r: 3.4 };
+export const protectedAt = (x, y, z) => (Math.hypot(x - OUTFITTER.x, z - OUTFITTER.z) < OUTFITTER.r && y > surfaceY(OUTFITTER.x, OUTFITTER.z) - 6)
+  || (Math.hypot(x - DEPOT.x, z - DEPOT.z) < DEPOT.r && y > surfaceY(DEPOT.x, DEPOT.z) - 6);
 
 export function richness(x, y, z) {
   const v = noise.fbm3(x * 0.07, y * 0.09, z * 0.07, 3);

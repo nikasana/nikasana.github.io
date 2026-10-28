@@ -11,6 +11,7 @@ import { PRESETS } from '../render/graphics.js';
 import { ACTION_LABELS, keyLabel } from '../player/input.js';
 import * as M from '../econ/model.js';
 import { PLANETS } from '../econ/data/planets.js';
+import { COINS } from '../econ/data/coins.js';
 import { FINDS } from '../econ/data/finds.js';
 import { MUTANTS, MUTANT_BY_ID } from '../econ/data/mutants.js';
 
@@ -173,12 +174,22 @@ export class Menus {
             h('h4', {}, `${p.icon} ${p.name}`),
             h('p', {}, pc ? `Melted through at the ${pc.pole === 'S' ? 'South' : 'North'} pole, ${Math.round(pc.depth)} m.` : 'Not yet. Reach the goal depth to send a postcard.'));
         })));
+      } else if (t === 'coins') {
+        const seen = g.profile.coinTypes || {};
+        const kinds = COINS.filter((c) => !c.special);
+        body.append(h('p', { style: { color: 'var(--haze)', margin: '0 0 10px' } }, `${kinds.filter((c) => seen[c.id]).length} of ${kinds.length} kinds found. Deeper layers hold new kinds; each world has one of its own. Bigger coins of a kind are worth more. Chests: ${seen.chest ? 'found' : 'not yet'}.`),
+          h('div.coll', {}, kinds.map((c) => {
+            const pl = c.planet ? PLANETS.find((p) => p.id === c.planet) : null;
+            return h(`div.card${seen[c.id] ? '' : '.blank'}`, {},
+              h('h4', {}, seen[c.id] ? `${c.icon} ${c.name}` : '? ? ? ? ?'),
+              h('p', {}, `From about ${c.minDepth} m${pl ? ` · only on ${pl.icon} ${pl.name}` : ''}${seen[c.id] ? ` · worth ${c.value.toLocaleString('en-US')}× a copper` : ''}`));
+          })));
       } else if (t === 'milestones') {
         body.append(h('div.coll', {}, MILESTONES.filter((m) => m.planet === '*' || m.planet === e.planet).map((m) => h(`div.card${e.milestones[m.id] !== undefined ? '' : '.blank'}`, {},
           h('h4', {}, `${m.icon} ${m.name}`), h('p', {}, e.milestones[m.id] !== undefined ? `Reached at ${formatTime(e.milestones[m.id])}. Paid ${m.bonusSec} s of income.` : `Pays ${m.bonusSec} s of income.`)))));
       }
     };
-    for (const [id, l] of [['resonance', 'Resonance notebook'], ['mutations', 'Mutation log'], ['finds', 'Finds'], ['capsules', 'Capsules & needle'], ['milestones', 'Milestones'], ['postcards', 'Postcards']]) {
+    for (const [id, l] of [['resonance', 'Resonance notebook'], ['mutations', 'Mutation log'], ['finds', 'Finds'], ['coins', 'Coins'], ['capsules', 'Capsules & needle'], ['milestones', 'Milestones'], ['postcards', 'Postcards']]) {
       const b = h('button.tab', { onclick: () => setTab(id) }, l);
       b.dataset.t = id;
       tabs.append(b);
@@ -434,7 +445,7 @@ export class Menus {
         h('div.start-actions', {}, h('button.btn.primary', { onclick: () => { this.close(); if (onBegin) onBegin(pole); else g.newSave(pole); } }, 'Begin a new survey'),
           g.reverseUnlocked() ? h('button.btn', { title: 'Reverse Mode: freeze the worlds back. Same tools and trees, shorter goals.', onclick: () => { this.close(); g.newReverse(pole); } }, '❄️ Make It Snow') : '',
           g.started ? h('button.btn', { onclick: () => { this.close(); g.input.lock(); } }, 'Back to the ice') : ''),
-        h('div.start-foot', {}, 'Mouse and keyboard. WASD to move, left mouse to use your tool, U at the Outfitter for upgrades, Esc to pause.'),
+        h('div.start-foot', {}, g.touch ? 'Touch: your left thumb moves (push to the edge to sprint), drag anywhere else to look, hold USE to dig, JUMP rides the lift. Upgrades are at the terminal in the Outfitter\u2019s hut. ☰ pauses.' : 'Mouse and keyboard. WASD to move, left mouse to use your tool, the terminal in the Outfitter\u2019s hut for upgrades, Esc to pause.'),
       ),
       this.savesList(),
     );
@@ -627,7 +638,13 @@ class TreeView {
       const el = h(`div.tnode${n.gate ? '.gate' : ''}.k-${n.kind || 'stat'}`, { style: { left: `${this.pos[n.id][0]}px`, top: `${this.pos[n.id][1]}px`, '--tc': n.join ? TREE[n.join[0]].color : t.color, '--tc2': tc2 } });
       el.addEventListener('mouseenter', () => { this.hover = n.id; this.showTip(n.id); this.game.sfx.play('hover'); });
       el.addEventListener('mouseleave', () => { if (this.hover === n.id) { this.hover = null; this.tip.hidden = true; } });
-      el.addEventListener('click', (ev) => { ev.stopPropagation(); if (!this.dragged) this.buy(n.id, el); });
+      el.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        if (this.dragged) return;
+        // touch has no hover: the first tap shows what a node does, a second tap buys it
+        if (this.game.touch && this.hover !== n.id) { this.hover = n.id; this.showTip(n.id); return; }
+        this.buy(n.id, el);
+      });
       this.canvas.appendChild(el);
       this.nodes[n.id] = el;
     }
@@ -648,11 +665,15 @@ class TreeView {
     const table = M.costTable(e);
     const cost = table[id].cost;
     const per = n.max > 1 ? ' per level' : '';
+    const W = M.milestoneWeight(lvl, n.max);
+    const star = n.max >= M.MILESTONE && lvl < n.max && M.isMilestone(lvl + 1);
     const fx = n.effects.map(([stat, op, v]) => {
       if (op === 'set') return stat.endsWith('Tier') ? `${statName(stat)} → tier ${v}` : `${statName(stat)}: unlocked`;
-      if (op === 'add') return `${statName(stat)} ${v < 0 ? '−' : '+'}${fmtV(Math.abs(v), stat)}${per}${n.max > 1 ? ` (now ${v < 0 ? '−' : '+'}${fmtV(Math.abs(v * lvl), stat)})` : ''}`;
-      return `${statName(stat)} ×${(1 + v).toFixed(2)}${per}`;
+      if (op === 'add') return `${statName(stat)} ${v < 0 ? '−' : '+'}${fmtV(Math.abs(v), stat)}${per}${n.max > 1 ? ` (now ${v < 0 ? '−' : '+'}${fmtV(Math.abs(v * W), stat)})` : ''}`;
+      return `${statName(stat)} ×${(1 + v).toFixed(2)}${per}${n.max > 1 && lvl ? ` (now ×${Math.pow(1 + v, W).toFixed(2)})` : ''}`;
     });
+    if (n.max >= M.MILESTONE) fx.push(star ? '<b style="color:var(--brass)">★ Next level is a milestone: it counts three times (and costs more)</b>'
+      : `<span style="opacity:.7">★ Every ${M.MILESTONE}th level counts three times</span>`);
     const lock = M.lockedBy(e, id);
     const rival = n.excl ? NODES.filter((o) => o.excl === n.excl && o.id !== id).map((o) => skinNode(o, e.reverse).name).join(' / ') : '';
     const eyebrow = n.join ? `${TREE[n.join[0]].icon} ${TREE[n.join[0]].name} × ${TREE[n.join[1]].icon} ${TREE[n.join[1]].name} · cross-tree`
@@ -702,6 +723,7 @@ class TreeView {
         KIND_LABEL[n.kind] ? h('div.kind', {}, barred ? 'CLOSED' : KIND_LABEL[n.kind]) : '',
         h('div.top', {}, h('span.ic', {}, n.icon), h('span.nm', {}, n.name), h('span.lv', {}, `${lvl}/${n.max}`)),
         h('div.pips', {}, Array.from({ length: pips }, (_, i) => h(`i${i < filled ? '.f' : ''}`))),
+        n.max >= M.MILESTONE && !maxed && M.isMilestone(lvl + 1) ? h('div.star', { title: 'Next level is a milestone' }, '★') : '',
         h('div.cost', {}, h('span', {}, maxed ? 'MAX' : format(cost)), h('span.eta', {}, maxed || !unlocked ? '' : can ? 'buy' : formatTime(wait))),
       );
     }
@@ -728,26 +750,57 @@ class TreeView {
   }
 
   bind() {
+    // drag to pan with a mouse or a finger; wheel or pinch to zoom
     let down = null;
-    this.onDown = (ev) => { if (ev.button !== 0) return; down = { x: ev.clientX, y: ev.clientY, ox: this.ox, oy: this.oy }; this.dragged = false; this.wrap.classList.add('drag'); };
+    const pts = new Map();
+    let pinch = null;
+    this.onDown = (ev) => {
+      if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+      pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      if (pts.size === 2) {
+        const [a, b] = [...pts.values()];
+        pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), scale: this.scale };
+        down = null;
+        return;
+      }
+      down = { x: ev.clientX, y: ev.clientY, ox: this.ox, oy: this.oy }; this.dragged = false; this.wrap.classList.add('drag');
+    };
     this.onMove = (ev) => {
+      if (!pts.has(ev.pointerId)) return;
+      pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      if (pinch && pts.size >= 2) {
+        const [a, b] = [...pts.values()];
+        const r = this.wrap.getBoundingClientRect();
+        const want = pinch.scale * Math.hypot(a.x - b.x, a.y - b.y) / Math.max(1, pinch.d);
+        this.zoomBy(want / this.scale, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top);
+        this.dragged = true;
+        return;
+      }
       if (!down) return;
       const dx = ev.clientX - down.x, dy = ev.clientY - down.y;
-      if (Math.abs(dx) + Math.abs(dy) > 4) this.dragged = true;
+      if (Math.abs(dx) + Math.abs(dy) > 6) this.dragged = true;
       this.ox = down.ox + dx; this.oy = down.oy + dy; this.apply();
     };
-    this.onUp = () => { down = null; this.wrap.classList.remove('drag'); setTimeout(() => { this.dragged = false; }, 0); };
+    this.onUp = (ev) => {
+      pts.delete(ev.pointerId);
+      if (pts.size < 2) pinch = null;
+      if (pts.size) return;
+      down = null; this.wrap.classList.remove('drag'); setTimeout(() => { this.dragged = false; }, 0);
+    };
     this.onWheel = (ev) => { ev.preventDefault(); const r = this.wrap.getBoundingClientRect(); this.zoomBy(ev.deltaY < 0 ? 1.1 : 1 / 1.1, ev.clientX - r.left, ev.clientY - r.top); };
-    this.wrap.addEventListener('mousedown', this.onDown);
-    addEventListener('mousemove', this.onMove);
-    addEventListener('mouseup', this.onUp);
+    this.wrap.style.touchAction = 'none';
+    this.wrap.addEventListener('pointerdown', this.onDown);
+    addEventListener('pointermove', this.onMove);
+    addEventListener('pointerup', this.onUp);
+    addEventListener('pointercancel', this.onUp);
     this.wrap.addEventListener('wheel', this.onWheel, { passive: false });
     this.timer = setInterval(() => this.refresh(), 400);
   }
 
   destroy() {
-    removeEventListener('mousemove', this.onMove);
-    removeEventListener('mouseup', this.onUp);
+    removeEventListener('pointermove', this.onMove);
+    removeEventListener('pointerup', this.onUp);
+    removeEventListener('pointercancel', this.onUp);
     clearInterval(this.timer);
   }
 }

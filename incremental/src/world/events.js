@@ -172,6 +172,7 @@ export class FrozenThings {
   setup(planet, pole, seed, done) {
     this.group.clear();
     this.items = [];
+    this.needleDepth = null;
     const r = rng(hash32(seed, pole === 'N' ? 1 : 2, 333));
     const lim = HALF - 4;
     const place = (depth) => {
@@ -190,7 +191,10 @@ export class FrozenThings {
     const nd = NEEDLES[planet.id];
     if (nd && !done.needle) {
       const m = needleMesh();
-      m.position.copy(place(nd.depthMin + r() * (nd.depthMax - nd.depthMin)));
+      const depth = nd.depthMin + r() * (nd.depthMax - nd.depthMin);
+      m.position.copy(place(depth));
+      this.needleDepth = depth;
+      this.needleBand = [nd.depthMin, nd.depthMax];
       m.rotation.set(r() * 3, r() * 3, r() * 3);
       this.group.add(m);
       this.items.push({ kind: 'needle', data: nd, mesh: m, freed: false });
@@ -245,10 +249,9 @@ export class FrozenThings {
       if (it.kind === 'needle') {
         it.mesh.rotation.y += dt * 0.5;
         it.mesh.userData.glow.intensity = 0.4 + Math.sin(time * 5) * 0.3;
-        if (hintLevel > 0) {
-          const range = 6 + hintLevel * 9;
-          if (dPlayer < range) hint = { dir: p.clone().sub(playerPos).normalize(), strength: 1 - dPlayer / range, dist: dPlayer };
-        }
+        // everyone feels it once close; Needle Sense and friends reach much further
+        const range = hintLevel > 0 ? 10 + hintLevel * 9 : 8;
+        if (dPlayer < range) hint = { dir: p.clone().sub(playerPos).normalize(), strength: (1 - dPlayer / range) * (hintLevel > 0 ? 1 : 0.6), dist: dPlayer, dy: p.y - playerPos.y };
       }
       // a sealed capsule waits for its trick (warmth or lamplight), then opens like any other
       const sealed = it.kind === 'capsule' && it.data.puzzle && (it.progress || 0) < it.data.puzzle.need;

@@ -87,11 +87,17 @@ export class LocalTransport extends Emitter {
     this.ch.onmessage = (ev) => this.onMsg(ev.data);
     this.beat = setInterval(() => this.post({ t: '_ping' }), 1000);
     this.seen = new Map();
+    // a closing tab says goodbye at once; silence only counts as gone after 40 s, because a busy tab (one
+    // that is loading a crater) can stall its timers for a long while and must not be taken for gone
+    this.bye = () => this.post({ t: '_bye' });
+    addEventListener('pagehide', this.bye);
     this.watch = setInterval(() => {
       const now = Date.now();
-      for (const [p, t] of this.seen) if (now - t > 15000) { this.seen.delete(p); this.peers.delete(p); this.emit('leave', p); }
+      for (const [p, t] of this.seen) if (now - t > 40000) this.drop(p);
     }, 1000);
   }
+
+  drop(p) { this.seen.delete(p); this.peers.delete(p); this.emit('leave', p); }
 
   async host(code) {
     this.isHost = true;
@@ -104,7 +110,7 @@ export class LocalTransport extends Emitter {
     this.isHost = false;
     this.open(code);
     return new Promise((res, rej) => {
-      const to = setTimeout(() => rej(new Error('No crew host answered on this machine. Open the host tab first.')), 4000);
+      const to = setTimeout(() => rej(new Error('No crew host answered on this machine. Open the host tab first.')), 10000);   // a busy host tab can be slow to answer
       this.pendingJoin = () => { clearTimeout(to); this.emit('open', this.id); res(this.id); };
       this.post({ t: '_hello' });
     });
@@ -124,6 +130,7 @@ export class LocalTransport extends Emitter {
       return;
     }
     if (m.t === '_ping') return;
+    if (m.t === '_bye') { if (this.seen.has(from)) this.drop(from); return; }
     if (!this.peers.has(from)) {
       // only talk to members of this crew (host <-> members)
       if (this.isHost || host) { this.peers.add(from); }
@@ -139,6 +146,7 @@ export class LocalTransport extends Emitter {
 
   close() {
     clearInterval(this.beat); clearInterval(this.watch);
+    if (this.bye) { this.bye(); removeEventListener('pagehide', this.bye); this.bye = null; }
     if (this.ch) this.ch.close();
     this.ch = null;
     this.peers.clear();

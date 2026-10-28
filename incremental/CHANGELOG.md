@@ -1,5 +1,24 @@
 # Changelog
 
+## Coins, chests, the depot, a bigger tree, and a clearer depth gauge
+- 23 kinds of coin, each with its own shape and look: square, hex, ring, star, orb, gem, emerald, bar, shard, pebble and vase coins, some engraved and some glowing. Each kind starts at its own depth (bronze from 2 m, down to corestone from 1,250 m), so every layer has something new; later planets bring more kinds, and every world after Frostara has a signature coin found only there. The notebook has a Coins page and a notice marks each new kind.
+- Coins come in sizes from 0.65 to 1.5 times their kind's size; a coin's value grows with its size squared (a big one is worth about five small ones), and the average stays the same.
+- Chests: 1% of coins near the surface and 2.3% from about 500 m down are chests, worth 40 coins of that depth; they fill 18 pack slots. Chest Hunter makes them hold more.
+- The depot ⛟: a shed with a hopper next to the Outfitter's hut. Coins now count only once delivered there: stand at it and your pack pours in at the delivery speed (12 slots a second at first). The lift only carries you up. Packs are much bigger (120 slots, and pack upgrades add three times as much), so you come up now and then, not all the time. Depot upgrades: Depot Conveyor and Twin Intakes (faster), Pack Frame (a far bigger pack), and the late Pneumatic Chute and Chute Pressure that send a trickle up from anywhere. A depot marker (hexagon) shows on the map and compass.
+- A much bigger upgrade tree: an outer ring of 42 new nodes (167 in all, about 2,900 levels), with masteries of up to 400 levels for digging, melting, vision and automation, the depot column, and more for the planet, climate and luck trees. They are costly, to keep you upgrading through every planet.
+- Upgrade levels vary: every 5th level of a node is a ★ milestone that counts three times as much as a normal level and costs 1.75 times as much; the levels in between are a little smaller, so five levels together give what they did before. The tree marks a node whose next level is a milestone with ★, and its tip says so.
+- Depth gauge redone: SURFACE at the top and this planet's GOAL depth at the bottom, with labelled marks (10, 50, 100, 250, 500 m) instead of unlabelled lines; a dot labelled YOU follows you up and down; a notch marks the deepest point dug; the Golden Needle's depth band shows in gold (bright while you are in it), and with Needle Sense a gold diamond marks its exact depth.
+- Finding the needle: everyone now feels it within 8 m (Needle Sense from 19 m), and a readout under the crosshair says how far it is and whether to dig down.
+- Touch: JUMP and LIFT are separate buttons. LIFT is a wide, glowing blue button that appears only next to the lift beacon in the crater; JUMP only jumps. Notices on phones are smaller, sit beside the depth gauge, and show the newest two.
+- Fixed (crews): a crewmate going quiet for a moment (for example while another loads in) no longer counts as the host leaving, which could split a crew in two; a closing tab says goodbye at once, and rejoining waits longer for a busy host.
+- Fixed: freeing one of the new coin kinds could stop the game with an audio error (the clink sound only knew five kinds).
+
+## Mobile: phones and tablets
+- The game opens on phones and tablets (the desktop-only block is gone) and detects touch screens; add `?touch` to try the touch controls on a desktop, or `?desktop` to turn them off.
+- Touch controls: a move stick appears under your left thumb (push it to the edge to sprint), drag anywhere else to look; hold USE (the tool), ALT (its second action) and JUMP (jump, and ride the lift); LAMP toggles the lamp; tap a tool slot to switch tools; buttons for pause, upgrades, planet view, notebook, crew and music.
+- The upgrade tree pans with a finger and zooms with a pinch; on touch the first tap on a node shows what it does and a second tap buys it. Menus scroll with a finger.
+- Phones start on the Low preset at 60% render scale. The HUD, menus and start screen fit small screens; in portrait a hint suggests turning the phone sideways. Hints and the hut terminal say "tap USE" instead of "click" or "left mouse".
+
 ## Feedback round after Batch 8
 - Fixed: the snow and ice surface was drawn over everything standing in front of it below the horizon (the lower part of buildings, posts, the hut's interior). The depth copy before the ice pass never wrote depth, because WebGL skips depth writes when the depth test is off; it now always passes the test and writes.
 - The camp is flat: no wind ridges or rolling ground within about 55 m of the claim centre, so nothing low hides behind a ridge; buildings stand on the highest ground under their footprint.

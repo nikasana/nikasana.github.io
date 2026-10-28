@@ -91,13 +91,26 @@ button { font: inherit; color: inherit; }
 .hud-tool .slot.on { border-top-color: var(--glacier); background: rgba(14, 40, 52, 0.75); }
 .hud-tool .slot.locked { opacity: 0.38; }
 
-.hud-depth { position: absolute; right: var(--edge); top: 50%; transform: translateY(-50%); display: grid; grid-template-columns: auto 6px; gap: 10px; align-items: stretch; height: 46vh; }
-.hud-depth .scale { position: relative; width: 6px; background: linear-gradient(to bottom, rgba(230,241,244,0.5), rgba(143,214,236,0.25) 30%, rgba(40,90,140,0.4) 70%, rgba(255,139,82,0.55)); }
-.hud-depth .scale i { position: absolute; left: -5px; right: -5px; height: 2px; background: var(--frost); box-shadow: 0 0 10px var(--glacier); transition: top 300ms ease-out; }
-.hud-depth .scale u { position: absolute; left: 0; right: 0; height: 1px; background: rgba(0,0,0,0.5); }
-.hud-depth .labels { display: flex; flex-direction: column; justify-content: space-between; text-align: right; font: 500 10px/1 var(--mono); color: var(--haze); }
-.hud-depth .labels .now { color: var(--frost); font-size: var(--t-sm); }
-.hud-depth .labels .core { color: var(--ember); }
+.hud-depth { position: absolute; right: calc(var(--edge) + 62px); top: 50%; transform: translateY(-50%); height: 46vh; width: 8px; }
+.hud-depth .title { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); font: 600 10px/1 var(--display); letter-spacing: 0.16em; color: var(--glacier); white-space: nowrap; }
+.hud-depth .scale { position: absolute; inset: 0; border-radius: 4px; background: linear-gradient(to bottom, rgba(230,241,244,0.55), rgba(143,214,236,0.3) 30%, rgba(40,90,140,0.45) 70%, rgba(255,139,82,0.6)); box-shadow: 0 0 0 1px rgba(0,0,0,0.35); }
+/* labelled marks: a short line through the bar with its depth beside it */
+.hud-depth .tk { position: absolute; left: -3px; right: -3px; height: 1px; background: rgba(230,241,244,0.55); }
+.hud-depth .tk span { position: absolute; right: calc(100% + 6px); top: 0; transform: translateY(-50%); font: 500 10px/1 var(--mono); color: #c4d7de; white-space: nowrap; text-shadow: 0 1px 3px #000; }
+.hud-depth .tk.end { height: 2px; }
+.hud-depth .tk.goal span { color: var(--ember); font-weight: 600; }
+/* you: a bright dot that follows you up and down, with your depth beside it */
+.hud-depth .you { position: absolute; left: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--frost); border: 2px solid #06121a; box-shadow: 0 0 10px var(--glacier); transition: top 200ms ease-out; z-index: 3; }
+.hud-depth .you em { position: absolute; right: calc(100% + 8px); top: 50%; transform: translateY(-50%); padding: 3px 6px; background: rgba(6,18,26,0.85); border: 1px solid var(--glacier); font: 600 var(--t-sm)/1 var(--mono); font-style: normal; color: var(--frost); white-space: nowrap; }
+.hud-depth .you em::before { content: "YOU "; color: var(--glacier); font-size: 9px; letter-spacing: 0.1em; }
+/* the deepest point dug so far: a small notch */
+.hud-depth .max { position: absolute; left: -6px; right: -6px; height: 2px; margin-top: -1px; background: var(--glacier); opacity: 0.8; z-index: 2; }
+/* the Golden Needle: its depth band in gold; with Needle Sense, a diamond at its depth */
+.hud-depth .needle { position: absolute; left: -2px; right: -2px; background: rgba(255,210,122,0.55); border-radius: 2px; min-height: 4px; z-index: 1; }
+.hud-depth .needle span { position: absolute; left: calc(100% + 6px); top: 50%; transform: translateY(-50%); font: 600 10px/1 var(--mono); color: #ffd27a; white-space: nowrap; text-shadow: 0 1px 3px #000; }
+.hud-depth .needle.here { background: rgba(255,210,122,0.9); box-shadow: 0 0 10px #ffd27a; }
+.hud-depth .needle-at { position: absolute; left: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; background: #ffd27a; transform: rotate(45deg); box-shadow: 0 0 8px #ffd27a; z-index: 2; quotes: none; }
+.needle-text { position: absolute; left: 50%; top: calc(50% + 72px); transform: translateX(-50%); padding: 4px 9px; background: rgba(6,18,26,0.7); border: 1px solid rgba(255,210,122,0.6); font: 600 12px/1 var(--mono); color: #ffd27a; letter-spacing: 0.06em; white-space: nowrap; pointer-events: none; }
 
 .hud-stats { position: absolute; bottom: var(--edge); left: var(--edge); display: grid; gap: 4px; font: 500 var(--t-xs)/1.3 var(--mono); color: var(--haze); }
 .hud-stats .row { display: flex; gap: 10px; }
@@ -212,6 +225,7 @@ textarea.code { width: 100%; min-height: 110px; background: rgba(0,0,0,0.35); co
 .tnode .pips { display: flex; gap: 2px; }
 .tnode .pips i { flex: 1; height: 2px; background: var(--line); }
 .tnode .pips i.f { background: var(--tc, var(--glacier)); }
+.tnode .star { position: absolute; top: -9px; right: -7px; font-size: 13px; line-height: 1; color: var(--brass); text-shadow: 0 0 6px rgba(0,0,0,.8); }
 .tnode .cost { font: 500 var(--t-xs)/1 var(--mono); color: var(--brass); display: flex; justify-content: space-between; }
 .tnode .cost .eta { color: var(--haze); }
 .tnode.locked { opacity: 0.32; cursor: default; }
@@ -352,7 +366,7 @@ textarea.code { width: 100%; min-height: 110px; background: rgba(0,0,0,0.35); co
 /* legibility over bright snow: soft shadows on all HUD text, frosted backing behind corner readouts */
 .hud, .notices, .floaters { text-shadow: 0 1px 2px rgba(2, 8, 12, 0.6), 0 0 14px rgba(2, 8, 12, 0.35); }
 .hud-stats, .hud-keys { background: linear-gradient(to top, rgba(6, 18, 26, 0.55), rgba(6, 18, 26, 0.28)); padding: 10px 12px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
-.hud-wallet .rate, .hud-wallet .carry, .hud-goal .label, .hud-depth .labels { color: #c4d7de; }
+.hud-wallet .rate, .hud-wallet .carry, .hud-goal .label { color: #c4d7de; }
 .hud-goal { background: radial-gradient(ellipse at 50% 40%, rgba(6, 18, 26, 0.42), transparent 72%); padding: 6px 30px 10px; }
 .hud-keys em { font-style: normal; }
 @media (max-width: 1500px) { .hud-keys em { display: none; } .hud-keys { gap: 6px; } }
@@ -362,7 +376,7 @@ textarea.code { width: 100%; min-height: 110px; background: rgba(0,0,0,0.35); co
 .hud .hud-goal { top: calc(var(--edge) + 34px); }
 .hud-mapwrap { position: absolute; top: var(--edge); right: var(--edge); width: 176px; height: 176px; pointer-events: none; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.4)); }
 .hud-map-n { position: absolute; top: -2px; left: 50%; transform: translateX(-50%); font: 700 11px/1 var(--display); color: var(--ember); text-shadow: 0 1px 3px #000; }
-.hud .hud-depth { top: calc(var(--edge) + 200px); bottom: calc(var(--edge) + 64px); height: auto; transform: none; }
+.hud .hud-depth { top: calc(var(--edge) + 214px); bottom: calc(var(--edge) + 64px); height: auto; transform: none; }
 
 /* saved playthroughs on the start screen */
 .saves { align-self: center; display: grid; gap: 10px; max-height: 70vh; overflow: auto; padding: 4px 6px; width: min(520px, 42vw); }
@@ -375,3 +389,87 @@ textarea.code { width: 100%; min-height: 110px; background: rgba(0,0,0,0.35); co
 .captions { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); display: grid; gap: 4px; justify-items: center; pointer-events: none; }
 .caption { background: rgba(6,18,26,0.82); color: var(--frost); font: 500 var(--t-sm)/1.3 var(--body); padding: 5px 12px; border-left: 2px solid var(--glacier); animation: notice-in 300ms ease-out both; }
 .caption.out { animation: notice-out 420ms ease-in both; }
+
+/* ---------- touch controls (phones and tablets) ---------- */
+html, body { overscroll-behavior: none; }
+body.touch { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }   /* menus still scroll with a finger */
+.touch { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.touch > * { pointer-events: auto; }
+.touch-zone { position: absolute; inset: 0; touch-action: none; background: transparent; }
+.touch-stick { position: absolute; width: 0; height: 0; pointer-events: none !important; }
+.touch-stick::before { content: ''; position: absolute; left: -64px; top: -64px; width: 128px; height: 128px; border-radius: 50%; border: 2px solid rgba(230,241,244,0.35); background: rgba(6,18,26,0.25); }
+.touch-stick i { position: absolute; left: -28px; top: -28px; width: 56px; height: 56px; border-radius: 50%; background: rgba(230,241,244,0.45); box-shadow: 0 0 18px rgba(143,214,236,0.4); }
+.tbtn { position: absolute; border-radius: 50%; border: 2px solid rgba(230,241,244,0.45); background: rgba(6,18,26,0.45); color: var(--frost); font: 700 13px/1 var(--display); letter-spacing: 0.1em; touch-action: none; -webkit-tap-highlight-color: transparent; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.tbtn.on { background: rgba(143,214,236,0.45); border-color: var(--glacier); }
+.tbtn.use { right: max(22px, env(safe-area-inset-right)); bottom: 86px; width: 88px; height: 88px; font-size: 16px; }
+.tbtn.alt { right: calc(max(22px, env(safe-area-inset-right)) + 100px); bottom: 70px; width: 60px; height: 60px; }
+.tbtn.jump { right: calc(max(22px, env(safe-area-inset-right)) + 14px); bottom: 186px; width: 60px; height: 60px; }
+.tbtn.jump { font-size: 11px; }
+/* LIFT: a wide, rounded, glacier-blue button (not a circle like the others), above USE, only by the beacon */
+.tbtn.lift { right: calc(max(22px, env(safe-area-inset-right)) + 90px); bottom: 222px; width: 96px; height: 48px; border-radius: 14px; border-color: var(--glacier); background: rgba(40,110,150,0.6); color: #fff; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 0 14px rgba(143,214,236,0.55); animation: liftPulse 1.6s ease-in-out infinite; }
+.tbtn.lift i { font-style: normal; font-size: 16px; }
+.tbtn.lift[hidden] { display: none; }
+.tbtn.lift.on { background: rgba(143,214,236,0.75); animation: none; }
+@keyframes liftPulse { 50% { box-shadow: 0 0 24px rgba(143,214,236,0.9); } }
+.tbtn.lamp { right: calc(max(22px, env(safe-area-inset-right)) + 96px); bottom: 150px; width: 46px; height: 46px; font-size: 10px; }
+.touch-menus { position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: 12px; display: flex; gap: 6px; }
+.touch-menus .tbtn { position: static; width: 40px; height: 40px; border-radius: 10px; font-size: 18px; letter-spacing: 0; }
+body.touch .hud-tool .slot { pointer-events: auto; }
+body.touch .hud-keys, body.touch .hud-stats { display: none; }
+body.touch .click-to-play { pointer-events: auto; }
+.rotate-hint { display: none; }
+@media (orientation: portrait) {
+  body.touch .rotate-hint { display: block; position: fixed; top: 0; left: 0; right: 0; z-index: 20; padding: 8px 12px; text-align: center; font: 600 13px/1.3 var(--body); color: var(--frost); background: rgba(6,18,26,0.85); pointer-events: none; }
+}
+
+/* ---------- small screens ---------- */
+@media (max-width: 900px), (max-height: 520px) {
+  :root { --edge: 12px; --t-xxl: 34px; --t-lg: 16px; }
+  .hud-tool .slot { width: 66px; padding: 7px 6px 6px; }
+  .hud-tool .slot .tier { display: none; }
+  .hud-depth { height: 34vh; }
+  .notices { top: 92px; width: min(300px, 46vw); }
+  .notice .d { font-size: 12px; }
+  .menu-head { padding: 10px var(--edge) 8px; gap: 10px; flex-wrap: wrap; }
+  .menu-head h1 { font-size: 26px; }
+  .menu-body { padding: 10px var(--edge) 16px; }
+  .settings { grid-template-columns: 1fr; gap: 10px; }
+  .settings nav { display: flex; flex-wrap: wrap; }
+  .tree-tip { width: min(300px, 60vw); max-height: 60vh; overflow: auto; }
+  .pause-left, .pause-right { padding: 16px var(--edge); }
+  .start { overflow: auto; }
+}
+@media (max-width: 760px), (max-height: 520px) {
+  .start { grid-template-columns: 1fr; overflow-y: auto; align-content: start; }
+  .start-left { padding: 16px var(--edge) !important; gap: 10px !important; }
+  .start .title { font-size: 44px !important; }
+  .pause { grid-template-columns: 1fr; overflow-y: auto; height: 100%; }
+}
+.touch.planet .tbtn:not(.menu) { display: none; }
+/* phones: a smaller map, the depth gauge out of the buttons' way, compact pole cards */
+@media (max-width: 900px), (max-height: 520px) {
+  .hud-mapwrap { width: 110px; height: 110px; }
+  .hud-mapwrap canvas.hud-map { width: 110px !important; height: 110px !important; }
+  .hud-compass { width: min(340px, 50vw) !important; }
+  .poles h3 { font-size: 22px !important; }
+  .poles p, .poles .strata { display: none; }
+}
+body.touch .hud .hud-depth { right: auto; left: calc(var(--edge) + 6px); top: 30%; bottom: auto; height: 30vh; }
+body.touch .hud-depth .title { left: -4px; transform: none; }
+body.touch .hud-depth .tk span, body.touch .hud-depth .you em { right: auto; left: calc(100% + 6px); }
+body.touch .hud-depth .tk:not(.end) span { display: none; }
+body.touch .hud-depth .needle span { display: none; }
+@media (max-width: 760px), (max-height: 520px) {
+  .start { display: block !important; overflow-y: auto; height: 100%; touch-action: pan-y; }
+  .start-left { overflow: visible !important; height: auto !important; }
+  .start .title { font-size: 34px !important; }
+  .start .lede { font-size: 14px !important; }
+  .start .saves { position: static !important; width: auto !important; max-height: none !important; padding: 0 var(--edge) 16px; }
+  .menu-body { touch-action: pan-y; }
+}
+@media (orientation: portrait) { body.touch .touch-menus { bottom: 84px; } }
+/* phones: notices stay small and beside the depth gauge, newest two only */
+body.touch .notices { left: calc(var(--edge) + 110px); top: 96px; width: min(300px, 36vw); gap: 4px; }
+body.touch .notice { padding: 6px 9px 7px; }
+body.touch .notice .d { font-size: 11px; }
+body.touch .notices > :nth-child(n+3) { display: none; }

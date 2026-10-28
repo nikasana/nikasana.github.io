@@ -78,9 +78,11 @@ async function solo(browser) {
   await shot(page, '02-digging');
   await page.mouse.up();
   check('Digging removes ice and fills the pack', dug, JSON.stringify(await ev(page, () => ({ vol: window.__game.econ.volume.toFixed(2), carried: window.__game.state.carried }))));
+  // walk the pack over to the depot by the Outfitter's hut: it pours into the vault there
+  await ev(page, () => { const g = window.__game, d = g.works.depotPos; g.ctl.teleport(d.x + 1.5, g.volume.floorBelow(d.x + 1.5, d.y + 3, d.z, 8) + 0.05, d.z); });
   const banked = await until(page, () => window.__game.econ.coins.toNumber() > 0, 60000);
   const c1 = await ev(page, () => window.__game.econ.coins.toNumber());
-  check('Banking at the lift beacon credits the vault', banked && c1 > c0, `coins ${c0} -> ${c1}`);
+  check('Delivering at the depot credits the vault', banked && c1 > c0, `coins ${c0} -> ${c1}`);
   check('First upgrade affordable within seconds of digging', await until(page, () => { const g = window.__game; const n = g.econ.coins.toNumber(); return n >= 2.6; }, 90000), `coins ${await ev(page, () => window.__game.econ.coins.toNumber())}`);
 
   // buy through the upgrade graph

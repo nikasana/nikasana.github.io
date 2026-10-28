@@ -90,19 +90,19 @@ export const NODES = [
   N('vision', 'vis_clarity', 'Deep Clarity', '💎', 'Capstone. See the ice as it is: everything you free is worth more, and rich seams shatter.', 2e6, 1, ['vis_vein', 'vis_flood'], [['vision', 'mul', 0.35], ['richCrit', 'add', 0.2]], 1.5, 5, { kind: 'cap' }),
 
   // 🤖 AUTOMATION
-  N('auto', 'auto_pack', 'Bigger Pack', '🎒', 'Carry more coins before banking.', 2.8, 15, [], [['carry', 'add', 10]], 0, 0, { root: true }),
+  N('auto', 'auto_pack', 'Bigger Pack', '🎒', 'Carry more before you must go up to the depot.', 2.8, 15, [], [['carry', 'add', 30]], 0, 0, { root: true }),
   N('auto', 'auto_lift', 'Lift Winch', '🛗', 'The lift beacon keeps up faster.', 2.8, 12, ['auto_pack'], [['liftSpeed', 'add', 0.25]], 1, 0),
   N('auto', 'auto_magnet', 'Pack Magnet', '🧲', 'Coins slide into your pack on their own.', 38, 12, ['auto_pack'], [['autoCollect', 'add', 0.02]], 0, 1),
   N('auto', 'auto_stake', 'Seismic Stake', '📍', 'Auto-dig: a planted stake keeps fracturing the floor.', 220, 15, ['auto_lift'], [['autoDig', 'add', 0.03]], 2, 0, { kind: 'mech' }),
   N('auto', 'auto_seep', 'Heat Seep', '♨️', 'Auto-melt: a heat spike keeps melting the floor.', 220, 15, ['auto_magnet'], [['autoMelt', 'add', 0.04]], 0, 2, { kind: 'mech' }),
   N('auto', 'auto_belt', 'Lift Express', '⏫', 'Much faster lift.', 1400, 10, ['auto_lift'], [['liftSpeed', 'add', 0.5]], 1, 1),
-  N('auto', 'auto_hopper', 'Coin Hopper', '🪣', 'A deep coin hopper.', 2400, 12, ['auto_belt'], [['carry', 'add', 25]], 1, 2),
+  N('auto', 'auto_hopper', 'Coin Hopper', '🪣', 'A deep coin hopper on your back: far fewer trips up.', 2400, 12, ['auto_belt'], [['carry', 'add', 75]], 1, 2),
   N('auto', 'auto_offline', 'Night Seals', '🌙', 'Automation runs better while you are away.', 4800, 10, ['auto_stake'], [['offline', 'add', 0.1], ['autoAll', 'mul', 0.02]], 3, 0),
   N('auto', 'auto_field', 'Stake Field', '🗼', 'Commit to fracture: stakes hit much harder, heat spikes run cooler. Locks Heat Grid.', 3000, 1, ['auto_stake'], [['autoDig', 'mul', 0.6], ['autoMelt', 'mul', -0.2]], 3, 1, { kind: 'choice', excl: 'auto_style' }),
   N('auto', 'auto_grid', 'Heat Grid', '🕸️', 'Commit to heat: spikes melt much faster, stakes ring softer. Locks Stake Field.', 3000, 1, ['auto_seep'], [['autoMelt', 'mul', 0.6], ['autoDig', 'mul', -0.2]], 0, 3, { kind: 'choice', excl: 'auto_style' }),
   N('auto', 'auto_resonator', 'Stake Resonator', '🎵', 'Stakes ring harder.', 9500, 10, ['auto_stake'], [['autoDig', 'mul', 0.05]], 2, 1),
   N('auto', 'auto_vac', 'Vortex Collector', '🌀', 'Pull loose coins from the whole floor.', 19000, 10, ['auto_seep', 'auto_hopper'], [['autoCollect', 'add', 0.025]], 1, 3),
-  N('auto', 'auto_bank', 'Auto-Bank Relay', '🏦', 'Bank from farther away.', 58000, 10, ['auto_hopper'], [['bank', 'add', 0.02]], 2, 3),
+  N('auto', 'auto_bank', 'Depot Relay', '🏦', 'Deliver from farther away: the depot reaches out to you.', 58000, 10, ['auto_hopper'], [['bank', 'add', 0.02]], 2, 3),
   N('auto', 'auto_array', 'Stake Array', '🔱', 'A ring of stakes and spikes.', 140000, 12, ['auto_resonator'], [['autoDig', 'add', 0.15], ['autoMelt', 'add', 0.1]], 2, 2),
   N('auto', 'auto_core', 'Core Tap', '🔋', 'Stakes draw on deep heat.', 1.9e6, 8, ['auto_array'], [['autoDig', 'mul', 0.08], ['autoMelt', 'mul', 0.08]], 3, 3),
   N('auto', 'auto_tool', 'Auto Swing', '🔁', 'Auto-use-tool: while you stand still aiming at ice, your dig or melt tool keeps working on its own.', 32000, 1, ['auto_vac'], [['autoTool', 'set', 1]], 0, 4, { kind: 'mech' }),
@@ -166,13 +166,86 @@ export const NODES = [
   N('dna', 'dna_glass', 'Glass Eye', '🔮', 'Obsidice DNA. You see the seams in volcanic glass: clean breaks on rich ice.', 6000, 6, [], [['richCrit', 'add', 0.05]], 0, 0, { root: true, mutation: 'obsidice', at: [460, 640] }),
   N('dna', 'dna_hands', 'More Hands', '🙌', 'Capstone. Two tools at once: every strike lands twice, and the second hit opens its own crater.', 120000, 1, ['dna_arms', 'dna_steady'], [['hands', 'set', 1], ['digRate', 'mul', 0.1]], 0, 0, { kind: 'cap', mutation: 'tarfrost', at: [115, 930] }),
   N('dna', 'dna_salt', 'Salt Blood', '🧂', 'Brineice DNA. Your torch cuts a wider hole.', 5000, 6, [], [['meltRadius', 'add', 0.04]], 0, 0, { root: true, mutation: 'brineice', at: [690, 640] }),
-  N('dna', 'dna_lungs', 'Deep Lungs', '🫁', 'Pearlice DNA. You carry more before you must bank.', 6000, 5, [], [['carry', 'add', 6]], 0, 0, { root: true, mutation: 'pearlice', at: [690, 790] }),
+  N('dna', 'dna_lungs', 'Deep Lungs', '🫁', 'Pearlice DNA. You carry more before you must go up.', 6000, 5, [], [['carry', 'add', 18]], 0, 0, { root: true, mutation: 'pearlice', at: [690, 790] }),
   N('dna', 'dna_wind', 'Wind Runner', '🌬️', 'Ventice DNA. You walk faster, and storms steal less of your heat.', 6000, 6, [], [['walkSpeed', 'add', 0.04], ['stormShield', 'add', 0.06]], 0, 0, { root: true, mutation: 'ventice', at: [-690, 640] }),
   N('dna', 'dna_storm', 'Storm Heart', '⚡', 'Stormglass DNA. Hotter melting.', 9000, 8, [], [['meltPower', 'mul', 0.05]], 0, 0, { root: true, mutation: 'stormglass', at: [-690, 790] }),
   N('dna', 'dna_sky', 'Sky Eyes', '🌠', 'Lumice DNA. Auroras and lone sky coins come more often.', 8000, 5, [], [['auroraRate', 'add', 0.1]], 0, 0, { root: true, mutation: 'lumice', at: [-345, 930] }),
   N('dna', 'dna_prism', 'Prism Hands', '🌈', 'Prismice DNA. Clean breaks everywhere.', 10000, 6, [], [['crit', 'add', 0.015]], 0, 0, { root: true, mutation: 'prismice', at: [345, 930] }),
   N('dna', 'dna_apex', 'Apex Form', '🧬', 'Capstone of DNA, for a body made from six worlds of ice: faster, longer reach, harder blows, hotter melting, sharper eyes.', 400000, 1, ['dna_hands', 'dna_salt', 'dna_wind', 'dna_sky'], [['walkSpeed', 'add', 0.1], ['reach', 'add', 0.4], ['digRate', 'mul', 0.06], ['meltPower', 'mul', 0.06], ['nightVision', 'add', 0.3]], 0, 0, { at: [0, 1080] }),
 ];
+
+// The outer rings: costlier upgrades for the rest of every planet, and an endless Mastery in each main
+// tree, so there is always something worth buying until the very end. Placed with explicit positions in
+// the free space around each tree.
+const RING = (tree, id, name, icon, desc, c0, max, parents, effects, at, extra = {}) => N(tree, id, name, icon, desc, c0, max, parents, effects, 0, 0, { at, ...extra });
+NODES.push(
+  // ⛏️ DIG: above the tree
+  RING('dig', 'dig2_chisel', 'Frost Chisel', '🪛', 'A second edge for fine work: more of every coin comes out whole.', 4.5e6, 15, ['dig_master'], [['digYield', 'add', 0.04]], [-230, -1000]),
+  RING('dig', 'dig2_balance', 'Balanced Head', '⚖️', 'A perfectly weighted head: quicker swings.', 6e6, 15, ['dig2_chisel'], [['digRate', 'mul', 0.03]], [-440, -1000]),
+  RING('dig', 'dig2_split', 'Seam Splitter', '🪓', 'Clean breaks follow rich seams.', 9e6, 12, ['dig2_chisel'], [['richCrit', 'add', 0.03], ['crit', 'add', 0.006]], [-230, -1130]),
+  RING('dig', 'dig2_granite', 'Granite Grip', '🧱', 'Heavy blows land harder.', 1.4e7, 12, ['dig2_balance'], [['heavyMult', 'add', 0.08]], [-650, -1000]),
+  RING('dig', 'dig2_forge', 'Cold Forge', '🔥', 'Clean breaks free far more.', 2.2e7, 12, ['dig2_split'], [['critMult', 'add', 0.12]], [-440, -1130]),
+  RING('dig', 'dig2_bore', 'Deep Bore', '🕳️', 'A wider bite at every tier.', 4e7, 15, ['dig2_granite', 'dig2_forge'], [['digRadius', 'add', 0.012]], [-650, -1130], { kind: 'mech' }),
+  RING('dig', 'dig2_quake', 'Quake Strike', '💥', 'Every strike shakes loose a little more ice around it.', 9e7, 10, ['dig2_bore'], [['digRadius', 'mul', 0.025], ['digYield', 'add', 0.03]], [-860, -1130]),
+  RING('dig', 'dig2_mastery', 'Dig Mastery', '♾️', 'Endless: every level makes digging a little better, forever.', 2e7, 400, ['dig2_bore'], [['digRate', 'mul', 0.012], ['digYield', 'add', 0.008]], [-650, -1260], { kind: 'cap' }),
+  // 🔥 MELT: above the tree
+  RING('melt', 'melt2_blue', 'Blue Flame', '🔵', 'A hotter, cleaner flame.', 1.2e7, 15, ['melt_master'], [['meltPower', 'add', 0.05]], [230, -1000]),
+  RING('melt', 'melt2_sink', 'Heat Sink', '🧊', 'Less heat wasted on the air.', 1.6e7, 12, ['melt2_blue'], [['meltEff', 'add', 0.04]], [440, -1000]),
+  RING('melt', 'melt2_lens', 'Thermal Lens', '🔍', 'Spread the heat wider without losing it.', 2.2e7, 12, ['melt2_blue'], [['meltRadius', 'add', 0.04]], [230, -1130]),
+  RING('melt', 'melt2_flash', 'Flash Melt', '⚡', 'Ice you warm shatters wider under the pick.', 3e7, 10, ['melt2_sink'], [['shock', 'add', 0.08]], [650, -1000], { kind: 'mech' }),
+  RING('melt', 'melt2_coil', 'Plasma Coil', '🌀', 'Coiled plasma: much stronger melting.', 5e7, 12, ['melt2_lens'], [['meltPower', 'mul', 0.035]], [440, -1130]),
+  RING('melt', 'melt2_turbine', 'Steam Turbine', '♨️', 'Your steam drives a turbine that melts on its own.', 8e7, 12, ['melt2_flash', 'melt2_coil'], [['autoMelt', 'add', 0.06]], [650, -1130]),
+  RING('melt', 'melt2_sun', 'Sun Core', '☀️', 'A pocket sun in the lance.', 1.6e8, 10, ['melt2_turbine'], [['meltPower', 'mul', 0.05], ['meltRadius', 'add', 0.03]], [860, -1130]),
+  RING('melt', 'melt2_mastery', 'Melt Mastery', '♾️', 'Endless: every level makes melting a little better, forever.', 3e7, 400, ['melt2_turbine'], [['meltPower', 'mul', 0.012], ['meltEff', 'add', 0.006]], [650, -1260], { kind: 'cap' }),
+  // 👁️ VISION: out to the left
+  RING('vision', 'vis2_optics', 'Night Optics', '🌙', 'See further in the dark deep.', 3e6, 10, ['vis_clarity'], [['nightVision', 'add', 0.1], ['vision', 'add', 0.05]], [-1340, 560]),
+  RING('vision', 'vis2_sense', 'Coin Sense', '🪙', 'Coins come to you from further away.', 5e6, 12, ['vis2_optics'], [['collectRange', 'add', 0.3]], [-1550, 560]),
+  RING('vision', 'vis2_map', 'Seam Map', '🗺️', 'Read the seams further ahead: richer cuts.', 8e6, 12, ['vis2_optics'], [['vision', 'add', 0.08]], [-1340, 690]),
+  RING('vision', 'vis2_glint', 'Glint Lens', '💎', 'Coins seen through the lens are worth more.', 1.5e7, 12, ['vis2_map'], [['valueMult', 'add', 0.02]], [-1550, 690]),
+  RING('vision', 'vis2_scope', 'Prism Scope', '🔭', 'A stronger pull toward the Golden Needle, and finds glow brighter.', 3e7, 5, ['vis2_sense'], [['hint', 'add', 1]], [-1760, 560]),
+  RING('vision', 'vis2_appraise', 'Appraiser', '🧐', 'You know a good coin when you see one.', 6e7, 12, ['vis2_glint'], [['valueMult', 'add', 0.025]], [-1550, 820]),
+  RING('vision', 'vis2_mastery', 'Vision Mastery', '♾️', 'Endless: every level, coins are worth a little more, forever.', 2.5e7, 400, ['vis2_appraise'], [['valueMult', 'add', 0.004], ['collectRange', 'add', 0.02]], [-1340, 820], { kind: 'cap' }),
+  // 🤖 AUTOMATION and the depot: out to the right
+  RING('auto', 'dep_belt', 'Depot Conveyor', '🛤️', 'The depot takes your pack faster.', 120, 15, ['auto_pack'], [['deliver', 'mul', 0.22]], [1340, 110]),
+  RING('auto', 'dep_intake', 'Twin Intakes', '🚪', 'A second intake at the depot.', 3500, 10, ['dep_belt'], [['deliver', 'add', 6]], [1550, 110]),
+  RING('auto', 'dep_frame', 'Pack Frame', '🧳', 'A frame for a far bigger pack: trips up get rare.', 15000, 15, ['dep_belt'], [['carry', 'add', 60]], [1340, 240]),
+  RING('auto', 'dep_chute', 'Pneumatic Chute', '📯', 'A chute from your pack to the depot: a trickle of coins goes up on its own while you dig.', 250000, 1, ['dep_intake', 'dep_frame'], [['chute', 'add', 0.8]], [1550, 240], { kind: 'mech' }),
+  RING('auto', 'dep_pressure', 'Chute Pressure', '🌬️', 'More through the chute.', 900000, 12, ['dep_chute'], [['chute', 'add', 0.5]], [1760, 240]),
+  RING('auto', 'auto2_picker', 'Auto Picker', '🦾', 'A picker arm that digs on its own.', 4e6, 12, ['auto_core'], [['autoDig', 'add', 0.08]], [1340, 560]),
+  RING('auto', 'auto2_drone', 'Steam Drone', '🛸', 'A drone that melts on its own.', 6e6, 12, ['auto2_picker'], [['autoMelt', 'add', 0.08]], [1550, 560]),
+  RING('auto', 'auto2_shift', 'Night Shift', '🌒', 'Work goes on while you are away.', 9e6, 10, ['auto2_picker'], [['offline', 'add', 0.04]], [1340, 690]),
+  RING('auto', 'auto2_overdrive', 'Overdrive', '⏩', 'All automation runs harder.', 2.5e7, 12, ['auto2_drone', 'auto2_shift'], [['autoAll', 'mul', 0.035]], [1550, 690]),
+  RING('auto', 'auto2_mastery', 'Automation Mastery', '♾️', 'Endless: every level, all automation a little stronger, forever.', 3e7, 400, ['auto2_overdrive'], [['autoAll', 'mul', 0.01], ['deliver', 'mul', 0.01]], [1550, 820], { kind: 'cap' }),
+  // 🛰️ PLANET: up and right
+  RING('planet', 'pl2_polish', 'Mirror Polish', '✨', 'Brighter mirrors.', 1.2e6, 12, ['pl_orbit'], [['mirrorPower', 'add', 0.25]], [1340, -150]),
+  RING('planet', 'pl2_tune', 'Orbit Tuning', '🛰️', 'Mirrors hold their aim: more of the sunlight reaches the ice.', 4e6, 10, ['pl2_polish'], [['meltEff', 'add', 0.03]], [1550, -150]),
+  RING('planet', 'pl2_ring', 'Sun Ring', '💍', 'A ring of mirrors in orbit.', 1.5e7, 10, ['pl2_tune'], [['mirrorPower', 'add', 0.4], ['autoMelt', 'add', 0.03]], [1550, -280]),
+  // 🌡️ CLIMATE: left
+  RING('climate', 'cl2_albedo', 'Albedo Drop', '🌑', 'Darker ice drinks in the sun.', 2e5, 10, ['cl_green'], [['meltEff', 'add', 0.03]], [-1340, 250]),
+  RING('climate', 'cl2_current', 'Warm Current', '🌊', 'A warmer sea: coins rise with the water.', 8e5, 10, ['cl2_albedo'], [['valueMult', 'add', 0.015]], [-1550, 250]),
+  RING('climate', 'cl2_jet', 'Jet Stream', '🌪️', 'Steady winds carry heat to the pole.', 3e6, 10, ['cl2_current'], [['meltPower', 'mul', 0.025], ['stormShield', 'add', 0.05]], [-1550, 380]),
+  // 🍀 LUCK: below
+  RING('luck', 'lk2_chest', 'Chest Hunter', '🧰', 'Chests hold more.', 50000, 10, ['lk_ledger'], [['chestMult', 'add', 0.15]], [-900, 1060]),
+  RING('luck', 'lk2_strike', 'Lucky Strike', '🎲', 'Clean breaks come more often.', 2e5, 10, ['lk2_chest'], [['crit', 'add', 0.006]], [-1110, 1060]),
+  RING('luck', 'lk2_gold', 'Golden Touch', '👑', 'Everything you find is worth a little more.', 1.5e6, 12, ['lk2_strike'], [['valueMult', 'add', 0.015]], [-1110, 1190]),
+);
+
+// Spread the graph so no two nodes overlap: the side trees move outward, DNA moves down below Vision and
+// Automation, and the outer columns of Vision, Automation, Planet and Climate go further out still.
+{
+  const SHIFT = { planet: [260, 0], style: [260, 0], climate: [-260, 0], luck: [-260, 0], audio: [-260, 0], dna: [0, 440] };
+  const OUTER = { vision: -300, auto: 300, planet: 300, climate: -300 };
+  const T = Object.fromEntries(TREES.map((t) => [t.id, t]));
+  for (const n of NODES) {
+    const [ox, oy] = T[n.tree].origin;
+    const at = n.at ? [...n.at] : [ox * (230 + n.gx * 210), oy * (110 + n.gy * 124)];
+    const sh = SHIFT[n.tree] || [0, 0];
+    at[0] += sh[0]; at[1] += sh[1];
+    if (OUTER[n.tree] && /2_|^dep_/.test(n.id)) at[0] += OUTER[n.tree] + (n.tree === 'planet' || n.tree === 'climate' ? sh[0] : 0);   // the new outer columns
+    if (sh[0] || sh[1] || n.at) n.at = at;
+  }
+  for (const t of TREES) if (SHIFT[t.id] && t.label) t.label = [t.label[0] + SHIFT[t.id][0], t.label[1] + SHIFT[t.id][1]];
+}
 
 export const NODE_BY_ID = Object.fromEntries(NODES.map((n) => [n.id, n]));
 
@@ -182,7 +255,7 @@ export const BASE_STATS = {
   meltTier: 0, meltPower: 0, meltRadius: 0, meltEff: 1,
   visionTier: 0, vision: 1, hint: 0,
   collectRange: 2.2, collect: 0, autoCollect: 0, reach: 3.2,
-  carry: 40, liftSpeed: 1.5, bank: 0,
+  carry: 120, liftSpeed: 1.5, bank: 0, deliver: 12, chute: 0, chestMult: 0,
   autoDig: 0, autoMelt: 0, autoAll: 1, offline: 0.25,
   valueMult: 1,
   // tool interplay: warmed ice digs out wider (shock), cracked ice melts faster (seep)
