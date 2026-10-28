@@ -141,6 +141,35 @@ const star = await ev(() => { const t = window.__game.menus.tree; t.showTip('dig
 check('The tree marks the next milestone level with ★', star.star && star.tip, JSON.stringify(star));
 await shot('04-tree-milestone');
 
+// the upgrade screen works like a game shop: tabs with counts, a Ready to buy list, select-then-buy, buy max, search
+await ev(() => { const g = window.__game; g.devCoins(g.econ.coins.constructor.fromNumber(2000)); });
+await wait(1200);
+const shop = await ev(async () => {
+  const g = window.__game, t = g.menus.tree, sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  t.refresh();
+  const tabs = [...document.querySelectorAll('.up-tab')].length, count = +(document.querySelector('.up-tab .n')?.textContent || 0);
+  const ready = document.querySelectorAll('.up-list:not(.soon) .up-row.can').length;
+  const best = document.querySelector('.up-list .up-row small')?.textContent.includes('Best value');
+  // a first click on another node only selects it
+  t.dragged = false; t.select(null);
+  const id = 'dig_grip', L0 = g.econ.levels[id] || 0;
+  t.nodes[id].click(); await sleep(200);
+  const afterSelect = (g.econ.levels[id] || 0) - L0, panel = !t.tip.hidden && /→/.test(t.tip.textContent) && !!t.tip.querySelector('.up-buy.go');
+  t.tip.querySelector('.up-buy.go').click(); await sleep(200);
+  const afterBuy = (g.econ.levels[id] || 0) - L0;
+  const maxBtn = t.tip.querySelector('.up-buy.max'), n = maxBtn ? t.buyMax(id) : 0;
+  t.search.value = 'torch'; t.applyFilter();
+  const hits = document.querySelectorAll('.tnode.match').length, dimmed = document.querySelectorAll('.tnode.dim').length;
+  t.search.value = ''; t.applyFilter();
+  t.focusBranch('dig'); await sleep(500);
+  const digDim = t.nodes.dig_edge.classList.contains('dim'), meltDim = t.nodes.melt_torch ? t.nodes.melt_torch.classList.contains('dim') : null;
+  return { tabs, count, ready, best, afterSelect, panel, afterBuy, max: n, hits, dimmed, digDim, meltDim };
+});
+check('Upgrade screen: branch tabs with a count of what you can buy, and a Ready to buy list with the best value', shop.tabs >= 10 && shop.count > 0 && shop.ready > 0 && shop.best, JSON.stringify(shop));
+check('Upgrade screen: a click selects and shows before → after with a BUY button; BUY buys; Buy max buys several', shop.afterSelect === 0 && shop.panel && shop.afterBuy === 1 && shop.max >= 1, JSON.stringify(shop));
+check('Upgrade screen: search highlights matches, a branch tab dims the others', shop.hits >= 1 && shop.dimmed > 100 && !shop.digDim && shop.meltDim === true, JSON.stringify(shop));
+await shot('05-upgrade-shop');
+
 await browser.close();
 const failed = results.filter((r) => !r.ok);
 writeFileSync(join(out, 'report.md'), [`# Second feedback round checks`, '', `${results.length - failed.length}/${results.length} checks passed.`, '',
