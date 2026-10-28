@@ -463,7 +463,7 @@ export class CoinSystem {
   }
 
   drawLoose(camPos) {
-    const n = [0, 0, 0], f = [0, 0, 0];
+    const n = this.looseMesh.map(() => 0), f = this.looseFar.map(() => 0);
     for (const c of this.loose) {
       const near = c.p.distanceToSquared(camPos) < NEAR_R2 && n[c.tier] < 60;
       const m = near ? this.looseMesh[c.tier] : this.looseFar[c.tier];
@@ -479,7 +479,7 @@ export class CoinSystem {
   drawEmbedded(camPos) {
     this.lastBuild.copy(camPos);
     this.dirty = false;
-    const n = [0, 0, 0];
+    const n = this.embMesh.map(() => 0);
     const R2 = VIS_R * VIS_R;
     const RC = (VIS_R + CHUNK_M) ** 2;
     for (const list of this.embedded.values()) {
