@@ -14,7 +14,7 @@
 - PASS DNA tree completed: every mutant type has DNA and the Apex Form capstone unlocks ({"types":12,"apex":1,"walk0":1.1,"walk1":1.2000000000000002})
 - PASS Tide-sealed capsules open after the tide turns ({"found":true,"open":true})
 - PASS Aurora ribbons ring the Auralis globe
-- PASS Auralis save code exported for the fixtures (4286 chars)
+- PASS Auralis save code exported for the fixtures (3566 chars)
 - PASS Three crewmates in one crew (joined true true)
 - PASS Crew Roles: three roles share a mixed-crew bonus, and your role boosts its tree ({"mix":1.08,"role":"melter","mult":0})
 - PASS A crewmate's sky catch counts toward the crew milestone

@@ -49,7 +49,13 @@ function frozenCoinMaterial(tier, gfx) {
 
 const VIS_R = 11;              // embedded coins drawn within this distance
 const NEAR_R2 = 4 * 4;         // loose coins this close get the detailed, shadow-casting model
-const COUNT_PER_M3 = 2.0;   // dense enough that every few swings free a coin
+// Coins in the field are giant: about 0.8 m across (a relic 1.5 m), drawn GIANT times the minted size
+// (the vault pile keeps minted coins). There are COUNT_PER_M3 of them, six times fewer than before and
+// each worth six times more, and one only comes free once you have dug most of the way around it.
+export const GIANT = 2.6;
+const COUNT_PER_M3 = 0.32;
+const _sG = new THREE.Vector3(GIANT, GIANT, GIANT);
+const MAX_R = Math.max(...COINS.map((c) => c.radius)) * GIANT;
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(1, 1, 1), _p = new THREE.Vector3(), _n = new THREE.Vector3();
 
 // ---------- coin art ----------
@@ -317,7 +323,7 @@ export class CoinSystem {
       const x = ox + r() * CHUNK_M, y = oy + r() * CHUNK_M, z = oz + r() * CHUNK_M;
       const a = r(), b = r(), cc = r(), tierRoll = r();
       const top = surfaceY(x, z);
-      if (y > top - 0.42) continue; // the smoothed mesh sits a little below the analytic surface
+      if (y > top - 0.42 - 0.5) continue; // fully under the snow (the smoothed mesh sits a little below the analytic surface)
       const rich = richness(x, y, z);
       if (a > (0.06 + Math.pow(rich, 1.6) * 1.45) / 1.6) continue;
       const depth = top - y;
@@ -333,8 +339,8 @@ export class CoinSystem {
     }
     // the first metre under the starting spot holds a small frozen hoard, so the first swing pays
     if (c.cy === -1 && c.cx === 0 && c.cz === 0) {
-      for (let i = 0; i < 26; i++) {
-        const x = 1.2 + r() * 2.2, z = 1.5 + r() * 2.2, y = surfaceY(x, z) - 0.42 - r() * 0.6;
+      for (let i = 0; i < 5; i++) {
+        const x = 1.0 + r() * 2.8, z = 1.3 + r() * 2.8, y = surfaceY(x, z) - 0.95 - r() * 0.5;
         const id = hash32(ctx.seed, 7, i);
         if (this.collectedIds.has(id) || this.volume.sample(x, y, z) < ISO + 20) continue;
         _q.setFromEuler(new THREE.Euler(r() * 6.28, r() * 6.28, r() * 6.28));
@@ -377,17 +383,19 @@ export class CoinSystem {
     const freed = [];
     // only the chunks the edit's bounds overlap
     const lists = [];
-    for (let cx = Math.floor(b.x0 / CHUNK_M); cx <= Math.floor(b.x1 / CHUNK_M); cx++)
-      for (let cy = Math.floor(b.y0 / CHUNK_M); cy <= Math.floor(b.y1 / CHUNK_M); cy++)
-        for (let cz = Math.floor(b.z0 / CHUNK_M); cz <= Math.floor(b.z1 / CHUNK_M); cz++) {
+    // a giant coin reaches past the edit: look a coin's radius beyond it
+    const R = MAX_R;
+    for (let cx = Math.floor((b.x0 - R) / CHUNK_M); cx <= Math.floor((b.x1 + R) / CHUNK_M); cx++)
+      for (let cy = Math.floor((b.y0 - R) / CHUNK_M); cy <= Math.floor((b.y1 + R) / CHUNK_M); cy++)
+        for (let cz = Math.floor((b.z0 - R) / CHUNK_M); cz <= Math.floor((b.z1 + R) / CHUNK_M); cz++) {
           const l = this.embedded.get(keyOf(cx, cy, cz));
           if (l) lists.push(l);
         }
     for (const list of lists) {
       for (let i = list.length - 1; i >= 0; i--) {
         const k = list[i];
-        if (k.x < b.x0 || k.x > b.x1 || k.y < b.y0 || k.y > b.y1 || k.z < b.z0 || k.z > b.z1) continue;
-        if (this.volume.sample(k.x, k.y, k.z) < ISO - 6) {
+        if (k.x < b.x0 - R || k.x > b.x1 + R || k.y < b.y0 - R || k.y > b.y1 + R || k.z < b.z0 - R || k.z > b.z1 + R) continue;
+        if (this.exposed(k)) {
           list.splice(i, 1);
           freed.push(k);
         }
@@ -397,6 +405,24 @@ export class CoinSystem {
     this.dirty = true;
     for (const k of freed) this.release(k, op);
     if (this.onFreed) this.onFreed(freed, op);
+  }
+
+  // fully dug out: the centre and at least 9 of 10 points around the rim and on both faces are in open air
+  exposed(k) {
+    const v = this.volume;
+    if (v.sample(k.x, k.y, k.z) >= ISO - 6) return false;
+    const c = COINS[k.tier], r = c.radius * GIANT * 0.9, t = Math.max(0.04, c.thick * GIANT * 0.6);
+    let air = 0;
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      _p.set(Math.cos(a) * r, Math.sin(a) * r, 0).applyQuaternion(k.q);
+      if (v.sample(k.x + _p.x, k.y + _p.y, k.z + _p.z) < ISO) air++;
+    }
+    for (const f of [-1, 1]) {
+      _p.set(0, 0, f * t).applyQuaternion(k.q);
+      if (v.sample(k.x + _p.x, k.y + _p.y, k.z + _p.z) < ISO) air++;
+    }
+    return air >= 9;
   }
 
   release(k, op) {
@@ -438,7 +464,7 @@ export class CoinSystem {
       if (target && c.t > 0.25) {
         _p.copy(target.pos).sub(c.p);
         const d = _p.length();
-        if (d < 0.45) {
+        if (d < 0.9) {   // giant coins: taken a little further out
           this.loose.splice(i, 1);
           target.take(c);
           continue;
@@ -469,7 +495,7 @@ export class CoinSystem {
       if (c.sleep > 1) continue;
       c.v.y -= 16 * dt;
       c.p.addScaledVector(c.v, dt);
-      const rad = 0.05;
+      const rad = Math.max(0.07, COINS[c.tier].thick * GIANT * 0.5);   // a giant coin rests on its face; gems and relics are thicker
       const s = vol.sdf(c.p.x, c.p.y, c.p.z);
       if (s > -rad) {
         vol.normalAt(c.p.x, c.p.y, c.p.z, _n);
@@ -502,7 +528,7 @@ export class CoinSystem {
       const m = near ? this.looseMesh[c.tier] : this.looseFar[c.tier];
       const cnt = near ? n : f;
       if (cnt[c.tier] >= m.instanceMatrix.count) continue;
-      _m.compose(c.p, c.q, _s);
+      _m.compose(c.p, c.q, _sG);
       m.setMatrixAt(cnt[c.tier]++, _m);
     }
     this.looseMesh.forEach((m, i) => { m.count = n[i]; m.instanceMatrix.needsUpdate = true; });
@@ -525,7 +551,7 @@ export class CoinSystem {
         const m = this.embMesh[k.tier];
         if (n[k.tier] >= 7000) continue;
         _p.set(k.x, k.y, k.z);
-        _m.compose(_p, k.q, _s);
+        _m.compose(_p, k.q, _sG);
         m.setMatrixAt(n[k.tier]++, _m);
       }
     }

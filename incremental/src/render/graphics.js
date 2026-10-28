@@ -77,7 +77,8 @@ class MainScenePass extends Pass {
   constructor(g) {
     super();
     this.g = g;
-    this.copyDepth = new FullScreenQuad(new THREE.ShaderMaterial({ ...COPY_DEPTH, uniforms: THREE.UniformsUtils.clone(COPY_DEPTH.uniforms), depthWrite: true, depthTest: false }));
+    // depthTest must stay on for the depth write to happen (WebGL skips depth writes with the test off): always pass it
+    this.copyDepth = new FullScreenQuad(new THREE.ShaderMaterial({ ...COPY_DEPTH, uniforms: THREE.UniformsUtils.clone(COPY_DEPTH.uniforms), depthWrite: true, depthTest: true, depthFunc: THREE.AlwaysDepth }));
     this.copy = new FullScreenQuad(new THREE.ShaderMaterial({ ...COPY, uniforms: THREE.UniformsUtils.clone(COPY.uniforms), depthWrite: false, depthTest: false }));
     this.backMat = new THREE.MeshDepthMaterial({ side: THREE.BackSide });
   }

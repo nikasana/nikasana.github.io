@@ -114,3 +114,8 @@ Choices made where the build prompt is silent, and the reasons. Updated every ba
 - The "easier" threshold (goal in at most two thirds of the normal time for every bot) was chosen after seeing the numbers: with a 30% goal and half costs, the bots finish in 47-61% of the time and the first wait halves.
 - The Planet tools also freeze in Reverse Mode; their downward column mostly meets solid ice there, so they matter less than in a melt campaign.
 - Captions are attached to the music's cue function, so they appear even when the music is muted or the audio has not started.
+
+## Feedback round after Batch 8
+- The ice pass draws over a copy of the opaque pass's depth. A full-screen copy with depthTest off writes no depth in WebGL, so the ice was never occluded by opaque objects in front of it; the copy now uses depthFunc Always with the test on.
+- Giant coins keep the economy exact: COUNT_PER_M3 falls from 2.0 to 0.32 tries per m³ and COINS_PER_M3 from 0.58 to 0.093, so coinValue (value per m³ / coins per m³) makes each coin about six times richer; six pack slots per coin keep the bank trips as frequent. The "fully dug out" test samples the coin's centre plus 8 rim and 2 face points in its own orientation and needs 9 of 10 in air, so a coin resting on the floor of a hole still comes free.
+- The camp flattening multiplies the wind ridges by 0.25 and removes the rolling ground within 55 m (ramping back over the next 25 m). Old saves keep their edited chunks exactly, so a step of at most about 0.2 m can show where an edited chunk meets a regenerated one at the surface.

@@ -40,7 +40,8 @@ import * as Save from './save/save.js';
 
 const SIM_STEP = 1 / 30;
 const PHYS_STEP = 1 / 60;
-const COINS_PER_M3 = 0.58;    // expected embedded coins per m³ (see coins.js spawn: 2.0 tries x 1.6 x mean seam acceptance 0.18)
+const COINS_PER_M3 = 0.093;   // expected embedded coins per m³ (see coins.js spawn: 0.32 tries x 1.6 x mean seam acceptance 0.18)
+const COIN_SLOTS = 6;          // a giant coin takes six pack slots, so the pack fills at the same pace as before
 const CUE_CAPTIONS = {
   resonance: '♪ A rising chord: a resonance',
   motif: '♪ A short motif: a milestone',
@@ -558,11 +559,31 @@ class Game {
   }
 
   // Upgrades are bought at the Outfitter's hut on the surface.
-  atOutfitter() { return this.works.outfitterPos && this.ctl.pos.distanceTo(this.works.outfitterPos) < 4.2; }
+  // inside the Outfitter's hut (where the upgrade terminal is)
+  atOutfitter() { return this.works.insideHut(this.ctl.pos) || (this.works.terminalPos && this.ctl.pos.distanceTo(this.works.terminalPos) < 3); }
+
+  openUpgrades() {
+    if (!this.canUpgrade()) { this.upgradeAway(); return; }
+    this.suppressPause = true;
+    this.input.unlock();
+    this.sfx.play('click');
+    this.menus.show('upgrades');
+  }
+
+  // redraw the terminal's screen twice a second while you are near the hut
+  updateTerminal(dt) {
+    this.termT = (this.termT || 0) - dt;
+    if (this.termT > 0 || !this.works.terminalPos || this.ctl.pos.distanceTo(this.works.terminalPos) > 16) return;
+    this.termT = 0.5;
+    const e = this.econ, t = M.costTable(e);
+    const list = M.available(e).map((n) => ({ n: skinNode(n, e.reverse), cost: t[n.id].cost })).sort((a, b) => (a.cost.lt(b.cost) ? -1 : 1)).slice(0, 5)
+      .map(({ n, cost }) => ({ icon: n.icon, name: n.name, cost: format(cost), can: e.coins.gte(cost) }));
+    this.works.drawTerminal({ coins: format(e.coins), list, ready: list.some((x) => x.can), aimed: this.aimTerminal, reverse: e.reverse });
+  }
   canUpgrade() { return this.atOutfitter() || this.dev; }
   upgradeAway() {
     this.sfx.play('deny');
-    this.hud.notice("Upgrades are at the Outfitter's hut", `Ride the lift up and walk to the blue hut ▣ on the surface near where you started, then press ${this.keyName('upgrades')}.`, '', 7000);
+    this.hud.notice("Upgrades are at the Outfitter's hut", 'Ride the lift up, walk into the blue hut ▣ on the surface near where you started, and click the upgrade terminal on its back wall.', '', 7000);
   }
 
   placeStart() {
@@ -666,7 +687,7 @@ class Game {
   addDust(removed, depth, mult) {
     if (removed <= 0) return;
     const value = removed * M.baseValuePerM3(this.econ, Math.max(0, depth)) * 0.5 * mult;
-    const slots = removed * COINS_PER_M3;
+    const slots = removed * COINS_PER_M3 * COIN_SLOTS;
     const c = this.state.carried;
     const room = Math.max(0, this.stats.carry - c.count);
     const k = slots > 0 ? Math.min(1, room / slots) : 1;
@@ -1294,7 +1315,7 @@ class Game {
     this.profile.lastSolo = slot; this.writeProfile();
     this.newCampaign(pole, slot);
     this.enterPlay();
-    this.hud.notice('Welcome to Frostara', `Hold left mouse on the ice to dig. Coins go in your pack; stand by the glowing lift beacon to bank them. Buy upgrades at the blue Outfitter's hut ▣ nearby (press ${this.keyName('upgrades')} there).`, '', 14000);
+    this.hud.notice('Welcome to Frostara', `Hold left mouse on the ice to dig. Coins go in your pack; stand by the glowing lift beacon to bank them. Buy upgrades inside the blue Outfitter's hut ▣ nearby: click the terminal on its back wall.`, '', 14000);
   }
 
   // Reverse Mode ("Make It Snow") unlocks once Omega is melted through
@@ -1491,7 +1512,7 @@ class Game {
         if (!this.slotOverride) { this.newSave(pole); return; }
         this.newCampaign(pole, this.slot);
         begin();
-        this.hud.notice('Welcome to Frostara', `Hold left mouse on the ice to dig. Coins go in your pack; stay near the glowing lift beacon to bank them. Buy upgrades at the blue Outfitter's hut ▣ nearby (press ${this.keyName('upgrades')} there).`, '', 14000);
+        this.hud.notice('Welcome to Frostara', `Hold left mouse on the ice to dig. Coins go in your pack; stay near the glowing lift beacon to bank them. Buy upgrades inside the blue Outfitter's hut ▣ nearby: click the terminal on its back wall.`, '', 14000);
       });
     }
     if (join) setTimeout(() => this.crewJoin(join), 300);
@@ -1577,7 +1598,11 @@ class Game {
     const st = this.stats;
     const depthHere = this.depthAt(eye.x, eye.y, eye.z);
 
-    const toolInput = playing && inp.locked ? inp : { is: () => false, was: () => false };
+    // the upgrade terminal in the Outfitter's hut: aim at it and click
+    this.aimTerminal = playing && this.works.terminalHit(eye, dir);
+    if (this.aimTerminal && inp.locked && inp.was('use')) this.openUpgrades();
+    this.updateTerminal(dt);
+    const toolInput = playing && inp.locked && !this.aimTerminal ? inp : { is: () => false, was: () => false };
     this.tools.view.visible = this.started && this.menus.cur !== 'start';
     this.tools.update(dt, toolInput, {
       eye, dir, st, move: this.ctl.vel.lengthSq() > 0.5,
@@ -1591,11 +1616,11 @@ class Game {
     const carried = this.state.carried;
     this.coins.update(dt, eye, [{
       pos: chest, range: st.collectRange,
-      canTake: (c) => c.sky || carried.count + 1 <= st.carry,
+      canTake: (c) => c.sky || carried.count + COIN_SLOTS <= st.carry,
       take: (c) => {
         // aurora coins are caught straight into the vault
         if (c.sky) { this.catchSky(c, chest.clone().addScaledVector(dir, 0.6)); return; }
-        carried.count += 1; carried.value += c.value; carried.ids.push(c.id);
+        carried.count += COIN_SLOTS; carried.value += c.value; carried.ids.push(c.id);
         if (carried.ids.length > 400) carried.ids.splice(0, carried.ids.length - 400);
         this.sfx.play('clink', { tier: c.tier, gain: 0.7 });
         this.particles.glint(chest.clone().addScaledVector(dir, 0.6), COIN_RGB[c.tier], 0.12);
@@ -1740,7 +1765,8 @@ class Game {
     const deep = this.depthAt(this.ctl.pos.x, this.ctl.pos.y, this.ctl.pos.z) > 1.4;
     const full = c.count >= st.carry - 0.01;
     const jump = this.keyName('jump');
-    if (this.ride) prompt = 'Riding the lift up';
+    if (this.aimTerminal) prompt = this.canUpgrade() ? 'Upgrade terminal · click to open the upgrade tree' : 'Upgrade terminal';
+    else if (this.ride) prompt = 'Riding the lift up';
     else if (this.atBeacon && deep) prompt = c.value > 0 ? `Banking your pack · hold ${jump} to ride the lift up` : `Hold ${jump} to ride the lift up and out of the crater`;
     else if (full) prompt = 'Pack full · walk to the glowing lift beacon ◆ to bank it';
     else if (this.chain.n > 0 && this.coins.loose.some((k) => k.sky)) prompt = `Aurora Chain ${this.chain.n} · sky coins worth ×${Math.min(4, 1 + 0.2 * this.chain.n).toFixed(1)}`;
@@ -1774,5 +1800,6 @@ export async function boot() {
   g.init();
   window.__game = g;
   window.__THREE = THREE;
+  window.__surfaceY = surfaceY;   // for the test tools
   g.start();
 }

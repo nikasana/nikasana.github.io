@@ -9,8 +9,8 @@
 - PASS Cinderice mutant ice is discovered (emberice)
 - PASS Orbital laser (Melt tier 3) and satellite mirrors (Planet tool) unlock ({"melt":3,"planet":1,"meltEff":1.05})
 - PASS Climate tree raises melt efficiency (meltEff 1.05)
-- PASS Satellite mirror sunbeam melts the ice it points at ({"melted":6.342500000000003,"beam":true})
-- PASS Cinderice save code exported for the fixtures (6486 chars)
+- PASS Satellite mirror sunbeam melts the ice it points at ({"melted":6.338750000000002,"beam":true})
+- PASS Cinderice save code exported for the fixtures (5154 chars)
 
 ## Console errors
 

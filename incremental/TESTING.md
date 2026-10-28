@@ -12,6 +12,18 @@ How to reach and check every feature. Each batch adds a section; earlier section
 
 ---
 
+## Feedback round after Batch 8
+
+Automated: `node incremental/tools/polish1.mjs` (screenshots and report in `tools/shots/polish1/`).
+
+| Change | How to see it | Working looks like |
+|---|---|---|
+| Depth fix | Look at the vault, the hut or a stake from a few metres | Their lower parts stand in front of the snow; nothing is painted over by the ground |
+| Flat camp | Stand at the start and look north | The vault and survey hut stand whole on flat snow |
+| No gantry | Look up over the claim | No rails, bridge or cable; the lift beacon flies alone |
+| Upgrade terminal | Walk into the blue hut, face the back wall | The screen lists your vault and the cheapest upgrades; the prompt says click; clicking opens the tree |
+| Giant coins | Dig near a coin | A coin about 0.8 m across; a small bite does not free it, digging around it does; it fills six pack slots |
+
 ## Batch 8: Reverse Mode and final polish
 
 Automated: `node incremental/tools/batch8.mjs` (needs a fresh `tools/sim-report.md`). Full regression: `check-saves`, `sim --write`, `batch2` to `batch8`, `perf`, `playtest`.

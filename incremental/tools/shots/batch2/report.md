@@ -14,7 +14,7 @@
 - PASS Arrived on Mistral with legacy and re-scaled costs ({"planet":"mistral","legacy":2.572056908919799,"scale":2.572056908919799,"gem":true,"theme":"mistral"})
 - PASS Mistral has gem coins and its own theme
 - PASS Postcard shows in the gallery
-- PASS Mistral save code exported for the fixtures (574 chars)
+- PASS Mistral save code exported for the fixtures (578 chars)
 
 ## Console errors
 
