@@ -332,6 +332,8 @@ export class IceVolume {
         // meshes stay a while after their data is dropped, so a crater still reads from a distance
         if (dy > this.keepMeshDist || hd > WIN_H + 7) this.disposeMesh(c);
         c.mesh && (c.mesh.visible = dy < this.keepMeshDist);
+        // only nearby ice casts shadows: far chunks would only shade open snow, at a draw call per cascade each
+        if (c.mesh) c.mesh.castShadow = hd <= 3;
       }
       if (!c.data && !c.mesh) this.chunks.delete(c.key);
     }

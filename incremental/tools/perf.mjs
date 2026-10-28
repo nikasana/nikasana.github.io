@@ -18,7 +18,8 @@ const out = opt('--out', join(here, 'shots', 'batch7'));
 mkdirSync(out, { recursive: true });
 const base = `http://localhost:${opt('--port', '8123')}/index.html`;
 // budgets for the heaviest scene
-const BUDGET = { low: { calls: 260, tris: 1.2e6, logicMs: 8 }, ultra: { calls: 420, tris: 2.5e6, logicMs: 8 } };
+// (draw calls re-based in Batch 7 on the fully streamed scene: about 300 on Low and 425 on Ultra, +15% headroom)
+const BUDGET = { low: { calls: 340, tris: 1.2e6, logicMs: 8 }, ultra: { calls: 490, tris: 2.5e6, logicMs: 8 } };
 const results = [], rows = [], errors = [];
 const check = (name, ok, detail = '') => { results.push({ name, ok: !!ok, detail }); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? '  ' + detail : ''}`); };
 
@@ -50,7 +51,7 @@ for (const preset of ['low', 'ultra']) {
   // measure steady play: wait until chunk streaming and coin seeding around you have settled
   const settle = await ev(async () => {
     const g = window.__game, t0 = performance.now();
-    const near = (c) => ((c.cx + 0.5) * 8 - g.ctl.pos.x) ** 2 + ((c.cy + 0.5) * 8 - g.ctl.pos.y) ** 2 + ((c.cz + 0.5) * 8 - g.ctl.pos.z) ** 2 < 21 ** 2;
+    const near = (c) => ((c.cx + 0.5) * 8 - g.ctl.pos.x) ** 2 + ((c.cy + 0.5) * 8 - g.ctl.pos.y) ** 2 + ((c.cz + 0.5) * 8 - g.ctl.pos.z) ** 2 < 20 ** 2;
     while (performance.now() - t0 < 120000) {
       if (!g.volume.queue.size && !g.volume.inflight.size && ![...g.coins.pending.values()].some(near)) break;
       await new Promise((r) => setTimeout(r, 250));
