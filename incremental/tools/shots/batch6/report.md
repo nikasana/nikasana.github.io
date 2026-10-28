@@ -1,6 +1,6 @@
 # Batch 6 checks
 
-19/20 checks passed.
+20/20 checks passed.
 
 - PASS Auralis loads with its Sky Choir theme and a standing aurora ({"planet":"auralis","theme":"auralis","choir":1,"ambient":0.22,"mutants":"lumice,prismice","capsules":3,"needle":true})
 - PASS Auralis has its own mutant ice, three capsules and a Golden Needle ({"planet":"auralis","theme":"auralis","choir":1,"ambient":0.22,"mutants":"lumice,prismice","capsules":3,"needle":true})
@@ -15,7 +15,7 @@
 - PASS Tide-sealed capsules open after the tide turns ({"found":true,"open":true})
 - PASS Aurora ribbons ring the Auralis globe
 - PASS Auralis save code exported for the fixtures (4270 chars)
-- FAIL Three crewmates in one crew
+- PASS Three crewmates in one crew (joined true true)
 - PASS Crew Roles: three roles share a mixed-crew bonus, and your role boosts its tree ({"mix":1.08,"role":"melter","mult":0})
 - PASS A crewmate's sky catch counts toward the crew milestone
 - PASS Crew screen lists the full crew milestone set (11 rows)
