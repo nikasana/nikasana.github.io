@@ -306,7 +306,8 @@ export function heatSpread(e) {
 
 // ---------- milestones ----------
 
-export function checkMilestones(e, incomePerSec) {
+// pay: false records milestones without paying their one-off bonus (the sim measures the steady curve)
+export function checkMilestones(e, incomePerSec, pay = true) {
   const hit = [];
   for (const m of MILESTONES) {
     if (e.milestones[m.id]) continue;
@@ -314,7 +315,7 @@ export function checkMilestones(e, incomePerSec) {
     const ok = (m.kind === 'depth' && e.depth >= m.value) || (m.kind === 'sea' && seaLevelCm(e) >= m.value)
       || (m.kind === 'volume' && e.volume >= m.value) || (m.kind === 'heat' && heatSpread(e) >= m.value)
       || (m.kind === 'act' && (e.actions[m.key] || 0) >= m.value);
-    if (ok) hit.push(awardMilestone(e, m, incomePerSec));
+    if (ok) { if (pay) hit.push(awardMilestone(e, m, incomePerSec)); else e.milestones[m.id] = e.time; }
   }
   return hit;
 }

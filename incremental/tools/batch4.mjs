@@ -100,10 +100,15 @@ const aur = await ev(() => ({ active: window.__game.aurora.active, sky: window._
 check('Aurora fills the sky and drops sky coins', aur.active && aur.sky > 5, JSON.stringify(aur));
 await shot('03-aurora');
 const caught = await ev(async () => {
-  const g = window.__game, c = g.coins.loose.find((x) => x.sky);
+  // sky coins trickle down and fade (Batch 6): take the lowest one, and give it time to reach you
+  const g = window.__game;
+  if (!g.coins.loose.some((x) => x.sky)) g.dropSkyCoin(false);
+  const c = g.coins.loose.filter((x) => x.sky).sort((a, b) => (a.p.y - a.floorY) - (b.p.y - b.floorY))[0];
+  c.life = 1e9;
   const v0 = g.econ.total.toNumber();
   g.ctl.teleport(c.p.x, c.floorY + 0.1, c.p.z);
-  await new Promise((r) => setTimeout(r, 4000));
+  const t0 = performance.now();
+  while (g.econ.total.toNumber() - v0 <= 0 && performance.now() - t0 < 15000) await new Promise((r) => setTimeout(r, 300));
   return g.econ.total.toNumber() - v0;
 });
 check('A sky coin is caught straight into the vault', caught > 0, `+${caught.toFixed ? caught.toFixed(1) : caught}`);

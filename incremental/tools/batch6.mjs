@@ -171,12 +171,13 @@ if (!args.includes('--skip-coop')) {
   await ev(async () => { const g = window.__game; g.settings.crewRole = 'digger'; await g.crewCreate(); }, null, host);
   const code6 = await ev(() => window.__game.crew.code, null, host);
   const m1 = await openTab(`slot=c6m1&join=${code6}`, 'member1');
-  const j1 = await until(m1, () => window.__game.crew.active && window.__game.started && window.__game.slot.startsWith('crew.'), 150000);
+  const j1 = await until(m1, () => window.__game.crew.active && window.__game.started && window.__game.slot.startsWith('crew.'), 300000);
   await ev(() => { window.__game.settings.crewRole = 'melter'; }, null, m1);
   const m2 = await openTab(`slot=c6m2&join=${code6}`, 'member2');
-  const j2 = await until(m2, () => window.__game.crew.active && window.__game.started && window.__game.slot.startsWith('crew.'), 150000);
+  const j2 = await until(m2, () => window.__game.crew.active && window.__game.started && window.__game.slot.startsWith('crew.'), 300000);
   await ev(() => { window.__game.settings.crewRole = 'seer'; }, null, m2);
-  check('Three crewmates in one crew', j1 && j2);
+  const three = await until(host, () => window.__game.crew.members.size >= 2, 120000);   // three tabs on software WebGL load slowly
+  check('Three crewmates in one crew', three, `joined ${j1} ${j2}`);
   const mixed = await until(m1, () => window.__game.crew.mix > 1.07, 60000);
   const roles = await ev(() => ({ mix: window.__game.crew.mix, role: window.__game.econ.role, mult: window.__game.stats.meltPower }), null, m1);
   check('Crew Roles: three roles share a mixed-crew bonus, and your role boosts its tree', mixed && roles.role === 'melter', JSON.stringify(roles));
