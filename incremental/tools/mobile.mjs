@@ -91,7 +91,7 @@ await shot('03-pause');
 await ev(() => window.__game.menus.close());
 await until(() => window.__game.input.locked, 10000);
 
-// JUMP and LIFT are different buttons: LIFT shows only by the lift beacon in the crater, and JUMP never rides
+// JUMP and LIFT are different buttons: LIFT shows only down in a crater, and JUMP never rides
 const liftAway = await ev(() => document.querySelector('.tbtn.lift').hidden);
 await ev(() => { const g = window.__game; g.devShaft(12); });
 await until(() => window.__game.volume.pending() < 4, 60000);
@@ -104,7 +104,7 @@ await shot('03b-lift-button');
 await ev(() => { window.__liftY = window.__game.ctl.pos.y; });
 await finger('.tbtn.lift', 7, [[0, 0]], 4000);   // a slow software frame takes a while to fill the half-second hold
 const rode = await until(() => !!window.__game.ride || window.__game.ctl.pos.y > window.__liftY + 4, 5000);
-check('JUMP and LIFT are separate: LIFT appears only by the beacon, JUMP never rides, LIFT does',
+check('JUMP and LIFT are separate: LIFT appears only in a crater, JUMP never rides, LIFT does',
   liftAway && liftShown && !jumpRode && rode, JSON.stringify({ liftAway, liftShown, jumpRode, rode, y0j: y0j.toFixed(1) }));
 await until(() => !window.__game.ride, 30000);
 

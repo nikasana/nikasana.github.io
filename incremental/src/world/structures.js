@@ -372,4 +372,6 @@ export class Works {
   }
 
   beaconPos() { return this.beacon.position; }
+  // the lift is only seen while it carries you up
+  setLiftVisible(v) { if (this.beacon.visible !== v) { this.beacon.visible = v; this.beam.visible = v; } }
 }

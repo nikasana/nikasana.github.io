@@ -1,6 +1,6 @@
 // Touch controls for phones and tablets: a move stick that appears under your left thumb (push it all the
 // way to sprint), drag anywhere else to look, hold buttons for the tool (USE), its second action (ALT) and
-// jump, a LIFT button by the lift beacon, and a row of buttons for the menus. They press the same bound actions as the keyboard and
+// jump, a LIFT button whenever you are down in a crater, and a row of buttons for the menus. They press the same bound actions as the keyboard and
 // mouse, so the game itself does not know the difference.
 import { h } from './dom.js';
 
@@ -24,7 +24,7 @@ export class TouchControls {
       return b;
     };
     this.useBtn = hold('use', 'USE', 'use');
-    // LIFT is its own button, shown only beside the lift beacon in the crater, so JUMP always just jumps
+    // LIFT is its own button, shown whenever you are down in a crater, so JUMP always just jumps
     this.liftBtn = h('button.tbtn.lift', { 'aria-label': 'Ride the lift up', hidden: true }, h('i', {}, '▲'), 'LIFT');
     const lift = (v) => (ev) => { ev.preventDefault(); ev.stopPropagation(); this.liftBtn.classList.toggle('on', v); game.touchLift = v; };
     this.liftBtn.addEventListener('pointerdown', lift(true));

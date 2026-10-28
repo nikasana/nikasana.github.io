@@ -439,13 +439,13 @@ export class Menus {
       h('div.start-left', {},
         h('div.eyebrow', {}, `Planet 1 of 7 · ${p.name}`),
         h('div.title', {}, 'Melt the', h('span', {}, 'Planet')),
-        h('p.lede', {}, `${p.name} is frozen to the core. Pick a pole and dig. Coins lie in seams through the ice and stranger things are frozen deeper down; the lift beacon follows you, and the Outfitter's hut on the surface sells upgrades.`),
+        h('p.lede', {}, `${p.name} is frozen to the core. Pick a pole and dig. Coins lie in seams through the ice and stranger things are frozen deeper down; hold R in a crater and the lift carries you up, and the Outfitter's hut on the surface sells upgrades.`),
         h('div.eyebrow', {}, 'Choose your pole. You stay there for the whole planet.'),
         cards,
         h('div.start-actions', {}, h('button.btn.primary', { onclick: () => { this.close(); if (onBegin) onBegin(pole); else g.newSave(pole); } }, 'Begin a new survey'),
           g.reverseUnlocked() ? h('button.btn', { title: 'Reverse Mode: freeze the worlds back. Same tools and trees, shorter goals.', onclick: () => { this.close(); g.newReverse(pole); } }, '❄️ Make It Snow') : '',
           g.started ? h('button.btn', { onclick: () => { this.close(); g.input.lock(); } }, 'Back to the ice') : ''),
-        h('div.start-foot', {}, g.touch ? 'Touch: your left thumb moves (push to the edge to sprint), drag anywhere else to look, hold USE to dig, JUMP rides the lift. Upgrades are at the terminal in the Outfitter\u2019s hut. ☰ pauses.' : 'Mouse and keyboard. WASD to move, left mouse to use your tool, the terminal in the Outfitter\u2019s hut for upgrades, Esc to pause.'),
+        h('div.start-foot', {}, g.touch ? 'Touch: your left thumb moves (push to the edge to sprint), drag anywhere else to look, hold USE to dig, hold LIFT in a crater to ride up. Upgrades are at the terminal in the Outfitter\u2019s hut. ☰ pauses.' : 'Mouse and keyboard. WASD to move, left mouse to use your tool, hold R in a crater to ride the lift up, the terminal in the Outfitter\u2019s hut for upgrades, Esc to pause.'),
       ),
       this.savesList(),
     );
@@ -542,26 +542,29 @@ export class Menus {
 
 // ---------- upgrade node graph ----------
 
-// The upgrade screen. The node graph is the map; around it, what good upgrade screens in games have:
-// branch tabs that fly to a branch (with a count of what you can buy there), a "Ready to buy" list with
-// the best value marked, a details panel with a big BUY button and before → after numbers, search,
-// a legend, and keys (B buy, M buy max, F fit, / search). Click a node to select it, click it again
-// (or press BUY) to buy, so a stray click never spends coins.
+// The upgrade screen, laid out like a game's tech tree: tabs for the branches (with a count of what you
+// can buy in each), and each branch drawn top to bottom from its first, cheap steps to its late, costly
+// ones, every card saying in a line what it does. "All" is an overview of the branches. Left: the vault,
+// what you can buy now (best value first) and what comes next; right: the selected upgrade with before →
+// after numbers and a big BUY. Click a card to select it, click it again (or BUY, or B) to buy; double-click
+// a row in the list to buy it there. Only one branch is on screen at a time and it scrolls natively, so
+// the screen stays light.
+const CARD_W = 196, CARD_H = 92, GAP_X = 22, GAP_Y = 58, PAD_X = 220, PAD_Y = 40;
+
 class TreeView {
   constructor(wrap, game, menus) {
     this.wrap = wrap;
     this.game = game;
     this.menus = menus;
     const body = wrap.parentElement;
+    body.classList.add('up-body');
     this.canvas = h('div.tree-canvas');
-    this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    this.canvas.appendChild(this.svg);
     wrap.appendChild(this.canvas);
 
-    // top bar: branch tabs, search, view buttons and toggles
+    // top bar: branch tabs, search, toggles
     this.tabs = {};
     const tab = (id, icon, label) => {
-      const b = h('button.up-tab', { onclick: () => this.focusBranch(id) }, h('span.i', {}, icon), h('span.l', {}, label), h('b.n', { hidden: true }));
+      const b = h('button.up-tab', { onclick: () => this.showBranch(id) }, h('span.i', {}, icon), h('span.l', {}, label), h('b.n', { hidden: true }));
       this.tabs[id] = b;
       return b;
     };
@@ -569,17 +572,16 @@ class TreeView {
     this.search.addEventListener('input', () => this.applyFilter());
     this.search.addEventListener('keydown', (ev) => {
       ev.stopPropagation();
-      if (ev.key === 'Enter') { const m = this.matches()[0]; if (m) { this.select(m); this.flyTo(m); } }
+      if (ev.key === 'Enter') { const m = this.matches()[0]; if (m) this.reveal(m); }
       if (ev.key === 'Escape') { this.search.value = ''; this.applyFilter(); this.search.blur(); }
     });
     this.zoomBar = h('div.tree-zoom', {},
-      h('button.btn', { title: 'Zoom in', onclick: () => this.zoomBy(1.2) }, '+'), h('button.btn', { title: 'Zoom out', onclick: () => this.zoomBy(1 / 1.2) }, '−'), h('button.btn', { title: 'See the whole tree (F)', onclick: () => { this.branch = null; this.applyFilter(); this.fit(true); } }, 'Fit'),
       ...[['autoBuy', 'Quartermaster'], ['autoTool', 'Auto Swing']].filter(([k]) => game.stats[k] >= 1).map(([k, label]) => {
         const b = h(`button.btn${game.settings[k] !== false ? '.primary' : ''}`, { onclick: () => { game.settings[k] = game.settings[k] === false; b.classList.toggle('primary', game.settings[k] !== false); b.textContent = `${label}: ${game.settings[k] !== false ? 'on' : 'off'}`; game.saveSettings(); } }, `${label}: ${game.settings[k] !== false ? 'on' : 'off'}`);
         return b;
       }));
     this.readyBtn = h('button.btn.up-ready-toggle', { onclick: () => this.left.classList.toggle('open') }, '🛒');
-    body.appendChild(h('div.up-bar', {}, this.readyBtn, h('div.up-tabs', {}, tab(null, '✦', 'All'), ...TREES.map((t) => tab(t.id, t.icon, t.name))), this.search, this.zoomBar));
+    body.appendChild(h('div.up-bar', {}, this.readyBtn, h('div.up-tabs', {}, tab('all', '✦', 'All'), ...TREES.map((t) => tab(t.id, t.icon, t.name))), this.search, this.zoomBar));
 
     // left: the vault, what you can buy now, what comes next, and the legend
     this.wallet = h('div.wallet');
@@ -592,83 +594,143 @@ class TreeView {
       h('div.up-h', {}, 'Coming up'), this.soonList,
       h('div.up-legend', {},
         h('span', {}, h('i.lg.can'), 'Can buy'), h('span', {}, h('i.lg.short'), 'Not enough yet'), h('span', {}, h('i.lg.lock'), 'Locked'), h('span', {}, h('i.lg.max'), 'Maxed'), h('span', {}, h('b', {}, '★'), 'Milestone level')),
-      h('div.up-keys', {}, game.touch ? 'Tap a node to see it, tap again to buy. Drag to move, pinch to zoom.' : 'Click a node to see it, click again or press B to buy · M buy max · F whole tree · / search · drag to move, wheel to zoom'));
+      h('div.up-keys', {}, game.touch ? 'Tap a card to see it, tap again to buy. Double-tap a row in the list to buy it.' : 'Click a card to see it, click again or press B to buy · double-click a list row to buy · M buy max · / search'));
     body.appendChild(this.left);
 
-    // right: details of the selected (or hovered) node; `tip` keeps its old name for the tests
+    // right: details of the selected (or hovered) upgrade; `tip` keeps its old name for the tests
     this.tip = h('div.tree-tip.up-detail', { hidden: true });
+    this.placeholder = h('div.up-detail.up-ph', {}, h('div.eyebrow', {}, 'Upgrade details'), h('p', {}, 'Pick a card to see what it does, what it changes and what it costs. Green cards and rows can be bought now.'));
+    body.appendChild(this.placeholder);
     body.appendChild(this.tip);
 
     this.nodes = {};
-    this.pos = {};
-    this.layout();
-    this.scale = 0.85;
-    this.ox = 0; this.oy = 0;
+    this.sections = {};
+    this.build();
     this.bind();
+    const v = menus.treeViewState;
+    const ready = NODES.find((n) => M.isUnlocked(game.econ, n.id) && !M.isMaxed(game.econ, n.id) && game.econ.coins.gte(M.costOf(game.econ, n.id)));
+    this.showBranch(v?.branch || (ready ? ready.tree : 'dig'), true);
     this.refresh();
-    // open where you left off, or at a readable zoom on the centre of the tree
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      const v = menus.treeViewState;
-      if (v) { this.scale = v.scale; this.ox = v.ox; this.oy = v.oy; this.branch = v.branch; this.sel = v.sel; this.applyFilter(); this.apply(); if (this.sel) this.showTip(this.sel); }
-      else this.home();
-    }));
+    if (v?.sel && this.nodes[v.sel]) this.select(v.sel);
+    requestAnimationFrame(() => { if (v && v.branch === this.branch) { this.wrap.scrollLeft = v.sx; this.wrap.scrollTop = v.sy; } else this.centerBranch(); });
   }
 
-  home() {
-    const r = this.wrap.getBoundingClientRect();
-    if (!r.width) return;
-    this.scale = r.width < 900 ? 0.62 : 0.8;
-    this.ox = r.width / 2 + (this.left.offsetWidth && getComputedStyle(this.left).display !== 'none' ? this.left.offsetWidth / 2 : 0);
-    this.oy = r.height / 2 + 20;
-    this.apply();
+  // tests and older code read the pan offset
+  get ox() { return -this.wrap.scrollLeft; }
+  get oy() { return -this.wrap.scrollTop; }
+  // the old map's pan and zoom: nothing to set any more (older screenshot scripts still call these)
+  set ox(v) {} set oy(v) {}
+  apply() {}
+
+  // ---------- layout: every branch as tiers, top to bottom ----------
+  build() {
+    const rev = this.game.econ.reverse;
+    for (const t of TREES) {
+      const list = NODES.filter((n) => n.tree === t.id);
+      const ids = new Set(list.map((n) => n.id));
+      // tier: steps from the branch's first upgrades (parents in other branches do not count)
+      const tier = {};
+      const tierOf = (n) => {
+        if (tier[n.id] !== undefined) return tier[n.id];
+        tier[n.id] = 0;
+        const ps = n.parents.filter((p) => ids.has(p));
+        return (tier[n.id] = ps.length ? 1 + Math.max(...ps.map((p) => tierOf(NODE_BY_ID[p]))) : 0);
+      };
+      list.forEach(tierOf);
+      const rows = [];
+      for (const n of list) (rows[tier[n.id]] ||= []).push(n);
+      // order each row under its parents (barycentre), the first row by the old map position
+      const x = {};
+      const old = (n) => (n.at ? n.at[0] : (n.gx || 0)) + (n.at ? n.at[1] : (n.gy || 0)) * 0.001;
+      rows.forEach((row, r) => {
+        if (r === 0) row.sort((a, b) => old(a) - old(b));
+        else row.sort((a, b) => bary(a) - bary(b) || old(a) - old(b));
+        row.forEach((n, i) => { x[n.id] = i - (row.length - 1) / 2; });
+        function bary(n) { const ps = n.parents.filter((p) => x[p] !== undefined); return ps.length ? ps.reduce((s, p) => s + x[p], 0) / ps.length : 0; }
+      });
+      const widest = Math.max(...rows.map((r) => r.length));
+      const W = widest * (CARD_W + GAP_X) + PAD_X * 2, H = rows.length * (CARD_H + GAP_Y) + PAD_Y * 2 + 30;
+      const sec = h('div.up-sec', { style: { width: `${W}px`, height: `${H}px`, '--tc': t.color } });
+      const label = h('div.tree-label', {}, t.id === 'melt' && rev ? FREEZE_TREE.name : t.name);
+      if (t.id === 'melt') this.meltLabel = label;
+      sec.appendChild(label);
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('width', W); svg.setAttribute('height', H);
+      sec.appendChild(svg);
+      const pos = {};
+      rows.forEach((row, r) => row.forEach((n) => {
+        pos[n.id] = [W / 2 + x[n.id] * (CARD_W + GAP_X), PAD_Y + 30 + r * (CARD_H + GAP_Y)];
+      }));
+      // step labels down the left: the further down, the later and costlier
+      rows.forEach((row, r) => sec.appendChild(h('div.up-step', { style: { top: `${PAD_Y + 30 + r * (CARD_H + GAP_Y) + CARD_H / 2}px` } }, r === 0 ? 'START' : `STEP ${r + 1}`)));
+      const edges = [];
+      for (const n of list) for (const p of n.parents) {
+        if (!pos[p]) continue;
+        const [x1, y1] = pos[p], [x2, y2] = pos[n.id];
+        const a = [x1, y1 + CARD_H], b = [x2, y2], my = (a[1] + b[1]) / 2;
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M${a[0]},${a[1]} C${a[0]},${my} ${b[0]},${my} ${b[0]},${b[1]}`);
+        path.setAttribute('fill', 'none');
+        svg.appendChild(path);
+        edges.push({ path, from: p, to: n.id });
+      }
+      for (const n of list) {
+        const ext = n.parents.filter((p) => !ids.has(p));
+        const el = h(`div.tnode${n.gate ? '.gate' : ''}.k-${n.kind || 'stat'}`, { style: { left: `${pos[n.id][0] - CARD_W / 2}px`, top: `${pos[n.id][1]}px`, '--tc': n.join ? TREE[n.join[0]].color : t.color, '--tc2': n.join ? TREE[n.join[1]].color : t.color } });
+        el.dataset.ext = ext.join(',');
+        el.addEventListener('mouseenter', () => { if (this.game.touch) return; this.hover = n.id; this.showTip(n.id); });
+        el.addEventListener('mouseleave', () => { if (this.hover === n.id) { this.hover = null; if (this.sel) this.showTip(this.sel); else this.hideTip(); } });
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          if (this.dragged) return;
+          if (this.sel !== n.id) { this.select(n.id); return; }   // first click selects, the next one buys
+          this.buy(n.id, el);
+        });
+        sec.appendChild(el);
+        this.nodes[n.id] = el;
+      }
+      this.sections[t.id] = { el: sec, edges, list };
+      sec.hidden = true;
+      this.canvas.appendChild(sec);
+    }
+    // the overview: a card per branch
+    this.overview = h('div.up-overview', { hidden: true });
+    this.canvas.appendChild(this.overview);
+    this.results = h('div.up-results', { hidden: true });
+    this.canvas.appendChild(this.results);
   }
 
-  fit(anim) {
-    const r = this.wrap.getBoundingClientRect();
-    if (!r.width) return;
-    this.fitBox(this.bounds, anim, 0.25);
-  }
-
-  // zoom and pan so a box of the tree fills the free part of the screen
-  fitBox(b, anim, minScale = 0.45) {
-    const r = this.wrap.getBoundingClientRect();
-    const l = getComputedStyle(this.left).display !== 'none' ? this.left.offsetWidth + 16 : 0;
-    const rt = !this.tip.hidden && r.width > 900 ? this.tip.offsetWidth + 16 : 0;   // keep clear of the details panel
-    const w = r.width - l - rt - 20, top = 64, hgt = r.height - top - 20;
-    const bw = b.maxX - b.minX, bh = b.maxY - b.minY;
-    this.scale = Math.max(minScale, Math.min(1.1, Math.min(w / bw, hgt / bh)));
-    this.ox = l + w / 2 - ((b.minX + b.maxX) / 2) * this.scale;
-    this.oy = top + hgt / 2 - ((b.minY + b.maxY) / 2) * this.scale;
-    this.apply(anim);
-  }
-
-  inBranch(n, id) { return !id || n.tree === id || (n.join && n.join.includes(id)); }
-
-  focusBranch(id) {
+  showBranch(id, quiet) {
     this.branch = id;
-    this.applyFilter();
-    if (!id) { this.fit(true); return; }
-    // frame the part of the branch you can act on (owned and open nodes), not its far outer ring
-    const e = this.game.econ;
-    let pick = NODES.filter((n) => n.tree === id && (M.level(e, n.id) > 0 || M.isUnlocked(e, n.id)));
-    if (pick.length < 2) pick = NODES.filter((n) => n.tree === id && (n.root || n.parents.every((p) => NODE_BY_ID[p].tree !== id)));
-    if (!pick.length) pick = NODES.filter((n) => n.tree === id);
-    const have = new Set(pick.map((n) => n.id));
-    pick = pick.concat(NODES.filter((n) => n.tree === id && !have.has(n.id) && n.parents.some((p) => have.has(p))));   // and the next steps
-    let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
-    for (const n of pick) { const [x, y] = this.pos[n.id]; minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y); }
-    this.fitBox({ minX: minX - 110, minY: minY - 60, maxX: maxX + 110, maxY: maxY + 60 }, true);
+    for (const [k, s] of Object.entries(this.sections)) s.el.hidden = k !== id;
+    this.overview.hidden = id !== 'all';
+    if (id === 'all') this.fillOverview();
+    for (const [k, b] of Object.entries(this.tabs)) b.classList.toggle('on', k === id);
+    if (!quiet) { this.refresh(); requestAnimationFrame(() => this.centerBranch()); }
+    this.remember();
   }
 
-  flyTo(id) {
-    const r = this.wrap.getBoundingClientRect();
-    const l = getComputedStyle(this.left).display !== 'none' ? this.left.offsetWidth : 0;
-    const [x, y] = this.pos[id];
-    this.scale = Math.max(this.scale, 0.8);
-    this.ox = l + (r.width - l) / 2 - x * this.scale;
-    this.oy = r.height / 2 - y * this.scale;
-    this.apply(true);
+  // scroll so the branch's first steps are in view, centred
+  centerBranch() {
+    const s = this.sections[this.branch];
+    this.wrap.scrollTop = 0;
+    this.wrap.scrollLeft = s ? Math.max(0, (s.el.offsetWidth - this.wrap.clientWidth) / 2) : 0;
+    this.remember();
   }
+
+  // open an upgrade's branch, scroll to it and select it
+  reveal(id) {
+    this.search.value = ''; this.applyFilter();
+    const n = NODE_BY_ID[id];
+    if (this.branch !== n.tree) this.showBranch(n.tree, true);
+    this.refresh();
+    this.select(id);
+    requestAnimationFrame(() => {
+      const el = this.nodes[id];
+      this.wrap.scrollTo({ left: el.offsetLeft + CARD_W / 2 - this.wrap.clientWidth / 2, top: el.offsetTop - this.wrap.clientHeight / 3, behavior: 'smooth' });
+    });
+  }
+  flyTo(id) { this.reveal(id); }
 
   matches() {
     const q = this.search.value.trim().toLowerCase();
@@ -677,103 +739,41 @@ class TreeView {
     return NODES.map((n) => skinNode(n, rev)).filter((n) => n.name.toLowerCase().includes(q) || n.desc.toLowerCase().includes(q)).map((n) => n.id);
   }
 
-  // dim what is outside the chosen branch or the search
+  // search: a list of matching upgrades in place of the branch
   applyFilter() {
     const q = this.search.value.trim();
-    const hit = new Set(this.matches());
-    for (const n of NODES) {
-      const el = this.nodes[n.id];
-      const dim = (q && !hit.has(n.id)) || (!q && !this.inBranch(n, this.branch));
-      el.classList.toggle('dim', dim);
-      el.classList.toggle('match', !!q && hit.has(n.id));
+    const hit = this.matches();
+    this.results.hidden = !q;
+    for (const [k, s] of Object.entries(this.sections)) s.el.hidden = !!q || k !== this.branch;
+    this.overview.hidden = !!q || this.branch !== 'all';
+    if (q) {
+      const table = M.costTable(this.game.econ), inc = this.game.measuredRate();
+      clear(this.results).append(h('div.up-h', {}, hit.length ? `${hit.length} upgrade${hit.length > 1 ? 's' : ''} match “${q}”` : `Nothing matches “${q}”`),
+        ...hit.slice(0, 40).map((id) => this.row(NODE_BY_ID[id], table, inc)));
     }
-    for (const [id, b] of Object.entries(this.tabs)) b.classList.toggle('on', (id === 'null' ? null : id) === (this.branch ?? null) && !q);
-    this.remember();
+    for (const n of NODES) this.nodes[n.id].classList.toggle('match', !!q && hit.includes(n.id));
   }
 
-  remember() { this.menus.treeViewState = { scale: this.scale, ox: this.ox, oy: this.oy, branch: this.branch, sel: this.sel }; }
-
-  layout() {
-    const SX = 210, SY = 124;
-    for (const n of NODES) {
-      const t = TREE[n.tree];
-      const [ox, oy] = t.origin;
-      const x = ox * (230 + n.gx * SX);
-      const y = oy * (110 + n.gy * SY);
-      this.pos[n.id] = n.at ? [...n.at] : [x, y];
-    }
-    let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
-    for (const [x, y] of Object.values(this.pos)) { minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y); }
-    this.bounds = { minX: minX - 140, minY: minY - 120, maxX: maxX + 140, maxY: maxY + 120 };
-    const W = this.bounds.maxX - this.bounds.minX, H = this.bounds.maxY - this.bounds.minY;
-    this.svg.setAttribute('width', W); this.svg.setAttribute('height', H);
-    this.svg.style.left = `${this.bounds.minX}px`; this.svg.style.top = `${this.bounds.minY}px`;
-    this.svg.setAttribute('viewBox', `${this.bounds.minX} ${this.bounds.minY} ${W} ${H}`);
-    // tree labels
-    for (const t of TREES) {
-      const [ox, oy] = t.origin;
-      const [lx, ly] = t.label || [ox * 520, oy > 0 ? oy * 70 + 690 : -790];
-      const lab = h('div.tree-label', { style: { left: `${lx}px`, top: `${ly}px`, '--tc': t.color } }, `${t.name}`);
-      if (t.id === 'melt') this.meltLabel = lab;
-      this.canvas.appendChild(lab);
-    }
-    // the planet at the centre
-    const core = h('div', { style: { position: 'absolute', left: '-70px', top: '-70px', width: '140px', height: '140px', borderRadius: '50%', background: 'radial-gradient(circle at 35% 30%, #e6f1f4, #8fd6ec 35%, #1d4a63 70%, #06121a)', boxShadow: '0 0 60px rgba(143,214,236,0.35)' } });
-    this.canvas.appendChild(core);
-    this.edges = [];
-    for (const n of NODES) for (const p of n.parents) {
-      const [x1, y1] = this.pos[p], [x2, y2] = this.pos[n.id];
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      const mx = (x1 + x2) / 2;
-      path.setAttribute('d', `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
-      path.setAttribute('fill', 'none');
-      path.setAttribute('stroke-width', '2');
-      this.svg.appendChild(path);
-      this.edges.push({ path, from: p, to: n.id });
-    }
-    // roots connect to the core
-    for (const n of NODES.filter((x) => x.root)) {
-      const [x2, y2] = this.pos[n.id];
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', `M0,0 L${x2},${y2}`);
-      path.setAttribute('fill', 'none');
-      path.setAttribute('stroke', 'rgba(143,214,236,0.25)');
-      path.setAttribute('stroke-dasharray', '4 6');
-      this.svg.appendChild(path);
-    }
-    for (const n of NODES) {
-      const t = TREE[n.tree];
-      const tc2 = n.join ? TREE[n.join[1]].color : t.color;
-      const el = h(`div.tnode${n.gate ? '.gate' : ''}.k-${n.kind || 'stat'}`, { style: { left: `${this.pos[n.id][0]}px`, top: `${this.pos[n.id][1]}px`, '--tc': n.join ? TREE[n.join[0]].color : t.color, '--tc2': tc2 } });
-      el.addEventListener('mouseenter', () => { if (this.game.touch) return; this.hover = n.id; this.showTip(n.id); this.game.sfx.play('hover'); });
-      el.addEventListener('mouseleave', () => { if (this.hover === n.id) { this.hover = null; if (this.sel) this.showTip(this.sel); else this.tip.hidden = true; } });
-      el.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        if (this.dragged) return;
-        // the first click selects and shows what a node does; clicking the selected node again buys it
-        if (this.sel !== n.id) { this.select(n.id); return; }
-        this.buy(n.id, el);
-      });
-      this.canvas.appendChild(el);
-      this.nodes[n.id] = el;
-    }
-  }
+  remember() { if (this.menus) this.menus.treeViewState = { branch: this.branch, sel: this.sel, sx: this.wrap.scrollLeft, sy: this.wrap.scrollTop }; }
 
   select(id) {
     if (this.sel && this.nodes[this.sel]) this.nodes[this.sel].classList.remove('sel');
     this.sel = id;
     this.hover = id;   // older tests read the hovered node
     if (id) { this.nodes[id].classList.add('sel'); this.showTip(id); this.game.sfx.play('hover'); }
+    else this.hideTip();
     this.markPath();
     this.remember();
   }
 
-  // light up the way from the core to the selected node
+  hideTip() { this.tip.hidden = true; this.placeholder.hidden = false; }
+
+  // light up the way to the selected upgrade
   markPath() {
     const on = new Set();
     const walk = (id) => { if (on.has(id)) return; on.add(id); for (const p of NODE_BY_ID[id].parents) walk(p); };
     if (this.sel) walk(this.sel);
-    for (const ed of this.edges) ed.path.classList.toggle('path', on.has(ed.to) && on.has(ed.from));
+    for (const s of Object.values(this.sections)) for (const ed of s.edges) ed.path.classList.toggle('path', on.has(ed.to) && on.has(ed.from));
   }
 
   buy(id, el = this.nodes[id], quiet) {
@@ -813,7 +813,7 @@ class TreeView {
     return { n, cost: sum };
   }
 
-  // stats and income with one more level of a node
+  // stats and income with one more level of an upgrade
   preview(id) {
     const e = this.game.econ;
     const before = M.computeStats(e);
@@ -861,7 +861,7 @@ class TreeView {
     let buyBtn;
     if (maxed) buyBtn = h('button.up-buy.done', { disabled: true }, '✓ Maxed');
     else if (lock) buyBtn = h('button.up-buy', { disabled: true }, `Closed: you chose ${skinNode(lock, e.reverse).name}`);
-    else if (!unlocked) buyBtn = h('button.up-buy.lock', { onclick: () => { const p = missing[0] || n.parents[0]; if (p) { this.select(p); this.flyTo(p); } } }, `🔒 Needs ${missing.map((p) => skinNode(NODE_BY_ID[p], e.reverse).name).join(' and ') || 'its parent'} · show`);
+    else if (!unlocked) buyBtn = h('button.up-buy.lock', { onclick: () => { const p = missing[0] || n.parents[0]; if (p) this.reveal(p); } }, `🔒 Needs ${missing.map((p) => skinNode(NODE_BY_ID[p], e.reverse).name).join(' and ') || 'its parent'} · show`);
     else if (e.coins.gte(cost)) buyBtn = h('button.up-buy.go', { onclick: () => this.buy(id) }, h('span', {}, `Buy ${lvl ? `level ${lvl + 1}` : ''}`.trim()), h('b', {}, format(cost)));
     else buyBtn = h('button.up-buy', { disabled: true }, h('span', {}, 'Not enough coins'), h('b', {}, `${format(cost)} · ${formatTime(wait)}`));
     clear(this.tip).append(
@@ -876,6 +876,33 @@ class TreeView {
       mx.n > 1 ? h('button.up-buy.max', { onclick: () => this.buyMax(id) }, h('span', {}, `Buy max · ${mx.n} levels`), h('b', {}, format(mx.cost))) : '',
     );
     this.tip.hidden = false;
+    this.placeholder.hidden = true;
+  }
+
+  // one line on what an upgrade does, for cards and list rows
+  shortFx(n) {
+    const [stat, op, v] = n.effects[0] || [];
+    if (!stat) return n.desc;
+    const nm = statName(stat).toLowerCase();
+    if (op === 'set') return stat.endsWith('Tier') ? `New tool: ${n.name}` : `Unlocks ${nm}`;
+    if (op === 'add') return `${v < 0 ? '−' : '+'}${fmtV(Math.abs(v), stat)} ${nm}${n.effects.length > 1 ? ' …' : ''}`;
+    return `×${(1 + v).toFixed(2)} ${nm}${n.effects.length > 1 ? ' …' : ''}`;
+  }
+
+  // a list row: icon, name, a short line on what it does, and its price or wait; double-click buys it
+  row(n0, table, inc, best) {
+    const e = this.game.econ, n = skinNode(n0, e.reverse), lvl = M.level(e, n.id), cost = table[n.id].cost;
+    const unlocked = M.isUnlocked(e, n.id), maxed = M.isMaxed(e, n.id), can = unlocked && !maxed && e.coins.gte(cost) && !M.lockedBy(e, n.id);
+    const wait = Math.max(0, cost.sub(e.coins).toNumber()) / Math.max(1e-9, inc);
+    const r = h(`div.up-row${can ? '.can' : ''}${n.id === this.sel ? '.on' : ''}`, { style: { '--tc': TREE[n.tree].color }, title: can ? 'Click to see it in the tree · double-click to buy' : 'Click to see it in the tree' },
+      h('span.ic', {}, n.icon),
+      h('span.t', {}, h('span.nm', {}, n.name), h('small.fx', {}, this.shortFx(n)), h('small', {}, `${n.id === best ? '★ Best value · ' : ''}lv ${lvl} → ${lvl + 1}${n.max >= M.MILESTONE && M.isMilestone(lvl + 1) ? ' ★' : ''}`)),
+      maxed ? h('span.eta', {}, 'MAX') : can ? h('button.up-mini', { onclick: (ev) => { ev.stopPropagation(); this.buy(n.id); } }, format(cost)) : h('span.eta', {}, unlocked ? formatTime(wait) : '🔒'));
+    r.addEventListener('click', () => this.reveal(n.id));
+    r.addEventListener('dblclick', (ev) => { ev.preventDefault(); if (can) this.buy(n.id); });
+    // touch: two quick taps buy
+    r.addEventListener('pointerup', (ev) => { if (ev.pointerType !== 'touch') return; const now = performance.now(); if (now - (r.lastTap || 0) < 350 && can) this.buy(n.id); r.lastTap = now; });
+    return r;
   }
 
   // Ready to buy (best value first) and Coming up (cheapest you cannot afford yet)
@@ -884,7 +911,7 @@ class TreeView {
     const open = NODES.filter((n) => M.isUnlocked(e, n.id) && !M.isMaxed(e, n.id) && !M.lockedBy(e, n.id));
     const ready = open.filter((n) => e.coins.gte(table[n.id].cost));
     const soon = open.filter((n) => !e.coins.gte(table[n.id].cost)).sort((a, b) => table[a.id].cost.ratio(table[b.id].cost) - 1).slice(0, 4);
-    // value: income gained per coin, worked out only when the set of affordable nodes changes
+    // value: income gained per coin, worked out only when the set of affordable upgrades changes
     const key = ready.map((n) => `${n.id}${M.level(e, n.id)}`).join() + (rev ? 'r' : '');
     if (key !== this.readyKey) {
       this.readyKey = key;
@@ -899,25 +926,41 @@ class TreeView {
     }
     ready.sort((a, b) => (this.value[b.id] || 0) - (this.value[a.id] || 0) || table[a.id].cost.ratio(table[b.id].cost) - 1);
     const best = ready.length && (this.value[ready[0].id] || 0) > 0 ? ready[0].id : null;
-    const row = (n0, can) => {
-      const n = skinNode(n0, rev), lvl = M.level(e, n.id), cost = table[n.id].cost;
-      const wait = Math.max(0, cost.sub(e.coins).toNumber()) / Math.max(1e-9, inc);
-      return h(`div.up-row${can ? '.can' : ''}${n.id === this.sel ? '.on' : ''}`, { style: { '--tc': TREE[n.tree].color }, onclick: () => { this.select(n.id); this.flyTo(n.id); } },
-        h('span.ic', {}, n.icon),
-        h('span.t', {}, h('span.nm', {}, n.name), h('small', {}, `${n.id === best ? '★ Best value · ' : ''}level ${lvl} → ${lvl + 1}${n.max >= M.MILESTONE && M.isMilestone(lvl + 1) ? ' ★' : ''}`)),
-        can ? h('button.up-mini', { onclick: (ev) => { ev.stopPropagation(); this.buy(n.id); } }, format(cost)) : h('span.eta', {}, formatTime(wait)));
-    };
-    clear(this.readyList).append(...(ready.length ? ready.slice(0, 7).map((n) => row(n, true)) : [h('div.up-empty', {}, 'Nothing affordable yet. Dig on: the next one is below.')]),
-      ready.length > 7 ? h('div.up-empty', {}, `+${ready.length - 7} more you can buy`) : '');
-    clear(this.soonList).append(...soon.map((n) => row(n, false)));
+    // rebuild only when what the lists say has changed (a row replaced under the pointer loses its click)
+    const sig = `${key}|${this.sel}|${soon.map((n) => `${n.id}${formatTime(Math.max(0, table[n.id].cost.sub(e.coins).toNumber()) / Math.max(1e-9, inc))}`).join()}|${ready.map((n) => format(table[n.id].cost)).join()}`;
+    if (sig !== this.listSig) {
+      this.listSig = sig;
+      clear(this.readyList).append(...(ready.length ? ready.slice(0, 7).map((n) => this.row(n, table, inc, best)) : [h('div.up-empty', {}, 'Nothing affordable yet. Dig on: the next one is below.')]),
+        ready.length > 7 ? h('div.up-empty', {}, `+${ready.length - 7} more you can buy`) : '');
+      clear(this.soonList).append(...soon.map((n) => this.row(n, table, inc)));
+    }
     this.readyBtn.textContent = `🛒 ${ready.length}`;
     // tab badges: how many you can buy in each branch
     const per = {};
-    for (const n of ready) { per[n.tree] = (per[n.tree] || 0) + 1; }
+    for (const n of ready) per[n.tree] = (per[n.tree] || 0) + 1;
     for (const t of TREES) { const b = this.tabs[t.id].querySelector('.n'); const c = per[t.id] || 0; b.hidden = !c; b.textContent = c; }
-    const all = this.tabs.null.querySelector('.n'); all.hidden = !ready.length; all.textContent = ready.length;
-    // hide branches with nothing open yet (DNA before any mutation), but keep the tab if anything is owned
+    const all = this.tabs.all.querySelector('.n'); all.hidden = !ready.length; all.textContent = ready.length;
     for (const t of TREES) this.tabs[t.id].classList.toggle('empty', !NODES.some((n) => n.tree === t.id && (M.isUnlocked(e, n.id) || M.level(e, n.id))));
+    this.perBranch = per;
+  }
+
+  // "All": a card per branch with its progress, what you can buy there and its best next step
+  fillOverview() {
+    const e = this.game.econ, rev = e.reverse;
+    const table = M.costTable(e);
+    clear(this.overview).append(h('div.up-h', {}, 'Your branches · pick one to open it'), h('div.up-ov-grid', {}, ...TREES.map((t) => {
+      const list = NODES.filter((n) => n.tree === t.id);
+      const lv = list.reduce((a, n) => a + M.level(e, n.id), 0), max = list.reduce((a, n) => a + n.max, 0);
+      const open = list.filter((n) => M.isUnlocked(e, n.id) && !M.isMaxed(e, n.id) && !M.lockedBy(e, n.id));
+      const can = open.filter((n) => e.coins.gte(table[n.id].cost)).length;
+      const next = open.sort((a, b) => table[a.id].cost.ratio(table[b.id].cost) - 1)[0];
+      const name = t.id === 'melt' && rev ? FREEZE_TREE.name : t.name, icon = t.id === 'melt' && rev ? FREEZE_TREE.icon : t.icon;
+      return h(`button.up-ov${can ? '.can' : ''}${open.length || lv ? '' : '.empty'}`, { style: { '--tc': t.color }, onclick: () => this.showBranch(t.id) },
+        h('div.top', {}, h('span.i', {}, icon), h('span.nm', {}, name), can ? h('b.n', {}, `${can} to buy`) : ''),
+        h('div.bar', {}, h('i', { style: { width: `${(lv / max) * 100}%` } })),
+        h('small', {}, `${lv} / ${max} levels · ${list.length} upgrades`),
+        h('small', {}, next ? `Next: ${skinNode(next, rev).icon} ${skinNode(next, rev).name} · ${format(table[next.id].cost)}` : lv ? 'Nothing open right now' : 'Locked for now'));
+    })));
   }
 
   refresh() {
@@ -927,122 +970,93 @@ class TreeView {
     // Reverse Mode: the Melt tree reads as the Freeze tree
     if (this.meltLabel) this.meltLabel.textContent = e.reverse ? FREEZE_TREE.name : TREE.melt.name;
     if (this.tabs?.melt) { this.tabs.melt.querySelector('.l').textContent = e.reverse ? FREEZE_TREE.name : TREE.melt.name; this.tabs.melt.querySelector('.i').textContent = e.reverse ? FREEZE_TREE.icon : TREE.melt.icon; }
-    for (const n0 of NODES) {
+    // only the branch on screen is redrawn (the first time, every card is filled in)
+    const list = this.filled && this.sections[this.branch] ? this.sections[this.branch].list : NODES;
+    this.filled = true;
+    for (const n0 of list) {
       const n = skinNode(n0, e.reverse);
       const el = this.nodes[n.id];
       const lvl = M.level(e, n.id);
       const unlocked = M.isUnlocked(e, n.id);
       const maxed = lvl >= n.max;
       const cost = table[n.id].cost;
-      const can = unlocked && !maxed && e.coins.gte(cost);
       const barred = !!M.lockedBy(e, n.id);
+      const can = unlocked && !maxed && e.coins.gte(cost) && !barred;
       el.classList.toggle('locked', !unlocked);
       el.classList.toggle('barred', barred);
       el.classList.toggle('maxed', maxed);
-      el.classList.toggle('can', can && !barred);
+      el.classList.toggle('can', can);
       el.classList.toggle('short', unlocked && !maxed && !can && !barred);
-      const pips = Math.min(n.max, 12);
-      const filled = Math.round((lvl / n.max) * pips);
       const wait = Math.max(0, cost.sub(e.coins).toNumber()) / Math.max(1e-9, inc);
-      const sig = `${lvl}|${unlocked}|${can}|${barred}|${maxed ? '' : format(cost)}|${can || maxed || !unlocked ? '' : formatTime(wait)}|${n.name}`;
+      const ext = el.dataset.ext ? el.dataset.ext.split(',').filter((p) => M.level(e, p) < 1) : [];
+      const sig = `${lvl}|${unlocked}|${can}|${barred}|${maxed ? '' : format(cost)}|${can || maxed || !unlocked ? '' : formatTime(wait)}|${n.name}|${ext.join()}`;
       if (el.dataset.sig === sig) continue;   // nothing changed: keep the DOM (and its hover) as it is
       el.dataset.sig = sig;
       el.innerHTML = '';
       el.append(
         KIND_LABEL[n.kind] ? h('div.kind', {}, barred ? 'CLOSED' : KIND_LABEL[n.kind]) : '',
         h('div.top', {}, h('span.ic', {}, n.icon), h('span.nm', {}, n.name), h('span.lv', {}, `${lvl}/${n.max}`)),
-        h('div.pips', {}, Array.from({ length: pips }, (_, i) => h(`i${i < filled ? '.f' : ''}`))),
+        h('div.fx', {}, this.shortFx(n)),
+        h('div.pips', {}, h('i', { style: { width: `${(lvl / n.max) * 100}%` } })),
         n.max >= M.MILESTONE && !maxed && M.isMilestone(lvl + 1) ? h('div.star', { title: 'Next level is a milestone' }, '★') : '',
-        h('div.cost', {}, h('span', {}, maxed ? '✓ MAX' : !unlocked ? '🔒 locked' : format(cost)), h('span.eta', {}, maxed || !unlocked || barred ? '' : can ? 'BUY' : formatTime(wait))),
+        h('div.cost', {}, h('span', {}, maxed ? '✓ MAX' : !unlocked ? (ext.length ? `🔒 needs ${skinNode(NODE_BY_ID[ext[0]], e.reverse).name}` : '🔒 locked') : format(cost)), h('span.eta', {}, maxed || !unlocked || barred ? '' : can ? 'BUY' : formatTime(wait))),
       );
     }
-    for (const ed of this.edges) {
-      const on = M.level(e, ed.from) >= 1;
-      const tc = TREE[NODE_BY_ID[ed.from].tree].color;
-      ed.path.setAttribute('stroke', on ? tc : 'rgba(196,232,244,0.14)');
-      ed.path.setAttribute('stroke-opacity', on ? (M.level(e, ed.to) >= 1 ? '0.85' : '0.45') : '1');
+    for (const s of Object.values(this.sections)) {
+      if (s.el.hidden && this.edgesDone) continue;
+      for (const ed of s.edges) {
+        const on = M.level(e, ed.from) >= 1;
+        ed.path.setAttribute('class', `${on ? (M.level(e, ed.to) >= 1 ? 'own' : 'open') : ''}${ed.path.classList.contains('path') ? ' path' : ''}`);
+      }
     }
+    this.edgesDone = true;
     this.wallet.textContent = format(e.coins);
     this.walletSub.textContent = `+${format(inc)}/s`;
     this.fillLists(table, inc);
+    if (this.branch === 'all' && !this.overview.hidden) { const k = Object.values(this.perBranch || {}).join() + format(e.coins); if (k !== this.ovKey) { this.ovKey = k; this.fillOverview(); } }
     const shown = this.hover || this.sel;
     if (shown && !this.tip.hidden) this.showTip(shown, true);
   }
 
-  apply(anim) {
-    this.canvas.classList.toggle('anim', !!anim);
-    this.canvas.style.transform = `translate(${this.ox}px, ${this.oy}px) scale(${this.scale})`;
-    if (anim) { clearTimeout(this.animT); this.animT = setTimeout(() => this.canvas.classList.remove('anim'), 420); }
-    if (this.menus) this.remember();
-  }
-  center() { const r = this.wrap.getBoundingClientRect(); this.ox = r.width / 2; this.oy = r.height / 2; this.apply(); }
-  zoomBy(k, cx, cy) {
-    const r = this.wrap.getBoundingClientRect();
-    cx ??= r.width / 2; cy ??= r.height / 2;
-    const ns = Math.max(0.25, Math.min(1.8, this.scale * k));
-    this.ox = cx - (cx - this.ox) * (ns / this.scale);
-    this.oy = cy - (cy - this.oy) * (ns / this.scale);
-    this.scale = ns;
-    this.apply();
-  }
-
   bind() {
-    // drag to pan with a mouse or a finger; wheel or pinch to zoom
+    // drag to scroll with a mouse or a finger (the page scrolls natively too: wheel, trackpad)
     let down = null;
-    const pts = new Map();
-    let pinch = null;
     this.onDown = (ev) => {
       if (ev.pointerType === 'mouse' && ev.button !== 0) return;
-      pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
-      if (pts.size === 2) {
-        const [a, b] = [...pts.values()];
-        pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), scale: this.scale };
-        down = null;
-        return;
-      }
-      down = { x: ev.clientX, y: ev.clientY, ox: this.ox, oy: this.oy }; this.dragged = false; this.wrap.classList.add('drag');
+      if (ev.target.closest('.up-row, .up-ov, button, input')) return;
+      down = { x: ev.clientX, y: ev.clientY, sx: this.wrap.scrollLeft, sy: this.wrap.scrollTop, id: ev.pointerId };
+      this.dragged = false;
     };
     this.onMove = (ev) => {
-      if (!pts.has(ev.pointerId)) return;
-      pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
-      if (pinch && pts.size >= 2) {
-        const [a, b] = [...pts.values()];
-        const r = this.wrap.getBoundingClientRect();
-        const want = pinch.scale * Math.hypot(a.x - b.x, a.y - b.y) / Math.max(1, pinch.d);
-        this.zoomBy(want / this.scale, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top);
-        this.dragged = true;
-        return;
-      }
-      if (!down) return;
+      if (!down || ev.pointerId !== down.id) return;
       const dx = ev.clientX - down.x, dy = ev.clientY - down.y;
-      if (Math.abs(dx) + Math.abs(dy) > 6) this.dragged = true;
-      this.ox = down.ox + dx; this.oy = down.oy + dy; this.apply();
+      if (!this.dragged && Math.abs(dx) + Math.abs(dy) < 6) return;
+      this.dragged = true;
+      this.wrap.classList.add('drag');
+      this.wrap.scrollLeft = down.sx - dx; this.wrap.scrollTop = down.sy - dy;
     };
     this.onUp = (ev) => {
-      pts.delete(ev.pointerId);
-      if (pts.size < 2) pinch = null;
-      if (pts.size) return;
-      down = null; this.wrap.classList.remove('drag'); setTimeout(() => { this.dragged = false; }, 0);
+      if (!down || ev.pointerId !== down.id) return;
+      down = null; this.wrap.classList.remove('drag'); this.remember();
+      setTimeout(() => { this.dragged = false; }, 0);
     };
-    this.onWheel = (ev) => { ev.preventDefault(); const r = this.wrap.getBoundingClientRect(); this.zoomBy(ev.deltaY < 0 ? 1.1 : 1 / 1.1, ev.clientX - r.left, ev.clientY - r.top); };
     this.wrap.style.touchAction = 'none';
     this.wrap.addEventListener('pointerdown', this.onDown);
     addEventListener('pointermove', this.onMove);
     addEventListener('pointerup', this.onUp);
     addEventListener('pointercancel', this.onUp);
-    this.wrap.addEventListener('wheel', this.onWheel, { passive: false });
+    this.wrap.addEventListener('scroll', () => this.remember(), { passive: true });
     this.onKey = (ev) => {
       if (this.menus.cur !== 'upgrades' || ev.target === this.search || ev.ctrlKey || ev.metaKey || ev.altKey) return;
       const k = ev.key.toLowerCase();
       if (k === '/') { ev.preventDefault(); this.search.focus(); }
       else if (k === 'b' && this.sel) this.buy(this.sel);
       else if (k === 'm' && this.sel) this.buyMax(this.sel);
-      else if (k === 'f') { this.branch = null; this.applyFilter(); this.fit(true); }
       else return;
       ev.stopPropagation();
     };
     addEventListener('keydown', this.onKey, true);
-    this.timer = setInterval(() => this.refresh(), 400);
+    this.timer = setInterval(() => this.refresh(), 500);
   }
 
   destroy() {

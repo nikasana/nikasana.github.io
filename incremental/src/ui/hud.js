@@ -191,7 +191,7 @@ export class Hud {
     const k = (a) => keyLabel(g.input.code(a));
     if (!this.keysDone) {
       this.keysDone = true;
-      this.keys.innerHTML = [['upgrades', 'Upgrades'], ['planet', 'Planet'], ['collections', 'Notebook'], ['coop', 'Crew'], ['music', 'Music']]
+      this.keys.innerHTML = [['lift', 'Lift up'], ['upgrades', 'Upgrades'], ['planet', 'Planet'], ['collections', 'Notebook'], ['coop', 'Crew'], ['music', 'Music']]
         .map(([a, l]) => `<span title="${l}"><kbd>${k(a)}</kbd><em>${l}</em></span>`).join('') + '<span title="Pause"><kbd>Esc</kbd><em>Pause</em></span>';
     }
 
@@ -199,9 +199,9 @@ export class Hud {
     this.cross.classList.toggle('far', !s.hit);
     if (s.prompt) { this.prompt.hidden = false; this.prompt.textContent = s.prompt; } else this.prompt.hidden = true;
 
-    // lift beacon marker: always shown, above the beacon when in view, at the screen edge when not
+    // lift marker: only while the lift carries you up
     const cam = g.gfx.camera;
-    if (!this.el.hidden) {
+    if (!this.el.hidden && g.ride) {
       const bp = g.works.beaconPos().clone();
       const top = bp.clone().add(new THREE.Vector3(0, 0.9, 0));
       const v = top.clone().project(cam);
