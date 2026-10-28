@@ -97,14 +97,15 @@ function findMesh(atmo, look, glowHex) {
 
 function needleMesh() {
   const g = new THREE.Group();
-  const gold = new THREE.MeshStandardMaterial({ color: 0xffd27a, metalness: 1, roughness: 0.12, emissive: 0x6a4200, emissiveIntensity: 0.6 });
+  const gold = new THREE.MeshStandardMaterial({ color: 0xffd27a, metalness: 1, roughness: 0.12, emissive: 0x8a5600, emissiveIntensity: 1.2 });
   const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.012, 0.42, 8), gold);
   const eye = new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.005, 6, 16), gold);
   eye.position.y = 0.22;
   g.add(shaft, eye);
-  const glow = new THREE.PointLight(0xffc860, 0.6, 2.5, 2);
+  const glow = new THREE.PointLight(0xffc860, 1.2, 4, 2);
   g.add(glow);
   g.userData.glow = glow;
+  g.scale.setScalar(2.4);   // about a metre long: easy to spot in the ice
   return g;
 }
 
@@ -237,17 +238,25 @@ export class FrozenThings {
   update(dt, time, playerPos, hintLevel) {
     let hint = null;
     this.sealedNear = null;
+    this.needleNear = null;
     for (const it of this.items) {
       if (it.done) continue;
       const p = it.mesh.position;
       const dPlayer = Math.min(p.distanceTo(playerPos), Math.hypot(p.x - playerPos.x, p.y - playerPos.y - 1.1, p.z - playerPos.z));
       it.mesh.visible = dPlayer < (it.kind === 'find' ? (this.findRange || 25) : 60);
       if (it.kind === 'fossil') continue;
-      if (!it.freed && dPlayer < 30) it.freed = this.volume.sample(p.x, p.y, p.z) < ISO - 10;
+      if (!it.freed && dPlayer < 30) it.freed = this.volume.sample(p.x, p.y, p.z) < ISO - 10 || (it.kind === 'needle' && this.mostlyClear(p));
       if (it.kind === 'capsule') it.mesh.userData.seam.emissiveIntensity = 1.4 + Math.sin(time * 2.2) * 0.6;
       if (it.kind === 'find') it.mesh.userData.glow.emissiveIntensity = 2.0 + Math.sin(time * 3 + p.x) * 0.9;
       if (it.kind === 'needle') {
         it.mesh.rotation.y += dt * 0.5;
+        // close by and still in the ice: say so; once free it flies to you
+        if (!it.freed && dPlayer < 3.5) this.needleNear = { clear: this.clearShare(p) };
+        // once free it drifts to you, but only through open air (never through the ice)
+        if (it.freed && dPlayer < 6 && dPlayer > 1.2) {
+          const to = playerPos.clone().add(new THREE.Vector3(0, 1.1, 0)).sub(p), step = to.multiplyScalar(Math.min(1, dt * 3));
+          if (this.volume.sdf(p.x + step.x, p.y + step.y, p.z + step.z) < -0.05) p.add(step);
+        }
         it.mesh.userData.glow.intensity = 0.4 + Math.sin(time * 5) * 0.3;
         // everyone feels it once close; Needle Sense and friends reach much further
         const range = hintLevel > 0 ? 10 + hintLevel * 9 : 8;
@@ -258,13 +267,30 @@ export class FrozenThings {
       if (sealed && dPlayer < 3.5) this.sealedNear = it;
       // tide-sealed: freed, it opens once you wait beside it for the tide to turn
       if (sealed && it.freed && it.data.puzzle.kind === 'tide' && dPlayer < 3.5) this.puzzle('tide', p, dt, 1);
-      if (it.freed && dPlayer < 2.0 && !sealed) {
+      if (it.freed && dPlayer < (it.kind === 'needle' ? 2.6 : 2.0) && !sealed) {
         it.done = true;
         this.emit(it.kind, it);
         this.animateOut(it);
       }
     }
     return hint;
+  }
+
+  // share of the points around an item that are open air (the needle is thin: digging next to it frees it)
+  clearShare(p) {
+    let n = 0;
+    const o = [[0.4, 0, 0], [-0.4, 0, 0], [0, 0.4, 0], [0, -0.4, 0], [0, 0, 0.4], [0, 0, -0.4]];
+    for (const [x, y, z] of o) if (this.volume.sample(p.x + x, p.y + y, p.z + z) < ISO) n++;
+    return n / o.length;
+  }
+  mostlyClear(p) { return this.volume.sample(p.x, p.y, p.z) < ISO + 30 || this.clearShare(p) >= 0.5; }
+
+  // a dig or melt that reaches the needle knocks it free
+  hitAt(x, y, z, r) {
+    for (const it of this.items) {
+      if (it.kind !== 'needle' || it.done || it.freed) continue;
+      if (it.mesh.position.distanceTo(new THREE.Vector3(x, y, z)) < r + 0.7) it.freed = true;
+    }
   }
 
   // where the Golden Needle still waits (null once found)

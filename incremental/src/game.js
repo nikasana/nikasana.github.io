@@ -787,6 +787,7 @@ class Game {
     this.coins.syncSpawn = true;
     let res;
     try { res = this.volume.applyOp(op); } finally { this.coins.syncSpawn = false; }
+    if (op.kind === 'dig' || op.kind === 'melt') this.frozen.hitAt(op.x, op.y, op.z, op.r || 1);   // a tool that reaches the needle knocks it free
     const depth = this.depthAt(op.x, op.y, op.z);
     // frozen ice counts like removed ice (the same economy), and the tools treat it as their work
     if (op.kind === 'freeze') res.removed = res.added;
@@ -1020,7 +1021,7 @@ class Game {
     this.countAction('needle');
     this.music.cue('stinger');
     if (!this.settings.reduceFlash) { this.gfx.flash = 0.35; this.flashT = 0.6; }
-    this.hud.notice('The Golden Needle', `Found. One is hidden on every planet. Worth ${format(bonus)} coins.`, 'money', 9000);
+    this.hud.notice('✦ The Golden Needle is yours', `+${format(bonus)} coins, already in your vault. There is one on every planet: this planet's is done. What next: keep digging down toward the GOAL at the bottom of the depth gauge (${Math.round(M.goalDepthOf(this.econ)).toLocaleString('en-US')} m) to finish ${this.planet.name} and travel on, and spend your coins at the Outfitter's hut.`, 'money', 14000);
     if (this.crew.active) { this.crew.event({ k: 'needle', bonus }); if (!this.crew.isHost) this.crew.bank(bonus, []); }
     this.save();
   }
@@ -1841,6 +1842,7 @@ class Game {
       const it = this.frozen.sealedNear, P = it.data.puzzle;
       prompt = `${it.data.name} · ${P.kind === 'heat' ? 'frozen shut: melt the ice right next to it' : P.kind === 'tide' ? 'tide-sealed: wait beside it while the tide turns' : 'light-sealed: hold your focused lamp on it'} (${Math.round(100 * (it.progress || 0) / P.need)}%)`;
     }
+    else if (this.frozen.needleNear) prompt = `✦ The Golden Needle is right here in the ice (${Math.round(this.frozen.needleNear.clear * 100)}% dug clear) · dig next to it to knock it free; it flies to you`;
     else if (deep && this.time - (this.liftHintAt || -99) < 6) prompt = `Stand by the glowing lift beacon ◆ and hold ${jump} to ride up`;
     // first-time explanations
     const tips = this.state.tips || (this.state.tips = {});

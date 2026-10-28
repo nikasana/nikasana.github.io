@@ -197,6 +197,8 @@ IceState iceState() {
   s.snow = clamp( top * smoothstep( 0.2, 0.7, n.y ) + top * 0.35, 0.0, 1.0 ) * ( 1.0 - s.wet );
   float fr = smoothstep( 0.45, 0.95, n.y ) * smoothstep( 0.35, 0.75, fbm3( vWPos * 1.7 ) );
   fr += 0.22 * smoothstep( 0.55, 0.85, fbm3( vWPos * 3.1 + 5.0 ) );
+  // floors you walk on are frosted over (matte, not see-through glass); walls stay clear ice
+  fr = max( fr, smoothstep( 0.55, 0.9, n.y ) );
   s.frost = clamp( fr, 0.0, 1.0 ) * ( 1.0 - s.wet ) * ( 1.0 - s.snow ) * ( 1.0 - crack );
   return s;
 }
@@ -310,7 +312,7 @@ const ICE_COMPOSE = /* glsl */`
   vec3 snowCol = litW * vec3( 0.96, 0.975, 0.99 ) * mix( vec3( 0.86, 0.94, 1.08 ), vec3( 1.0 ), smoothstep( 0.1, 0.6, lumS ) ) + lampTerm * 0.6;
   float glint = step( 0.992, h31( floor( vWPos * 55.0 ) ) ) * pow( clamp( dot( reflect( -wV, wN ), normalize( uSunDirW ) ), 0.0, 1.0 ), 6.0 );
   snowCol += uSunCol * glint * 6.0 * ( ice.snow + ice.frost );
-  col = mix( col, snowCol * 0.92, ice.frost * 0.75 );
+  col = mix( col, snowCol * 0.9, ice.frost * 0.92 );
   col = mix( col, snowCol, ice.snow );
   col = mix( col, litW * vec3( 0.86, 0.94, 0.98 ) + lampTerm * 0.5, ice.crack * 0.55 );
   col = mix( col, litW * 1.15 + 0.03, ice.crackLine * 0.8 );
@@ -321,7 +323,8 @@ const ICE_COMPOSE = /* glsl */`
 
   // pit walls cannot see the open sky: occlude reflections with depth and cavity
   float specOcc = mix( 1.0, 0.15, smoothstep( 0.3, 4.0, ice.depth ) ) * ( 1.0 - smoothstep( 0.35, 0.8, ice.cav ) * 0.8 );
-  outgoingLight = col + spec * specOcc * ( 1.0 - ice.snow * 0.35 );
+  // frosted floors and snow do not mirror the sky
+  outgoingLight = col + spec * specOcc * ( 1.0 - ice.snow * 0.35 ) * ( 1.0 - ice.frost * 0.75 );
   if ( any( isnan( outgoingLight ) ) || any( isinf( outgoingLight ) ) ) outgoingLight = vec3( 0.0 );
   outgoingLight = clamp( outgoingLight, 0.0, 64.0 );
   if ( uDebug > 0.5 ) {

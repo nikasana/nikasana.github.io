@@ -85,15 +85,29 @@ const guide = await ev(() => { const t = document.querySelector('.needle-text');
 await ev(() => { window.__game.ctl.yaw = 0; });   // turn north: the needle is now to the left
 await wait(1500);
 const guide2 = await ev(() => document.querySelector('.needle-text').textContent);
-check('At the needle’s depth the compass, map and a readout point across to it', guide.mark && /Needle 2\d m ↑ ahead/.test(guide.text) && /to your left/.test(guide2), `${guide.text} | then ${guide2}`);
+check('At the needle’s depth the compass, map and a readout point across to it', guide.mark && /Needle 2\d\.\d\d m · ↑ ahead 2\d\.\d\d m/.test(guide.text) && /← left/.test(guide2), `${guide.text} | then ${guide2}`);
 await shot('02a-needle-guide');
 
 // needle sense: a diamond at its depth, and a readout with distance and direction when close
 await ev(() => { const g = window.__game; g.devLevel('vis_hint', 1); g.ctl.noclip = true; const it = g.frozen.items.find((i) => i.kind === 'needle' && !i.done); const p = it.mesh.position; g.ctl.teleport(p.x + 6, p.y + 3, p.z); });
 await wait(2000);
 const sense = await ev(() => ({ at: !document.querySelector('.hud-depth .needle-at').hidden, text: document.querySelector('.needle-text')?.hidden ? '' : document.querySelector('.needle-text').textContent }));
-check('With Needle Sense: the needle’s depth on the gauge and a distance readout nearby', sense.at && /Needle \d+ m/.test(sense.text), JSON.stringify(sense));
+check('With Needle Sense: the needle’s depth on the gauge and a distance readout nearby', sense.at && /Needle \d+\.\d\d m|Needle \d+ cm/.test(sense.text), JSON.stringify(sense));
 await shot('02-needle-sense');
+// close up the readout is in centimetres, and digging next to the needle knocks it free: it flies to you
+const near = await ev(async () => {
+  const g = window.__game, it = g.frozen.items.find((i) => i.kind === 'needle' && !i.done), p = it.mesh.position.clone();
+  g.ctl.teleport(p.x + 0.5, p.y - 0.4, p.z);
+  await new Promise((r) => setTimeout(r, 1500));
+  const t = document.querySelector('.needle-text').textContent;
+  const v0 = g.econ.coins.toNumber();
+  g.ctl.teleport(p.x + 2.2, p.y - 1, p.z);
+  g.applyOp({ kind: 'dig', x: p.x + 1.1, y: p.y, z: p.z, r: 0.6, seed: 1 }, 'local');
+  const t0 = performance.now();
+  while (performance.now() - t0 < 20000 && !g.state.needle) await new Promise((r) => setTimeout(r, 300));
+  return { text: t, found: !!g.state.needle, paid: g.econ.coins.toNumber() > v0, notice: [...document.querySelectorAll('.notice .d')].some((d) => /What next/.test(d.textContent)) };
+});
+check('The needle readout goes down to centimetres; digging next to the needle frees it and it flies to you, with a what-next notice', /\d+ cm/.test(near.text) && near.found && near.paid && near.notice, JSON.stringify(near));
 await ev(() => { window.__game.ctl.noclip = false; });
 
 // the depot: the pack pours in only at the depot, at the delivery speed; upgrades make it faster

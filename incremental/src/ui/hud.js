@@ -232,21 +232,27 @@ export class Hud {
       this.needle.hidden = false;
       this.needle.style.background = `conic-gradient(from ${ang - 14}deg, rgba(255,210,122,${0.12 + hint.strength * 0.5}) 0deg 28deg, transparent 28deg)`;
       this.needle.style.maskImage = this.needle.style.webkitMaskImage = 'radial-gradient(circle, transparent 54%, #000 56%, #000 60%, transparent 62%)';
-      // and a readout under the crosshair: how far, and whether to dig down, up or across
-      const v = hint.dy < -1.2 ? ' ↓ dig down' : hint.dy > 1.2 ? ' ↑ above you' : '';
+      // and a readout under the crosshair, to the centimetre: how far, which way across, how far up or down
       this.needleText.hidden = false;
-      this.needleText.textContent = `✦ Needle ${hint.dist.toFixed(0)} m${v}`;
+      this.needleText.textContent = needleReadout(hint.dir.x * hint.dist, hint.dir.z * hint.dist, hint.dy, g.ctl.yaw);
     } else if (s.needleGuide && !this.el.hidden) {
       // at the needle's depth but not yet close: which way to go across, and how far
-      const gd = s.needleGuide, dist = Math.hypot(gd.dx, gd.dz);
-      const yaw = Math.atan2(-gd.dx, -gd.dz);                       // the controller's yaw that faces it
-      let rel = ((yaw - g.ctl.yaw) * 180 / Math.PI) % 360;
-      if (rel > 180) rel -= 360; if (rel < -180) rel += 360;
-      const arrow = Math.abs(rel) < 25 ? '↑ ahead' : Math.abs(rel) > 155 ? '↓ behind you' : rel > 0 ? '← to your left' : '→ to your right';
-      const v = gd.dy < -2 ? ', a little deeper' : gd.dy > 2 ? ', a little higher' : '';
+      const gd = s.needleGuide;
       this.needle.hidden = true;
       this.needleText.hidden = false;
-      this.needleText.textContent = `✦ Needle ${dist.toFixed(0)} m ${arrow}${v}`;
+      this.needleText.textContent = needleReadout(gd.dx, gd.dz, gd.dy, g.ctl.yaw);
     } else { this.needle.hidden = true; this.needleText.hidden = true; }
   }
+}
+
+// distances to the centimetre: "43 cm" under a metre, "2.37 m" above
+const cmOrM = (d) => (d < 1 ? `${Math.round(d * 100)} cm` : `${d.toFixed(2)} m`);
+// The needle readout: straight-line distance, which way to turn, and how far up or down (from your feet).
+export function needleReadout(dx, dz, dy, yaw) {
+  const across = Math.hypot(dx, dz), dist = Math.hypot(across, dy);
+  let rel = ((Math.atan2(-dx, -dz) - yaw) * 180 / Math.PI) % 360;   // the controller's yaw that faces it, relative to yours
+  if (rel > 180) rel -= 360; if (rel < -180) rel += 360;
+  const turn = across < 0.25 ? '' : Math.abs(rel) < 25 ? ` · ↑ ahead ${cmOrM(across)}` : Math.abs(rel) > 155 ? ` · ↓ behind you ${cmOrM(across)}` : rel > 0 ? ` · ← left ${cmOrM(across)}` : ` · → right ${cmOrM(across)}`;
+  const up = dy < -0.15 ? ` · dig down ${cmOrM(-dy)}` : dy > 1.9 ? ` · up ${cmOrM(dy - 1.6)}` : ' · at your level';
+  return `✦ Needle ${cmOrM(dist)}${turn}${up}`;
 }
