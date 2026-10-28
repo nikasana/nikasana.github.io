@@ -221,8 +221,8 @@ function main() {
   L('Growth is the effective per-level cost growth a bot felt: geometric mean of each level\'s price over the previous level\'s price of the same node (node growth, synergy reductions and purchase inflation together).');
   L();
   const verdicts = [];
-  for (const p of PLANETS.filter((x) => x.available)) {
-    for (const pole of ['N', 'S']) {
+  for (const p of PLANETS.filter((x) => x.available && (!process.env.SIM_ONLY || x.id === process.env.SIM_ONLY))) {
+    for (const pole of process.env.SIM_ONLY ? [process.env.SIM_POLE || 'N'] : ['N', 'S']) {
       L(`## ${p.icon} ${p.name}, ${pole === 'N' ? 'North' : 'South'} pole (${p.poles[pole].name})`);
       L();
       L('| bot | purchases | first wait | early median | mid median | late median | p95 | peak | drift | growth | goal (min) | synergies | wave peaks |');

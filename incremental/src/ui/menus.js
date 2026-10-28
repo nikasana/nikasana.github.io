@@ -11,6 +11,7 @@ import { PRESETS } from '../render/graphics.js';
 import { ACTION_LABELS, keyLabel } from '../player/input.js';
 import * as M from '../econ/model.js';
 import { PLANETS } from '../econ/data/planets.js';
+import { COINS } from '../econ/data/coins.js';
 import { FINDS } from '../econ/data/finds.js';
 import { MUTANTS, MUTANT_BY_ID } from '../econ/data/mutants.js';
 
@@ -173,12 +174,22 @@ export class Menus {
             h('h4', {}, `${p.icon} ${p.name}`),
             h('p', {}, pc ? `Melted through at the ${pc.pole === 'S' ? 'South' : 'North'} pole, ${Math.round(pc.depth)} m.` : 'Not yet. Reach the goal depth to send a postcard.'));
         })));
+      } else if (t === 'coins') {
+        const seen = g.profile.coinTypes || {};
+        const kinds = COINS.filter((c) => !c.special);
+        body.append(h('p', { style: { color: 'var(--haze)', margin: '0 0 10px' } }, `${kinds.filter((c) => seen[c.id]).length} of ${kinds.length} kinds found. Deeper layers hold new kinds; each world has one of its own. Bigger coins of a kind are worth more. Chests: ${seen.chest ? 'found' : 'not yet'}.`),
+          h('div.coll', {}, kinds.map((c) => {
+            const pl = c.planet ? PLANETS.find((p) => p.id === c.planet) : null;
+            return h(`div.card${seen[c.id] ? '' : '.blank'}`, {},
+              h('h4', {}, seen[c.id] ? `${c.icon} ${c.name}` : '? ? ? ? ?'),
+              h('p', {}, `From about ${c.minDepth} m${pl ? ` · only on ${pl.icon} ${pl.name}` : ''}${seen[c.id] ? ` · worth ${c.value.toLocaleString('en-US')}× a copper` : ''}`));
+          })));
       } else if (t === 'milestones') {
         body.append(h('div.coll', {}, MILESTONES.filter((m) => m.planet === '*' || m.planet === e.planet).map((m) => h(`div.card${e.milestones[m.id] !== undefined ? '' : '.blank'}`, {},
           h('h4', {}, `${m.icon} ${m.name}`), h('p', {}, e.milestones[m.id] !== undefined ? `Reached at ${formatTime(e.milestones[m.id])}. Paid ${m.bonusSec} s of income.` : `Pays ${m.bonusSec} s of income.`)))));
       }
     };
-    for (const [id, l] of [['resonance', 'Resonance notebook'], ['mutations', 'Mutation log'], ['finds', 'Finds'], ['capsules', 'Capsules & needle'], ['milestones', 'Milestones'], ['postcards', 'Postcards']]) {
+    for (const [id, l] of [['resonance', 'Resonance notebook'], ['mutations', 'Mutation log'], ['finds', 'Finds'], ['coins', 'Coins'], ['capsules', 'Capsules & needle'], ['milestones', 'Milestones'], ['postcards', 'Postcards']]) {
       const b = h('button.tab', { onclick: () => setTab(id) }, l);
       b.dataset.t = id;
       tabs.append(b);
@@ -654,11 +665,15 @@ class TreeView {
     const table = M.costTable(e);
     const cost = table[id].cost;
     const per = n.max > 1 ? ' per level' : '';
+    const W = M.milestoneWeight(lvl, n.max);
+    const star = n.max >= M.MILESTONE && lvl < n.max && M.isMilestone(lvl + 1);
     const fx = n.effects.map(([stat, op, v]) => {
       if (op === 'set') return stat.endsWith('Tier') ? `${statName(stat)} → tier ${v}` : `${statName(stat)}: unlocked`;
-      if (op === 'add') return `${statName(stat)} ${v < 0 ? '−' : '+'}${fmtV(Math.abs(v), stat)}${per}${n.max > 1 ? ` (now ${v < 0 ? '−' : '+'}${fmtV(Math.abs(v * lvl), stat)})` : ''}`;
-      return `${statName(stat)} ×${(1 + v).toFixed(2)}${per}`;
+      if (op === 'add') return `${statName(stat)} ${v < 0 ? '−' : '+'}${fmtV(Math.abs(v), stat)}${per}${n.max > 1 ? ` (now ${v < 0 ? '−' : '+'}${fmtV(Math.abs(v * W), stat)})` : ''}`;
+      return `${statName(stat)} ×${(1 + v).toFixed(2)}${per}${n.max > 1 && lvl ? ` (now ×${Math.pow(1 + v, W).toFixed(2)})` : ''}`;
     });
+    if (n.max >= M.MILESTONE) fx.push(star ? '<b style="color:var(--brass)">★ Next level is a milestone: it counts three times (and costs more)</b>'
+      : `<span style="opacity:.7">★ Every ${M.MILESTONE}th level counts three times</span>`);
     const lock = M.lockedBy(e, id);
     const rival = n.excl ? NODES.filter((o) => o.excl === n.excl && o.id !== id).map((o) => skinNode(o, e.reverse).name).join(' / ') : '';
     const eyebrow = n.join ? `${TREE[n.join[0]].icon} ${TREE[n.join[0]].name} × ${TREE[n.join[1]].icon} ${TREE[n.join[1]].name} · cross-tree`
@@ -708,6 +723,7 @@ class TreeView {
         KIND_LABEL[n.kind] ? h('div.kind', {}, barred ? 'CLOSED' : KIND_LABEL[n.kind]) : '',
         h('div.top', {}, h('span.ic', {}, n.icon), h('span.nm', {}, n.name), h('span.lv', {}, `${lvl}/${n.max}`)),
         h('div.pips', {}, Array.from({ length: pips }, (_, i) => h(`i${i < filled ? '.f' : ''}`))),
+        n.max >= M.MILESTONE && !maxed && M.isMilestone(lvl + 1) ? h('div.star', { title: 'Next level is a milestone' }, '★') : '',
         h('div.cost', {}, h('span', {}, maxed ? 'MAX' : format(cost)), h('span.eta', {}, maxed || !unlocked ? '' : can ? 'buy' : formatTime(wait))),
       );
     }

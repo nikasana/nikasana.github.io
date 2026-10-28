@@ -1,7 +1,7 @@
 // Surface works: the lift beacon that follows you (it flies on its own, so there is no crane), the coin
 // vault at the rim where banked coins pile up, and the Outfitter's hut with its upgrade terminal.
 import * as THREE from 'three';
-import { HALF, surfaceY, OUTFITTER } from './field.js';
+import { HALF, surfaceY, OUTFITTER, DEPOT } from './field.js';
 import { COINS } from '../econ/data/coins.js';
 import { rng } from '../core/rng.js';
 
@@ -165,6 +165,34 @@ export class Works {
       this.outfitterPos = new THREE.Vector3(hx, hy, hz);
       this.terminalPos = new THREE.Vector3(hx, hy + 1.2, zb - T - 0.4);
     }
+    // the depot: deliver your pack here. A squat shed with a glowing intake facing the claim; coins
+    // poured in go down the chute to the vault.
+    {
+      const dx = DEPOT.x, dz = DEPOT.z, W = 4.0, D = 3.2, H = 3.0;
+      const dy = padY(dx, dz, W, D);
+      const shed = steel(atmo, 0x8a6a2c, 0.6, 0.35, 'depot');
+      this.group.add(box(W, H + 0.6, D, shed, dx, dy + H / 2 - 0.3, dz));
+      this.group.add(box(W + 0.4, 0.2, D + 0.4, dark, dx, dy + H + 0.1, dz));
+      this.colliders.push({ min: new THREE.Vector3(dx - W / 2 - 0.05, dy - 1, dz - D / 2 - 0.05), max: new THREE.Vector3(dx + W / 2 + 0.05, dy + H, dz + D / 2 + 0.05) });
+      // the intake: a hopper on the front wall with a glowing collection ring
+      const zf = dz - D / 2;
+      const hopper = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.45, 0.9, 16, 1, true), dark);
+      hopper.material = dark; hopper.position.set(dx, dy + 1.25, zf - 0.55); hopper.castShadow = true;
+      this.group.add(hopper);
+      this.group.add(box(0.5, 0.9, 0.5, dark, dx, dy + 0.45, zf - 0.55));      // its stand
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.86, 0.05, 10, 40), this.ringMat);
+      ring.rotation.x = Math.PI / 2; ring.position.set(dx, dy + 1.7, zf - 0.55);
+      this.group.add(ring);
+      this.group.add(box(W - 0.3, 0.12, 2.4, paint, dx, dy, zf - 1.2));          // apron
+      const sign = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.4, 0.06), this.ringMat);
+      sign.position.set(dx, dy + H + 0.45, zf - 0.05);
+      this.group.add(sign);
+      this.depotLight = new THREE.PointLight(0xffd59a, 3, 8, 1.6);
+      this.depotLight.position.set(dx, dy + 2.4, zf - 1.4);
+      this.group.add(this.depotLight);
+      this.depotPos = new THREE.Vector3(dx, dy + 1.0, zf - 0.55);   // where you pour the pack in
+      this.depotRing = ring;
+    }
     // a little survey hut by the vault, for scale
     this.group.add(box(3.2, 2.4, 2.6, steel(atmo, 0xb24d22, 0.7, 0.1, 'hut'), VAULT.x + VAULT.w / 2 + 4.6, vy + 1.15, VAULT.z + 0.4));
     this.group.add(box(3.5, 0.18, 2.9, dark, VAULT.x + VAULT.w / 2 + 4.6, vy + 2.42, VAULT.z + 0.4));
@@ -177,7 +205,7 @@ export class Works {
     this.pd = Math.floor(VAULT.d / this.pileRes);
     this.pileH = new Float32Array(this.pw * this.pd);
     this.pileCount = 0;
-    this.pileMesh = coinGeos.map((g, i) => {
+    this.pileMesh = coinGeos.slice(0, 3).map((g, i) => {   // the vault piles copper, silver and gold
       const im = new THREE.InstancedMesh(g, coinMats[i], 3000);
       im.count = 0;
       im.castShadow = true;

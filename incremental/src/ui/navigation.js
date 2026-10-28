@@ -8,7 +8,7 @@ const FONT_DISPLAY = "'Big Shoulders Display', 'Arial Narrow', sans-serif";
 const COL = { frost: '#e6f1f4', haze: '#9fb8c2', glacier: '#8fd6ec', brass: '#e2b25e', ember: '#ff8b52', violet: '#b9a4ff' };
 // Colour-safe markers (Settings > Accessibility): the Okabe-Ito palette, which stays distinct with every
 // common colour-vision deficiency. Every marker also has its own shape, so colour is never the only cue.
-const SAFE = { lift: '#56b4e9', outfitter: '#0072b2', vault: '#e69f00', find: '#f0e442', crew: '#cc79a7' };
+const SAFE = { lift: '#56b4e9', outfitter: '#0072b2', vault: '#e69f00', depot: '#d55e00', find: '#f0e442', crew: '#cc79a7' };
 const CARDINAL = { 0: 'N', 45: 'NE', 90: 'E', 135: 'SE', 180: 'S', 225: 'SW', 270: 'W', 315: 'NW' };
 
 // North is -z. Bearing in degrees, clockwise from north, of a world direction (dx, dz).
@@ -53,6 +53,7 @@ export class Navigation {
         if (Math.hypot(p.x - g.ctl.pos.x, p.z - g.ctl.pos.z) < 60) out.push({ x: p.x, z: p.z, col: safe ? SAFE.find : '#' + it.find.glow.toString(16).padStart(6, '0'), shape: 'star', label: '', mapOnly: true });
       }
     }
+    if (g.works.depotPos) { const d = g.works.depotPos; out.push({ x: d.x, z: d.z, col: safe ? SAFE.depot : COL.brass, shape: 'hexagon', label: 'DEPOT' }); }
     const v = g.works.vaultCenter();
     out.push({ x: v.x, z: v.z, col: safe ? SAFE.vault : COL.brass, shape: 'square', label: 'VAULT' });
     if (g.crew && g.crew.active && g.avatars) for (const a of g.avatars.map.values()) out.push({ x: a.root.position.x, z: a.root.position.z, col: safe ? SAFE.crew : COL.violet, shape: 'dot', label: '' });
@@ -122,6 +123,7 @@ export class Navigation {
     x.beginPath();
     if (kind === 'diamond') { x.moveTo(sx, sy - s); x.lineTo(sx + s, sy); x.lineTo(sx, sy + s); x.lineTo(sx - s, sy); x.closePath(); }
     else if (kind === 'square') x.rect(sx - s * 0.8, sy - s * 0.8, s * 1.6, s * 1.6);
+    else if (kind === 'hexagon') { for (let i = 0; i < 6; i++) { const a = Math.PI / 6 + i * Math.PI / 3; x.lineTo(sx + Math.cos(a) * s, sy + Math.sin(a) * s); } x.closePath(); }
     else if (kind === 'triangle') { x.moveTo(sx, sy - s); x.lineTo(sx + s * 0.95, sy + s * 0.75); x.lineTo(sx - s * 0.95, sy + s * 0.75); x.closePath(); }
     else if (kind === 'star') { for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? s * 0.45 : s; x.lineTo(sx + Math.cos(a) * r, sy + Math.sin(a) * r); } x.closePath(); }
     else x.arc(sx, sy, s * 0.8, 0, Math.PI * 2);

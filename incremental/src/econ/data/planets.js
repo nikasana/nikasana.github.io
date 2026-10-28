@@ -1,3 +1,4 @@
+import { coinTypesFor } from './coins.js';
 // Planet data. Each pole has its own starting strata (Pole Pick Variations).
 // Strata: from depth `d` (m) down to the next entry. hard: dig resistance, rich: coin richness.
 
@@ -5,7 +6,6 @@ export const PLANETS = [
   {
     id: 'frostara', name: 'Frostara', icon: '🌍', rule: 'Classic ice sheet', available: true,
     radiusM: 1400, goalDepth: 1000, density: 7.5, depthScale: 9, richExp: 1.32,
-    coinTiers: ['copper', 'silver', 'gold'],
     exposure: 0.82, fog: [0.66, 0.77, 0.88], fogDensity: 0.0011,
     sky: { turbidity: 2.2, rayleigh: 1.1, mieCoefficient: 0.004, mieDirectionalG: 0.82 },
     sunElevation: 14, dayLength: 600,
@@ -43,7 +43,6 @@ export const PLANETS = [
   {
     id: 'mistral', name: 'Mistral', icon: '🌫️', rule: 'Fog, so vision matters', available: true,
     radiusM: 1800, goalDepth: 1200, density: 7.5, depthScale: 9, richExp: 1.34,
-    coinTiers: ['copper', 'silver', 'gold', 'gem'],
     // thick, low fog: past a few dozen metres everything is pearl grey unless your lamp cuts it
     exposure: 0.74, fog: [0.7, 0.71, 0.76], fogDensity: 0.022, skyVeil: 0.88, skyVeilBright: 0.9,
     sky: { turbidity: 9, rayleigh: 0.5, mieCoefficient: 0.02, mieDirectionalG: 0.7 },
@@ -82,7 +81,6 @@ export const PLANETS = [
   {
     id: 'cinderice', name: 'Cinderice', icon: '🌋', rule: 'Lava under ice, so melting is risky', available: true,
     radiusM: 2200, goalDepth: 1400, density: 7.5, depthScale: 9, richExp: 1.36,
-    coinTiers: ['copper', 'silver', 'gold', 'gem'],
     // ash-dark ice over a hot core: a dim red sky, embers in the air, lava glowing through the deep ice
     exposure: 0.78, fog: [0.42, 0.33, 0.3], fogDensity: 0.004, skyVeil: 0.55, skyVeilBright: 0.85,
     sky: { turbidity: 12, rayleigh: 0.6, mieCoefficient: 0.012, mieDirectionalG: 0.8 },
@@ -122,7 +120,6 @@ export const PLANETS = [
   {
     id: 'tidalis', name: 'Tidalis', icon: '🌊', rule: 'Ocean ice, so currents carry coins', available: true,
     radiusM: 2600, goalDepth: 1500, density: 7.5, depthScale: 9, richExp: 1.38,
-    coinTiers: ['copper', 'silver', 'gold', 'gem', 'relic'],
     // a frozen ocean: green-blue sea ice, a low bright sky, and currents running under the ice
     exposure: 0.86, fog: [0.62, 0.78, 0.82], fogDensity: 0.0018,
     sky: { turbidity: 3, rayleigh: 1.6, mieCoefficient: 0.005, mieDirectionalG: 0.8 },
@@ -162,7 +159,6 @@ export const PLANETS = [
   {
     id: 'gale', name: 'Gale', icon: '🌪️', rule: 'Storms, so wind decides what works', available: true,
     radiusM: 3000, goalDepth: 1600, density: 7.5, depthScale: 9, richExp: 1.4,
-    coinTiers: ['copper', 'silver', 'gold', 'gem', 'relic'],
     // a wind-scoured world: storms blow the heat away from melting; short calm windows open between them
     exposure: 0.84, fog: [0.7, 0.74, 0.78], fogDensity: 0.004, skyVeil: 0.35, skyVeilBright: 0.95,
     sky: { turbidity: 6, rayleigh: 1.2, mieCoefficient: 0.008, mieDirectionalG: 0.8 },
@@ -202,7 +198,6 @@ export const PLANETS = [
   {
     id: 'auralis', name: 'Auralis', icon: '🌌', rule: 'Aurora world with rare sky coins', available: true,
     radiusM: 3200, goalDepth: 1700, density: 6.4, depthScale: 9, richExp: 1.42,
-    coinTiers: ['copper', 'silver', 'gold', 'gem', 'relic'],
     // a world of long twilight: the ice is poorer, but the sky pays. Auroras come often, and between
     // them a lone sky coin drifts down now and then. Catching sky coins one after another builds the Aurora Chain.
     exposure: 0.8, fog: [0.26, 0.3, 0.42], fogDensity: 0.0016,
@@ -245,7 +240,6 @@ export const PLANETS = [
   {
     id: 'omega', name: 'Omega', icon: '🔮', rule: 'Every rule combined', available: true,
     radiusM: 3600, goalDepth: 2000, density: 7.0, depthScale: 9, richExp: 1.44,
-    coinTiers: ['copper', 'silver', 'gold', 'gem', 'relic'],
     // the last world: fog, lava, currents, storms and auroras all at once, over ice that holds every kind of mutant
     exposure: 0.8, fog: [0.5, 0.48, 0.56], fogDensity: 0.009, skyVeil: 0.5, skyVeilBright: 0.9, clouds: 0.18,
     sky: { turbidity: 7, rayleigh: 0.9, mieCoefficient: 0.01, mieDirectionalG: 0.8 },
@@ -289,6 +283,9 @@ export const PLANETS = [
     },
   },
 ];
+
+// coin types per planet: the general kinds up to its place in the journey, plus its own signature coin
+PLANETS.forEach((p, i) => { p.coinTiers = coinTypesFor(p.id, i); });
 
 export const PLANET_BY_ID = Object.fromEntries(PLANETS.map((p) => [p.id, p]));
 

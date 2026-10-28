@@ -91,6 +91,23 @@ await shot('03-pause');
 await ev(() => window.__game.menus.close());
 await until(() => window.__game.input.locked, 10000);
 
+// JUMP and LIFT are different buttons: LIFT shows only by the lift beacon in the crater, and JUMP never rides
+const liftAway = await ev(() => document.querySelector('.tbtn.lift').hidden);
+await ev(() => { const g = window.__game; g.devShaft(12); });
+await until(() => window.__game.volume.pending() < 4, 60000);
+await ev(() => { const g = window.__game, b = g.works.beaconPos(), p = g.ctl.pos; b.set(p.x + 0.8, p.y + 1.2, p.z); });
+const liftShown = await until(() => !document.querySelector('.tbtn.lift').hidden, 20000);
+const y0j = await ev(() => window.__game.ctl.pos.y);
+await finger('.tbtn.jump', 6, [[0, 0]], 4000);   // long enough to have ridden, if jump still rode
+const jumpRode = await ev(() => !!window.__game.ride);
+await shot('03b-lift-button');
+await ev(() => { window.__liftY = window.__game.ctl.pos.y; });
+await finger('.tbtn.lift', 7, [[0, 0]], 4000);   // a slow software frame takes a while to fill the half-second hold
+const rode = await until(() => !!window.__game.ride || window.__game.ctl.pos.y > window.__liftY + 4, 5000);
+check('JUMP and LIFT are separate: LIFT appears only by the beacon, JUMP never rides, LIFT does',
+  liftAway && liftShown && !jumpRode && rode, JSON.stringify({ liftAway, liftShown, jumpRode, rode, y0j: y0j.toFixed(1) }));
+await until(() => !window.__game.ride, 30000);
+
 // the upgrade terminal: walk in, aim, tap USE
 await ev(() => { const g = window.__game, h = g.works.hut; g.tools.select(0, g.stats); const cx = (h.x0 + h.x1) / 2, door = h.z0 + 0.8; g.ctl.teleport(cx, g.volume.floorBelow(cx, h.y + 2, door, 6) + 0.05, door); g.ctl.yaw = Math.PI; g.ctl.pitch = -0.05; });
 await until(() => window.__game.aimTerminal, 30000);

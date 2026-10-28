@@ -66,7 +66,7 @@ const water = await ev(() => {
 check('Meltwater pools that meet merge into one', water === 1, `${water} pool(s)`);
 
 // relic coin model
-check('Relic coin tier exists (model, low-poly model, material)', await ev(() => window.__game.coins.geos.length === 5 && window.__game.coins.lowGeos.length === 5 && window.__game.coins.mats.length === 5));
+check('Relic coin tier exists (model, low-poly model, material)', await ev(() => window.__game.coins.geos.length >= 5 && window.__game.coins.lowGeos.length === window.__game.coins.geos.length && window.__game.coins.mats.length === window.__game.coins.geos.length && window.__game.planet.coinTiers.includes('relic')));
 
 // sonic hammer and heat pipe
 await ev(() => { const g = window.__game; for (const id of ['dig_swing', 'dig_grip', 'dig_drill', 'dig_bit', 'dig_torque', 'dig_chip', 'dig_frac', 'dig_echo', 'dig_cool', 'dig_wide', 'dig_sonic', 'pl_mirror', 'pl_lens', 'pl_array', 'pl_orbit', 'pl_pipe']) g.devLevel(id, 1); g.tools.select(0, g.stats); g.ctl.yaw = 0; g.ctl.pitch = -0.2; });

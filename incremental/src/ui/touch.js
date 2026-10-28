@@ -1,6 +1,6 @@
 // Touch controls for phones and tablets: a move stick that appears under your left thumb (push it all the
 // way to sprint), drag anywhere else to look, hold buttons for the tool (USE), its second action (ALT) and
-// jump / lift, and a row of buttons for the menus. They press the same bound actions as the keyboard and
+// jump, a LIFT button by the lift beacon, and a row of buttons for the menus. They press the same bound actions as the keyboard and
 // mouse, so the game itself does not know the difference.
 import { h } from './dom.js';
 
@@ -24,7 +24,12 @@ export class TouchControls {
       return b;
     };
     this.useBtn = hold('use', 'USE', 'use');
-    this.el.append(this.useBtn, hold('alt', 'ALT', 'alt'), hold('jump', 'JUMP', 'jump'), hold('lamp', 'LAMP', 'lamp'));
+    // LIFT is its own button, shown only beside the lift beacon in the crater, so JUMP always just jumps
+    this.liftBtn = h('button.tbtn.lift', { 'aria-label': 'Ride the lift up', hidden: true }, h('i', {}, '▲'), 'LIFT');
+    const lift = (v) => (ev) => { ev.preventDefault(); ev.stopPropagation(); this.liftBtn.classList.toggle('on', v); game.touchLift = v; };
+    this.liftBtn.addEventListener('pointerdown', lift(true));
+    for (const t of ['pointerup', 'pointercancel', 'pointerleave']) this.liftBtn.addEventListener(t, lift(false));
+    this.el.append(this.useBtn, hold('alt', 'ALT', 'alt'), hold('jump', '⤒ JUMP', 'jump'), hold('lamp', 'LAMP', 'lamp'), this.liftBtn);
     // menu buttons: the same keys the keyboard would press
     const tap = (label, title, code) => {
       const b = h('button.tbtn.menu', { 'aria-label': title, title }, label);
@@ -93,6 +98,9 @@ export class TouchControls {
     if (this.el.hidden === show) this.el.hidden = !show;
     this.el.classList.toggle('planet', g.view === 'planet');
     if (!show && this.touches.size) { this.touches.clear(); this.stick.hidden = true; this.setMove(0, 0, false); }
+    const lift = show && g.view !== 'planet' && !!(g.liftReady || g.ride);
+    if (this.liftBtn.hidden === lift) this.liftBtn.hidden = !lift;
+    if (!lift && g.touchLift && !g.ride) { g.touchLift = false; this.liftBtn.classList.remove('on'); }
   }
 }
 

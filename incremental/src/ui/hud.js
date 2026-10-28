@@ -18,7 +18,7 @@ export class Hud {
     this.rate = h('div.rate', {}, '');
     this.carryBar = h('i');
     this.carryTxt = h('span', {}, '');
-    this.carry = h('div.carry', { title: 'Coins you have freed but not banked yet. Stand next to the lift beacon to bank them.' }, h('span', {}, 'PACK'), h('div.bar', {}, this.carryBar), this.carryTxt);
+    this.carry = h('div.carry', { title: 'Coins you have freed but not delivered yet. Deliver them at the depot by the Outfitter\u2019s hut on the surface.' }, h('span', {}, 'PACK'), h('div.bar', {}, this.carryBar), this.carryTxt);
     this.carryHint = h('div.carry-hint');
     this.el.appendChild(h('div.hud-wallet', {}, h('div.coins', {}, h('span.unit'), this.coins), this.rate, this.carry, this.carryHint));
 
@@ -31,11 +31,14 @@ export class Hud {
     this.tools = h('div.hud-tool');
     this.el.appendChild(this.tools);
 
-    this.depthMark = h('i');
-    this.depthNow = h('span.now');
-    this.depthCore = h('span.core');
-    this.depthScale = h('div.scale', {}, this.depthMark);
-    this.el.appendChild(h('div.hud-depth', {}, h('div.labels', {}, h('span', {}, 'SURFACE'), this.depthNow, this.depthCore), this.depthScale));
+    // depth gauge: surface at the top, this planet's goal depth at the bottom, labelled marks in between;
+    // the dot is you (it follows you up and down), the notch is the deepest point dug, gold is the needle
+    this.depthYou = h('b.you', {}, h('em'));
+    this.depthMax = h('s.max', { title: 'Deepest point dug' });
+    this.depthNeedle = h('div.needle', { hidden: true }, h('span', {}, '✦ needle'));
+    this.depthNeedleAt = h('q.needle-at', { hidden: true, title: 'The Golden Needle (Needle Sense)' });
+    this.depthScale = h('div.scale', {}, this.depthNeedle, this.depthMax, this.depthNeedleAt, this.depthYou);
+    this.el.appendChild(h('div.hud-depth', {}, h('div.title', {}, 'DEPTH'), this.depthScale));
 
     this.stratum = h('div.stratum');
     this.rows = h('div');
@@ -59,6 +62,8 @@ export class Hud {
     root.appendChild(this.lift);
     this.needle = h('div', { style: { position: 'absolute', left: '50%', top: '50%', width: '120px', height: '120px', marginLeft: '-60px', marginTop: '-60px', borderRadius: '50%', pointerEvents: 'none' }, hidden: true });
     root.appendChild(this.needle);
+    this.needleText = h('div.needle-text', { hidden: true });
+    root.appendChild(this.needleText);
     this.nav = new Navigation(this.el, game);
     this.navT = performance.now();
     this.lastTools = '';
@@ -68,7 +73,7 @@ export class Hud {
   set visible(v) {
     this.el.hidden = !v;
     this.notices.hidden = false;
-    if (!v) { this.lift.hidden = true; this.needle.hidden = true; }
+    if (!v) { this.lift.hidden = true; this.needle.hidden = true; this.needleText.hidden = true; }
   }
 
   // a caption for a sound-only cue (music), so it can be read as well as heard
@@ -113,7 +118,7 @@ export class Hud {
     const fill = Math.min(1, s.carried / s.carryCap);
     this.carryBar.style.width = `${fill * 100}%`;
     this.carryTxt.textContent = `${Math.floor(s.carried)}/${Math.floor(s.carryCap)}${s.carriedValue > 0 ? ` · ${format(s.carriedValue)} to bank` : ''}`;
-    this.carryHint.textContent = s.carried > 0.5 && !s.atBeacon ? 'Bank it at the lift beacon ◆' : '';
+    this.carryHint.textContent = s.carried > 0.5 && !s.atDepot ? 'Deliver it at the depot ⛟' : '';
     this.carry.classList.toggle('full', fill >= 1);
 
     // next goal + hidden wait meter: the glow grows as you get close to affording it
@@ -144,17 +149,34 @@ export class Hud {
       });
     }
 
-    // depth gauge against the planet's radius (square-root scale so early metres show)
-    if (!this.depthTicks) {
-      this.depthTicks = true;
-      for (const d of [10, 100, 500, 1000]) {
-        if (d >= s.radius) continue;
-        this.depthScale.append(h('u', { style: { top: `${Math.sqrt(d / s.radius) * 100}%` } }));
-      }
+    // depth gauge (square-root scale so the first metres get room)
+    const goal = s.goalDepth || s.radius;
+    const at = (d) => `${Math.sqrt(Math.min(1, Math.max(0, d) / goal)) * 100}%`;
+    if (this.depthTicks !== goal) {
+      this.depthTicks = goal;
+      this.depthScale.querySelectorAll('.tk').forEach((x) => x.remove());
+      const mark = (d, text, cls = '') => this.depthScale.prepend(h(`div.tk${cls}`, { style: { top: at(d) } }, h('span', {}, text)));
+      mark(0, 'SURFACE', '.end');
+      for (const d of [10, 50, 100, 250, 500]) if (d < goal * 0.8) mark(d, `${d} m`);
+      mark(goal, `GOAL ${goal.toLocaleString('en-US')} m`, '.end.goal');
     }
-    this.depthMark.style.top = `${Math.sqrt(Math.min(1, s.crater / s.radius)) * 100}%`;
-    this.depthNow.textContent = `${s.crater.toFixed(s.crater < 10 ? 1 : 0)} m`;
-    this.depthCore.textContent = `CORE ${s.radius.toLocaleString('en-US')} m`;
+    const you = Math.max(0, s.depth);
+    this.depthYou.style.top = at(you);
+    this.depthYou.firstChild.textContent = `${you.toFixed(you < 10 ? 1 : 0)} m`;
+    this.depthMax.style.top = at(s.crater);
+    this.depthMax.hidden = s.crater < 0.5 || Math.abs(s.crater - you) < 1;
+    const nd = s.needle;
+    this.depthNeedle.hidden = !nd;
+    this.depthNeedleAt.hidden = !nd || !nd.sense;
+    if (nd) {
+      const t0 = Math.sqrt(nd.band[0] / goal), t1 = Math.sqrt(nd.band[1] / goal);
+      this.depthNeedle.style.top = `${t0 * 100}%`;
+      this.depthNeedle.style.height = `${(t1 - t0) * 100}%`;
+      this.depthNeedleAt.style.top = at(nd.depth);
+      const inBand = you >= nd.band[0] - 2 && you <= nd.band[1] + 2;
+      this.depthNeedle.classList.toggle('here', inBand);
+      this.depthNeedle.title = nd.sense ? `The Golden Needle is at about ${Math.round(nd.depth)} m` : `The Golden Needle is somewhere ${nd.band[0]}-${nd.band[1]} m down (Needle Sense shows where)`;
+    }
 
     this.stratum.textContent = s.stratum;
     this.rows.innerHTML = [
@@ -197,7 +219,7 @@ export class Hud {
       this.lift.hidden = false;
       this.lift.style.left = `${(x * 0.5 + 0.5) * innerWidth}px`;
       this.lift.style.top = `${(-y * 0.5 + 0.5) * innerHeight}px`;
-      const what = s.atBeacon ? (s.carried > 0 ? 'BANKING' : 'LIFT · here') : `LIFT ${d.toFixed(0)} m${s.carried > 0.5 ? ' · bank here' : ''}`;
+      const what = s.atBeacon ? 'LIFT · here' : `LIFT ${d.toFixed(0)} m`;
       this.lift.textContent = edge === 'left' ? `◀ ◆ ${what}` : edge === 'right' ? `◆ ${what} ▶` : `◆ ${what}`;
       this.lift.style.opacity = edge || d > 2.2 || s.carried > 0 ? '1' : '0.55';
     } else this.lift.hidden = true;
@@ -210,6 +232,10 @@ export class Hud {
       this.needle.hidden = false;
       this.needle.style.background = `conic-gradient(from ${ang - 14}deg, rgba(255,210,122,${0.12 + hint.strength * 0.5}) 0deg 28deg, transparent 28deg)`;
       this.needle.style.maskImage = this.needle.style.webkitMaskImage = 'radial-gradient(circle, transparent 54%, #000 56%, #000 60%, transparent 62%)';
-    } else this.needle.hidden = true;
+      // and a readout under the crosshair: how far, and whether to dig down, up or across
+      const v = hint.dy < -1.2 ? ' ↓ dig down' : hint.dy > 1.2 ? ' ↑ above you' : '';
+      this.needleText.hidden = false;
+      this.needleText.textContent = `✦ Needle ${hint.dist.toFixed(0)} m${v}`;
+    } else { this.needle.hidden = true; this.needleText.hidden = true; }
   }
 }

@@ -125,3 +125,10 @@ Choices made where the build prompt is silent, and the reasons. Updated every ba
 - Touch is detected with (pointer: coarse) and no fine pointer, so a laptop with a touch screen stays on mouse and keyboard; ?touch and ?desktop override it.
 - The stick is digital (four directions with a 30% dead zone) because the controller takes the four move actions; pushing past the stick's edge sprints. Look drags are scaled ×2.4 against mouse movement.
 - On the first run on a phone the Low preset at 60% render scale and a 72° field of view keep the frame cost down; players can raise it in Settings.
+
+## Coins, depot and milestones
+- Coin kinds keep their array index (the first five are the original copper, silver, gold, gem and relic, so old saves and the vault pile still match). `tierWeights` ranks the kinds a planet holds by their start depth; each ramps in from its depth and thins as deeper kinds take over. Value per m³ is unchanged: `coinValue` is still value per m³ over coins per m³, scaled by the kind's relative value and the coin's size² over the mean size².
+- Chests take their share out of the ordinary coins (each coin is divided by 1 + p·(CHEST_VALUE − 1)), so chests add excitement without raising the income per m³.
+- Delivery is a rate (pack slots per second) instead of an instant bank at the lift, which makes the depot an upgrade path of its own; the chute is a late, small rate that works anywhere, so the trips get rarer but never disappear.
+- Milestones: W(L) = (L + 2·⌊L/5⌋)·5/7 for nodes with 5 or more levels, so level 5, 10, … each add three normal steps and five levels add the same as before. Milestone levels cost ×1.75. Without the 5/7 the milestones made every bot about 40% faster and broke the strategy ordering in the sim; nodes with fewer than 5 levels keep plain levels.
+- The depth gauge uses a square-root scale against the goal depth (not the planet's radius), so the first metres have room and the bottom of the gauge is where the planet ends.

@@ -117,15 +117,24 @@ function reductions(active) {
 
 // ---------- stats ----------
 
+// Upgrades vary with their level: every 5th level is a milestone (★) that counts MS_GAIN times a normal
+// level and costs MS_COST times as much (see costOf), so a node has small steps and big jumps. The
+// normal levels are scaled down so five levels together still give what they did before.
+export const MILESTONE = 5, MS_GAIN = 3, MS_COST = 1.75;
+export const isMilestone = (L) => L > 0 && L % MILESTONE === 0;
+const MS_NORM = MILESTONE / (MILESTONE - 1 + MS_GAIN);
+export const milestoneWeight = (L, max = MILESTONE) => (max < MILESTONE ? L : (L + (MS_GAIN - 1) * Math.floor(L / MILESTONE)) * MS_NORM);   // short nodes keep plain levels
+
 export function computeStats(e, active = activeSynergies(e)) {
   const st = { ...BASE_STATS };
   const muls = {};
   for (const n of NODES) {
     const L = level(e, n.id);
     if (!L) continue;
+    const W = milestoneWeight(L, n.max);
     for (const [stat, op, v] of n.effects) {
-      if (op === 'add') st[stat] += v * L * TUNE.eff;
-      else if (op === 'mul') muls[stat] = (muls[stat] || 1) * Math.pow(1 + v * TUNE.eff, L);
+      if (op === 'add') st[stat] += v * W * TUNE.eff;
+      else if (op === 'mul') muls[stat] = (muls[stat] || 1) * Math.pow(1 + v * TUNE.eff, W);
       else if (op === 'set') st[stat] = Math.max(st[stat], v);
     }
   }
@@ -162,7 +171,8 @@ export function costOf(e, id, red) {
   const L = level(e, id);
   const g = growthOf(e, id, red);
   // per-level growth (strategy dependent) plus gentle inflation from total purchases on this planet
-  return Big.fromNumber(n.c0 * e.scale).mul(Big.pow10(L * Math.log10(g) + e.inflation));
+  const ms = (n.max || 1) >= MILESTONE && isMilestone(L + 1) ? Math.log10(MS_COST) : 0;
+  return Big.fromNumber(n.c0 * e.scale).mul(Big.pow10(L * Math.log10(g) + e.inflation + ms));
 }
 
 export function costTable(e) {
@@ -239,7 +249,7 @@ export function collectEff(st) {
 }
 
 export function bankEff(st) {
-  return 0.55 + 0.11 * Math.log(1 + st.carry / 40) + 0.08 * Math.log(1 + st.liftSpeed / 1.5) + st.bank;
+  return 0.55 + 0.11 * Math.log(1 + st.carry / 120) + 0.08 * Math.log(1 + st.liftSpeed / 1.5) + st.bank;   // the pack starts at 120 slots
 }
 
 // Coin value multiplier applied at banking (tier value x this).

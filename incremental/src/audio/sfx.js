@@ -142,7 +142,7 @@ export class Sfx {
   s_clink(t, o) {
     if (this.throttle('clink', 28)) return;
     const out = this.e.out('sfx', o.pos, 0.25);
-    const tier = o.tier || 0;
+    const tier = Math.min(4, Math.max(0, o.tier | 0));
     out.gain.value = 0.32 * (o.gain ?? 1);
     const ctx = this.e.ctx;
     // copper, silver, gold, and the glassy ring of a gem
@@ -169,7 +169,7 @@ export class Sfx {
     const g = ctx.createGain(); this.env(g, t, 0.08, 0.35, 0.5);
     n.connect(bp).connect(g).connect(out);
     const n2 = Math.min(10, 3 + (o.count || 3));
-    for (let i = 0; i < n2; i++) this.s_clinkRaw(out, t + 0.05 + i * vary(0.045, 0.4), o.tier ?? 0);
+    for (let i = 0; i < n2; i++) this.s_clinkRaw(out, t + 0.05 + i * vary(0.045, 0.4), Math.min(4, Math.max(0, o.tier | 0)));
   }
 
   s_clinkRaw(out, t, tier) {

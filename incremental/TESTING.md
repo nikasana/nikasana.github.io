@@ -12,6 +12,22 @@ How to reach and check every feature. Each batch adds a section; earlier section
 
 ---
 
+## Coins, chests, the depot, the tree and the depth gauge
+
+Automated: `node incremental/tools/polish2.mjs` (screenshots and report in `tools/shots/polish2/`); the touch LIFT button is in `tools/mobile.mjs`.
+
+| Feature | How to reach it | Working looks like |
+|---|---|---|
+| Coin kinds | Dig down; Notebook → Coins | New shapes appear layer by layer, each with a "New coin" notice; the Coins page fills in |
+| Coin sizes | Look at coins in a crater wall | Small and big coins of the same kind; big ones add more to the pack value |
+| Chests | Dig a few hundred coins (dev: Dig shaft 60 m) | About 1 in 100 is a wooden chest; it fills much of the pack and pays a lot |
+| Depot | Fill the pack, ride up, walk to the shed by the hut (hexagon on the map) | The pack pours in at a steady pace with streaks and a +coins floater; away from it nothing is delivered |
+| Depot upgrades | Buy Depot Conveyor (outer column on the Automation side) | The pack empties faster at the depot |
+| Milestones | Open the tree; buy a node to level 4 | A ★ on the node; its tip says the next level is a milestone and costs more |
+| Depth gauge | Dig down, then climb out | The YOU dot moves with you; a notch stays at the deepest point; every mark has a depth; GOAL at the bottom |
+| Needle | Dig to 35-60 m on Frostara | The gold band on the gauge lights up; close to the needle a "✦ Needle N m ↓" readout appears |
+| Touch LIFT | On a phone, stand by the lift beacon in the crater | A wide blue LIFT button appears; holding it rides up, JUMP only jumps |
+
 ## Mobile
 
 Automated: `node incremental/tools/mobile.mjs` (an emulated phone, 844×390, touch; screenshots in `tools/shots/mobile/`).
@@ -21,7 +37,7 @@ Automated: `node incremental/tools/mobile.mjs` (an emulated phone, 844×390, tou
 | Opens on a phone | Open the link on a phone (or add `?touch` on a desktop) | The start screen, then touch buttons over the game |
 | Move and look | Left thumb anywhere on the left; drag on the right | A stick appears under the thumb; the view turns with the drag |
 | Tools | Hold USE / ALT; tap a tool slot | Digging, melting, the lamp; the slot lights up |
-| Lift | Hold JUMP by the beacon | You ride up |
+| Lift | Hold LIFT (shown only by the beacon) | You ride up; JUMP only jumps |
 | Upgrades | Walk into the hut, aim at the terminal, tap USE | The tree opens; drag pans, pinch zooms, tap shows, tap again buys |
 | Menus | ☰ 🌐 📓 👥 🎵 buttons | Pause, planet view (drag turns the globe), notebook, crew, music |
 | Portrait | Hold the phone upright | A hint to turn it sideways; everything still works |
