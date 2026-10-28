@@ -50,7 +50,7 @@ export class Music {
   setVariation(id) { this.variation = VARIATION_BY_ID[id] ? id : 'base'; this.applyVariation(); }
   applyVariation() {
     const b = this.baseTheme || this.theme, m = (VARIATION_BY_ID[this.variation || 'base'] || {}).mod || {};
-    this.theme = { ...b, bpm: b.bpm.map((x) => x * (m.bpm || 1)), bright: b.bright * (m.bright || 1), glass: b.glass * (m.glass || 1), bowed: b.bowed * (m.bowed || 1) };
+    this.theme = { ...b, bpm: b.bpm.map((x) => x * (m.bpm || 1)), bright: b.bright * (m.bright || 1), glass: b.glass * (m.glass || 1), bowed: b.bowed * (m.bowed || 1), choir: (b.choir || 0) * (m.choir || 1) };
   }
 
   setEnabled(on) {
@@ -119,6 +119,7 @@ export class Music {
       this.pad(this.chord(deg).map((n) => n - 12), t, dur);
       if (m.drone > 0.01) this.drone(this.scaleNote(0, -2), t, dur);
       if (m.brass > 0.01 && r() < 0.7) this.brass(this.chord(deg).slice(0, 3).map((n) => n - 12), t + s16 * 4, s16 * 20);
+      if (this.theme.choir > 0.01) this.choir(this.chord(deg).map((n) => n - (r() < 0.5 ? 0 : 12)), t + s16 * 2, s16 * 30);
       if (m.bowed > 0.01 && r() < 0.6) this.bowed(this.scaleNote(deg + (r() < 0.5 ? 4 : 6), 0), t + s16 * 8, s16 * 22);
     }
     const deg = this.cur ?? 0;
@@ -230,6 +231,32 @@ export class Music {
     g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.32 * this.theme.bowed, t + dur * 0.4); g.gain.linearRampToValueAtTime(0.0001, t + dur);
     o.connect(bp).connect(g); o.connect(bp2).connect(g); g.connect(out);
     o.start(t); vib.start(t); o.stop(t + dur + 0.1); vib.stop(t + dur + 0.1);
+  }
+
+  // a wordless choir: detuned voices through vowel formants, slowly opening from "oo" to "ah"
+  choir(notes, t, dur) {
+    const ctx = this.e.ctx;
+    const out = this.voiceOut('pad', 0.45);
+    const amp = 0.09 * this.theme.choir;
+    out.gain.setValueAtTime(0.0001, t);
+    out.gain.linearRampToValueAtTime(amp, t + dur * 0.35);
+    out.gain.linearRampToValueAtTime(0.0001, t + dur + 1.5);
+    const forms = [[400, 800, 6], [1150, 1150, 8], [2800, 2900, 12]];
+    const bus = ctx.createGain(); bus.gain.value = 1;
+    for (const [f0, f1, q] of forms) {
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = q;
+      bp.frequency.setValueAtTime(f0, t); bp.frequency.linearRampToValueAtTime(f1, t + dur * 0.6);
+      bus.connect(bp).connect(out);
+    }
+    for (const n of notes) for (const det of [-9, 0, 8]) {
+      const o = ctx.createOscillator(); o.type = 'sawtooth';
+      o.frequency.value = mtof(n); o.detune.value = det;
+      const vib = ctx.createOscillator(); vib.frequency.value = 4.6 + Math.random(); const vg = ctx.createGain(); vg.gain.value = 7;
+      vib.connect(vg).connect(o.detune);
+      const g = ctx.createGain(); g.gain.value = 0.22;
+      o.connect(g).connect(bus);
+      o.start(t); vib.start(t); o.stop(t + dur + 2); vib.stop(t + dur + 2);
+    }
   }
 
   brass(notes, t, dur) {

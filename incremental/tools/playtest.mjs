@@ -227,10 +227,11 @@ async function coop(browser) {
   await shot(host, '19-coop-crew-screen');
   // host leaves: member keeps playing and can resume as host
   await host.close();
-  const lost = await until(member, () => window.__game.crew.lostHost, 30000);
+  const lost = await until(member, () => window.__game.crew.lostHost || window.__game.crew.isHost, 30000);
   check('Member keeps playing when the host leaves', lost);
-  const resumed = await ev(member, async () => window.__game.crew.resumeAsHost());
-  check('Member resumes as host from their copy', resumed && (await ev(member, () => window.__game.crew.isHost)));
+  // host migration: the last member takes over the crew on their own
+  const resumed = await until(member, () => window.__game.crew.isHost, 30000);
+  check('Member takes over as host from their copy', resumed);
   await member.close();
 }
 

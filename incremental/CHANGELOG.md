@@ -1,5 +1,21 @@
 # Changelog
 
+## Batch 6: Auralis
+- Auralis: a twilight world of violet-green ice under a standing aurora. North (Crown of Lights: auroras about every 1.5 minutes over poorer ice) and South (Quiet Pole: rarer auroras, richer ice). Theme: Sky Choir, with a new wordless choir voice.
+- Full aurora events on every planet: sky coins now fall one after another through the aurora instead of all at once, sparkle as they fall, and fade if nobody catches them. Each aurora picks its own colours.
+- Aurora Chain: every sky coin you catch in a row is worth 20% more (up to ×4); a coin that fades uncaught nearby breaks the chain. The HUD shows the chain while sky coins are out.
+- Lone sky coins: on Auralis a single rich sky coin streaks down every 25-70 s between auroras.
+- DNA tree completed: six new mutant ice types (Brineice and Pearlice on Tidalis, Ventice and Stormglass on Gale, Lumice and Prismice on Auralis), each with its own effect in the ice and a DNA node, plus the Apex Form capstone.
+- Planet milestones completed: 11 for every planet (crater 25/100/500 m and 1 km, sea level 5/25/100 cm, a meltwater lake, the first capsule, the Golden Needle, Pole ice free) and one or two for each world's own rule (vein combo, wind windows, high tide, Aurora Chain, sky harvest...). The Notebook shows the current planet's set.
+- Time capsules and a Golden Needle on Tidalis, Gale and Auralis, with a new tide-sealed puzzle: free the capsule and wait beside it while the tide turns.
+- Planet view: aurora ribbons ring the Auralis globe.
+- Co-op: optional Crew Roles (Digger, Melter, Seer, Engineer) boost your own tree, and a crew with different roles shares up to +12% income. Role icons show on name tags and in the crew screen.
+- Co-op: the full Crew Milestones set (11 shared goals, from melting 1,000 m³ together to melting 1 km down together), in a scrolling list in the crew screen.
+- Co-op: automatic host migration. When the host leaves, the remaining member with the lowest id takes over from their own copy and the others rejoin; nobody has to press anything.
+- Co-op fixes: a crewmate who opens a time capsule or finds the Golden Needle now pays the shared vault, and the capsule disappears for everyone; crewmates' sky coins reach the vault.
+- Fix: gem and relic coins (tiers 4 and 5) were not drawn when loose or embedded, so aurora coins on gem planets were invisible.
+- Dev menu: milestone pickers, Sky coin now, Chain +5.
+
 ## Batch 5: Gale
 - Gale: wind-scoured grey-blue ice, North (Howling Shelf: long storms, short calms that pay double) and South (Lee Basin: sheltered, gentler storms). Theme: Pressure Front.
 - Weather: storms of 55-85 s cut melting to 40% with blowing snow and thick fog; calm Wind Windows of 12-20 s between them make melting pay double. The HUD shows the phase and time left.

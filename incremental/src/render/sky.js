@@ -80,7 +80,7 @@ export class Atmosphere {
       u.rayleigh.value = p.sky.rayleigh;
       u.mieCoefficient.value = p.sky.mieCoefficient;
       u.mieDirectionalG.value = p.sky.mieDirectionalG;
-      if (u.cloudCoverage) { u.cloudCoverage.value = 0.32; u.cloudDensity.value = 0.45; u.cloudScale.value = 0.00018; u.cloudSpeed.value = 0.00001; u.cloudElevation.value = 0.45; }
+      if (u.cloudCoverage) { u.cloudCoverage.value = p.clouds ?? 0.32; u.cloudDensity.value = 0.45; u.cloudScale.value = 0.00018; u.cloudSpeed.value = 0.00001; u.cloudElevation.value = 0.45; }
     }
     this.veil.uVeil.value = p.skyVeil || 0;
     this.veil.uVeilColor.value.setRGB(...p.fog).multiplyScalar(p.skyVeilBright || 1);

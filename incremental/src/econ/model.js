@@ -3,7 +3,7 @@ import { Big } from '../core/big.js';
 import { NODES, NODE_BY_ID, BASE_STATS, TREES } from './data/nodes.js';
 import { SYNERGIES, SYNERGY_BY_ID } from './data/synergies.js';
 import { PLANET_BY_ID, strataProps } from './data/planets.js';
-import { MILESTONES, CREW_MILESTONES } from './data/milestones.js';
+import { MILESTONES, CREW_MILESTONES, ROLE_BY_ID } from './data/milestones.js';
 
 export const GROWTH_BASE = 1.25;  // per-level node cost growth with no synergy help
 export const RED_CAP = 0.65;      // max growth reduction (1 + 0.25 * 0.35 = 1.09)
@@ -132,6 +132,11 @@ export function computeStats(e, active = activeSynergies(e)) {
   }
   if (e.crew.income) income *= e.crew.income;
   if (e.crew.dig) st.digRate *= e.crew.dig;
+  if (e.crew.melt) st.meltPower *= e.crew.melt;
+  // Crew Roles: your specialty, and the shared bonus for a mixed crew (set by the game while in a crew)
+  const role = e.role && ROLE_BY_ID[e.role];
+  if (role) st[role.stat[0]] *= role.stat[1];
+  if (e.roleMix) income *= e.roleMix;
   st.incomeMult = income;
   st.autoDig += st.autoMelt * st.pipes;
   st.autoDig *= st.autoAll;
@@ -266,6 +271,13 @@ export function weatherMeltFactor(e, st) {
   return (storm * inStorm + calm * w.calmBonus) / (storm + calm);
 }
 
+// Auralis: part of the income falls from the sky (auroras and lone sky coins), paid at income rate.
+export function skyIncomeFactor(e, st) {
+  const a = planetOf(e).aurora;
+  if (!a) return 1;
+  return 1 + a[e.pole].share * (1 + 0.5 * (st.auroraCoins || 0) + 0.5 * (st.auroraRate || 0));
+}
+
 export function rates(e, st = computeStats(e), activity = ACTIVITY) {
   if (activity > 0) activity = Math.min(1, activity + 0.12 * (st.autoTool || 0));   // Auto Swing fills the idle moments
   const hard = hardnessAt(e);
@@ -274,8 +286,9 @@ export function rates(e, st = computeStats(e), activity = ACTIVITY) {
   const mix = toolMix(st, d, m);
   const autoVol = (st.autoDig + st.autoMelt) / hard;
   const V = baseValuePerM3(e) * valueMult(e, st) * collectEff(st) * bankEff(st);
-  const income = (mix.val * activity + autoVol) * V;
-  const passive = autoVol * V;
+  const sky = skyIncomeFactor(e, st);
+  const income = (mix.val * activity + autoVol) * V * sky;
+  const passive = autoVol * V * sky;
   return { income, passive, activeVol: mix.vol * activity, autoVol, V, digVol: d, meltVol: m, mix };
 }
 
@@ -298,16 +311,20 @@ export function checkMilestones(e, incomePerSec) {
   for (const m of MILESTONES) {
     if (e.milestones[m.id]) continue;
     if (m.planet !== '*' && m.planet !== e.planet) continue;
-    const ok = (m.kind === 'depth' && e.depth >= m.value) || (m.kind === 'sea' && seaLevelCm(e) >= m.value);
-    if (ok) {
-      const bonus = Big.fromNumber(Math.max(25, incomePerSec * m.bonusSec));
-      e.milestones[m.id] = e.time;
-      e.coins = e.coins.add(bonus);
-      e.total = e.total.add(bonus);
-      hit.push({ m, bonus });
-    }
+    const ok = (m.kind === 'depth' && e.depth >= m.value) || (m.kind === 'sea' && seaLevelCm(e) >= m.value)
+      || (m.kind === 'volume' && e.volume >= m.value) || (m.kind === 'heat' && heatSpread(e) >= m.value)
+      || (m.kind === 'act' && (e.actions[m.key] || 0) >= m.value);
+    if (ok) hit.push(awardMilestone(e, m, incomePerSec));
   }
   return hit;
+}
+
+export function awardMilestone(e, m, incomePerSec) {
+  const bonus = Big.fromNumber(Math.max(25, incomePerSec * m.bonusSec));
+  e.milestones[m.id] = e.time;
+  e.coins = e.coins.add(bonus);
+  e.total = e.total.add(bonus);
+  return { m, bonus };
 }
 
 export function applyCrewBonuses(e, crewDone) {

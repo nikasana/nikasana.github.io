@@ -271,7 +271,9 @@ textarea.code { width: 100%; min-height: 110px; background: rgba(0,0,0,0.35); co
 .coop input[type=text] { background: rgba(0,0,0,0.35); border: 1px solid var(--line-strong); color: var(--frost); padding: 9px 12px; font: 500 var(--t-md)/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; width: 100%; }
 .coop .members { display: grid; gap: 1px; background: var(--line); }
 .coop .members div { background: rgba(5,14,20,0.95); padding: 10px 12px; display: flex; justify-content: space-between; font: 500 var(--t-sm)/1 var(--mono); }
-.coop .ms { display: grid; gap: 1px; background: var(--line); }
+.coop .ms { display: grid; gap: 1px; background: var(--line); max-height: 52vh; overflow-y: auto; }
+.coop .roles { display: flex; gap: 6px; flex-wrap: wrap; }
+.coop .roles .btn { padding: 6px 10px; }
 .coop .ms div { background: rgba(5,14,20,0.95); padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; gap: 4px; font-size: var(--t-sm); }
 .coop .ms .bar { grid-column: 1 / -1; height: 2px; background: var(--line); position: relative; }
 .coop .ms .bar i { position: absolute; inset: 0 auto 0 0; background: var(--glacier); }

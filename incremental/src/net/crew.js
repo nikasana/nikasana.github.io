@@ -3,7 +3,7 @@
 // bank requests and purchase requests. Every member keeps a copy of the crew save, so anyone can
 // resume as host if the host leaves.
 import { makeTransport } from './transport.js';
-import { CREW_MILESTONES } from '../econ/data/milestones.js';
+import { CREW_MILESTONES, roleMix } from '../econ/data/milestones.js';
 
 const ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const MAX_CREW = 4;
@@ -28,6 +28,8 @@ export class Crew {
     this.sendT = 0;
     this.econT = 0;
     this.progress = { crewVolume: 0, crewBanked: 0, crewDepth: 0 };
+    this.mix = 1;                // shared Crew Roles bonus (host decides)
+    this.hostPeer = null;        // member: the host's peer id
     this.done = {};
     this.credited = new Set();   // coin ids already banked (host)
     this.lostHost = false;
@@ -131,12 +133,25 @@ export class Crew {
     });
   }
 
+  // Host migration: when the host leaves, the remaining member with the lowest id takes over the crew
+  // from their own copy; everyone else rejoins the new host. Until then each plays on from their copy.
   hostGone() {
     if (this.lostHost) return;
     this.lostHost = true;
     this.retryT = 3;
-    this.setStatus('The host left. Playing on from your copy; rejoining automatically. You can also resume as host.', 'bad');
+    if (this.hostPeer) this.members.delete(this.hostPeer);
+    const ids = [this.t?.id, ...this.members.keys()].filter(Boolean).sort();
+    this.heir = ids[0] === this.t?.id;
+    this.setStatus(this.heir ? 'The host left. You are taking over the crew…' : 'The host left. A crewmate is taking over; rejoining automatically.', 'bad');
     this.emit('hostLost');
+    if (this.heir) setTimeout(() => this.migrate(), 1500);
+  }
+
+  async migrate() {
+    if (!this.lostHost || this.isHost) return;
+    const ok = await this.resumeAsHost();
+    if (ok) { this.setStatus(`The host left, so you now host crew ${this.code}. Crewmates rejoin you automatically.`, 'ok'); this.emit('migrated'); }
+    else { await this.tryRejoin(); if (this.lostHost) setTimeout(() => this.migrate(), 4000); }   // the old id may still be held for a moment
   }
 
   onMessage(from, m) {
@@ -155,6 +170,7 @@ export class Crew {
         this.leave(true);
         break;
       case 'welcome':
+        this.hostPeer = from;
         g.crewLoad(m.snap);
         this.progress = m.crew.progress;
         this.done = m.crew.done || {};
@@ -182,6 +198,9 @@ export class Crew {
         if (!this.isHost) return;
         this.creditBank(m.value, m.ids, from);
         break;
+      case 'count':
+        if (this.isHost && typeof m.kind === 'string' && m.kind.startsWith('crew')) this.progress[m.kind] = (this.progress[m.kind] || 0) + (+m.n || 0);
+        break;
       case 'act':
         if (this.isHost) g.crewAction(m.a, m.n);
         break;
@@ -189,7 +208,7 @@ export class Crew {
         if (this.isHost) g.crewBuy(m.id, from);
         break;
       case 'econ':
-        if (!this.isHost) { g.crewEcon(m.e); this.progress = m.p || this.progress; }
+        if (!this.isHost) { g.crewEcon(m.e); this.progress = m.p || this.progress; this.mix = m.mix || 1; this.hostPeer = from; }
         break;
       case 'event':
         g.crewEvent(m.ev, !this.isHost ? null : from);
@@ -246,6 +265,13 @@ export class Crew {
     else if (this.t && !this.lostHost) this.t.send(null, { t: 'bank', value, ids });
   }
 
+  // crew milestone progress (host keeps the count; members report theirs)
+  count(kind, n) {
+    if (!this.t) return;
+    if (this.isHost) this.progress[kind] = (this.progress[kind] || 0) + n;
+    else if (!this.lostHost) this.t.send(null, { t: 'count', kind, n });
+  }
+
   action(a, n = 1) { if (this.t && !this.isHost && !this.lostHost) this.t.send(null, { t: 'act', a, n }); }
   buy(id) { if (this.t && !this.isHost && !this.lostHost) this.t.send(null, { t: 'buy', id }); }
   // host: tell everyone; member: tell the host, who applies it and passes it on
@@ -265,12 +291,16 @@ export class Crew {
       if (this.econT <= 0) {
         this.econT = 0.5;
         this.progress.crewDepth = Math.max(this.progress.crewDepth, g.econ.depth);
-        this.t.send(null, { t: 'econ', e: g.crewEconPacket(), p: this.progress });
+        if (this.members.size) this.progress.crewTime = (this.progress.crewTime || 0) + 0.5;
+        const roles = this.roles();
+        this.progress.crewRoles = Math.max(this.progress.crewRoles || 0, roles);
+        this.mix = this.members.size ? roleMix(roles) : 1;
+        this.t.send(null, { t: 'econ', e: g.crewEconPacket(), p: this.progress, mix: this.mix });
         this.checkMilestones();
       }
     } else if (this.lostHost) {
       this.retryT -= dt;
-      if (this.retryT <= 0) { this.retryT = 6; this.tryRejoin(); }
+      if (this.retryT <= 0) { this.retryT = 4; if (!this.heir) this.tryRejoin(); }
     }
     // drop silent members
     const now = performance.now();
@@ -288,6 +318,7 @@ export class Crew {
       this.t = t;
       this.wire();
       this.lostHost = false;
+      this.heir = false;
       t.send(null, { t: 'hello', name: this.name });
       this.setStatus(`Rejoined crew ${code}.`, 'ok');
     } catch {
@@ -314,9 +345,18 @@ export class Crew {
     }
   }
 
+  // number of different Crew Roles among everyone in the crew right now
+  roles() {
+    const set = new Set();
+    const mine = this.game.settings?.crewRole;
+    if (mine) set.add(mine);
+    for (const [, m] of this.members) if (m.st && m.st.r) set.add(m.st.r);
+    return set.size;
+  }
+
   memberList() {
-    const out = [{ name: `${this.name} (you)`, host: this.isHost }];
-    for (const [, m] of this.members) out.push({ name: m.name, host: false });
+    const out = [{ name: `${this.name} (you)`, host: this.isHost, role: this.game.settings?.crewRole || null }];
+    for (const [id, m] of this.members) out.push({ name: m.name, host: !this.isHost && id === this.hostPeer, role: m.st?.r || null });
     return out;
   }
 }

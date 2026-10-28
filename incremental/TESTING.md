@@ -12,6 +12,25 @@ How to reach and check every feature. Each batch adds a section; earlier section
 
 ---
 
+## Batch 6: Auralis
+
+Automated: `node incremental/tools/batch6.mjs` (screenshots and report in `tools/shots/batch6/`; three-tab co-op included, `--skip-coop` to leave it out).
+
+| New | How to reach it | Dev menu | Working looks like |
+|---|---|---|---|
+| Auralis | Complete Gale and travel | World: planet Auralis, Go | Twilight sky with a faint standing aurora; the Sky Choir theme |
+| Aurora events | Every 5-9 min (about 1.5 min on Auralis North) | Events: Aurora now | Coins fall one by one and sparkle; uncaught ones fade after about 20 s |
+| Aurora Chain | Catch sky coins one after another | Events: Chain +5 | HUD "Aurora Chain N · ×M"; a notice every 5 catches; a fading coin nearby resets it |
+| Lone sky coins | Auralis, between auroras | Events: Sky coin now | A streak, then a relic coin hovering over the snow |
+| New mutant ice | Tidalis, Gale, Auralis | Events: Mutant ice ahead | Brineice/Pearlice, Ventice/Stormglass, Lumice/Prismice tints; each shows its effect (Lumice calls a sky coin) |
+| DNA completed | DNA tree, outer columns and bottom row | Upgrades: dna_* | Six new nodes, each needing its mutant; Apex Form at the bottom |
+| Milestones | Notebook > Milestones | Events: milestone picker, Reach milestone | 11 general cards plus this planet's own |
+| Tide-sealed capsules | Tidalis and Auralis | Events: Time capsule here | Prompt "tide-sealed: wait beside it"; it opens after a few seconds nearby |
+| Aurora ribbons | Planet view on Auralis | — | Green-violet curtains around both poles |
+| Crew Roles | Crew screen (C) in a crew | — | Role buttons; icons on name tags; "now ×1.08 income" with three roles |
+| Crew milestones | Crew screen | Events: crew milestone picker | 11 rows with progress bars, scrolling |
+| Host migration | Close the host's tab | — | A member becomes host within a few seconds; the others rejoin; digging still syncs |
+
 ## Batch 5: Gale
 
 Automated: `node incremental/tools/batch5.mjs` (screenshots and report in `tools/shots/batch5/`).
