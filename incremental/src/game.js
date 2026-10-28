@@ -323,6 +323,7 @@ class Game {
       else this.hud.notice('Storm', 'The wind is back: it steals the heat from your torch.', 'heat', 3000);
     }
     const st = this.stats;
+    if (this.climaxOn) { this.tools.meltFactor = 1; this.calmBonus = 1; return; }
     const storm = w.state === 'storm';
     const base = this.econ.pole === 'S' ? (W.meltInStorm + 1) / 2 : W.meltInStorm;   // the South pole is sheltered
     this.tools.meltFactor = storm ? base + (1 - base) * Math.min(1, st.stormShield || 0) : 1;
@@ -333,7 +334,7 @@ class Game {
       this.snowT = (this.snowT || 0) - dt;
       if (this.snowT <= 0) {
         this.snowT = 0.05;
-        for (let k = 0; k < 4; k++) {
+        for (let k = 0; k < this.particles.n(4); k++) {
           const x = eye.x - 12 + Math.random() * 6, z = eye.z + (Math.random() - 0.5) * 24, y = eye.y - 1 + Math.random() * 4;
           this.particles.alpha.spawn(2, 0, x, y, z, 14 + Math.random() * 6, -0.6, (Math.random() - 0.5) * 2, 1.6, 0.05, 0.03, 0.95, 0.97, 1, 0.6, 0, 0, 0);
         }
@@ -353,7 +354,7 @@ class Game {
   // sequence builds the Aurora Chain (each catch is worth more); a coin that fades uncaught breaks it.
   auroraGap() {
     const A = this.planet.aurora?.[this.econ.pole];
-    const [a, b] = A ? A.every : [300, 540];
+    const [a, b] = this.climaxOn ? this.planet.climax.every : A ? A.every : [300, 540];
     return (a + Math.random() * (b - a)) / (1 + (this.stats.auroraRate || 0));
   }
 
@@ -361,6 +362,7 @@ class Game {
     this.auroraT = this.auroraGap();
     const dur = this.planet.aurora?.dur || 60;
     this.aurora.start(dur);
+    if (this.climaxOn) { this.aurora.uniforms.uColA.value.setRGB(1.0, 0.78, 0.35); this.aurora.uniforms.uColB.value.setRGB(0.7, 0.35, 1.0); }
     const n = Math.round((this.planet.aurora?.coins || 14) * (1 + (this.stats.auroraCoins || 0)));
     // a handful at once, then the rest one by one until shortly before the light fades
     const first = Math.min(6, n);
@@ -414,19 +416,42 @@ class Game {
     }
   }
 
+  // Omega's climax: in the final 15% the core wakes. The storms fall silent, a gold aurora hangs over
+  // the crater, auroras and lone sky coins come thick, and the music rises.
+  updateClimax() {
+    const C = this.planet.climax;
+    const on = !!C && this.econ.depth >= C.from * this.planet.goalDepth;
+    if (on === !!this.climaxOn) return;
+    this.climaxOn = on;
+    this.aurora.ambient = on ? 0.75 : this.planet.aurora ? 0.22 : 0;
+    if (!on) return;
+    this.aurora.start(this.planet.aurora?.dur || 50);
+    this.aurora.uniforms.uColA.value.setRGB(1.0, 0.78, 0.35); this.aurora.uniforms.uColB.value.setRGB(0.7, 0.35, 1.0);
+    this.auroraT = Math.min(this.auroraT, 8);
+    this.loneT = Math.min(this.loneT || 0, 4);
+    if (this.weather) { this.weather.state = 'calm'; this.weather.left = 1e9; }
+    this.music.cue('stinger');
+    this.music.cue('swell');
+    if (!this.state.climax) {
+      this.state.climax = Date.now();
+      this.hud.notice('🔮 The core wakes', 'The last stretch of Omega. The storms fall silent, the sky turns gold, and coins fall thick. Dig on to the core.', 'money', 12000);
+    }
+  }
+
   updateSky(dt) {
     const q = this.skyQueue;
     if (q && q.left > 0 && (q.t -= dt) <= 0) { q.t = q.every; q.left--; this.dropSkyCoin(false); }
     // Auralis: a lone sky coin now and then, between auroras
     const A = this.planet.aurora?.[this.econ.pole];
     if (A && this.started && (this.loneT -= dt) <= 0) {
-      this.loneT = (A.skyEvery[0] + Math.random() * (A.skyEvery[1] - A.skyEvery[0])) / (1 + (this.stats.auroraRate || 0));
+      const se = this.climaxOn ? this.planet.climax.skyEvery : A.skyEvery;
+      this.loneT = (se[0] + Math.random() * (se[1] - se[0])) / (1 + (this.stats.auroraRate || 0));
       this.dropSkyCoin(true);
     }
     // sky coins sparkle as they fall
     if ((this.sparkT = (this.sparkT || 0) - dt) <= 0) {
       this.sparkT = 0.25;
-      for (const c of this.coins.loose) if (c.sky && c.p.y > c.floorY + 1.6 && Math.random() < 0.5) this.particles.glint(c.p, COIN_RGB[c.tier], 0.1);
+      for (const c of this.coins.loose) if (c.sky && c.p.y > c.floorY + 1.6 && Math.random() < 0.5 * this.particles.density) this.particles.glint(c.p, COIN_RGB[c.tier], 0.1);
     }
   }
 
@@ -478,6 +503,7 @@ class Game {
     // Auralis: a faint standing aurora and lone sky coins between auroras
     this.aurora.ambient = p.aurora ? 0.22 : 0;
     this.chain = { n: 0, t: 0 };
+    this.climaxOn = false;
     this.skyQueue = null;
     this.loneT = p.aurora ? 12 : 0;
     if (p.aurora) this.auroraT = Math.min(this.auroraT, 40);
@@ -1559,13 +1585,14 @@ class Game {
     this.updateMutants(dt, eye);
     this.aurora.update(dt, this.time, eye);
     if (this.started && !(this.crew.active && !this.crew.isHost) && (this.auroraT -= dt) <= 0) this.startAurora();
+    this.updateClimax();
     this.updateSky(dt);
     // Current Reading: drifting motes show which way the current runs
     if (this.planet.current) {
       this.curT = (this.curT || 0) - dt;
       if (this.curT <= 0) {
         this.curT = 0.12;
-        for (let k = 0; k < 2; k++) {
+        for (let k = 0; k < this.particles.n(2); k++) {
           const x = eye.x + (Math.random() - 0.5) * 16, z = eye.z + (Math.random() - 0.5) * 16, y = eye.y - 1 - Math.random() * 1.5;
           if (this.volume.sdf(x, y, z) > -0.2) continue;
           const [cx, cz] = this.currentAt(x, z);
@@ -1667,7 +1694,8 @@ class Game {
     else if (this.atBeacon && deep) prompt = c.value > 0 ? `Banking your pack · hold ${jump} to ride the lift up` : `Hold ${jump} to ride the lift up and out of the crater`;
     else if (full) prompt = 'Pack full · walk to the glowing lift beacon ◆ to bank it';
     else if (this.chain.n > 0 && this.coins.loose.some((k) => k.sky)) prompt = `Aurora Chain ${this.chain.n} · sky coins worth ×${Math.min(4, 1 + 0.2 * this.chain.n).toFixed(1)}`;
-    else if (this.weather && FAMILIES[this.tools.family].id === 'melt') prompt = this.weather.state === 'calm' ? `Wind window · ${Math.ceil(this.weather.left)} s · melting pays double` : `Storm · melting is weak · calm in about ${Math.ceil(this.weather.left)} s`;
+    else if (this.climaxOn && this.time % 40 < 6) prompt = 'The core wakes · the storms are silent · catch the falling coins';
+    else if (this.weather && !this.climaxOn && FAMILIES[this.tools.family].id === 'melt') prompt = this.weather.state === 'calm' ? `Wind window · ${Math.ceil(this.weather.left)} s · melting pays double` : `Storm · melting is weak · calm in about ${Math.ceil(this.weather.left)} s`;
     else if (this.lavaHeat > 0.25) prompt = `Heat ${Math.round(this.lavaHeat * 100)}% · lava below: ease off the torch or it bursts`;
     else if (this.veinCombo > 1) prompt = `Heat vein ×${this.veinCombo.toFixed(1)}`;
     else if (this.frozen.sealedNear) {

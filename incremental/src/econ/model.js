@@ -263,8 +263,9 @@ export function toolMix(st, d, m) {
 // Gale: storms weaken melting; calm windows make it pay double. Averaged over the weather cycle,
 // assuming the player melts as much in the calm as they can (Storm Shields soften the storms).
 export function weatherMeltFactor(e, st) {
-  const w = planetOf(e).weather;
+  const p = planetOf(e), w = p.weather;
   if (!w) return 1;
+  if (p.climax && e.depth >= p.climax.from * p.goalDepth) return 1;   // Omega: the storms fall silent when the core wakes
   const storm = (w.storm[0] + w.storm[1]) / 2, calm = (w.calm[0] + w.calm[1]) / 2;
   const base = e.pole === 'S' ? (w.meltInStorm + 1) / 2 : w.meltInStorm;   // the South pole is sheltered
   const inStorm = base + (1 - base) * Math.min(1, st.stormShield || 0);
@@ -314,7 +315,8 @@ export function checkMilestones(e, incomePerSec, pay = true) {
     if (m.planet !== '*' && m.planet !== e.planet) continue;
     const ok = (m.kind === 'depth' && e.depth >= m.value) || (m.kind === 'sea' && seaLevelCm(e) >= m.value)
       || (m.kind === 'volume' && e.volume >= m.value) || (m.kind === 'heat' && heatSpread(e) >= m.value)
-      || (m.kind === 'act' && (e.actions[m.key] || 0) >= m.value);
+      || (m.kind === 'act' && (e.actions[m.key] || 0) >= m.value)
+      || (m.kind === 'acts' && Object.entries(m.req).every(([k, v]) => (e.actions[k] || 0) >= v));
     if (ok) { if (pay) hit.push(awardMilestone(e, m, incomePerSec)); else e.milestones[m.id] = e.time; }
   }
   return hit;

@@ -53,6 +53,17 @@ export class Music {
     this.theme = { ...b, bpm: b.bpm.map((x) => x * (m.bpm || 1)), bright: b.bright * (m.bright || 1), glass: b.glass * (m.glass || 1), bowed: b.bowed * (m.bowed || 1), choir: (b.choir || 0) * (m.choir || 1) };
   }
 
+  nextMovement() {
+    const ids = this.theme.medley;
+    this.movement = ((this.movement ?? -1) + 1) % ids.length;
+    const t = THEME_BY_ID[ids[this.movement]];
+    if (!t) return;
+    const keep = { id: this.theme.id, name: this.theme.name, medley: ids, choir: Math.max(0.5, t.choir || 0) };
+    const m = (VARIATION_BY_ID[this.variation || 'base'] || {}).mod || {};
+    this.theme = { ...t, ...keep, bpm: t.bpm.map((x) => x * (m.bpm || 1)), bright: t.bright * (m.bright || 1), glass: t.glass * (m.glass || 1), bowed: t.bowed * (m.bowed || 1) };
+    this.chordIdx = -1;
+  }
+
   setEnabled(on) {
     this.enabled = on;
     if (this.out) this.out.gain.setTargetAtTime(on ? 1 : 0, this.e.ctx.currentTime, on ? 1.5 : 0.4);
@@ -110,6 +121,8 @@ export class Music {
     const bar = Math.floor(step / 16), s = step % 16;
     const m = this.mix();
     // chords change every two bars
+    // a medley theme (Omega) moves to the next world's key, mode and voices every eight bars, over a steady choir
+    if (s === 0 && bar % 8 === 0 && this.theme.medley) this.nextMovement();
     if (s === 0 && bar % 2 === 0) {
       this.chordIdx = (this.chordIdx + 1) % this.theme.prog.length;
       if (r() < 0.15) this.chordIdx = Math.floor(r() * this.theme.prog.length);

@@ -242,7 +242,52 @@ export const PLANETS = [
       },
     },
   },
-  { id: 'omega', name: 'Omega', icon: '🔮', rule: 'Every rule combined', available: false },
+  {
+    id: 'omega', name: 'Omega', icon: '🔮', rule: 'Every rule combined', available: true,
+    radiusM: 3600, goalDepth: 2000, density: 7.0, depthScale: 9, richExp: 1.44,
+    coinTiers: ['copper', 'silver', 'gold', 'gem', 'relic'],
+    // the last world: fog, lava, currents, storms and auroras all at once, over ice that holds every kind of mutant
+    exposure: 0.8, fog: [0.5, 0.48, 0.56], fogDensity: 0.009, skyVeil: 0.5, skyVeilBright: 0.9, clouds: 0.18,
+    sky: { turbidity: 7, rayleigh: 0.9, mieCoefficient: 0.01, mieDirectionalG: 0.8 },
+    sunElevation: 8, dayLength: 660,
+    grade: { lift: [0.02, 0.01, 0.03], gain: [1.0, 0.98, 1.02], sat: 1.06, contrast: 1.12 },
+    ice: { tint: [0.6, 0.72, 0.86], deep: [0.2, 0.08, 0.28], snow: [0.82, 0.82, 0.88] },
+    ocean: [0.1, 0.08, 0.2], land: [0.28, 0.24, 0.3], seed: 9901,
+    theme: 'omega',
+    allMutants: true,
+    lava: { from: 20, pockets: 60, veins: 6 },
+    current: { speed: 0.6, turn: 0.005 },
+    weather: { storm: [45, 70], calm: [14, 22], meltInStorm: 0.55, calmBonus: 1.8 },
+    aurora: { N: { every: [120, 180], skyEvery: [45, 80], share: 0.15 }, S: { every: [150, 220], skyEvery: [60, 100], share: 0.1 }, dur: 50, coins: 16 },
+    // the final 15%: the core wakes. Storms fall silent, a gold aurora hangs over the crater, and sky coins come thick.
+    climax: { from: 0.85, every: [35, 55], skyEvery: [12, 22] },
+    poles: {
+      N: {
+        name: 'Convergence', desc: 'Every rule at full strength: lava early, strong currents, the long storms.',
+        strata: [
+          { d: 0, name: 'Ash-frost', color: [0.82, 0.8, 0.86], hard: 0.8, rich: 1.0 },
+          { d: 6, name: 'Veiled firn', color: [0.68, 0.74, 0.84], hard: 0.9, rich: 1.05 },
+          { d: 30, name: 'Brine glass', color: [0.46, 0.74, 0.76], hard: 1.02, rich: 1.12 },
+          { d: 110, name: 'Ember bands', color: [0.62, 0.38, 0.36], hard: 1.15, rich: 1.2 },
+          { d: 330, name: 'Storm glass', color: [0.36, 0.42, 0.72], hard: 1.3, rich: 1.3 },
+          { d: 900, name: 'Night ice', color: [0.26, 0.16, 0.48], hard: 1.45, rich: 1.42 },
+          { d: 1700, name: 'The waking core', color: [0.95, 0.72, 0.4], hard: 1.6, rich: 1.68 },
+        ],
+      },
+      S: {
+        name: 'Still Point', desc: 'The rules arrive one at a time: gentler storms, lava deeper, a slower current.',
+        strata: [
+          { d: 0, name: 'Quiet frost', color: [0.86, 0.86, 0.9], hard: 0.85, rich: 1.0 },
+          { d: 8, name: 'Veiled firn', color: [0.68, 0.74, 0.84], hard: 0.95, rich: 1.05 },
+          { d: 40, name: 'Brine glass', color: [0.46, 0.74, 0.76], hard: 1.05, rich: 1.13 },
+          { d: 130, name: 'Ember bands', color: [0.62, 0.38, 0.36], hard: 1.17, rich: 1.22 },
+          { d: 360, name: 'Storm glass', color: [0.36, 0.42, 0.72], hard: 1.3, rich: 1.32 },
+          { d: 940, name: 'Night ice', color: [0.26, 0.16, 0.48], hard: 1.45, rich: 1.44 },
+          { d: 1700, name: 'The waking core', color: [0.95, 0.72, 0.4], hard: 1.6, rich: 1.7 },
+        ],
+      },
+    },
+  },
 ];
 
 export const PLANET_BY_ID = Object.fromEntries(PLANETS.map((p) => [p.id, p]));

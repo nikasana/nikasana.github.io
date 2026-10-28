@@ -2,7 +2,8 @@
 // bonus: seconds of current income paid out (so it scales with progress).
 
 // kind: depth (crater m), sea (cm), volume (m³ removed), heat (heat spread 0..1), or act (a counter
-// in econ.actions: sky coins, finds, capsules, needle, wind windows, best chain or vein combo).
+// in econ.actions: sky coins, finds, capsules, needle, wind windows, best chain or vein combo), or acts
+// (several counters at once, `req`).
 export const MILESTONES = [
   { id: 'crater25', name: 'Crater 25 m', icon: '🕳️', planet: '*', kind: 'depth', value: 25, bonusSec: 60, motif: 0 },
   { id: 'sea5', name: '5 cm sea level rise', icon: '🌊', planet: '*', kind: 'sea', value: 5, bonusSec: 90, motif: 1 },
@@ -23,6 +24,8 @@ export const MILESTONES = [
   { id: 'gale_eye', name: 'Eye of the storm: melt through 10 wind windows', icon: '🌪️', planet: 'gale', kind: 'act', key: 'windows', value: 10, bonusSec: 90, motif: 0 },
   { id: 'aur_chain', name: 'Aurora Chain of 10', icon: '🌌', planet: 'auralis', kind: 'act', key: 'chainBest', value: 10, bonusSec: 90, motif: 1 },
   { id: 'aur_sky', name: 'Sky harvest: 100 sky coins', icon: '✨', planet: 'auralis', kind: 'act', key: 'sky', value: 100, bonusSec: 120, motif: 2 },
+  { id: 'omega_rules', name: 'Every rule: a ×3 vein combo, 3 wind windows and an Aurora Chain of 5', icon: '🔮', planet: 'omega', kind: 'acts', req: { veinBest: 3, windows: 3, chainBest: 5 }, bonusSec: 120, motif: 2 },
+  { id: 'omega_core', name: 'The core wakes', icon: '🌟', planet: 'omega', kind: 'depth', value: 1700, bonusSec: 150, motif: 0 },
 ];
 
 export const CREW_MILESTONES = [
@@ -74,6 +77,9 @@ export const CAPSULES = [
   { id: 'cap_aur_1', planet: 'auralis', depth: 12, name: 'Star Capsule', puzzle: { kind: 'light', need: 4 }, contents: { coinsSec: 190, lore: 'A jar of something that glows green, then violet, then green.' } },
   { id: 'cap_aur_2', planet: 'auralis', depth: 70, name: 'Tide-sealed Capsule', puzzle: { kind: 'tide', need: 8 }, contents: { coinsSec: 380, lore: 'A sky chart with the auroras drawn in as rivers.' } },
   { id: 'cap_aur_3', planet: 'auralis', depth: 200, name: 'Choir Capsule', puzzle: { kind: 'heat', need: 8 }, contents: { coinsSec: 640, lore: 'Seven tuning forks, one for each world. Six of them are humming.' } },
+  { id: 'cap_omega_1', planet: 'omega', depth: 15, name: 'Last Capsule', puzzle: { kind: 'light', need: 5 }, contents: { coinsSec: 220, lore: 'A list of seven worlds. Six are crossed out in your handwriting.' } },
+  { id: 'cap_omega_2', planet: 'omega', depth: 90, name: 'Tide-sealed Capsule', puzzle: { kind: 'tide', need: 8 }, contents: { coinsSec: 420, lore: 'A compass with seven needles, all pointing down.' } },
+  { id: 'cap_omega_3', planet: 'omega', depth: 260, name: 'Frost-sealed Capsule', puzzle: { kind: 'heat', need: 9 }, contents: { coinsSec: 700, lore: 'An empty capsule, and a note: leave something here for whoever digs next.' } },
 ];
 
 export const NEEDLES = {
@@ -83,4 +89,5 @@ export const NEEDLES = {
   tidalis: { depthMin: 45, depthMax: 85, rewardSec: 850 },
   gale: { depthMin: 50, depthMax: 90, rewardSec: 900 },
   auralis: { depthMin: 50, depthMax: 95, rewardSec: 950 },
+  omega: { depthMin: 60, depthMax: 110, rewardSec: 1100 },
 };
