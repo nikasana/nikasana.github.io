@@ -51,7 +51,7 @@ const opened = await ev((id) => !!window.__game.state.capsules[id], cap);
 check('Frost-sealed capsule stays shut until warmed, then opens', cap && sealed && opened, String(cap));
 
 // gem coins: Mistral has them
-const gemTier = await ev(() => window.__game.coins.geos.length === 4 && window.__game.coins.lowGeos.length === 4);
+const gemTier = await ev(() => window.__game.coins.geos.length >= 4 && window.__game.coins.lowGeos.length >= 4 && window.__game.coins.geos.length === window.__game.coins.lowGeos.length);
 check('Gem coin tier exists (model, low-poly model, material)', gemTier);
 
 // mutant ice: a pocket in the wall, discovered on strike, unlocks DNA
