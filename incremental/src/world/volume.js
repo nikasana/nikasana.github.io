@@ -188,6 +188,14 @@ export class IceVolume {
             if (dist > r) continue;
             const f = 1 - dist / r;
             nd = Math.max(0, old - amount * f);
+          } else if (op.kind === 'freeze') {
+            // Reverse Mode: frost grows new ice where it lands, never inside the player (op.avoid)
+            const dist = Math.sqrt(dx * dx + dy * dy * 0.8 + dz * dz);
+            if (dist > r || old >= 255) continue;
+            const a = op.avoid;
+            if (a && (x - a.x) ** 2 + ((y - a.y) * 0.5) ** 2 + (z - a.z) ** 2 < a.r * a.r) continue;
+            const f = 1 - dist / r;
+            nd = Math.min(255, old + amount * f);
           } else if (op.kind === 'fill') {
             if (y > op.level) continue;
             const s = Math.hypot(dx, dz) - r;

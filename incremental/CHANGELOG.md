@@ -1,5 +1,15 @@
 # Changelog
 
+## Batch 8: Reverse Mode "Make It Snow" and final polish
+- Reverse Mode, unlocked once Omega is melted through (start screen, or the travel screen after Omega): a separate survey that freezes the seven worlds back, from Frostara on.
+- The torch becomes the Frost Wand (Cryo Lance, Orbital Frost Beam): it grows new ice where you aim, never inside you. Every cubic metre frozen pays like one melted, there is no meltwater, and the sea level falls instead of rising. It always snows gently around you.
+- The Freeze tree mirrors the Melt tree node for node (same costs, effects and synergies, its own names, icons and descriptions), so nothing new has to be learned. Kept easy: goals are 30% of the depth and upgrades cost half, so a planet takes about half to two thirds of the time.
+- The HUD shows "Ice rebuilt" against the goal; the saves list marks Reverse surveys and shows each save's planet.
+- Accessibility (Settings > Accessibility): colour-safe markers (Okabe-Ito palette), captions for musical cues, and reduced flashing. Every map and compass marker now has its own shape (the Outfitter a triangle, finds a star), so colour is never the only cue.
+- Key rebinding review: the HUD key hints and tool-bar keys now follow a rebind straight away (they kept the old keys before); the controls page explains swaps, lists the fixed Esc pause key, names "Notebook" as everywhere else, and says "Freeze tools" in Reverse Mode.
+- Sim: a Reverse Mode section checks that it is easier for every bot and that strategy still matters.
+- Dev menu: Make It Snow (Reverse Mode).
+
 ## Batch 7: Omega
 - Omega, the last world, with every rule at once: Mistral's fog, Cinderice's lava pockets and heat veins, Tidalis's current, Gale's storms and wind windows, and Auralis's auroras and sky coins. North (Convergence: everything at full strength) and South (Still Point: gentler storms, deeper lava, a slower current).
 - Every kind of mutant ice can turn up on Omega, so any missing DNA can still be found there.

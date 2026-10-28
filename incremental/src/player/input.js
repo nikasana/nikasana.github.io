@@ -14,7 +14,7 @@ export const ACTION_LABELS = {
   jump: 'Jump', sprint: 'Sprint', use: 'Use tool', alt: 'Tool secondary',
   tool1: 'Dig tools', tool2: 'Melt tools', tool3: 'Planet tools', tool4: 'Vision tools',
   planet: 'Planet view', upgrades: 'Upgrades', coop: 'Co-op crews', music: 'Music',
-  collections: 'Collections', lamp: 'Toggle lamp',
+  collections: 'Notebook', lamp: 'Toggle lamp',
 };
 
 export function keyLabel(code) {

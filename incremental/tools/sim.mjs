@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import * as M from '../src/econ/model.js';
 import { PLANETS } from '../src/econ/data/planets.js';
+import { REVERSE } from '../src/econ/data/freeze.js';
 import { SYNERGIES } from '../src/econ/data/synergies.js';
 import { rng } from '../src/core/rng.js';
 
@@ -172,7 +173,7 @@ export function runBot(planetId, pole, botName, seed, opts = {}) {
       last = e.time; changed = true;
     }
     if (changed || e.time % 5 < DT) st = M.computeStats(e);
-    if (goalAt === null && e.depth >= p.goalDepth) { goalAt = e.time; break; }
+    if (goalAt === null && e.depth >= M.goalDepthOf(e)) { goalAt = e.time; break; }
   }
   // rolling median wait
   const W = 21, idx = [], med = [];
@@ -270,6 +271,27 @@ function main() {
   L(`- First upgrade after travel about as quick as on planet 1: **${travelOk ? 'PASS' : 'FAIL'}**`);
   L();
   verdicts.push(travelOk);
+  // Reverse Mode ("Make It Snow"): the same economy with shorter goals and cheaper upgrades, so it must be easier
+  L('## Reverse Mode (Make It Snow)');
+  L();
+  L(`Frostara (North) in Reverse Mode: goal ×${REVERSE.goal}, costs ×${REVERSE.scale}, everything else the same (the Freeze tree is the Melt tree under other names).`);
+  L();
+  L('| bot | first wait (normal → reverse) | early median (normal → reverse) | goal min (normal → reverse) | drift reverse |');
+  L('|---|---|---|---|---|');
+  const rev = {}, nor = {};
+  for (const b of Object.keys(bots)) {
+    const N = [1, 2, 3].map((sd) => runBot('frostara', 'N', b, sd)), R = [1, 2, 3].map((sd) => runBot('frostara', 'N', b, sd, { reverse: true, scale: REVERSE.scale }));
+    nor[b] = { first: avg(N, 'first'), early: avg(N, 'early'), goal: avg(N, 'goalMin') };
+    rev[b] = { first: avg(R, 'first'), early: avg(R, 'early'), goal: avg(R, 'goalMin'), drift: avg(R, 'drift') };
+    L(`| ${b} | ${fmt(nor[b].first, 2)} → ${fmt(rev[b].first, 2)} | ${fmt(nor[b].early)} → ${fmt(rev[b].early)} | ${fmt(nor[b].goal)} → ${fmt(rev[b].goal)} | ${fmt(rev[b].drift, 2)} |`);
+  }
+  const easier = Object.keys(bots).every((b) => rev[b].first <= nor[b].first + 0.01 && (nor[b].goal === null ? rev[b].goal !== null : rev[b].goal <= nor[b].goal * 0.67));   // a bot that never finished normally must finish in reverse
+  const revOrder = rev.random.drift > rev.cheapest.drift && rev.cheapest.drift > rev.roi.drift;
+  L();
+  L(`- Reverse Mode is easier: first wait no longer and the goal reached in at most two thirds of the time, for every bot: **${easier ? 'PASS' : 'FAIL'}**`);
+  L(`- Strategy still matters (drift random > cheapest > ROI): **${revOrder ? 'PASS' : 'FAIL'}**`);
+  L();
+  verdicts.push(easier && revOrder);
   L(`Overall: **${verdicts.every(Boolean) ? 'PASS' : 'FAIL'}**`);
   if (WRITE) {
     const here = dirname(fileURLToPath(import.meta.url));

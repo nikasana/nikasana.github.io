@@ -1,6 +1,7 @@
 // Tools: four families, each a tree of tiers. Handles use, effects on the ice, and the held models.
 // The camera never shakes: all motion lives in the held tool.
 import * as THREE from 'three';
+import { FREEZE_TIERS } from '../econ/data/freeze.js';
 import { GRAD, VOXEL, richness } from '../world/field.js';
 import { digVolumeRate, meltVolumeRate } from '../econ/model.js';
 import { MAX_HEAT, MAX_CRACK } from '../world/iceMaterial.js';
@@ -12,6 +13,11 @@ export const FAMILIES = [
   { id: 'planet', name: 'Planet', key: 'tool3', tiers: ['Satellite mirrors', 'Heat pipe'], stat: 'planetTier' },
   { id: 'vision', name: 'Vision', key: 'tool4', tiers: ['Lamp', 'X-ray', 'Satellite radar'], stat: 'visionTier' },
 ];
+
+// what a family is called right now: in Reverse Mode the melt tools freeze
+export function familyView(F, reverse) {
+  return reverse && F.id === 'melt' ? { ...F, name: 'Freeze', tiers: FREEZE_TIERS } : F;
+}
 
 const ease = (t) => t * t * (3 - 2 * t);
 const HAND = new THREE.Vector3(0.28, -0.45, -0.2);   // where the grip sits, in camera space
@@ -240,6 +246,13 @@ export class Tools {
     }
   }
 
+  // Reverse Mode: the torch glows ice-blue and sprays frost
+  setReverse(on) {
+    this.reverse = on;
+    this.M.hot.emissive.set(on ? 0x6fdcff : 0xff5a1a);
+    this.game.particles.frost = on;
+  }
+
   modelName(st) {
     const F = FAMILIES[this.family];
     const t = this.tierOf(st);
@@ -401,7 +414,7 @@ export class Tools {
     const amount = (3 * GRAD * vt * (cracked ? 1 + st.seep : 1) * (this.meltFactor ?? 1)) / (Math.PI * r * r * r);
     const c = h.point.clone().addScaledVector(h.normal, -r * 0.25);
     const res = g.applyOp({ kind: 'melt', x: c.x, y: c.y, z: c.z, r, amount, seed: 0 }, 'local');
-    if (tier >= 3) this.skyBeam(h.point, 0.35 + r * 0.25, [1.0, 0.75, 0.55]);   // orbital laser
+    if (tier >= 3) this.skyBeam(h.point, 0.35 + r * 0.25, this.reverse ? [0.62, 0.88, 1.0] : [1.0, 0.75, 0.55]);   // orbital laser
     // heat point for the shader
     let hp = this.heat.find((q) => q.p.distanceTo(h.point) < r * 0.7);
     if (!hp) { hp = { p: h.point.clone(), r, i: 0, t: 0 }; this.heat.unshift(hp); if (this.heat.length > MAX_HEAT) this.heat.length = MAX_HEAT; }
@@ -429,7 +442,7 @@ export class Tools {
         const r = 0.9, amount = (3 * GRAD * vt) / (Math.PI * r * r * r) * 3;
         removed += g.applyOp({ kind: 'melt', x: h.point.x, y: h.point.y - 0.3 - k * 0.8, z: h.point.z, r, amount, seed: 0 }, 'local').removed;
       }
-      this.skyBeam(h.point.clone().add(new THREE.Vector3(0, -4, 0)), 0.5, [1.0, 0.45, 0.15]);
+      this.skyBeam(h.point.clone().add(new THREE.Vector3(0, -4, 0)), 0.5, this.reverse ? [0.62, 0.88, 1.0] : [1.0, 0.45, 0.15]);
       if (Math.random() < dt * 12) g.particles.steam(h.point, h.normal, 1.2);
       this.emit('melt', { point: h.point, normal: h.normal, removed, depth: ctx.depthAt(h.point.y), dt, wide: false });
       return;
@@ -442,7 +455,7 @@ export class Tools {
     const vt = ((st.mirrorPower || 0) * 0.8 * st.meltEff / hard) * dt;
     const amount = (3 * GRAD * vt) / (Math.PI * r * r * r) * 3;
     const res = g.applyOp({ kind: 'melt', x: h.point.x, y: h.point.y - 0.4, z: h.point.z, r, amount, seed: 0 }, 'local');
-    this.skyBeam(h.point, 1.6, [1.0, 0.92, 0.7]);
+    this.skyBeam(h.point, 1.6, this.reverse ? [0.62, 0.88, 1.0] : [1.0, 0.92, 0.7]);
     if (Math.random() < dt * 10) g.particles.steam(h.point, h.normal, 1.4);
     this.emit('melt', { point: h.point, normal: h.normal, removed: res.removed, depth, dt, wide: true });
   }

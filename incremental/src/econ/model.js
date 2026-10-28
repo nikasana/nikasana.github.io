@@ -4,6 +4,7 @@ import { NODES, NODE_BY_ID, BASE_STATS, TREES } from './data/nodes.js';
 import { SYNERGIES, SYNERGY_BY_ID } from './data/synergies.js';
 import { PLANET_BY_ID, strataProps } from './data/planets.js';
 import { MILESTONES, CREW_MILESTONES, ROLE_BY_ID } from './data/milestones.js';
+import { REVERSE } from './data/freeze.js';
 
 export const GROWTH_BASE = 1.25;  // per-level node cost growth with no synergy help
 export const RED_CAP = 0.65;      // max growth reduction (1 + 0.25 * 0.35 = 1.09)
@@ -35,8 +36,12 @@ export function createEcon(planetId = 'frostara', pole = 'N', opts = {}) {
     legacy: opts.legacy ?? 1, // income multiplier carried from earlier planets
     crew: {},                 // crew milestone bonuses {income, dig}
     devFlag: false,
+    reverse: !!opts.reverse,  // Reverse Mode ("Make It Snow"): freeze instead of melt, shorter goals
   };
 }
+
+// goal depth for this campaign (Reverse Mode goals are shorter)
+export function goalDepthOf(e) { return planetOf(e).goalDepth * (e.reverse ? REVERSE.goal : 1); }
 
 export const level = (e, id) => e.levels[id] || 0;
 
@@ -265,7 +270,7 @@ export function toolMix(st, d, m) {
 export function weatherMeltFactor(e, st) {
   const p = planetOf(e), w = p.weather;
   if (!w) return 1;
-  if (p.climax && e.depth >= p.climax.from * p.goalDepth) return 1;   // Omega: the storms fall silent when the core wakes
+  if (p.climax && e.depth >= p.climax.from * goalDepthOf(e)) return 1;   // Omega: the storms fall silent when the core wakes
   const storm = (w.storm[0] + w.storm[1]) / 2, calm = (w.calm[0] + w.calm[1]) / 2;
   const base = e.pole === 'S' ? (w.meltInStorm + 1) / 2 : w.meltInStorm;   // the South pole is sheltered
   const inStorm = base + (1 - base) * Math.min(1, st.stormShield || 0);
@@ -302,7 +307,7 @@ export function shaftArea(st) {
 export function seaLevelCm(e) { return 5 * Math.pow(e.melted / 6000, 0.6); }
 export function heatSpread(e) {
   const p = planetOf(e);
-  return Math.min(1, 0.6 * Math.log10(1 + e.volume) / 6 + 0.4 * e.depth / p.goalDepth);
+  return Math.min(1, 0.6 * Math.log10(1 + e.volume) / 6 + 0.4 * e.depth / goalDepthOf(e));
 }
 
 // ---------- milestones ----------
@@ -372,7 +377,7 @@ export function offlineGain(e, seconds) {
 export function legacyFor(e) {
   const p = planetOf(e);
   const total = e.total.toNumber ? e.total.toNumber() : Number(e.total);
-  const k = 1 + 0.15 * Math.log10(1 + total) + 0.4 * Math.min(1, e.depth / p.goalDepth) + 0.2 * Math.min(1, e.time / 3600);
+  const k = 1 + 0.15 * Math.log10(1 + total) + 0.4 * Math.min(1, e.depth / goalDepthOf(e)) + 0.2 * Math.min(1, e.time / 3600);
   return e.legacy * k;
 }
 
@@ -381,7 +386,7 @@ export function legacyFor(e) {
 export function travelOpts(e, nextId) {
   const legacy = legacyFor(e);
   const next = PLANET_BY_ID[nextId], first = PLANET_BY_ID.frostara;
-  return { legacy, scale: legacy * (next.density / first.density) };
+  return { legacy, scale: legacy * (next.density / first.density) * (e.reverse ? REVERSE.scale : 1), reverse: !!e.reverse };
 }
 
 export function nextPlanet(e) {

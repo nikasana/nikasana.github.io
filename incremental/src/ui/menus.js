@@ -3,6 +3,7 @@
 import { h, clear } from './dom.js';
 import { format, formatTime, numberFormat } from '../core/big.js';
 import { TREES, NODES, NODE_BY_ID } from '../econ/data/nodes.js';
+import { FREEZE_TREE, skinNode, REVERSE } from '../econ/data/freeze.js';
 import { SYNERGIES } from '../econ/data/synergies.js';
 import { MILESTONES, CREW_MILESTONES, CAPSULES, ROLES, ROLE_BY_ID } from '../econ/data/milestones.js';
 import { THEMES, VARIATIONS } from '../audio/themes.js';
@@ -351,18 +352,33 @@ export class Menus {
           row('Master', vslider('master')), row('Music', vslider('music')), row('Effects', vslider('sfx')), row('Ambience', vslider('amb'))));
       } else if (sec === 'controls') {
         const binds = h('div.set-group', {}, h('h3', {}, 'Keys'));
-        for (const [a, label] of Object.entries(ACTION_LABELS)) {
+        binds.append(h('p.small', { style: { color: 'var(--haze)', margin: '0 0 6px' } }, 'Click a key, then press the new one (or a mouse button). A key that is already in use swaps with it. Esc cancels.'));
+        for (const [a, label0] of Object.entries(ACTION_LABELS)) {
+          const label = a === 'tool2' && g.econ?.reverse ? 'Freeze tools' : label0;
           const cap = h('button.keycap', {}, keyLabel(g.input.bindings[a]));
           cap.addEventListener('click', () => {
             cap.classList.add('listening'); cap.textContent = 'Press a key';
-            g.input.rebind(a, (b) => { s.bindings = { ...b }; g.saveSettings(); show('controls'); });
+            g.input.rebind(a, (b) => { s.bindings = { ...b }; g.saveSettings(); g.hud.invalidateKeys(); show('controls'); });
           });
           binds.append(row(label, cap));
         }
-        binds.append(row('Restore defaults', h('button.btn', { onclick: () => { s.bindings = {}; g.input.bindings = { ...g.defaultBindings }; g.saveSettings(); show('controls'); } }, 'Reset keys')));
+        binds.append(row('Pause', h('span.val', {}, 'Esc (fixed)'), 'Always Esc, so you can never lock yourself out of the menus.'));
+        binds.append(row('Restore defaults', h('button.btn', { onclick: () => { s.bindings = {}; g.input.bindings = { ...g.defaultBindings }; g.saveSettings(); g.hud.invalidateKeys(); show('controls'); } }, 'Reset keys')));
         pane.append(h('div.set-group', {}, h('h3', {}, 'Mouse'),
           row('Sensitivity', slider('sensitivity', 0.3, 3, 0.05, (v) => v.toFixed(2))),
           row('Invert vertical look', toggle('invertY'))), binds);
+      } else if (sec === 'access') {
+        const flag = (key) => h(`button.toggle${s[key] ? '.on' : ''}`, { 'aria-label': key, onclick: (ev) => { s[key] = !s[key]; ev.currentTarget.classList.toggle('on', s[key]); g.saveSettings(); } });
+        pane.append(
+          h('div.set-group', {}, h('h3', {}, 'Seeing'),
+            row('Colour-safe markers', flag('colorSafe'), 'Compass and map markers use a palette that stays distinct with colour blindness. Every marker also has its own shape.'),
+            row('Reduce flashing', flag('reduceFlash'), 'No bright flash when you find the Golden Needle.')),
+          h('div.set-group', {}, h('h3', {}, 'Hearing'),
+            row('Captions for musical cues', flag('captions'), 'A short caption when the music marks an event: resonances, milestones, big finds, capsules, auroras.')),
+          h('div.set-group', {}, h('h3', {}, 'Comfort'),
+            row('Camera shake', h('span.val', {}, 'Never'), 'The camera never shakes, at any setting.'),
+            row('Mouse sensitivity, field of view, keys', h('button.btn', { onclick: () => show('controls') }, 'Controls'))),
+        );
       } else if (sec === 'game') {
         const box = h('textarea.code', { id: 'save-code', placeholder: 'Your save code appears here. Paste one to import.' });
         const msg = h('div.status');
@@ -383,7 +399,7 @@ export class Menus {
           ));
       }
     };
-    for (const [id, l] of [['graphics', 'Graphics'], ['audio', 'Audio'], ['controls', 'Controls'], ['game', 'Game']]) {
+    for (const [id, l] of [['graphics', 'Graphics'], ['audio', 'Audio'], ['controls', 'Controls'], ['access', 'Accessibility'], ['game', 'Game']]) {
       const b = h('button', { onclick: () => show(id) }, l);
       b.dataset.s = id;
       nav.append(b);
@@ -416,6 +432,7 @@ export class Menus {
         h('div.eyebrow', {}, 'Choose your pole. You stay there for the whole planet.'),
         cards,
         h('div.start-actions', {}, h('button.btn.primary', { onclick: () => { this.close(); if (onBegin) onBegin(pole); else g.newSave(pole); } }, 'Begin a new survey'),
+          g.reverseUnlocked() ? h('button.btn', { title: 'Reverse Mode: freeze the worlds back. Same tools and trees, shorter goals.', onclick: () => { this.close(); g.newReverse(pole); } }, '❄️ Make It Snow') : '',
           g.started ? h('button.btn', { onclick: () => { this.close(); g.input.lock(); } }, 'Back to the ice') : ''),
         h('div.start-foot', {}, 'Mouse and keyboard. WASD to move, left mouse to use your tool, U at the Outfitter for upgrades, Esc to pause.'),
       ),
@@ -433,14 +450,15 @@ export class Menus {
       wrap.append(h('div.eyebrow', {}, list.length ? 'Your surveys' : 'No saved surveys yet'));
       for (const s of list) {
         const when = s.savedAt ? `${formatTime((Date.now() - s.savedAt) / 1000)} ago` : '';
-        const title = s.crew ? `Crew ${s.crew}` : `Solo · ${s.pole === 'S' ? 'South' : 'North'} pole`;
+        const pl = PLANETS.find((x) => x.id === s.planet);
+        const title = `${s.crew ? `Crew ${s.crew}` : s.reverse ? '❄️ Make It Snow' : 'Solo'} · ${pl ? `${pl.icon} ${pl.name}, ` : ''}${s.pole === 'S' ? 'South' : 'North'} pole`;
         const current = g.started && g.slot === s.slot;
         const actions = s.crew
           ? [h('button.btn.primary', { onclick: () => g.continueSave(s.slot) }, 'Resume as host'), h('button.btn', { onclick: () => { this.close(); g.crewJoin(s.crew); } }, 'Rejoin')]
           : [h('button.btn.primary', { onclick: () => (current ? (this.close(), g.input.lock()) : g.continueSave(s.slot)) }, current ? 'Playing' : 'Continue')];
         actions.push(h('button.btn.danger', { onclick: () => this.confirm('Delete this survey?', `${title} will be gone for good.`, 'Delete', () => { g.deleteSave(s.slot); render(); }) }, 'Delete'));
         wrap.append(h('div.save-row', {},
-          h('div.save-t', {}, h('b', {}, title), h('span', {}, `${s.depth.toFixed(1)} m deep · ${s.coins} in the vault · ${s.purchases} upgrades${when ? ` · ${when}` : ''}`)),
+          h('div.save-t', {}, h('b', {}, title), h('span', {}, `${s.depth.toFixed(1)} m ${s.reverse ? 'rebuilt' : 'deep'} · ${s.coins} in the vault · ${s.purchases} upgrades${when ? ` · ${when}` : ''}`)),
           h('div.save-a', {}, actions)));
       }
     };
@@ -452,7 +470,20 @@ export class Menus {
   build_travel() {
     const g = this.game, e = g.econ;
     const next = M.nextPlanet(e);
-    if (!next) return this.frame('Travel', h('p', {}, 'No further planet is ready yet.'));
+    if (!next && e.planet === 'omega' && !e.reverse) {
+      let pole = 'N';
+      return h('div.start', {},
+        h('div.start-left', {},
+          h('div.eyebrow', {}, '🔮 Omega complete · every world melted through'),
+          h('div.title', {}, 'Make It', h('span', {}, 'Snow')),
+          h('p.lede', {}, 'Reverse Mode is open: go back to Frostara and freeze the worlds again. The same tools and trees, read backwards: your torch becomes a Frost Wand that grows new ice, the Melt tree becomes the Freeze tree, and the goals are shorter and kinder.'),
+          h('div.start-actions', {},
+            h('button.btn.primary', { onclick: () => { this.close(); g.newReverse(pole); } }, '❄️ Make It Snow'),
+            h('button.btn', { onclick: () => { this.close(); g.input.lock(); } }, 'Stay on Omega for now')),
+          h('div.start-foot', {}, 'Your melted campaign stays saved. Reverse Mode is a separate survey on the start screen too.')),
+        h('div'));
+    }
+    if (!next) return this.frame('Travel', h('p', {}, e.reverse ? 'Every world is frozen again. The snow is falling everywhere.' : 'No further planet is ready yet.'));
     const opts = M.travelOpts(e, next.id);
     let pole = 'N';
     const cards = h('div.poles');
@@ -563,6 +594,7 @@ class TreeView {
       const [ox, oy] = t.origin;
       const [lx, ly] = t.label || [ox * 520, oy > 0 ? oy * 70 + 690 : -790];
       const lab = h('div.tree-label', { style: { left: `${lx}px`, top: `${ly}px`, '--tc': t.color } }, `${t.name}`);
+      if (t.id === 'melt') this.meltLabel = lab;
       this.canvas.appendChild(lab);
     }
     // the planet at the centre
@@ -611,7 +643,7 @@ class TreeView {
 
   showTip(id) {
     const g = this.game, e = g.econ;
-    const n = NODE_BY_ID[id];
+    const n = skinNode(NODE_BY_ID[id], this.game.econ?.reverse);
     const lvl = M.level(e, id);
     const table = M.costTable(e);
     const cost = table[id].cost;
@@ -622,9 +654,9 @@ class TreeView {
       return `${statName(stat)} ×${(1 + v).toFixed(2)}${per}`;
     });
     const lock = M.lockedBy(e, id);
-    const rival = n.excl ? NODES.filter((o) => o.excl === n.excl && o.id !== id).map((o) => o.name).join(' / ') : '';
+    const rival = n.excl ? NODES.filter((o) => o.excl === n.excl && o.id !== id).map((o) => skinNode(o, e.reverse).name).join(' / ') : '';
     const eyebrow = n.join ? `${TREE[n.join[0]].icon} ${TREE[n.join[0]].name} × ${TREE[n.join[1]].icon} ${TREE[n.join[1]].name} · cross-tree`
-      : `${TREE[n.tree].icon} ${TREE[n.tree].name}${n.gate ? ' · tool tier' : n.kind && KIND_LABEL[n.kind] ? ` · ${KIND_LABEL[n.kind].toLowerCase()}` : ''}`;
+      : `${n.tree === 'melt' && e.reverse ? `${FREEZE_TREE.icon} ${FREEZE_TREE.name}` : `${TREE[n.tree].icon} ${TREE[n.tree].name}`}${n.gate ? ' · tool tier' : n.kind && KIND_LABEL[n.kind] ? ` · ${KIND_LABEL[n.kind].toLowerCase()}` : ''}`;
     const inc = g.measuredRate();
     const wait = Math.max(0, cost.sub(e.coins).toNumber()) / Math.max(1e-9, inc);
     clear(this.tip).append(
@@ -635,9 +667,9 @@ class TreeView {
       h('div.eff', { html: `<div>Level <b>${lvl}</b> / ${n.max}</div>` }),
       M.isMaxed(e, id) ? h('div.eff', { html: '<b>Maxed</b>' }) :
         h('div.eff', { html: `<div>Cost <span style="color:var(--brass)">${format(cost)}</span>${!M.isUnlocked(e, id) ? ' · locked' : e.coins.gte(cost) ? ' · <b>affordable</b>' : ` · about ${formatTime(wait)}`}</div>` }),
-      lock ? h('p', { style: { color: 'var(--ember)' } }, `Closed: you chose ${lock.name}.`)
+      lock ? h('p', { style: { color: 'var(--ember)' } }, `Closed: you chose ${skinNode(lock, e.reverse).name}.`)
         : n.mutation && !(e.mutations || {})[n.mutation] ? h('p', { style: { color: 'var(--moss)' } }, `Needs ${MUTANT_BY_ID[n.mutation].name}: find this mutant ice to unlock it.`)
-        : !M.isUnlocked(e, id) ? h('p', {}, `Needs ${n.parents.map((p) => NODE_BY_ID[p].name).join(' and ')}.`) : '',
+        : !M.isUnlocked(e, id) ? h('p', {}, `Needs ${n.parents.map((p) => skinNode(NODE_BY_ID[p], e.reverse).name).join(' and ')}.`) : '',
       rival && !lock && lvl < 1 ? h('p', { style: { color: 'var(--brass)' } }, `Choose one: buying this closes ${rival} for this planet.`) : '',
     );
     this.tip.hidden = false;
@@ -647,7 +679,10 @@ class TreeView {
     const g = this.game, e = g.econ;
     const table = M.costTable(e);
     const inc = g.measuredRate();
-    for (const n of NODES) {
+    // Reverse Mode: the Melt tree reads as the Freeze tree
+    if (this.meltLabel) this.meltLabel.textContent = e.reverse ? FREEZE_TREE.name : TREE.melt.name;
+    for (const n0 of NODES) {
+      const n = skinNode(n0, e.reverse);
       const el = this.nodes[n.id];
       const lvl = M.level(e, n.id);
       const unlocked = M.isUnlocked(e, n.id);

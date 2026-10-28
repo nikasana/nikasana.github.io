@@ -249,9 +249,11 @@ export class Particles {
     for (let i = 0, n = this.n(3 * power); i < n; i++) {
       const v = dir.clone().multiplyScalar(5 + R() * 3).add(new THREE.Vector3(R() - 0.5, R() - 0.5, R() - 0.5).multiplyScalar(0.8));
       const s = 0.05 + R() * 0.05;
-      this.add.spawn(P.FLAME, 0, nozzle.x, nozzle.y, nozzle.z, v.x, v.y, v.z, 0.16 + R() * 0.1, s, s * 3.5, 1.0, 0.45 + R() * 0.2, 0.15, 0.85, 2, -2, 0);
+      // Reverse Mode sprays frost: ice-blue and slower, drifting down
+      if (this.frost) this.add.spawn(P.FLAME, 0, nozzle.x, nozzle.y, nozzle.z, v.x * 0.7, v.y * 0.7, v.z * 0.7, 0.3 + R() * 0.15, s, s * 4, 0.55, 0.85 + R() * 0.1, 1.0, 0.7, 2.5, 1.5, 0);
+      else this.add.spawn(P.FLAME, 0, nozzle.x, nozzle.y, nozzle.z, v.x, v.y, v.z, 0.16 + R() * 0.1, s, s * 3.5, 1.0, 0.45 + R() * 0.2, 0.15, 0.85, 2, -2, 0);
     }
-    if (R() < 0.6) this.add.spawn(P.FLAME, 0, nozzle.x, nozzle.y, nozzle.z, dir.x * 6, dir.y * 6, dir.z * 6, 0.12, 0.05, 0.2, 0.55, 0.75, 1.0, 0.8, 1, 0, 0);
+    if (R() < 0.6) this.add.spawn(P.FLAME, 0, nozzle.x, nozzle.y, nozzle.z, dir.x * 6, dir.y * 6, dir.z * 6, 0.12, 0.05, 0.2, this.frost ? 0.85 : 0.55, this.frost ? 0.95 : 0.75, 1.0, 0.8, 1, 0, 0);
   }
 
   steam(p, normal, power = 1) {

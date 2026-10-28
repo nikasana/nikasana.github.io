@@ -16,7 +16,7 @@ import { FrozenThings } from './world/events.js';
 import { surfaceY, richness } from './world/field.js';
 import { Controller } from './player/controller.js';
 import { Input, DEFAULT_BINDINGS } from './player/input.js';
-import { Tools, FAMILIES } from './player/tools.js';
+import { Tools, FAMILIES, familyView } from './player/tools.js';
 import { mutantPockets, MUTANT_BY_ID } from './econ/data/mutants.js';
 import { MAX_MUT } from './world/iceMaterial.js';
 import { Lava, LAVA_COLOR } from './world/lava.js';
@@ -30,6 +30,7 @@ import { DevMenu, PerfOverlay } from './ui/devmenu.js';
 import { h } from './ui/dom.js';
 import { Crew } from './net/crew.js';
 import * as M from './econ/model.js';
+import { REVERSE, skinNode } from './econ/data/freeze.js';
 import { PLANETS, PLANET_BY_ID, strataProps } from './econ/data/planets.js';
 import { COINS, tierWeights } from './econ/data/coins.js';
 import { MILESTONES, CREW_MILESTONES } from './econ/data/milestones.js';
@@ -40,6 +41,13 @@ import * as Save from './save/save.js';
 const SIM_STEP = 1 / 30;
 const PHYS_STEP = 1 / 60;
 const COINS_PER_M3 = 0.58;    // expected embedded coins per m³ (see coins.js spawn: 2.0 tries x 1.6 x mean seam acceptance 0.18)
+const CUE_CAPTIONS = {
+  resonance: '♪ A rising chord: a resonance',
+  motif: '♪ A short motif: a milestone',
+  stinger: '♪ A bright fanfare: something big',
+  swell: '♪ The music swells',
+  capsule: '♪ A music-box chime: a capsule opens',
+};
 const COIN_RGB = [[1, 0.62, 0.45], [0.9, 0.95, 1], [1, 0.82, 0.35], [0.55, 0.9, 1], [1, 0.6, 0.35]];
 
 const DEFAULT_SETTINGS = {
@@ -113,6 +121,9 @@ class Game {
     this.music.setTheme(this.settings.theme);
 
     this.hud = new Hud(this.ui, this);
+    // captions for musical cues (Settings > Accessibility): shown even when the audio is off or not started
+    const cue = this.music.cue.bind(this.music);
+    this.music.cue = (kind, arg) => { cue(kind, arg); if (this.settings.captions && CUE_CAPTIONS[kind]) this.hud.caption(CUE_CAPTIONS[kind]); };
     this.menus = new Menus(this.ui, this);
     this.perf = new PerfOverlay(this.ui);
     if (this.dev) this.devMenu = new DevMenu(this.ui, this);
@@ -148,7 +159,7 @@ class Game {
     this.tools.on('whiff', () => this.sfx.play('whiff'));
     this.tools.on('select', (f, ok) => {
       this.sfx.play('click');
-      if (!ok) this.hud.notice(`${FAMILIES[f].name} tools`, FAMILIES[f].id === 'planet' ? 'Buy Satellite Mirrors in the Planet tree (right side of the upgrade graph) to unlock it.' : 'Buy the first upgrade in this tree to unlock the tool.');
+      if (!ok) this.hud.notice(`${familyView(FAMILIES[f], this.econ.reverse).name} tools`, FAMILIES[f].id === 'planet' ? 'Buy Satellite Mirrors in the Planet tree (right side of the upgrade graph) to unlock it.' : 'Buy the first upgrade in this tree to unlock the tool.');
     });
     this.ctl.on('step', () => this.sfx.play('step', { ice: this.feetOnIce() }));
     // water: wading, swimming and splashes
@@ -420,7 +431,7 @@ class Game {
   // the crater, auroras and lone sky coins come thick, and the music rises.
   updateClimax() {
     const C = this.planet.climax;
-    const on = !!C && this.econ.depth >= C.from * this.planet.goalDepth;
+    const on = !!C && this.econ.depth >= C.from * M.goalDepthOf(this.econ);
     if (on === !!this.climaxOn) return;
     this.climaxOn = on;
     this.aurora.ambient = on ? 0.75 : this.planet.aurora ? 0.22 : 0;
@@ -439,6 +450,15 @@ class Game {
   }
 
   updateSky(dt) {
+    // Reverse Mode: it is always gently snowing around you
+    if (this.econ.reverse && (this.snowfallT = (this.snowfallT || 0) - dt) <= 0) {
+      this.snowfallT = 0.08;
+      const eye = this.ctl.pos;
+      for (let k = 0, n = this.particles.n(3); k < n; k++) {
+        const x = eye.x + (Math.random() - 0.5) * 22, z = eye.z + (Math.random() - 0.5) * 22, y = eye.y + 6 + Math.random() * 4;
+        this.particles.alpha.spawn(2, 0, x, y, z, (Math.random() - 0.5) * 0.4, -1.1, (Math.random() - 0.5) * 0.4, 7, 0.05, 0.04, 0.96, 0.98, 1, 0.75, 0, 0, 0);
+      }
+    }
     const q = this.skyQueue;
     if (q && q.left > 0 && (q.t -= dt) <= 0) { q.t = q.every; q.left--; this.dropSkyCoin(false); }
     // Auralis: a lone sky coin now and then, between auroras
@@ -500,6 +520,7 @@ class Game {
     this.coins.current = p.current ? (x, z) => this.currentAt(x, z) : null;
     // Gale: the weather cycle starts in a storm
     this.weather = p.weather ? { state: 'storm', left: p.weather.storm[0] } : null;
+    this.tools.setReverse(!!this.econ?.reverse);
     // Auralis: a faint standing aurora and lone sky coins between auroras
     this.aurora.ambient = p.aurora ? 0.22 : 0;
     this.chain = { n: 0, t: 0 };
@@ -667,9 +688,9 @@ class Game {
   afterBuy(id, res) {
     this.statsDirty = true;
     this.sfx.play('buy', { step: this.econ.purchases });
-    const n = M.NODE_BY_ID[id];
+    const n = skinNode(M.NODE_BY_ID[id], this.econ.reverse);
     if (n.gate) this.hud.notice(`New tool: ${n.name}`, n.desc, 'money');
-    if (n.root && n.tree === 'melt') this.hud.notice('Torch unlocked', `Press ${this.keyName('tool2')} to switch to it. Warming ice before you dig it frees more.`, 'money');
+    if (n.root && n.tree === 'melt') this.hud.notice(this.econ.reverse ? 'Frost Wand unlocked' : 'Torch unlocked', this.econ.reverse ? `Press ${this.keyName('tool2')} to switch to it, aim at the ice and hold left mouse to grow new ice.` : `Press ${this.keyName('tool2')} to switch to it. Warming ice before you dig it frees more.`, 'money');
     if (n.root && n.tree === 'vision') this.hud.notice('Lamp unlocked', `Press ${this.keyName('tool4')} and hold left mouse to focus it; ${this.keyName('lamp')} switches it on or off.`, 'money');
     for (const s of res.fresh) this.onResonance(s);
     if (this.crew.isHost) { this.crew.econT = 0; this.crew.event({ k: 'buy', id }); }
@@ -688,6 +709,11 @@ class Game {
   // ---------- world actions ----------
 
   applyOp(op, src) {
+    // Reverse Mode: everything that melted ice now grows it (never inside the player)
+    if (this.econ.reverse && op.kind === 'melt') {
+      const p = this.ctl.pos;
+      op = { ...op, kind: 'freeze', avoid: src === 'local' ? { x: p.x, y: p.y + 0.9, z: p.z, r: 0.75 } : op.avoid };
+    }
     // coins in the ice must be seeded before the edit changes it (they are freed, not lost)
     const R = (op.r || 1) + 1;
     this.coins.flushBox(op.x - R, op.y - R, op.z - R, op.x + R, op.y + R, op.z + R);
@@ -695,9 +721,14 @@ class Game {
     let res;
     try { res = this.volume.applyOp(op); } finally { this.coins.syncSpawn = false; }
     const depth = this.depthAt(op.x, op.y, op.z);
+    // frozen ice counts like removed ice (the same economy), and the tools treat it as their work
+    if (op.kind === 'freeze') res.removed = res.added;
     if (op.kind !== 'fill' && !(this.crew.active && !this.crew.isHost)) {
       this.econ.volume += res.removed;
       if (op.kind === 'melt') this.econ.melted += res.removed;
+      if (op.kind === 'freeze') this.econ.frozen = (this.econ.frozen || 0) + res.added;
+      // Reverse Mode progress: the ice you move, integrated the same way as the economy model does
+      if (this.econ.reverse) this.econ.depth += res.removed / M.shaftArea(this.stats);
     }
     if (src === 'local' && this.crew.active) this.crew.sendOp(op, res.removed);
     return { ...res, depth };
@@ -777,8 +808,9 @@ class Game {
       }
     }
     if ((this.calmBonus || 1) > 1 && m.removed > 0) this.calmMelted = true;
-    this.addDust(m.removed, m.depth, (m.lavaMult || 1) * (this.calmBonus || 1));
-    if (m.removed > 0) this.water.add(m.point, m.removed);
+    // Reverse Mode: freezing frees no coins, so the new ice pays its full value as snow-dust
+    this.addDust(m.removed, m.depth, (m.lavaMult || 1) * (this.calmBonus || 1) * (this.econ.reverse ? 2 : 1));
+    if (m.removed > 0 && !this.econ.reverse) this.water.add(m.point, m.removed);
   }
 
   // a running best (chain, combo): members report it, the host keeps the highest
@@ -910,8 +942,7 @@ class Game {
     this.state.needle = true;
     this.countAction('needle');
     this.music.cue('stinger');
-    this.gfx.flash = 0.35;
-    this.flashT = 0.6;
+    if (!this.settings.reduceFlash) { this.gfx.flash = 0.35; this.flashT = 0.6; }
     this.hud.notice('The Golden Needle', `Found. One is hidden on every planet. Worth ${format(bonus)} coins.`, 'money', 9000);
     if (this.crew.active) { this.crew.event({ k: 'needle', bonus }); if (!this.crew.isHost) this.crew.bank(bonus, []); }
     this.save();
@@ -925,7 +956,7 @@ class Game {
       this.music.cue('motif', m.motif ?? i);
       if (this.crew.isHost) this.crew.event({ k: 'ms', id: m.id, bonus: bonus.toJSON() });
     });
-    if (!this.state.complete && this.econ.depth >= this.planet.goalDepth) this.completePlanet();
+    if (!this.state.complete && this.econ.depth >= M.goalDepthOf(this.econ)) this.completePlanet();
   }
 
   // ---------- planets ----------
@@ -958,7 +989,7 @@ class Game {
     this.music.cue('stinger');
     this.hud.notice(`${this.planet.icon} ${this.planet.name} is melted through`, 'Your crater has reached the goal depth. A new world is waiting.', 'money', 9000);
     this.save();
-    if (M.nextPlanet(this.econ)) { this.suppressPause = true; this.input.unlock(); this.menus.show('travel'); }
+    if (M.nextPlanet(this.econ) || (this.econ.planet === 'omega' && !this.econ.reverse)) { this.suppressPause = true; this.input.unlock(); this.menus.show('travel'); }
   }
 
   // Leave for the next planet: the economy starts fresh there, carrying this planet's Legacy.
@@ -1104,7 +1135,7 @@ class Game {
 
   updatePlanetState() {
     const e = this.econ;
-    this.planetView.setState({ depthF: Math.min(1, this.craterDepth() / this.planet.goalDepth), heat: M.heatSpread(e), seaCm: M.seaLevelCm(e), craterDepth: this.craterDepth() });
+    this.planetView.setState({ depthF: Math.min(1, (this.econ.reverse ? this.econ.depth : this.craterDepth()) / M.goalDepthOf(this.econ)), heat: M.heatSpread(e), seaCm: M.seaLevelCm(e), craterDepth: this.craterDepth() });
   }
 
   buildPlanetUi() {
@@ -1236,7 +1267,7 @@ class Game {
       const crew = slot.startsWith('crew.') ? slot.slice(5) : null;
       let coins = '0';
       try { coins = format(Save.econFromJSON(d.econ).coins); } catch { /* old save */ }
-      out.push({ slot, crew, pole: d.econ.pole, depth: d.econ.depth || 0, coins, purchases: d.econ.purchases || 0, savedAt: d.savedAt || 0 });
+      out.push({ slot, crew, planet: d.econ.planet, reverse: !!d.econ.reverse, pole: d.econ.pole, depth: d.econ.depth || 0, coins, purchases: d.econ.purchases || 0, savedAt: d.savedAt || 0 });
     }
     return out.sort((a, b) => b.savedAt - a.savedAt);
   }
@@ -1263,6 +1294,19 @@ class Game {
     this.newCampaign(pole, slot);
     this.enterPlay();
     this.hud.notice('Welcome to Frostara', `Hold left mouse on the ice to dig. Coins go in your pack; stand by the glowing lift beacon to bank them. Buy upgrades at the blue Outfitter's hut ▣ nearby (press ${this.keyName('upgrades')} there).`, '', 14000);
+  }
+
+  // Reverse Mode ("Make It Snow") unlocks once Omega is melted through
+  reverseUnlocked() { return !!(this.profile.completed || {}).omega || this.dev; }
+
+  newReverse(pole) {
+    if (this.started) this.save();
+    if (this.crew.active) { this.crew.leave(true); this.avatars.clear(); }
+    const slot = `reverse-${Date.now().toString(36)}`;
+    this.newCampaign(pole, slot, 'frostara', { reverse: true, scale: REVERSE.scale });
+    this.enterPlay();
+    this.music.cue('swell');
+    this.hud.notice('❄️ Make It Snow', 'Reverse Mode: freeze the worlds back. Your torch is now a Frost Wand (tool 2): aim at the ice and hold left mouse to grow new ice. Every cubic metre you freeze pays like one melted, and the goals are shorter.', 'money', 15000);
   }
 
   deleteSave(slot) {
@@ -1654,7 +1698,7 @@ class Game {
 
     this.audio.setListener(eye, dir);
     this.audio.setDepth(Math.max(0, depthHere));
-    this.music.setDepth(this.craterDepth() / this.planet.goalDepth, this.tools.using ? 1 : 0);
+    this.music.setDepth((this.econ.reverse ? this.econ.depth : this.craterDepth()) / M.goalDepthOf(this.econ), this.tools.using ? 1 : 0);
     if (this.audio.ready) this.sfx.loop('wind', true, { level: 1 / (1 + Math.max(0, depthHere) / 12) });
 
     this.hudT -= dt;
@@ -1671,7 +1715,7 @@ class Game {
     this.state.played = (this.state.played || 0) + dt;
     this.updateAutomation(dt);
     this.crew.tick(dt);
-    e.depth = Math.max(e.depth, this.craterDepth());
+    if (!e.reverse) e.depth = Math.max(e.depth, this.craterDepth());   // Reverse Mode counts it per edit (applyOp)
     this.slowT = (this.slowT || 0) - dt;
     if (this.slowT <= 0) {
       this.slowT = 1;
@@ -1719,7 +1763,7 @@ class Game {
       tiers: [st.digTier, st.meltTier, 0, st.visionTier].map((x) => Math.round(x)),
       crater: this.craterDepth(), radius: this.planet.radiusM, depth: Math.max(0, depthHere), stratum: sp.name,
       hard: M.hardnessAt(e, Math.max(0, depthHere)), reading: visionUse ? richness(this.tools.hit.point.x, this.tools.hit.point.y, this.tools.hit.point.z) : null,
-      sea: M.seaLevelCm(e), resonances: Object.keys(e.found).length, hit: !!this.tools.hit, prompt, atBeacon: this.atBeacon, needleHint: this.needleHint,
+      sea: e.reverse ? -M.seaLevelCm({ melted: e.frozen || 0 }) : M.seaLevelCm(e), rebuilt: e.reverse ? e.depth : undefined, rebuiltGoal: M.goalDepthOf(e), resonances: Object.keys(e.found).length, hit: !!this.tools.hit, prompt, atBeacon: this.atBeacon, needleHint: this.needleHint,
     });
   }
 }
