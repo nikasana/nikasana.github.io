@@ -33,7 +33,7 @@ export const MUTANT_BY_ID = Object.fromEntries(MUTANTS.map((m) => [m.id, m]));
 
 // Pockets for a planet: deterministic from its seed, spread across the open ice and 2-80 m deep.
 export function mutantPockets(planet, pole, surfaceY) {
-  const types = MUTANTS.filter((m) => m.planet === planet.id);
+  const types = planet.allMutants ? MUTANTS : MUTANTS.filter((m) => m.planet === planet.id);   // Omega holds every kind
   if (!types.length) return [];
   const r = rng(hash32(planet.seed, pole === 'N' ? 5 : 6, 777));
   const out = [];

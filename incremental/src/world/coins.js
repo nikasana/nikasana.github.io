@@ -238,6 +238,8 @@ export function coinMaterial(atmo, tier) {
 
 // ---------- system ----------
 
+const chunkDist = (c, p) => ((c.cx + 0.5) * CHUNK_M - p.x) ** 2 + ((c.cy + 0.5) * CHUNK_M - p.y) ** 2 + ((c.cz + 0.5) * CHUNK_M - p.z) ** 2;
+
 export class CoinSystem {
   constructor(scene, volume, atmo, tiersUnlocked) {
     this.scene = scene;
@@ -268,8 +270,11 @@ export class CoinSystem {
     this.planetCtx = null;
     this.onCollect = null;
     this.collectedIds = new Set();   // ids collected this session (coins in still-loaded chunks)
-    volume.on('load', (c) => this.spawnChunk(c));
-    volume.on('drop', (c) => { this.embedded.delete(c.key); this.dirty = true; });
+    // seeding a chunk's coins is costly (noise per candidate), so loads are queued and seeded a few per
+    // frame, nearest first; chunks touched by an edit are seeded at once (see flushBox / syncSpawn)
+    this.pending = new Map();
+    volume.on('load', (c) => { if (this.syncSpawn) this.spawnChunk(c); else this.pending.set(c.key, c); });
+    volume.on('drop', (c) => { this.pending.delete(c.key); this.embedded.delete(c.key); this.dirty = true; });
     volume.on('edit', (op, res) => this.onEdit(op, res));
   }
 
@@ -341,6 +346,31 @@ export class CoinSystem {
     this.dirty = true;
   }
 
+  // seed queued chunks inside a box now (before an edit changes their ice)
+  flushBox(x0, y0, z0, x1, y1, z1) {
+    if (!this.pending.size) return;
+    for (let cx = Math.floor(x0 / CHUNK_M); cx <= Math.floor(x1 / CHUNK_M); cx++)
+      for (let cy = Math.floor(y0 / CHUNK_M); cy <= Math.floor(y1 / CHUNK_M); cy++)
+        for (let cz = Math.floor(z0 / CHUNK_M); cz <= Math.floor(z1 / CHUNK_M); cz++) {
+          const k = keyOf(cx, cy, cz), c = this.pending.get(k);
+          if (c) { this.pending.delete(k); this.spawnChunk(c); }
+        }
+  }
+
+  seedPending(camPos, budgetMs = 1.5) {
+    if (!this.pending.size) return;
+    const t0 = performance.now();
+    // only chunks near enough to show their coins (VIS_R) need seeding now; the rest wait until you come
+    // close or an edit reaches them
+    const near = (VIS_R + CHUNK_M * 1.2) ** 2;
+    const list = [...this.pending.values()].filter((c) => chunkDist(c, camPos) < near).sort((a, b) => chunkDist(a, camPos) - chunkDist(b, camPos));
+    for (const c of list) {
+      this.pending.delete(c.key);
+      this.spawnChunk(c);
+      if (performance.now() - t0 > budgetMs) break;
+    }
+  }
+
   // Free embedded coins whose ice is gone.
   onEdit(op, res) {
     const b = res.bounds;
@@ -392,6 +422,7 @@ export class CoinSystem {
   }
 
   update(dt, camPos, collectors, autoCollect = 0) {
+    this.seedPending(camPos);
     const vol = this.volume;
     for (let i = this.loose.length - 1; i >= 0; i--) {
       const c = this.loose[i];
@@ -512,6 +543,7 @@ export class CoinSystem {
   }
 
   clear() {
+    this.pending.clear();
     this.embedded.clear();
     this.loose.length = 0;
     this.collectedIds.clear();

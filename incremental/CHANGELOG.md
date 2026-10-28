@@ -1,5 +1,17 @@
 # Changelog
 
+## Batch 7: Omega
+- Omega, the last world, with every rule at once: Mistral's fog, Cinderice's lava pockets and heat veins, Tidalis's current, Gale's storms and wind windows, and Auralis's auroras and sky coins. North (Convergence: everything at full strength) and South (Still Point: gentler storms, deeper lava, a slower current).
+- Every kind of mutant ice can turn up on Omega, so any missing DNA can still be found there.
+- The climax: in the final 15% of the planet the core wakes. The storms fall silent, a gold aurora hangs over the crater, auroras come every 35-55 s and lone sky coins every 12-22 s, and the music rises.
+- Theme: All Rivers, a medley that moves through every earlier world's key, mode and voices, eight bars each, carried by one choir.
+- Three time capsules, a Golden Needle and two Omega milestones ("Every rule" and "The core wakes").
+- Final balance pass: the sim covers all seven planets (both poles each) and every check passes.
+- Performance pass on Low and Ultra: storm snow, current motes and sky-coin sparkles now follow the particle density of the preset; `tools/perf.mjs` measures the heaviest scene (Omega's climax) against draw-call, triangle and logic-time budgets.
+- Streaming hitches cut: meshing a chunk next to unloaded neighbours no longer generates those whole neighbours (it samples just the border it needs), and coins in newly loaded ice are seeded a chunk per frame, nearest first, only near you (chunks under an edit are seeded at once, so no coin is ever lost). In the perf scene the world-streaming cost per frame fell from about 12.6 ms to under 1 ms once loaded.
+- The planet view names the right planet number (it said 1 of 7 everywhere).
+- Dev menu: Wake the core (Omega).
+
 ## Batch 6: Auralis
 - Auralis: a twilight world of violet-green ice under a standing aurora. North (Crown of Lights: auroras about every 1.5 minutes over poorer ice) and South (Quiet Pole: rarer auroras, richer ice). Theme: Sky Choir, with a new wordless choir voice.
 - Full aurora events on every planet: sky coins now fall one after another through the aurora instead of all at once, sparkle as they fall, and fade if nobody catches them. Each aurora picks its own colours.

@@ -10,7 +10,7 @@
 - PASS Orbital laser (Melt tier 3) and satellite mirrors (Planet tool) unlock ({"melt":3,"planet":1,"meltEff":1.05})
 - PASS Climate tree raises melt efficiency (meltEff 1.05)
 - PASS Satellite mirror sunbeam melts the ice it points at ({"melted":6.342500000000003,"beam":true})
-- PASS Cinderice save code exported for the fixtures (6470 chars)
+- PASS Cinderice save code exported for the fixtures (6474 chars)
 
 ## Console errors
 

@@ -12,6 +12,19 @@ How to reach and check every feature. Each batch adds a section; earlier section
 
 ---
 
+## Batch 7: Omega
+
+Automated: `node incremental/tools/batch7.mjs` (needs a fresh `tools/sim-report.md` from `node tools/sim.mjs --write`) and `node incremental/tools/perf.mjs` (Low and Ultra budgets, written to `tools/shots/batch7/perf.md`).
+
+| New | How to reach it | Dev menu | Working looks like |
+|---|---|---|---|
+| Omega | Complete Auralis and travel | World: planet Omega, Go | Fog, a stormy violet sky, lava glow in the deep ice, drifting motes from the current, auroras |
+| Every mutant | Dig anywhere on Omega | Events: Mutant ice ahead | Any of the twelve tints |
+| The climax | Reach 85% of the goal depth (1,700 m) | Events: Wake the core (Omega) | Notice "The core wakes"; storms stop; a gold-violet aurora stays; sky coins fall often |
+| All Rivers | Music on Omega (or pick it in Music) | — | Every eight bars the key and instruments shift to the next world's theme, over a choir |
+| Omega milestones | Notebook > Milestones on Omega | Events: milestone picker | "Every rule" and "The core wakes" |
+| Perf pass | `node tools/perf.mjs` | Settings > Graphics: preset, perf overlay | Low and Ultra both within budget in Omega's climax |
+
 ## Batch 6: Auralis
 
 Automated: `node incremental/tools/batch6.mjs` (screenshots and report in `tools/shots/batch6/`; three-tab co-op included, `--skip-coop` to leave it out).

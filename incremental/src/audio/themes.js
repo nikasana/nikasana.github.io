@@ -37,7 +37,13 @@ export const THEMES = [
     root: 60, mode: [0, 2, 4, 6, 7, 9, 11], prog: [0, 4, 5, 1, 0, 3, 4, 1],
     bpm: [50, 86], bright: 1.2, glass: 1.4, mallet: 0.7, brass: 0.4, bowed: 0.8, perc: 0.4, choir: 1.0,
   },
-  { id: 'omega', name: 'All Rivers', planet: 'omega', desc: 'Omega. Every theme at once.', locked: true },
+  {
+    id: 'omega', name: 'All Rivers', planet: 'omega',
+    desc: 'Omega. Every theme in turn, eight bars each, carried by one choir: the whole journey in one piece.',
+    root: 60, mode: [0, 2, 4, 6, 7, 9, 11], prog: [0, 4, 5, 3, 0, 1, 4, 3],
+    bpm: [56, 104], bright: 1.0, glass: 1.0, mallet: 1.0, brass: 0.9, bowed: 1.0, perc: 1.0, choir: 0.6,
+    medley: ['frostara', 'mistral', 'cinderice', 'tidalis', 'gale', 'auralis'],
+  },
 ];
 
 export const THEME_BY_ID = Object.fromEntries(THEMES.map((t) => [t.id, t]));

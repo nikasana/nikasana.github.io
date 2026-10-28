@@ -161,6 +161,32 @@ Growth is the effective per-level cost growth a bot felt: geometric mean of each
 - Synergy drift near zero (|drift| < 1 s/100): **PASS** (-0.44)
 - First-upgrade wait about 2 s for every bot: **PASS**
 
+## 🔮 Omega, North pole (Convergence)
+
+| bot | purchases | first wait | early median | mid median | late median | p95 | peak | drift | growth | goal (min) | synergies | wave peaks |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| random | 287 | 2.20 | 7.6 | 30.3 | 69.1 | 75.8 | 168.7 | 14.68 | 2.003 | — (0/5) | 7.6 | 6% |
+| cheapest | 366 | 2.00 | 4.5 | 19.3 | 39.1 | 40.8 | 46.5 | 10.51 | 1.503 | 99.5 | 10.0 | 0% |
+| roi | 384 | 2.25 | 1.6 | 2.1 | 1.9 | 7.3 | 40.7 | -0.27 | 1.386 | 17.0 | 7.0 | 10% |
+| synergy | 445 | 2.25 | 1.5 | 1.8 | 1.0 | 6.3 | 26.4 | -0.41 | 1.334 | 14.6 | 8.0 | 14% |
+
+- Drift ordering random > cheapest > ROI > synergy: **PASS**
+- Synergy drift near zero (|drift| < 1 s/100): **PASS** (-0.41)
+- First-upgrade wait about 2 s for every bot: **PASS**
+
+## 🔮 Omega, South pole (Still Point)
+
+| bot | purchases | first wait | early median | mid median | late median | p95 | peak | drift | growth | goal (min) | synergies | wave peaks |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| random | 297 | 2.40 | 7.5 | 32.3 | 90.3 | 80.1 | 153.8 | 14.85 | 2.023 | — (0/5) | 7.6 | 6% |
+| cheapest | 367 | 2.00 | 4.5 | 18.4 | 38.5 | 40.3 | 45.8 | 10.22 | 1.497 | 98.8 | 10.0 | 0% |
+| roi | 384 | 2.50 | 1.6 | 3.1 | 2.0 | 7.5 | 43.3 | -0.31 | 1.384 | 17.3 | 7.0 | 10% |
+| synergy | 447 | 2.50 | 1.6 | 1.8 | 1.0 | 6.2 | 28.3 | -0.43 | 1.336 | 15.2 | 8.0 | 15% |
+
+- Drift ordering random > cheapest > ROI > synergy: **PASS**
+- Synergy drift near zero (|drift| < 1 s/100): **PASS** (-0.43)
+- First-upgrade wait about 2 s for every bot: **PASS**
+
 ## Planet travel and re-scaling
 
 Each bot finishes Frostara (North), travels with the legacy it earned, and plays the next planet (North) with re-scaled costs.
