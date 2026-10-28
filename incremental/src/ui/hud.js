@@ -1,7 +1,7 @@
 // In-play HUD: wallet, next goal (with the hidden wait meter), tools, depth gauge, readouts, notices.
 import { h, clear } from './dom.js';
 import { format } from '../core/big.js';
-import { FAMILIES } from '../player/tools.js';
+import { FAMILIES, familyView } from '../player/tools.js';
 import { keyLabel } from '../player/input.js';
 import { NODE_BY_ID, TREES } from '../econ/data/nodes.js';
 import * as THREE from 'three';
@@ -51,6 +51,9 @@ export class Hud {
     root.appendChild(this.notices);
     this.floaters = h('div.floaters');
     root.appendChild(this.floaters);
+    // captions for musical cues (Settings > Accessibility)
+    this.captions = h('div.captions', { 'aria-live': 'polite' });
+    root.appendChild(this.captions);
     // lift beacon chevron and needle compass
     this.lift = h('div', { style: { position: 'absolute', font: '600 12px/1 var(--mono)', color: 'var(--glacier)', letterSpacing: '0.1em', whiteSpace: 'nowrap', transform: 'translate(-50%,-50%)', textShadow: '0 1px 4px #000', padding: '5px 8px', background: 'rgba(6,18,26,0.55)', border: '1px solid rgba(143,214,236,0.45)', pointerEvents: 'none' }, hidden: true });
     root.appendChild(this.lift);
@@ -67,6 +70,17 @@ export class Hud {
     this.notices.hidden = false;
     if (!v) { this.lift.hidden = true; this.needle.hidden = true; }
   }
+
+  // a caption for a sound-only cue (music), so it can be read as well as heard
+  caption(text, ms = 3200) {
+    const c = h('div.caption', {}, text);
+    this.captions.append(c);
+    while (this.captions.children.length > 3) this.captions.firstChild.remove();
+    setTimeout(() => { c.classList.add('out'); setTimeout(() => c.remove(), 450); }, ms);
+  }
+
+  // key labels are cached in the HUD: rebuild them after a rebind
+  invalidateKeys() { this.keysDone = false; this.lastTools = ''; }
 
   notice(title, desc = '', kind = '', ms = 5200) {
     const n = h(`div.notice${kind ? '.' + kind : ''}`, {}, h('div.t', {}, title), desc ? h('div.d', {}, desc) : null);
@@ -116,11 +130,12 @@ export class Hud {
     }
 
     // tools
-    const key = `${g.tools.family}|${s.tiers.join(',')}`;
+    const key = `${g.tools.family}|${s.tiers.join(',')}|${g.econ?.reverse ? 'r' : ''}`;
     if (key !== this.lastTools) {
       this.lastTools = key;
       clear(this.tools);
-      FAMILIES.forEach((F, i) => {
+      FAMILIES.forEach((F0, i) => {
+        const F = familyView(F0, g.econ?.reverse);
         const tier = s.tiers[i];
         const ok = F.id === 'dig' || tier >= 1;
         const name = ok ? F.tiers[Math.max(0, tier - 1)] : F.id === 'planet' ? 'Planet tree' : 'Locked';
@@ -146,7 +161,8 @@ export class Hud {
       ['Depth', `${s.depth.toFixed(1)} m`],
       ['Ice hardness', `×${s.hard.toFixed(2)}`],
       s.reading !== null ? ['Richness', '▮'.repeat(Math.round(s.reading * 5)) + '▯'.repeat(5 - Math.round(s.reading * 5))] : null,
-      ['Sea level', `+${s.sea.toFixed(2)} cm`],
+      ['Sea level', `${s.sea >= 0 ? '+' : '−'}${Math.abs(s.sea).toFixed(2)} cm`],
+      s.rebuilt !== undefined ? ['Ice rebuilt', `${s.rebuilt.toFixed(1)} / ${s.rebuiltGoal.toFixed(0)} m`] : null,
       ['Resonances', `${s.resonances}`],
     ].filter(Boolean).map(([a, b]) => `<div class="row"><b>${b}</b><span>${a}</span></div>`).join('');
 

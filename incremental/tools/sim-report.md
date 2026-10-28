@@ -200,4 +200,18 @@ Each bot finishes Frostara (North), travels with the legacy it earned, and plays
 
 - First upgrade after travel about as quick as on planet 1: **PASS**
 
+## Reverse Mode (Make It Snow)
+
+Frostara (North) in Reverse Mode: goal ×0.3, costs ×0.5, everything else the same (the Freeze tree is the Melt tree under other names).
+
+| bot | first wait (normal → reverse) | early median (normal → reverse) | goal min (normal → reverse) | drift reverse |
+|---|---|---|---|---|
+| random | 2.33 → 1.17 | 7.5 → 5.2 | 100.8 → 54.6 | 11.83 |
+| cheapest | 2.00 → 1.00 | 4.5 → 3.6 | 74.9 → 35.2 | 6.87 |
+| roi | 2.50 → 1.25 | 1.9 → 1.6 | 16.3 → 9.7 | 0.05 |
+| synergy | 2.50 → 1.25 | 1.8 → 1.3 | 14.1 → 7.8 | 0.28 |
+
+- Reverse Mode is easier: first wait no longer and the goal reached in at most two thirds of the time, for every bot: **PASS**
+- Strategy still matters (drift random > cheapest > ROI): **PASS**
+
 Overall: **PASS**

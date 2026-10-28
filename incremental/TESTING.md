@@ -12,6 +12,21 @@ How to reach and check every feature. Each batch adds a section; earlier section
 
 ---
 
+## Batch 8: Reverse Mode and final polish
+
+Automated: `node incremental/tools/batch8.mjs` (needs a fresh `tools/sim-report.md`). Full regression: `check-saves`, `sim --write`, `batch2` to `batch8`, `perf`, `playtest`.
+
+| New | How to reach it | Dev menu | Working looks like |
+|---|---|---|---|
+| Reverse Mode | Complete Omega: the travel screen offers it; afterwards the start screen shows ❄️ Make It Snow | World: Make It Snow (Reverse Mode) | Snow falling; tool 2 is "Freeze · Frost wand"; HUD "Ice rebuilt N / M m" and a falling sea level |
+| Frost wand | Freeze tree: Frost Wand | Upgrades: melt_torch +1 | Blue frost spray; new ice grows where you aim, never inside you; the pack fills |
+| Freeze tree | Upgrades in Reverse Mode | — | The Melt tree's place reads "Freeze", with Frost Wand, Colder Breath, Cryo Lance... |
+| Shorter goals | Any Reverse planet | Events: Complete this planet | Goal is 30% of the normal depth; travel keeps Reverse Mode |
+| Colour-safe markers | Settings > Accessibility | — | Lift sky blue diamond, Outfitter blue triangle, Vault orange square, finds yellow stars |
+| Captions | Settings > Accessibility | Events: Trigger resonance | A caption above the tool bar for each musical cue |
+| Reduce flashing | Settings > Accessibility | Events: Golden Needle here | No flash on the needle |
+| Rebinding | Settings > Controls | — | A used key swaps; the HUD hints show the new keys at once |
+
 ## Batch 7: Omega
 
 Automated: `node incremental/tools/batch7.mjs` (needs a fresh `tools/sim-report.md` from `node tools/sim.mjs --write`) and `node incremental/tools/perf.mjs` (Low and Ultra budgets, written to `tools/shots/batch7/perf.md`).

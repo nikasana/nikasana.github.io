@@ -6,6 +6,9 @@ import { h } from './dom.js';
 const FONT_MONO = "'IBM Plex Mono', ui-monospace, monospace";
 const FONT_DISPLAY = "'Big Shoulders Display', 'Arial Narrow', sans-serif";
 const COL = { frost: '#e6f1f4', haze: '#9fb8c2', glacier: '#8fd6ec', brass: '#e2b25e', ember: '#ff8b52', violet: '#b9a4ff' };
+// Colour-safe markers (Settings > Accessibility): the Okabe-Ito palette, which stays distinct with every
+// common colour-vision deficiency. Every marker also has its own shape, so colour is never the only cue.
+const SAFE = { lift: '#56b4e9', outfitter: '#0072b2', vault: '#e69f00', find: '#f0e442', crew: '#cc79a7' };
 const CARDINAL = { 0: 'N', 45: 'NE', 90: 'E', 135: 'SE', 180: 'S', 225: 'SW', 270: 'W', 315: 'NW' };
 
 // North is -z. Bearing in degrees, clockwise from north, of a world direction (dx, dz).
@@ -39,19 +42,20 @@ export class Navigation {
 
   markers() {
     const g = this.game, out = [];
+    const safe = !!g.settings.colorSafe;
     const b = g.works.beaconPos();
-    out.push({ x: b.x, z: b.z, col: COL.glacier, shape: 'diamond', label: 'LIFT' });
-    if (g.works.outfitterPos) { const o = g.works.outfitterPos; out.push({ x: o.x, z: o.z, col: '#7fd4ff', shape: 'square', label: 'OUTFITTER' }); }
+    out.push({ x: b.x, z: b.z, col: safe ? SAFE.lift : COL.glacier, shape: 'diamond', label: 'LIFT' });
+    if (g.works.outfitterPos) { const o = g.works.outfitterPos; out.push({ x: o.x, z: o.z, col: safe ? SAFE.outfitter : '#7fd4ff', shape: 'triangle', label: 'OUTFITTER' }); }
     if ((g.stats.visionTier || 0) >= 3 || (g.revealUntil || 0) > g.time) {
       for (const it of g.frozen.items) {
         if (it.kind !== 'find' || it.done) continue;
         const p = it.mesh.position;
-        if (Math.hypot(p.x - g.ctl.pos.x, p.z - g.ctl.pos.z) < 60) out.push({ x: p.x, z: p.z, col: '#' + it.find.glow.toString(16).padStart(6, '0'), shape: 'dot', label: '', mapOnly: true });
+        if (Math.hypot(p.x - g.ctl.pos.x, p.z - g.ctl.pos.z) < 60) out.push({ x: p.x, z: p.z, col: safe ? SAFE.find : '#' + it.find.glow.toString(16).padStart(6, '0'), shape: 'star', label: '', mapOnly: true });
       }
     }
     const v = g.works.vaultCenter();
-    out.push({ x: v.x, z: v.z, col: COL.brass, shape: 'square', label: 'VAULT' });
-    if (g.crew && g.crew.active && g.avatars) for (const a of g.avatars.map.values()) out.push({ x: a.root.position.x, z: a.root.position.z, col: COL.violet, shape: 'dot', label: '' });
+    out.push({ x: v.x, z: v.z, col: safe ? SAFE.vault : COL.brass, shape: 'square', label: 'VAULT' });
+    if (g.crew && g.crew.active && g.avatars) for (const a of g.avatars.map.values()) out.push({ x: a.root.position.x, z: a.root.position.z, col: safe ? SAFE.crew : COL.violet, shape: 'dot', label: '' });
     return out;
   }
 
@@ -118,6 +122,8 @@ export class Navigation {
     x.beginPath();
     if (kind === 'diamond') { x.moveTo(sx, sy - s); x.lineTo(sx + s, sy); x.lineTo(sx, sy + s); x.lineTo(sx - s, sy); x.closePath(); }
     else if (kind === 'square') x.rect(sx - s * 0.8, sy - s * 0.8, s * 1.6, s * 1.6);
+    else if (kind === 'triangle') { x.moveTo(sx, sy - s); x.lineTo(sx + s * 0.95, sy + s * 0.75); x.lineTo(sx - s * 0.95, sy + s * 0.75); x.closePath(); }
+    else if (kind === 'star') { for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? s * 0.45 : s; x.lineTo(sx + Math.cos(a) * r, sy + Math.sin(a) * r); } x.closePath(); }
     else x.arc(sx, sy, s * 0.8, 0, Math.PI * 2);
     x.fill();
   }
