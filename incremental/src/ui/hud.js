@@ -236,6 +236,17 @@ export class Hud {
       const v = hint.dy < -1.2 ? ' ↓ dig down' : hint.dy > 1.2 ? ' ↑ above you' : '';
       this.needleText.hidden = false;
       this.needleText.textContent = `✦ Needle ${hint.dist.toFixed(0)} m${v}`;
+    } else if (s.needleGuide && !this.el.hidden) {
+      // at the needle's depth but not yet close: which way to go across, and how far
+      const gd = s.needleGuide, dist = Math.hypot(gd.dx, gd.dz);
+      const yaw = Math.atan2(-gd.dx, -gd.dz);                       // the controller's yaw that faces it
+      let rel = ((yaw - g.ctl.yaw) * 180 / Math.PI) % 360;
+      if (rel > 180) rel -= 360; if (rel < -180) rel += 360;
+      const arrow = Math.abs(rel) < 25 ? '↑ ahead' : Math.abs(rel) > 155 ? '↓ behind you' : rel > 0 ? '← to your left' : '→ to your right';
+      const v = gd.dy < -2 ? ', a little deeper' : gd.dy > 2 ? ', a little higher' : '';
+      this.needle.hidden = true;
+      this.needleText.hidden = false;
+      this.needleText.textContent = `✦ Needle ${dist.toFixed(0)} m ${arrow}${v}`;
     } else { this.needle.hidden = true; this.needleText.hidden = true; }
   }
 }

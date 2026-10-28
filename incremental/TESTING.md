@@ -25,7 +25,7 @@ Automated: `node incremental/tools/polish2.mjs` (screenshots and report in `tool
 | Depot upgrades | Buy Depot Conveyor (outer column on the Automation side) | The pack empties faster at the depot |
 | Milestones | Open the tree; buy a node to level 4 | A ★ on the node; its tip says the next level is a milestone and costs more |
 | Depth gauge | Dig down, then climb out | The YOU dot moves with you; a notch stays at the deepest point; every mark has a depth; GOAL at the bottom |
-| Needle | Dig to 35-60 m on Frostara | The gold band on the gauge lights up; close to the needle a "✦ Needle N m ↓" readout appears |
+| Needle | Dig to 35-60 m on Frostara | The gold band on the gauge lights up; a gold ★ NEEDLE marker shows on the compass and minimap and a readout says how far and which way (left, right, ahead, behind) |
 | Touch LIFT | On a phone, stand by the lift beacon in the crater | A wide blue LIFT button appears; holding it rides up, JUMP only jumps |
 
 ## Mobile

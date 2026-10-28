@@ -78,6 +78,16 @@ await ev(() => { const g = window.__game, p = g.ctl.pos; g.ctl.teleport(p.x, win
 await wait(1500);
 const up = await ev(() => { const d = document.querySelector('.hud-depth'); return { you: parseFloat(d.querySelector('.you').style.top), max: parseFloat(d.querySelector('.max').style.top), maxShown: !d.querySelector('.max').hidden }; });
 check('The dot follows you up; the deepest point stays marked', up.you < gauge.top - 5 && up.maxShown && up.max > up.you, JSON.stringify(up));
+// at the needle's depth (no Needle Sense), the compass, map and a readout point across to it
+await ev(() => { const g = window.__game; g.ctl.noclip = true; const p = g.frozen.needlePosition(); g.ctl.teleport(p.x + 22, p.y - 0.5, p.z); g.ctl.yaw = Math.PI / 2; g.ctl.pitch = 0; });   // facing west, needle to the west
+await wait(2500);
+const guide = await ev(() => { const t = document.querySelector('.needle-text'); return { text: t.hidden ? '' : t.textContent, mark: window.__game.hud.nav.markers().some((m) => m.label === 'NEEDLE') }; });
+await ev(() => { window.__game.ctl.yaw = 0; });   // turn north: the needle is now to the left
+await wait(1500);
+const guide2 = await ev(() => document.querySelector('.needle-text').textContent);
+check('At the needle’s depth the compass, map and a readout point across to it', guide.mark && /Needle 2\d m ↑ ahead/.test(guide.text) && /to your left/.test(guide2), `${guide.text} | then ${guide2}`);
+await shot('02a-needle-guide');
+
 // needle sense: a diamond at its depth, and a readout with distance and direction when close
 await ev(() => { const g = window.__game; g.devLevel('vis_hint', 1); g.ctl.noclip = true; const it = g.frozen.items.find((i) => i.kind === 'needle' && !i.done); const p = it.mesh.position; g.ctl.teleport(p.x + 6, p.y + 3, p.z); });
 await wait(2000);

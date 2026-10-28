@@ -1814,6 +1814,10 @@ class Game {
 
   updateHud(depthHere) {
     const e = this.econ, st = this.stats;
+    // once you are at the needle's depth, the compass, the map and a readout point you across to it
+    const np = this.state.needle ? null : this.frozen.needlePosition(), band = this.frozen.needleBand;
+    const atDepth = np && band && depthHere >= band[0] - 3 && depthHere <= band[1] + 3;
+    this.needleGuide = atDepth ? { x: np.x, z: np.z, dx: np.x - this.ctl.pos.x, dz: np.z - this.ctl.pos.z, dy: np.y - this.ctl.pos.y } : null;
     const goal = M.nextGoal(e);
     const c = this.state.carried;
     const sp = strataProps(this.planet, e.pole, Math.max(0, depthHere));
@@ -1851,6 +1855,7 @@ class Game {
       hard: M.hardnessAt(e, Math.max(0, depthHere)), reading: visionUse ? richness(this.tools.hit.point.x, this.tools.hit.point.y, this.tools.hit.point.z) : null,
       sea: e.reverse ? -M.seaLevelCm({ melted: e.frozen || 0 }) : M.seaLevelCm(e), rebuilt: e.reverse ? e.depth : undefined, rebuiltGoal: M.goalDepthOf(e), resonances: Object.keys(e.found).length, hit: !!this.tools.hit, prompt, atBeacon: this.atBeacon, atDepot: this.atDepot, needleHint: this.needleHint,
       needle: !this.state.needle && this.frozen.needleDepth != null ? { band: this.frozen.needleBand, depth: this.frozen.needleDepth, sense: st.hint > 0 } : null,
+      needleGuide: this.needleGuide,
       goalDepth: M.goalDepthOf(e),
     });
   }

@@ -1,5 +1,8 @@
 # Changelog
 
+## Needle guide
+- Once you are down at the Golden Needle's depth (inside its gold band on the depth gauge), you are guided across to it: a gold ★ NEEDLE marker appears on the compass strip and the minimap, and a readout under the crosshair says how far it is and which way to go ("✦ Needle 22 m ← to your left", "↑ ahead", "→ to your right", "↓ behind you", plus "a little deeper/higher" when needed). Close up, Needle Sense's arc and readout take over as before.
+
 ## Coins, chests, the depot, a bigger tree, and a clearer depth gauge
 - 23 kinds of coin, each with its own shape and look: square, hex, ring, star, orb, gem, emerald, bar, shard, pebble and vase coins, some engraved and some glowing. Each kind starts at its own depth (bronze from 2 m, down to corestone from 1,250 m), so every layer has something new; later planets bring more kinds, and every world after Frostara has a signature coin found only there. The notebook has a Coins page and a notice marks each new kind.
 - Coins come in sizes from 0.65 to 1.5 times their kind's size; a coin's value grows with its size squared (a big one is worth about five small ones), and the average stays the same.
