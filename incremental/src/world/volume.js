@@ -391,15 +391,27 @@ export class IceVolume {
   gatherPadded(c) {
     const dens = new Uint8Array(P * P * P);
     const bi = c.cx * CHUNK, bj = c.cy * CHUNK, bk = c.cz * CHUNK;
+    // neighbours that are not loaded are sampled analytically (the same formula as generateChunk),
+    // only for the padding voxels we need, instead of generating their whole block
     const cache = new Map();
     const blockOf = (cx, cy, cz) => {
       const k = keyOf(cx, cy, cz);
       if (cache.has(k)) return cache.get(k);
-      let ch = this.chunks.get(k);
-      let d = ch && ch.data;
-      if (!d) d = this.edited.get(k) || generateChunk(cx, cy, cz, this.hm).data;
+      const ch = this.chunks.get(k);
+      const d = (ch && ch.data) || this.edited.get(k) || null;
       cache.set(k, d);
       return d;
+    };
+    const tops = new Map();
+    const topAt = (gi, gk) => {
+      const key = gi * 100003 + gk;
+      let t = tops.get(key);
+      if (t === undefined) {
+        const x = gi * VOXEL, z = gk * VOXEL;
+        t = surfaceY(x, z) - (!inDomain(x, z, MARGIN) || !this.hm ? 0 : sampleHeightmap(this.hm, x, z));
+        tops.set(key, t);
+      }
+      return t;
     };
     for (let j = -PAD; j < CHUNK + PAD; j++) {
       const gj = bj + j, cy = Math.floor(gj / CHUNK), lj = gj - cy * CHUNK;
@@ -408,7 +420,7 @@ export class IceVolume {
         for (let i = -PAD; i < CHUNK + PAD; i++) {
           const gi = bi + i, cx = Math.floor(gi / CHUNK), li = gi - cx * CHUNK;
           const d = (cx === c.cx && cy === c.cy && cz === c.cz) ? c.data : blockOf(cx, cy, cz);
-          dens[(i + PAD) + P * ((k + PAD) + P * (j + PAD))] = d[idx(li, lj, lk)];
+          dens[(i + PAD) + P * ((k + PAD) + P * (j + PAD))] = d ? d[idx(li, lj, lk)] : clamp(ISO + ((topAt(gi, gk) - gj * VOXEL) / VOXEL) * GRAD, 0, 255) | 0;
         }
       }
     }

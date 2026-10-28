@@ -688,7 +688,12 @@ class Game {
   // ---------- world actions ----------
 
   applyOp(op, src) {
-    const res = this.volume.applyOp(op);
+    // coins in the ice must be seeded before the edit changes it (they are freed, not lost)
+    const R = (op.r || 1) + 1;
+    this.coins.flushBox(op.x - R, op.y - R, op.z - R, op.x + R, op.y + R, op.z + R);
+    this.coins.syncSpawn = true;
+    let res;
+    try { res = this.volume.applyOp(op); } finally { this.coins.syncSpawn = false; }
     const depth = this.depthAt(op.x, op.y, op.z);
     if (op.kind !== 'fill' && !(this.crew.active && !this.crew.isHost)) {
       this.econ.volume += res.removed;

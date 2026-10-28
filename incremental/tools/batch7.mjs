@@ -42,7 +42,7 @@ await ev(() => { const g = window.__game; g.econ.total = g.econ.total.constructo
 await wait(12000);
 await ev(() => { const g = window.__game; g.econ.depth = g.planet.goalDepth; g.completePlanet(); });
 await wait(4000);
-const travel = await ev(() => ({ menu: window.__game.menus.cur, text: document.querySelector('.menu-body')?.textContent || '' }));
+const travel = await ev(() => ({ menu: window.__game.menus.cur, text: [...document.querySelectorAll('.start .title')].map((e) => e.textContent).join(' ') }));
 check('Finishing Auralis offers the trip to Omega', travel.menu === 'travel' && travel.text.includes('Omega'), travel.menu);
 await shot('01-travel-to-omega');
 await ev(() => { const g = window.__game; g.menus.close(); g.travelTo('omega', 'N'); });

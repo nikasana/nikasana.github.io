@@ -8,6 +8,7 @@
 - Three time capsules, a Golden Needle and two Omega milestones ("Every rule" and "The core wakes").
 - Final balance pass: the sim covers all seven planets (both poles each) and every check passes.
 - Performance pass on Low and Ultra: storm snow, current motes and sky-coin sparkles now follow the particle density of the preset; `tools/perf.mjs` measures the heaviest scene (Omega's climax) against draw-call, triangle and logic-time budgets.
+- Streaming hitches cut: meshing a chunk next to unloaded neighbours no longer generates those whole neighbours (it samples just the border it needs), and coins in newly loaded ice are seeded a chunk per frame, nearest first, only near you (chunks under an edit are seeded at once, so no coin is ever lost). In the perf scene the world-streaming cost per frame fell from about 12.6 ms to under 1 ms once loaded.
 - The planet view names the right planet number (it said 1 of 7 everywhere).
 - Dev menu: Wake the core (Omega).
 

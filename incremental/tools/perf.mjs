@@ -47,7 +47,17 @@ for (const preset of ['low', 'ultra']) {
     g.startAurora();
     for (let i = 0; i < 20; i++) g.dropSkyCoin(i % 4 === 0);
   });
-  await page.waitForTimeout(8000);
+  // measure steady play: wait until chunk streaming and coin seeding around you have settled
+  const settle = await ev(async () => {
+    const g = window.__game, t0 = performance.now();
+    const near = (c) => ((c.cx + 0.5) * 8 - g.ctl.pos.x) ** 2 + ((c.cy + 0.5) * 8 - g.ctl.pos.y) ** 2 + ((c.cz + 0.5) * 8 - g.ctl.pos.z) ** 2 < 21 ** 2;
+    while (performance.now() - t0 < 120000) {
+      if (!g.volume.queue.size && !g.volume.inflight.size && ![...g.coins.pending.values()].some(near)) break;
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    return (performance.now() - t0) / 1000;
+  });
+  await page.waitForTimeout(3000);
   // instrument: logic time = tick minus the render call
   const m = await ev(async () => {
     const g = window.__game, gfx = g.gfx, orig = gfx.render.bind(gfx);
@@ -74,7 +84,7 @@ for (const preset of ['low', 'ultra']) {
     };
   });
   await page.screenshot({ path: join(out, `perf-${preset}.jpg`), type: 'jpeg', quality: 82, timeout: 240000 });
-  rows.push({ preset, ...m });
+  rows.push({ preset, settle, ...m });
   const B = BUDGET[preset];
   check(`${preset}: the heaviest scene is set up (climax, aurora, sky coins)`, m.climax && m.aurora && m.sky >= 10, JSON.stringify({ climax: m.climax, aurora: m.aurora, sky: m.sky }));
   check(`${preset}: draw calls within budget (${B.calls})`, m.calls <= B.calls, `${m.calls}`);
@@ -87,8 +97,8 @@ const failed = results.filter((r) => !r.ok);
 writeFileSync(join(out, 'perf.md'), [
   '# Performance pass (Omega climax, the heaviest scene)', '',
   'Measured under software WebGL (SwiftShader), so render time is not representative; the budgets are on draw calls, triangles and game logic time (each frame\'s tick without the render call).', '',
-  '| preset | draw calls | triangles | logic median (ms) | logic p95 (ms) | particles | loose coins (sky) |', '|---|---|---|---|---|---|---|',
-  ...rows.map((r) => `| ${r.preset} | ${r.calls} | ${(r.tris / 1e3).toFixed(0)}k | ${r.logicMed.toFixed(2)} | ${r.logicP95.toFixed(2)} | ${r.particles} | ${r.loose} (${r.sky}) |`), '',
+  '| preset | settle after teleport (s) | draw calls | triangles | logic median (ms) | logic p95 (ms) | particles | loose coins (sky) |', '|---|---|---|---|---|---|---|---|',
+  ...rows.map((r) => `| ${r.preset} | ${r.settle.toFixed(1)} | ${r.calls} | ${(r.tris / 1e3).toFixed(0)}k | ${r.logicMed.toFixed(2)} | ${r.logicP95.toFixed(2)} | ${r.particles} | ${r.loose} (${r.sky}) |`), '',
   `${results.length - failed.length}/${results.length} checks passed.`, '',
   ...results.map((r) => `- ${r.ok ? 'PASS' : 'FAIL'} ${r.name}${r.detail ? ` (${r.detail})` : ''}`), '', '## Console errors', '', errors.length ? errors.map((e) => `- ${e}`).join('\n') : 'None.', ''].join('\n'));
 console.log(`\n${results.length - failed.length}/${results.length} passed, ${errors.length} console errors`);
