@@ -2,11 +2,11 @@
 
 Preset low, 960x540, software WebGL. 27/27 checks passed.
 
-- PASS Digging removes ice and fills the pack ({"vol":"1.78","carried":{"count":0,"value":0,"ids":[]}})
-- PASS Banking at the lift beacon credits the vault (coins 0 -> 6.0648839308865625)
-- PASS First upgrade affordable within seconds of digging (coins 6.0648839308865625)
+- PASS Digging removes ice and fills the pack ({"vol":"2.06","carried":{"count":0,"value":0,"ids":[]}})
+- PASS Banking at the lift beacon credits the vault (coins 0 -> 7.105921757756867)
+- PASS First upgrade affordable within seconds of digging (coins 7.105921757756867)
 - PASS Buying from the upgrade tree (2 bought)
-- PASS Torch melts ice and leaves meltwater ({"melted":"0.640","pools":1,"down":[],"locked":true,"block":false,"menu":null,"view":"fp","hit":true,"fam":1,"tier":1})
+- PASS Torch melts ice and leaves meltwater ({"melted":"0.578","pools":1,"down":[],"locked":true,"block":false,"menu":null,"view":"fp","hit":true,"fam":1,"tier":1})
 - PASS Crater depth tracked (23.5 m)
 - PASS Milestones pay out
 - PASS Time capsule opens when freed and reached
@@ -17,12 +17,12 @@ Preset low, 960x540, software WebGL. 27/27 checks passed.
 - PASS Screen opens: music
 - PASS Planet view opens
 - PASS Planet view returns to first person
-- PASS Performance overlay shows frame time (10 FPS · 101.8 ms (worst 1660.0) · 188 calls · 336k tris)
-- PASS Save code exports (14974 chars)
+- PASS Performance overlay shows frame time (8 FPS · 122.2 ms (worst 2794.0) · 187 calls · 335k tris)
+- PASS Save code exports (14990 chars)
 - PASS Save code imports
 - PASS Offline summary shown
-- PASS Crew created with a room code (J3ZZFQ)
-- PASS Join link carries the code (http://localhost:8123/index.html?join=J3ZZFQ&coopdebug=1)
+- PASS Crew created with a room code (BZ6ZLM)
+- PASS Join link carries the code (http://localhost:8123/index.html?join=BZ6ZLM&coopdebug=1)
 - PASS Member joins through the link
 - PASS Dig edits sync host -> member
 - PASS Member banking credits the shared vault (0 -> 500)
