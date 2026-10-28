@@ -261,7 +261,8 @@ export class Tools {
     const reach = (F.id === 'melt' ? st.reach * 1.45 : st.reach) + Math.max(0, -ctx.dir.y) * 1.5;
     const hit = g.volume.raycast(ctx.eye, ctx.dir, reach + 0.2);
     this.hit = hit.hit && hit.dist <= reach ? hit : null;
-    const lmb = input.is('use') && ok;
+    // Auto Swing (Automation): the game holds the button for you while you stand still aiming at ice
+    const lmb = (input.is('use') || (this.autoUse && (F.id === 'dig' || F.id === 'melt'))) && ok;
     const rmb = input.is('alt') && ok;
     this.using = false;
     this.cooldown = Math.max(0, this.cooldown - dt);
@@ -397,7 +398,7 @@ export class Tools {
     const vt = (meltVolumeRate(st) / hard) * (wide ? 0.7 : 1) * dt;
     // crack seep: heat pours into fresh pick cracks
     const cracked = this.cracks.some((q) => q.t < 12 && q.p.distanceTo(h.point) < q.r + r * 0.5);
-    const amount = (3 * GRAD * vt * (cracked ? 1 + st.seep : 1)) / (Math.PI * r * r * r);
+    const amount = (3 * GRAD * vt * (cracked ? 1 + st.seep : 1) * (this.meltFactor ?? 1)) / (Math.PI * r * r * r);
     const c = h.point.clone().addScaledVector(h.normal, -r * 0.25);
     const res = g.applyOp({ kind: 'melt', x: c.x, y: c.y, z: c.z, r, amount, seed: 0 }, 'local');
     if (tier >= 3) this.skyBeam(h.point, 0.35 + r * 0.25, [1.0, 0.75, 0.55]);   // orbital laser

@@ -255,10 +255,22 @@ export function toolMix(st, d, m) {
   return best;
 }
 
+// Gale: storms weaken melting; calm windows make it pay double. Averaged over the weather cycle,
+// assuming the player melts as much in the calm as they can (Storm Shields soften the storms).
+export function weatherMeltFactor(e, st) {
+  const w = planetOf(e).weather;
+  if (!w) return 1;
+  const storm = (w.storm[0] + w.storm[1]) / 2, calm = (w.calm[0] + w.calm[1]) / 2;
+  const base = e.pole === 'S' ? (w.meltInStorm + 1) / 2 : w.meltInStorm;   // the South pole is sheltered
+  const inStorm = base + (1 - base) * Math.min(1, st.stormShield || 0);
+  return (storm * inStorm + calm * w.calmBonus) / (storm + calm);
+}
+
 export function rates(e, st = computeStats(e), activity = ACTIVITY) {
+  if (activity > 0) activity = Math.min(1, activity + 0.12 * (st.autoTool || 0));   // Auto Swing fills the idle moments
   const hard = hardnessAt(e);
   const d = digVolumeRate(st) / hard;
-  const m = meltVolumeRate(st) / hard;
+  const m = meltVolumeRate(st) / hard * weatherMeltFactor(e, st);
   const mix = toolMix(st, d, m);
   const autoVol = (st.autoDig + st.autoMelt) / hard;
   const V = baseValuePerM3(e) * valueMult(e, st) * collectEff(st) * bankEff(st);

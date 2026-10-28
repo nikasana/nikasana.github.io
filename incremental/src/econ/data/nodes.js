@@ -17,6 +17,7 @@ export const TREES = [
   { id: 'planet', name: 'Planet', icon: '🛰️', color: '#ffd27a', origin: [1, 0], label: [1000, -230] },
   { id: 'climate', name: 'Climate', icon: '🌡️', color: '#8fe3c8', origin: [-1, 0], label: [-1000, 420] },
   { id: 'style', name: 'Style', icon: '🎨', color: '#ff9fc4', origin: [1, 0], label: [1000, 420] },
+  { id: 'luck', name: 'Luck & Secrets', icon: '🍀', color: '#c8f07a', origin: [-1, 0], label: [-1000, 900] },
   { id: 'audio', name: 'Audio', icon: '🎼', color: '#f2c9ff', origin: [-1, 0], label: [-1000, -230] },
   { id: 'dna', name: 'DNA', icon: '🧬', color: '#7dffb2', origin: [0, 1], label: [0, 1040] },
 ];
@@ -104,6 +105,8 @@ export const NODES = [
   N('auto', 'auto_bank', 'Auto-Bank Relay', '🏦', 'Bank from farther away.', 58000, 10, ['auto_hopper'], [['bank', 'add', 0.02]], 2, 3),
   N('auto', 'auto_array', 'Stake Array', '🔱', 'A ring of stakes and spikes.', 140000, 12, ['auto_resonator'], [['autoDig', 'add', 0.15], ['autoMelt', 'add', 0.1]], 2, 2),
   N('auto', 'auto_core', 'Core Tap', '🔋', 'Stakes draw on deep heat.', 1.9e6, 8, ['auto_array'], [['autoDig', 'mul', 0.08], ['autoMelt', 'mul', 0.08]], 3, 3),
+  N('auto', 'auto_tool', 'Auto Swing', '🔁', 'Auto-use-tool: while you stand still aiming at ice, your dig or melt tool keeps working on its own.', 32000, 1, ['auto_vac'], [['autoTool', 'set', 1]], 0, 4, { kind: 'mech' }),
+  N('auto', 'auto_buyer', 'Quartermaster', '🧾', 'Auto-buy: every few seconds, buys the cheapest upgrade that costs under a quarter of your vault (never a choose-one node). Toggle it in the upgrade screen.', 85000, 1, ['auto_bank'], [['autoBuy', 'set', 1]], 1, 4, { kind: 'mech' }),
   N('auto', 'auto_sync', 'Sync Clock', '⏱️', 'Capstone. All automation in step, ringing as one.', 7.5e6, 1, ['auto_core', 'auto_vac'], [['autoAll', 'mul', 0.5]], 2, 4, { kind: 'cap' }),
 
   // ✳️ CROSS-TREE: need a node from each of two trees, and make the two work together
@@ -129,6 +132,7 @@ export const NODES = [
   N('climate', 'cl_soot', 'Soot Dusting', '🌑', 'Darken the ice so it drinks the sun: every melt goes further.', 3000, 10, [], [['meltEff', 'add', 0.05]], 0, 0, { root: true, at: [-900, 180] }),
   N('climate', 'cl_dark', 'Dark Ice', '⬛', 'Deeper albedo: hotter melting.', 12000, 10, ['cl_soot'], [['meltPower', 'mul', 0.04]], 0, 0, { at: [-1110, 180] }),
   N('climate', 'cl_sea', 'Sea Wall', '🌊', 'A managed sea: coins from a warming world fetch more.', 8000, 8, ['cl_soot'], [['valueMult', 'add', 0.02]], 0, 0, { at: [-900, 330] }),
+  N('climate', 'cl_shield', 'Storm Shields', '🛡️', 'Wind breaks around your crater: storms steal less of your heat (Gale).', 30000, 5, ['cl_sea'], [['stormShield', 'add', 0.15]], 0, 0, { at: [-900, 480] }),
   N('climate', 'cl_green', 'Greenhouse Vents', '🏭', 'Vents warm the pole from below: the ice melts on its own.', 45000, 10, ['cl_dark'], [['autoMelt', 'add', 0.06]], 0, 0, { at: [-1110, 330] }),
 
   // 🎨 STYLE: purely cosmetic; each can be switched off in Settings > Game
@@ -136,6 +140,13 @@ export const NODES = [
   N('style', 'sty_obsid', 'Obsidian Tools', '🖤', 'Tool skin: black volcanic glass with a violet edge.', 6000, 1, ['sty_gold'], [['styleObsid', 'set', 1]], 0, 0, { kind: 'mech', at: [1110, 330] }),
   N('style', 'sty_warm', 'Warm Crater Light', '🕯️', 'Crater colour: a warmer, golden grade over the ice.', 2500, 1, ['sty_gold'], [['styleWarm', 'set', 1]], 0, 0, { kind: 'mech', at: [900, 480] }),
   N('style', 'sty_wide', 'Wide Lens', '📷', 'Camera mode: a wider view.', 4000, 1, ['sty_warm'], [['styleWide', 'set', 1]], 0, 0, { kind: 'mech', at: [1110, 480] }),
+
+  // 🍀 LUCK AND SECRETS: better capsules, aurora catches, needle hints, richer finds
+  N('luck', 'lk_capsule', 'Lucky Seals', '🎁', 'Time capsules hold more.', 4000, 6, [], [['capsuleMult', 'add', 0.25]], 0, 0, { root: true, at: [-900, 640] }),
+  N('luck', 'lk_aurora', 'Aurora Charm', '🌌', 'Auroras come more often and drop more coins.', 9000, 5, ['lk_capsule'], [['auroraRate', 'add', 0.2], ['auroraCoins', 'add', 0.2]], 0, 0, { at: [-1110, 640] }),
+  N('luck', 'lk_needle', 'Needle Whisper', '🪡', 'A stronger pull toward the Golden Needle.', 15000, 3, ['lk_capsule'], [['hint', 'add', 1]], 0, 0, { at: [-900, 790] }),
+  N('luck', 'lk_finds', 'Treasure Nose', '👃', 'Finds frozen in the ice pay more.', 6000, 8, ['lk_aurora'], [['findMult', 'add', 0.2]], 0, 0, { at: [-1110, 790] }),
+  N('luck', 'lk_ledger', 'Hidden Ledger', '📒', 'Capstone of luck: a little more value and a few more clean breaks, everywhere.', 30000, 10, ['lk_finds', 'lk_needle'], [['valueMult', 'add', 0.01], ['crit', 'add', 0.01]], 0, 0, { at: [-1005, 930] }),
 
   // 🎼 AUDIO: music variations, an ambient layer and a sound pack (no income; for the ears)
   N('audio', 'aud_choir', 'Wind Choir', '🌬️', 'An ambient layer of slow bowed voices under the music. Pick it in the Music screen.', 40, 1, [], [['audioChoir', 'set', 1]], 0, 0, { root: true, kind: 'mech', at: [-900, -120] }),
@@ -174,7 +185,10 @@ export const BASE_STATS = {
   // Audio
   audioChoir: 0, audioNight: 0, audioGlass: 0, audioPack: 0,
   // Planet
-  planetTier: 0, mirrorPower: 0,
+  planetTier: 0, mirrorPower: 0, stormShield: 0,
+  autoTool: 0, autoBuy: 0,
+  // Luck
+  capsuleMult: 0, auroraRate: 0, auroraCoins: 0, findMult: 0,
   // Style
   styleGold: 0, styleObsid: 0, styleWarm: 0, styleWide: 0,
 };

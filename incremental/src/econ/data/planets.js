@@ -159,7 +159,46 @@ export const PLANETS = [
       },
     },
   },
-  { id: 'gale', name: 'Gale', icon: '🌪️', rule: 'Storms, so wind decides what works', available: false },
+  {
+    id: 'gale', name: 'Gale', icon: '🌪️', rule: 'Storms, so wind decides what works', available: true,
+    radiusM: 3000, goalDepth: 1600, density: 7.5, depthScale: 9, richExp: 1.4,
+    coinTiers: ['copper', 'silver', 'gold', 'gem', 'relic'],
+    // a wind-scoured world: storms blow the heat away from melting; short calm windows open between them
+    exposure: 0.84, fog: [0.7, 0.74, 0.78], fogDensity: 0.004, skyVeil: 0.35, skyVeilBright: 0.95,
+    sky: { turbidity: 6, rayleigh: 1.2, mieCoefficient: 0.008, mieDirectionalG: 0.8 },
+    sunElevation: 12, dayLength: 600,
+    grade: { lift: [0.01, 0.01, 0.02], gain: [0.98, 0.99, 1.0], sat: 0.95, contrast: 1.12 },
+    ice: { tint: [0.6, 0.78, 0.9], deep: [0.1, 0.18, 0.32], snow: [0.88, 0.9, 0.93] },
+    ocean: [0.08, 0.14, 0.22], land: [0.32, 0.32, 0.34], seed: 7759,
+    theme: 'gale',
+    weather: { storm: [55, 85], calm: [12, 20], meltInStorm: 0.4, calmBonus: 2 },
+    poles: {
+      N: {
+        name: 'Howling Shelf', desc: 'Long storms and short calms, but the calm windows pay double.',
+        strata: [
+          { d: 0, name: 'Wind slab', color: [0.88, 0.9, 0.94], hard: 0.8, rich: 1.0 },
+          { d: 5, name: 'Scoured firn', color: [0.74, 0.82, 0.9], hard: 0.9, rich: 1.06 },
+          { d: 26, name: 'Drift ice', color: [0.58, 0.72, 0.86], hard: 1.0, rich: 1.12 },
+          { d: 90, name: 'Storm bands', color: [0.46, 0.6, 0.8], hard: 1.15, rich: 1.2 },
+          { d: 280, name: 'Gale glass', color: [0.34, 0.48, 0.72], hard: 1.3, rich: 1.3 },
+          { d: 760, name: 'Pressure ice', color: [0.22, 0.34, 0.6], hard: 1.45, rich: 1.42 },
+          { d: 1350, name: 'Eye of the storm', color: [0.5, 0.62, 0.86], hard: 1.6, rich: 1.65 },
+        ],
+      },
+      S: {
+        name: 'Lee Basin', desc: 'Sheltered from the worst of it: gentler storms, steadier digging.',
+        strata: [
+          { d: 0, name: 'Lee drift', color: [0.9, 0.92, 0.95], hard: 0.85, rich: 1.0 },
+          { d: 6, name: 'Basin firn', color: [0.72, 0.8, 0.9], hard: 0.95, rich: 1.05 },
+          { d: 34, name: 'Drift ice', color: [0.58, 0.72, 0.86], hard: 1.05, rich: 1.12 },
+          { d: 110, name: 'Storm bands', color: [0.46, 0.6, 0.8], hard: 1.15, rich: 1.22 },
+          { d: 320, name: 'Gale glass', color: [0.34, 0.48, 0.72], hard: 1.3, rich: 1.3 },
+          { d: 800, name: 'Pressure ice', color: [0.22, 0.34, 0.6], hard: 1.45, rich: 1.42 },
+          { d: 1350, name: 'Eye of the storm', color: [0.5, 0.62, 0.86], hard: 1.6, rich: 1.66 },
+        ],
+      },
+    },
+  },
   { id: 'auralis', name: 'Auralis', icon: '🌌', rule: 'Aurora world with rare sky coins', available: false },
   { id: 'omega', name: 'Omega', icon: '🔮', rule: 'Every rule combined', available: false },
 ];
