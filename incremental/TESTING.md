@@ -12,6 +12,21 @@ How to reach and check every feature. Each batch adds a section; earlier section
 
 ---
 
+## Batch 5: Gale
+
+Automated: `node incremental/tools/batch5.mjs` (screenshots and report in `tools/shots/batch5/`).
+
+| New | How to reach it | Dev menu | Working looks like |
+|---|---|---|---|
+| Gale | Complete Tidalis and travel | World: planet Gale, Go | Grey-blue ice under a windy sky |
+| Storms | Arrive on Gale | Events: Next weather phase | Blowing snow, thick fog, HUD "Storm"; melting is slower |
+| Wind Windows | Wait out a storm | Events: Next weather phase | The air clears, HUD "Wind Window"; melting pays double |
+| Storm Shields | Climate tree, after Sea Wall | Upgrades: cl_shield Max | Melting slows less during a storm |
+| Auto Swing | Automation tree: Auto Swing | Upgrades: auto_tool Max | Stand still aiming at ice: the tool keeps striking or melting |
+| Quartermaster | Automation tree: Quartermaster | Upgrades: auto_buyer Max | Upgrades buy themselves; toggle in the upgrade screen's zoom bar |
+| Luck & Secrets | Lower left of the graph | Upgrades: lk_* | Bigger capsules, more auroras, richer finds |
+| Finds and Capsules pages | Notebook | Events: Find / Complete planet | Found items in colour, unfound as silhouettes; capsules list their planet |
+
 ## Batch 4: Tidalis
 
 Automated: `node incremental/tools/batch4.mjs` (screenshots and report in `tools/shots/batch4/`).

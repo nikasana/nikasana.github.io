@@ -82,3 +82,9 @@ Choices made where the build prompt is silent, and the reasons. Updated every ba
 - The sonic hammer trades swing speed (-25%) for a wider bite and a six-crater ring per blow; the sim sees only its stats, so its wait curve is part of the proof.
 - Aurora coins are worth 12 s of income each and go straight to the vault so a full pack never wastes an aurora. In co-op only the host runs the aurora in this batch.
 - Style is cosmetic only and never touches the economy.
+
+## Batch 5: Gale
+- Weather is a two-phase cycle (storm, calm) with lengths drawn from the planet's ranges. The sim uses the time-weighted average melt factor: (storm x inStorm + calm x 2) / (storm + calm), where inStorm = 0.4 North, 0.7 South, lifted toward 1 by Storm Shields. Digging is never touched by weather, so storms push players toward the pick and calms toward the torch.
+- Auto Swing counts as +0.12 activity in the sim; it only works while standing still and aiming at ice, so it saves effort rather than replacing play.
+- Quartermaster spends at most a quarter of the vault per buy and skips choose-one nodes so it never makes a permanent choice for the player.
+- Luck nodes are small, capped boosts (capsules, auroras, finds, the needle hint) so collecting stays a side reward next to the main economy.
