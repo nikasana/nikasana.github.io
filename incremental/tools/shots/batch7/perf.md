@@ -4,19 +4,19 @@ Measured under software WebGL (SwiftShader), so render time is not representativ
 
 | preset | settle after teleport (s) | draw calls | triangles | logic median (ms) | logic p95 (ms) | particles | loose coins (sky) |
 |---|---|---|---|---|---|---|---|
-| low | 34.9 | 299 | 401k | 2.90 | 9.30 | 137 | 57 (28) |
-| ultra | 107.3 | 414 | 445k | 5.20 | 6.60 | 175 | 54 (28) |
+| low | 4.0 | 281 | 261k | 2.30 | 9.50 | 101 | 33 (26) |
+| ultra | 6.5 | 386 | 275k | 7.10 | 14.70 | 89 | 33 (26) |
 
 8/8 checks passed.
 
-- PASS low: the heaviest scene is set up (climax, aurora, sky coins) ({"climax":true,"aurora":true,"sky":28})
-- PASS low: draw calls within budget (340) (299)
-- PASS low: triangles within budget (1.2M) (401k)
-- PASS low: game logic within budget (8 ms median) (median 2.90 ms, p95 9.30 ms over 13 frames)
-- PASS ultra: the heaviest scene is set up (climax, aurora, sky coins) ({"climax":true,"aurora":true,"sky":28})
-- PASS ultra: draw calls within budget (490) (414)
-- PASS ultra: triangles within budget (2.5M) (445k)
-- PASS ultra: game logic within budget (8 ms median) (median 5.20 ms, p95 6.60 ms over 5 frames)
+- PASS low: the heaviest scene is set up (climax, aurora, sky coins) ({"climax":true,"aurora":true,"sky":26})
+- PASS low: draw calls within budget (340) (281)
+- PASS low: triangles within budget (1.2M) (261k)
+- PASS low: game logic within budget (8 ms median) (median 2.30 ms, p95 9.50 ms over 16 frames)
+- PASS ultra: the heaviest scene is set up (climax, aurora, sky coins) ({"climax":true,"aurora":true,"sky":26})
+- PASS ultra: draw calls within budget (490) (386)
+- PASS ultra: triangles within budget (2.5M) (275k)
+- PASS ultra: game logic within budget (8 ms median) (median 7.10 ms, p95 14.70 ms over 9 frames)
 
 ## Console errors
 
