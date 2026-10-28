@@ -119,3 +119,9 @@ Choices made where the build prompt is silent, and the reasons. Updated every ba
 - The ice pass draws over a copy of the opaque pass's depth. A full-screen copy with depthTest off writes no depth in WebGL, so the ice was never occluded by opaque objects in front of it; the copy now uses depthFunc Always with the test on.
 - Giant coins keep the economy exact: COUNT_PER_M3 falls from 2.0 to 0.32 tries per m³ and COINS_PER_M3 from 0.58 to 0.093, so coinValue (value per m³ / coins per m³) makes each coin about six times richer; six pack slots per coin keep the bank trips as frequent. The "fully dug out" test samples the coin's centre plus 8 rim and 2 face points in its own orientation and needs 9 of 10 in air, so a coin resting on the floor of a hole still comes free.
 - The camp flattening multiplies the wind ridges by 0.25 and removes the rolling ground within 55 m (ramping back over the next 25 m). Old saves keep their edited chunks exactly, so a step of at most about 0.2 m can show where an edited chunk meets a regenerated one at the surface.
+
+## Mobile
+- The touch controls press the same bound actions as the keyboard and mouse (Input.hold / tapKey), so the game logic has no touch branch; on touch, "locked" simply means "playing", since there is no pointer lock.
+- Touch is detected with (pointer: coarse) and no fine pointer, so a laptop with a touch screen stays on mouse and keyboard; ?touch and ?desktop override it.
+- The stick is digital (four directions with a 30% dead zone) because the controller takes the four move actions; pushing past the stick's edge sprints. Look drags are scaled ×2.4 against mouse movement.
+- On the first run on a phone the Low preset at 60% render scale and a 72° field of view keep the frame cost down; players can raise it in Settings.

@@ -434,7 +434,7 @@ export class Menus {
         h('div.start-actions', {}, h('button.btn.primary', { onclick: () => { this.close(); if (onBegin) onBegin(pole); else g.newSave(pole); } }, 'Begin a new survey'),
           g.reverseUnlocked() ? h('button.btn', { title: 'Reverse Mode: freeze the worlds back. Same tools and trees, shorter goals.', onclick: () => { this.close(); g.newReverse(pole); } }, '❄️ Make It Snow') : '',
           g.started ? h('button.btn', { onclick: () => { this.close(); g.input.lock(); } }, 'Back to the ice') : ''),
-        h('div.start-foot', {}, 'Mouse and keyboard. WASD to move, left mouse to use your tool, U at the Outfitter for upgrades, Esc to pause.'),
+        h('div.start-foot', {}, g.touch ? 'Touch: your left thumb moves (push to the edge to sprint), drag anywhere else to look, hold USE to dig, JUMP rides the lift. Upgrades are at the terminal in the Outfitter\u2019s hut. ☰ pauses.' : 'Mouse and keyboard. WASD to move, left mouse to use your tool, the terminal in the Outfitter\u2019s hut for upgrades, Esc to pause.'),
       ),
       this.savesList(),
     );
@@ -627,7 +627,13 @@ class TreeView {
       const el = h(`div.tnode${n.gate ? '.gate' : ''}.k-${n.kind || 'stat'}`, { style: { left: `${this.pos[n.id][0]}px`, top: `${this.pos[n.id][1]}px`, '--tc': n.join ? TREE[n.join[0]].color : t.color, '--tc2': tc2 } });
       el.addEventListener('mouseenter', () => { this.hover = n.id; this.showTip(n.id); this.game.sfx.play('hover'); });
       el.addEventListener('mouseleave', () => { if (this.hover === n.id) { this.hover = null; this.tip.hidden = true; } });
-      el.addEventListener('click', (ev) => { ev.stopPropagation(); if (!this.dragged) this.buy(n.id, el); });
+      el.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        if (this.dragged) return;
+        // touch has no hover: the first tap shows what a node does, a second tap buys it
+        if (this.game.touch && this.hover !== n.id) { this.hover = n.id; this.showTip(n.id); return; }
+        this.buy(n.id, el);
+      });
       this.canvas.appendChild(el);
       this.nodes[n.id] = el;
     }
@@ -728,26 +734,57 @@ class TreeView {
   }
 
   bind() {
+    // drag to pan with a mouse or a finger; wheel or pinch to zoom
     let down = null;
-    this.onDown = (ev) => { if (ev.button !== 0) return; down = { x: ev.clientX, y: ev.clientY, ox: this.ox, oy: this.oy }; this.dragged = false; this.wrap.classList.add('drag'); };
+    const pts = new Map();
+    let pinch = null;
+    this.onDown = (ev) => {
+      if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+      pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      if (pts.size === 2) {
+        const [a, b] = [...pts.values()];
+        pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), scale: this.scale };
+        down = null;
+        return;
+      }
+      down = { x: ev.clientX, y: ev.clientY, ox: this.ox, oy: this.oy }; this.dragged = false; this.wrap.classList.add('drag');
+    };
     this.onMove = (ev) => {
+      if (!pts.has(ev.pointerId)) return;
+      pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      if (pinch && pts.size >= 2) {
+        const [a, b] = [...pts.values()];
+        const r = this.wrap.getBoundingClientRect();
+        const want = pinch.scale * Math.hypot(a.x - b.x, a.y - b.y) / Math.max(1, pinch.d);
+        this.zoomBy(want / this.scale, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top);
+        this.dragged = true;
+        return;
+      }
       if (!down) return;
       const dx = ev.clientX - down.x, dy = ev.clientY - down.y;
-      if (Math.abs(dx) + Math.abs(dy) > 4) this.dragged = true;
+      if (Math.abs(dx) + Math.abs(dy) > 6) this.dragged = true;
       this.ox = down.ox + dx; this.oy = down.oy + dy; this.apply();
     };
-    this.onUp = () => { down = null; this.wrap.classList.remove('drag'); setTimeout(() => { this.dragged = false; }, 0); };
+    this.onUp = (ev) => {
+      pts.delete(ev.pointerId);
+      if (pts.size < 2) pinch = null;
+      if (pts.size) return;
+      down = null; this.wrap.classList.remove('drag'); setTimeout(() => { this.dragged = false; }, 0);
+    };
     this.onWheel = (ev) => { ev.preventDefault(); const r = this.wrap.getBoundingClientRect(); this.zoomBy(ev.deltaY < 0 ? 1.1 : 1 / 1.1, ev.clientX - r.left, ev.clientY - r.top); };
-    this.wrap.addEventListener('mousedown', this.onDown);
-    addEventListener('mousemove', this.onMove);
-    addEventListener('mouseup', this.onUp);
+    this.wrap.style.touchAction = 'none';
+    this.wrap.addEventListener('pointerdown', this.onDown);
+    addEventListener('pointermove', this.onMove);
+    addEventListener('pointerup', this.onUp);
+    addEventListener('pointercancel', this.onUp);
     this.wrap.addEventListener('wheel', this.onWheel, { passive: false });
     this.timer = setInterval(() => this.refresh(), 400);
   }
 
   destroy() {
-    removeEventListener('mousemove', this.onMove);
-    removeEventListener('mouseup', this.onUp);
+    removeEventListener('pointermove', this.onMove);
+    removeEventListener('pointerup', this.onUp);
+    removeEventListener('pointercancel', this.onUp);
     clearInterval(this.timer);
   }
 }

@@ -26,6 +26,7 @@ import { Sfx } from './audio/sfx.js';
 import { Music } from './audio/music.js';
 import { Hud } from './ui/hud.js';
 import { Menus } from './ui/menus.js';
+import { TouchControls, isTouchDevice } from './ui/touch.js';
 import { DevMenu, PerfOverlay } from './ui/devmenu.js';
 import { h } from './ui/dom.js';
 import { Crew } from './net/crew.js';
@@ -65,6 +66,9 @@ class Game {
     const saved = Save.readSettings() || {};
     this.settings = { ...DEFAULT_SETTINGS, ...saved, volume: { ...DEFAULT_SETTINGS.volume, ...(saved.volume || {}) } };
     if (this.qs.get('preset')) Object.assign(this.settings, PRESETS[this.qs.get('preset')], { preset: this.qs.get('preset'), shadowQ: this.qs.get('preset') });
+    // phones and tablets: touch controls, and on the first run a light preset for their GPUs
+    this.touch = isTouchDevice(this.qs);
+    if (this.touch && !saved.preset && !this.qs.get('preset')) Object.assign(this.settings, PRESETS.low, { preset: 'low', shadowQ: 'low', renderScale: 0.6, fov: 72 });
     numberFormat.scientific = this.settings.scientific;
     this.defaultBindings = { ...DEFAULT_BINDINGS };
     this.timeScale = 1;
@@ -112,6 +116,7 @@ class Game {
     this.avatars = new Avatars(this.gfx.scene, this.atmo);
 
     this.input = new Input(canvas, this.settings.bindings);
+    this.input.touch = this.touch;
     this.ctl = new Controller(this.volume);
     this.ctl.colliders = this.works.colliders;
     this.tools = new Tools(this);
@@ -130,8 +135,14 @@ class Game {
     if (this.dev) this.devMenu = new DevMenu(this.ui, this);
     this.planetUi = h('div.planet-ui', { hidden: true });
     this.ui.appendChild(this.planetUi);
-    this.clickPlay = h('div.click-to-play', { hidden: true }, 'Click to continue');
+    this.clickPlay = h('div.click-to-play', { hidden: true }, this.touch ? 'Tap to continue' : 'Click to continue');
     this.ui.appendChild(this.clickPlay);
+    if (this.touch) {
+      document.body.classList.add('touch');
+      document.body.appendChild(h('div.rotate-hint', {}, 'Turn your device sideways for the best view'));
+      this.touchUi = new TouchControls(this.ui, this);
+      this.clickPlay.addEventListener('pointerdown', () => { this.startAudio(); if (this.wantsLock()) this.input.lock(); });
+    }
 
     this.crew = new Crew(this, this.coopDebug);
     this.crew.name = this.settings.crewName;
@@ -229,7 +240,7 @@ class Game {
         if (was === 'start') return;
         this.menus.close();
         if (this.started) this.clickPlay.hidden = false;
-      }
+      } else if (inp.touch && this.started && this.view === 'fp') inp.unlock();   // touch: the ☰ button pauses
       return;
     }
     if (!this.started || this.menus.cur === 'start') return;
@@ -261,7 +272,7 @@ class Game {
     if (!name && this.started && this.view === 'fp' && !this.input.locked) {
       // back to play: take the mouse again straight away (menus close from a key or click, which allows it)
       this.input.lock();
-      this.clickPlay.hidden = false;
+      this.clickPlay.hidden = this.input.locked;   // touch resumes at once; a desktop waits for the pointer lock
     }
   }
 
@@ -578,12 +589,12 @@ class Game {
     const e = this.econ, t = M.costTable(e);
     const list = M.available(e).map((n) => ({ n: skinNode(n, e.reverse), cost: t[n.id].cost })).sort((a, b) => (a.cost.lt(b.cost) ? -1 : 1)).slice(0, 5)
       .map(({ n, cost }) => ({ icon: n.icon, name: n.name, cost: format(cost), can: e.coins.gte(cost) }));
-    this.works.drawTerminal({ coins: format(e.coins), list, ready: list.some((x) => x.can), aimed: this.aimTerminal, reverse: e.reverse });
+    this.works.drawTerminal({ coins: format(e.coins), list, ready: list.some((x) => x.can), aimed: this.aimTerminal, reverse: e.reverse, touch: this.touch });
   }
   canUpgrade() { return this.atOutfitter() || this.dev; }
   upgradeAway() {
     this.sfx.play('deny');
-    this.hud.notice("Upgrades are at the Outfitter's hut", 'Ride the lift up, walk into the blue hut ▣ on the surface near where you started, and click the upgrade terminal on its back wall.', '', 7000);
+    this.hud.notice("Upgrades are at the Outfitter's hut", `Ride the lift up, walk into the blue hut ▣ on the surface near where you started, and ${this.clickWord()} at the upgrade terminal on its back wall.`, '', 7000);
   }
 
   placeStart() {
@@ -712,8 +723,8 @@ class Game {
     this.sfx.play('buy', { step: this.econ.purchases });
     const n = skinNode(M.NODE_BY_ID[id], this.econ.reverse);
     if (n.gate) this.hud.notice(`New tool: ${n.name}`, n.desc, 'money');
-    if (n.root && n.tree === 'melt') this.hud.notice(this.econ.reverse ? 'Frost Wand unlocked' : 'Torch unlocked', this.econ.reverse ? `Press ${this.keyName('tool2')} to switch to it, aim at the ice and hold left mouse to grow new ice.` : `Press ${this.keyName('tool2')} to switch to it. Warming ice before you dig it frees more.`, 'money');
-    if (n.root && n.tree === 'vision') this.hud.notice('Lamp unlocked', `Press ${this.keyName('tool4')} and hold left mouse to focus it; ${this.keyName('lamp')} switches it on or off.`, 'money');
+    if (n.root && n.tree === 'melt') this.hud.notice(this.econ.reverse ? 'Frost Wand unlocked' : 'Torch unlocked', this.econ.reverse ? `Press ${this.keyName('tool2')} to switch to it, aim at the ice and hold ${this.useWord()} to grow new ice.` : `Press ${this.keyName('tool2')} to switch to it. Warming ice before you dig it frees more.`, 'money');
+    if (n.root && n.tree === 'vision') this.hud.notice('Lamp unlocked', `Press ${this.keyName('tool4')} and hold ${this.useWord()} to focus it; ${this.keyName('lamp')} switches it on or off.`, 'money');
     for (const s of res.fresh) this.onResonance(s);
     if (this.crew.isHost) { this.crew.econT = 0; this.crew.event({ k: 'buy', id }); }
     this.menus.refresh();
@@ -726,7 +737,13 @@ class Game {
     if (this.crew.isHost) this.crew.event({ k: 'res', id: s.id });
   }
 
-  keyName(a) { const c = this.input.code(a) || ''; return c.startsWith('Key') ? c.slice(3) : c.startsWith('Digit') ? c.slice(5) : c; }
+  keyName(a) {
+    if (this.touch) return { use: 'USE', alt: 'ALT', jump: 'JUMP', lamp: 'LAMP', upgrades: '⬆', planet: '🌐', collections: '📓', coop: '👥', music: '🎵', tool1: 'tool 1', tool2: 'tool 2', tool3: 'tool 3', tool4: 'tool 4' }[a] || a;
+    const c = this.input.code(a) || ''; return c.startsWith('Key') ? c.slice(3) : c.startsWith('Digit') ? c.slice(5) : c;
+  }
+  // "left mouse" / "click" on a desktop, the USE button on a touch screen
+  useWord() { return this.touch ? 'USE' : 'left mouse'; }
+  clickWord() { return this.touch ? 'tap USE' : 'click'; }
 
   // ---------- world actions ----------
 
@@ -1315,7 +1332,7 @@ class Game {
     this.profile.lastSolo = slot; this.writeProfile();
     this.newCampaign(pole, slot);
     this.enterPlay();
-    this.hud.notice('Welcome to Frostara', `Hold left mouse on the ice to dig. Coins go in your pack; stand by the glowing lift beacon to bank them. Buy upgrades inside the blue Outfitter's hut ▣ nearby: click the terminal on its back wall.`, '', 14000);
+    this.hud.notice('Welcome to Frostara', `Hold ${this.useWord()} on the ice to dig. Coins go in your pack; stand by the glowing lift beacon to bank them. Buy upgrades inside the blue Outfitter's hut ▣ nearby: ${this.clickWord()} at the terminal on its back wall.`, '', 14000);
   }
 
   // Reverse Mode ("Make It Snow") unlocks once Omega is melted through
@@ -1328,7 +1345,7 @@ class Game {
     this.newCampaign(pole, slot, 'frostara', { reverse: true, scale: REVERSE.scale });
     this.enterPlay();
     this.music.cue('swell');
-    this.hud.notice('❄️ Make It Snow', 'Reverse Mode: freeze the worlds back. Your torch is now a Frost Wand (tool 2): aim at the ice and hold left mouse to grow new ice. Every cubic metre you freeze pays like one melted, and the goals are shorter.', 'money', 15000);
+    this.hud.notice('❄️ Make It Snow', `Reverse Mode: freeze the worlds back. Your torch is now a Frost Wand (tool 2): aim at the ice and hold ${this.useWord()} to grow new ice. Every cubic metre you freeze pays like one melted, and the goals are shorter.`, 'money', 15000);
   }
 
   deleteSave(slot) {
@@ -1512,7 +1529,7 @@ class Game {
         if (!this.slotOverride) { this.newSave(pole); return; }
         this.newCampaign(pole, this.slot);
         begin();
-        this.hud.notice('Welcome to Frostara', `Hold left mouse on the ice to dig. Coins go in your pack; stay near the glowing lift beacon to bank them. Buy upgrades inside the blue Outfitter's hut ▣ nearby: click the terminal on its back wall.`, '', 14000);
+        this.hud.notice('Welcome to Frostara', `Hold ${this.useWord()} on the ice to dig. Coins go in your pack; stay near the glowing lift beacon to bank them. Buy upgrades inside the blue Outfitter's hut ▣ nearby: ${this.clickWord()} at the terminal on its back wall.`, '', 14000);
       });
     }
     if (join) setTimeout(() => this.crewJoin(join), 300);
@@ -1598,6 +1615,7 @@ class Game {
     const st = this.stats;
     const depthHere = this.depthAt(eye.x, eye.y, eye.z);
 
+    if (this.touchUi) this.touchUi.update();
     // the upgrade terminal in the Outfitter's hut: aim at it and click
     this.aimTerminal = playing && this.works.terminalHit(eye, dir);
     if (this.aimTerminal && inp.locked && inp.was('use')) this.openUpgrades();
@@ -1765,7 +1783,7 @@ class Game {
     const deep = this.depthAt(this.ctl.pos.x, this.ctl.pos.y, this.ctl.pos.z) > 1.4;
     const full = c.count >= st.carry - 0.01;
     const jump = this.keyName('jump');
-    if (this.aimTerminal) prompt = this.canUpgrade() ? 'Upgrade terminal · click to open the upgrade tree' : 'Upgrade terminal';
+    if (this.aimTerminal) prompt = this.canUpgrade() ? `Upgrade terminal · ${this.clickWord()} to open the upgrade tree` : 'Upgrade terminal';
     else if (this.ride) prompt = 'Riding the lift up';
     else if (this.atBeacon && deep) prompt = c.value > 0 ? `Banking your pack · hold ${jump} to ride the lift up` : `Hold ${jump} to ride the lift up and out of the crater`;
     else if (full) prompt = 'Pack full · walk to the glowing lift beacon ◆ to bank it';

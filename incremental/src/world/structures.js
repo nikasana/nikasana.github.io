@@ -338,7 +338,8 @@ export class Works {
       x.textAlign = 'left';
     });
     x.fillStyle = info.ready ? '#e6f1f4' : '#9fb8c2'; x.font = "600 28px 'IBM Plex Mono', monospace";
-    x.fillText(info.aimed ? '▶ Click to open the upgrade tree' : 'Aim at this screen and click to open the upgrade tree', 40, H - 36);
+    const act = info.touch ? 'tap USE' : 'click';
+    x.fillText(info.aimed ? `▶ ${act[0].toUpperCase() + act.slice(1)} to open the upgrade tree` : `Aim at this screen and ${act} to open the upgrade tree`, 40, H - 36);
     this.termTex.needsUpdate = true;
   }
 

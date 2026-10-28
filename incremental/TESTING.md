@@ -12,6 +12,20 @@ How to reach and check every feature. Each batch adds a section; earlier section
 
 ---
 
+## Mobile
+
+Automated: `node incremental/tools/mobile.mjs` (an emulated phone, 844×390, touch; screenshots in `tools/shots/mobile/`).
+
+| Feature | How to reach it | Working looks like |
+|---|---|---|
+| Opens on a phone | Open the link on a phone (or add `?touch` on a desktop) | The start screen, then touch buttons over the game |
+| Move and look | Left thumb anywhere on the left; drag on the right | A stick appears under the thumb; the view turns with the drag |
+| Tools | Hold USE / ALT; tap a tool slot | Digging, melting, the lamp; the slot lights up |
+| Lift | Hold JUMP by the beacon | You ride up |
+| Upgrades | Walk into the hut, aim at the terminal, tap USE | The tree opens; drag pans, pinch zooms, tap shows, tap again buys |
+| Menus | ☰ 🌐 📓 👥 🎵 buttons | Pause, planet view (drag turns the globe), notebook, crew, music |
+| Portrait | Hold the phone upright | A hint to turn it sideways; everything still works |
+
 ## Feedback round after Batch 8
 
 Automated: `node incremental/tools/polish1.mjs` (screenshots and report in `tools/shots/polish1/`).

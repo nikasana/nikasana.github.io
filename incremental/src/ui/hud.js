@@ -123,7 +123,7 @@ export class Hud {
         this.goalId = s.goal.id;
         clear(this.goalName).append(h('span', {}, n.icon), h('span', { style: { color: TREE_COLOR[n.tree] } }, n.name));
       }
-      this.goalCost.textContent = s.goalReady ? (g.atOutfitter() ? 'Ready · click the terminal' : 'Ready · go to the Outfitter ▣') : `${format(s.goal.cost)} coins`;
+      this.goalCost.textContent = s.goalReady ? (g.atOutfitter() ? `Ready · ${g.clickWord()} at the terminal` : 'Ready · go to the Outfitter ▣') : `${format(s.goal.cost)} coins`;
       this.goal.classList.toggle('ready', s.goalReady);
       const p = Math.min(1, s.goalProgress);
       this.goalGlow.style.opacity = String(Math.pow(p, 3) * 0.95);
@@ -139,7 +139,7 @@ export class Hud {
         const tier = s.tiers[i];
         const ok = F.id === 'dig' || tier >= 1;
         const name = ok ? F.tiers[Math.max(0, tier - 1)] : F.id === 'planet' ? 'Planet tree' : 'Locked';
-        this.tools.append(h(`div.slot${i === g.tools.family ? '.on' : ''}${ok ? '' : '.locked'}`, { title: F.id === 'planet' ? 'Planet tools arrive on Cinderice, the next planet' : '' },
+        this.tools.append(h(`div.slot${i === g.tools.family ? '.on' : ''}${ok ? '' : '.locked'}`, { onpointerdown: (ev) => { if (g.touch) { ev.preventDefault(); g.input.tapKey(g.input.code(F.key)); } }, title: F.id === 'planet' ? 'Planet tools arrive on Cinderice, the next planet' : '' },
           h('span.key', {}, keyLabel(g.input.code(F.key))), h('span.nm', {}, F.name), h('span.tier', {}, name)));
       });
     }

@@ -1,5 +1,11 @@
 # Changelog
 
+## Mobile: phones and tablets
+- The game opens on phones and tablets (the desktop-only block is gone) and detects touch screens; add `?touch` to try the touch controls on a desktop, or `?desktop` to turn them off.
+- Touch controls: a move stick appears under your left thumb (push it to the edge to sprint), drag anywhere else to look; hold USE (the tool), ALT (its second action) and JUMP (jump, and ride the lift); LAMP toggles the lamp; tap a tool slot to switch tools; buttons for pause, upgrades, planet view, notebook, crew and music.
+- The upgrade tree pans with a finger and zooms with a pinch; on touch the first tap on a node shows what it does and a second tap buys it. Menus scroll with a finger.
+- Phones start on the Low preset at 60% render scale. The HUD, menus and start screen fit small screens; in portrait a hint suggests turning the phone sideways. Hints and the hut terminal say "tap USE" instead of "click" or "left mouse".
+
 ## Feedback round after Batch 8
 - Fixed: the snow and ice surface was drawn over everything standing in front of it below the horizon (the lower part of buildings, posts, the hut's interior). The depth copy before the ice pass never wrote depth, because WebGL skips depth writes when the depth test is off; it now always passes the test and writes.
 - The camp is flat: no wind ridges or rolling ground within about 55 m of the claim centre, so nothing low hides behind a ridge; buildings stand on the highest ground under their footprint.
