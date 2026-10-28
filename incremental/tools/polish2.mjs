@@ -119,11 +119,12 @@ const depot = await ev(async () => {
   fill(); await sleep(1500);
   const away = c.count;
   g.ctl.teleport(d.x + 1.2, g.volume.floorBelow(d.x + 1.2, d.y + 3, d.z, 8) + 0.05, d.z);
-  await sleep(300); const n0 = c.count, t0 = g.time; await sleep(2000);
+  const gw = async (sec) => { const a = g.time; while (g.time - a < sec) await sleep(150); };
+  await gw(0.4); const n0 = c.count, t0 = g.time; await gw(1.5);
   const slow = (n0 - c.count) / (g.time - t0);   // game time: a slow software frame is clamped
   const base = g.stats.deliver;
   g.devLevel('dep_belt', 5); await sleep(300);
-  fill(); await sleep(300); const n1 = c.count, t1 = g.time; await sleep(1000);
+  fill(); await gw(0.4); const n1 = c.count, t1 = g.time; await gw(1.0);
   const fast = (n1 - c.count) / (g.time - t1);
   return { away, slow, fast, base, up: g.stats.deliver, atDepot: g.atDepot };
 });
@@ -163,7 +164,8 @@ const shop = await ev(async () => {
   t.refresh();
   const tabs = [...document.querySelectorAll('.up-tab')].length, count = +(document.querySelector('.up-tab .n')?.textContent || 0);
   const ready = document.querySelectorAll('.up-list:not(.soon) .up-row.can').length;
-  const best = document.querySelector('.up-list .up-row small')?.textContent.includes('Best value');
+  const best = document.querySelector('.up-list .up-row')?.textContent.includes('Best value');
+  const explained = [...document.querySelectorAll('.up-list .up-row .fx')].every((x) => x.textContent.length > 3) && [...document.querySelectorAll('.tnode .fx')].length > 100;
   // a first click on another node only selects it
   t.dragged = false; t.select(null);
   const id = 'dig_grip', L0 = g.econ.levels[id] || 0;
@@ -172,17 +174,46 @@ const shop = await ev(async () => {
   t.tip.querySelector('.up-buy.go').click(); await sleep(200);
   const afterBuy = (g.econ.levels[id] || 0) - L0;
   const maxBtn = t.tip.querySelector('.up-buy.max'), n = maxBtn ? t.buyMax(id) : 0;
+  // double-clicking a row in the Ready to buy list buys it there
+  t.refresh(); await sleep(200);
+  const rowEl = document.querySelector('.up-list:not(.soon) .up-row.can');
+  const before = g.econ.purchases;
+  rowEl?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+  await sleep(200);
+  const dbl = g.econ.purchases - before;
   t.search.value = 'torch'; t.applyFilter();
-  const hits = document.querySelectorAll('.tnode.match').length, dimmed = document.querySelectorAll('.tnode.dim').length;
+  const hits = document.querySelectorAll('.up-results .up-row').length, branchHidden = Object.values(t.sections).every((x) => x.el.hidden);
   t.search.value = ''; t.applyFilter();
-  t.focusBranch('dig'); await sleep(500);
-  const digDim = t.nodes.dig_edge.classList.contains('dim'), meltDim = t.nodes.melt_torch ? t.nodes.melt_torch.classList.contains('dim') : null;
-  return { tabs, count, ready, best, afterSelect, panel, afterBuy, max: n, hits, dimmed, digDim, meltDim };
+  t.showBranch('melt'); await sleep(300);
+  const oneBranch = !t.sections.melt.el.hidden && t.sections.dig.el.hidden;
+  // a branch reads top to bottom: every upgrade sits below the upgrades it needs
+  const below = t.sections.dig.list.every((n) => n.parents.every((p) => !t.sections.dig.list.some((q) => q.id === p) || parseFloat(t.nodes[p].style.top) < parseFloat(t.nodes[n.id].style.top)));
+  t.showBranch('all'); await sleep(300);
+  const overview = document.querySelectorAll('.up-ov').length;
+  return { tabs, count, ready, best, explained, afterSelect, panel, afterBuy, max: n, dbl, hits, branchHidden, oneBranch, below, overview };
 });
-check('Upgrade screen: branch tabs with a count of what you can buy, and a Ready to buy list with the best value', shop.tabs >= 10 && shop.count > 0 && shop.ready > 0 && shop.best, JSON.stringify(shop));
-check('Upgrade screen: a click selects and shows before → after with a BUY button; BUY buys; Buy max buys several', shop.afterSelect === 0 && shop.panel && shop.afterBuy === 1 && shop.max >= 1, JSON.stringify(shop));
-check('Upgrade screen: search highlights matches, a branch tab dims the others', shop.hits >= 1 && shop.dimmed > 100 && !shop.digDim && shop.meltDim === true, JSON.stringify(shop));
+check('Upgrade screen: branch tabs with a count of what you can buy, a Ready to buy list with the best value, and a one-line explanation on every card and row', shop.tabs >= 10 && shop.count > 0 && shop.ready > 0 && shop.best && shop.explained, JSON.stringify(shop));
+check('Upgrade screen: a click selects and shows before → after with a BUY button; BUY buys; Buy max buys several; double-clicking a list row buys it', shop.afterSelect === 0 && shop.panel && shop.afterBuy === 1 && shop.max >= 1 && shop.dbl === 1, JSON.stringify(shop));
+check('Upgrade screen: one branch at a time, laid out top to bottom; All shows every branch; search lists matches', shop.hits >= 1 && shop.branchHidden && shop.oneBranch && shop.below && shop.overview === 10, JSON.stringify(shop));
 await shot('05-upgrade-shop');
+await ev(() => window.__game.menus.close());
+
+// the lift: out of sight in a crater; holding R brings it and rides you up; Space only jumps
+await ev(() => { const g = window.__game; g.input.locked = true; g.clickPlay.hidden = true; g.ctl.noclip = false; g.ctl.teleport(4, window.__surfaceY(4, -4) + 0.3, -4); g.devShaft(10); });
+await wait(3000);
+const lift = await ev(async () => {
+  const g = window.__game, sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const hidden = !g.works.beacon.visible && document.querySelector('.hud') && g.liftReady;
+  g.input.down.add('Space'); const t0 = g.time; while (g.time - t0 < 1.2) await sleep(200); g.input.down.delete('Space');
+  const jumpRode = !!g.ride;
+  const y0 = g.ctl.pos.y;
+  g.input.down.add('KeyR'); const t1 = g.time; while (g.time - t1 < 1.0 && !g.ride) await sleep(150);
+  const rode = !!g.ride, shown = g.works.beacon.visible;
+  g.input.down.delete('KeyR');
+  const t2 = g.time; while (g.ride && g.time - t2 < 20) await sleep(300);
+  return { hidden: !!hidden, jumpRode, rode, shown, up: g.ctl.pos.y - y0, key: g.input.code('lift') };
+});
+check('The lift stays out of sight in a crater; hold R and it carries you up (Space only jumps)', lift.hidden && !lift.jumpRode && lift.rode && lift.shown && lift.up > 5 && lift.key === 'KeyR', JSON.stringify(lift));
 
 await browser.close();
 const failed = results.filter((r) => !r.ok);

@@ -7,7 +7,7 @@ export const DEFAULT_BINDINGS = {
   use: 'Mouse0', alt: 'Mouse2',
   tool1: 'Digit1', tool2: 'Digit2', tool3: 'Digit3', tool4: 'Digit4',
   planet: 'Tab', upgrades: 'KeyU', coop: 'KeyC', music: 'KeyM',
-  collections: 'KeyJ', lamp: 'KeyF',
+  collections: 'KeyJ', lamp: 'KeyF', lift: 'KeyR',
 };
 
 export const ACTION_LABELS = {
@@ -15,7 +15,7 @@ export const ACTION_LABELS = {
   jump: 'Jump', sprint: 'Sprint', use: 'Use tool', alt: 'Tool secondary',
   tool1: 'Dig tools', tool2: 'Melt tools', tool3: 'Planet tools', tool4: 'Vision tools',
   planet: 'Planet view', upgrades: 'Upgrades', coop: 'Co-op crews', music: 'Music',
-  collections: 'Notebook', lamp: 'Toggle lamp',
+  collections: 'Notebook', lamp: 'Toggle lamp', lift: 'Ride the lift up (hold, in a crater)',
 };
 
 export function keyLabel(code) {

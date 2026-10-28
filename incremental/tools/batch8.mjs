@@ -119,7 +119,7 @@ await shot('04-accessibility');
 await ev(() => [...document.querySelectorAll('.set-row')].filter((r) => /Colour-safe|Captions/.test(r.textContent)).forEach((r) => r.querySelector('button.toggle').click()));
 await ev(() => window.__game.menus.close());
 const safe = await ev(() => { const g = window.__game; return { on: g.settings.colorSafe, captions: g.settings.captions, markers: g.hud.nav.markers().map((m) => `${m.label || m.shape}:${m.col}:${m.shape}`) }; });
-check('Colour-safe markers switch to the Okabe-Ito palette, each with its own shape', safe.on && safe.markers.some((m) => m.startsWith('LIFT:#56b4e9:diamond')) && safe.markers.some((m) => m.startsWith('VAULT:#e69f00:square')) && safe.markers.some((m) => m.startsWith('OUTFITTER:#0072b2:triangle')), safe.markers.join(' '));
+check('Colour-safe markers switch to the Okabe-Ito palette, each with its own shape', safe.on && safe.markers.some((m) => m.startsWith('DEPOT:#d55e00:hexagon')) && safe.markers.some((m) => m.startsWith('VAULT:#e69f00:square')) && safe.markers.some((m) => m.startsWith('OUTFITTER:#0072b2:triangle')), safe.markers.join(' '));
 const cap = await ev(async () => { const g = window.__game; g.music.cue('resonance'); g.music.cue('stinger'); await new Promise((r) => setTimeout(r, 300)); return [...document.querySelectorAll('.caption')].map((c) => c.textContent); });
 check('Captions show for musical cues', cap.some((t) => t.includes('resonance')) && cap.some((t) => t.includes('fanfare')), cap.join(' | '));
 await shot('05-captions');

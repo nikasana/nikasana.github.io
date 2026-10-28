@@ -44,7 +44,7 @@ export class Navigation {
     const g = this.game, out = [];
     const safe = !!g.settings.colorSafe;
     const b = g.works.beaconPos();
-    out.push({ x: b.x, z: b.z, col: safe ? SAFE.lift : COL.glacier, shape: 'diamond', label: 'LIFT' });
+    if (g.ride) out.push({ x: b.x, z: b.z, col: safe ? SAFE.lift : COL.glacier, shape: 'diamond', label: 'LIFT' });
     if (g.works.outfitterPos) { const o = g.works.outfitterPos; out.push({ x: o.x, z: o.z, col: safe ? SAFE.outfitter : '#7fd4ff', shape: 'triangle', label: 'OUTFITTER' }); }
     if ((g.stats.visionTier || 0) >= 3 || (g.revealUntil || 0) > g.time) {
       for (const it of g.frozen.items) {

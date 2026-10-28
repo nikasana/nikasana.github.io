@@ -766,7 +766,7 @@ class Game {
   }
 
   keyName(a) {
-    if (this.touch) return { use: 'USE', alt: 'ALT', jump: 'JUMP', lamp: 'LAMP', upgrades: '⬆', planet: '🌐', collections: '📓', coop: '👥', music: '🎵', tool1: 'tool 1', tool2: 'tool 2', tool3: 'tool 3', tool4: 'tool 4' }[a] || a;
+    if (this.touch) return { lift: 'LIFT', use: 'USE', alt: 'ALT', jump: 'JUMP', lamp: 'LAMP', upgrades: '⬆', planet: '🌐', collections: '📓', coop: '👥', music: '🎵', tool1: 'tool 1', tool2: 'tool 2', tool3: 'tool 3', tool4: 'tool 4' }[a] || a;
     const c = this.input.code(a) || ''; return c.startsWith('Key') ? c.slice(3) : c.startsWith('Digit') ? c.slice(5) : c;
   }
   // "left mouse" / "click" on a desktop, the USE button on a touch screen
@@ -933,23 +933,30 @@ class Game {
         if (this.works.pileCount > before) this.sfx.play('pile', { pos: this.works.vaultCenter() });
       }
     } else this.deliverAcc = 0;
-    this.sfx.loop('hum', this.audio.ready, { level: Math.max(0, 1 - chest.distanceTo(bp) / 10) });
+    this.sfx.loop('hum', this.audio.ready, { level: this.ride ? 1 : 0 });
   }
 
   // ---------- riding the lift ----------
 
-  // Hold jump at the beacon to ride the lift to the surface; you step off on the nearest solid rim.
-  updateRide(dt, holdJump) {
+  // Hold the lift key (R; LIFT on touch) anywhere in a crater: the lift comes up under you and carries you
+  // to the surface, where you step off on the nearest solid rim. It stays out of sight the rest of the time.
+  updateRide(dt, holdLift) {
     const b = this.works.beaconPos();
     const deep = this.depthAt(this.ctl.pos.x, this.ctl.pos.y, this.ctl.pos.z) > 1.4;
     if (!this.ride) {
-      this.liftReady = this.atBeacon && deep;
-      if (holdJump && this.liftReady) {
+      this.liftReady = deep;
+      if (holdLift && this.liftReady) {
         this.rideHold = (this.rideHold || 0) + dt;
-        if (this.rideHold > 0.5) { this.ride = { t: 0 }; this.rideHold = 0; this.sfx.play('bank', { pos: b, count: 0 }); }
+        if (this.rideHold > 0.5) {
+          this.ride = { t: 0 }; this.rideHold = 0;
+          b.set(this.ctl.pos.x, this.ctl.pos.y + 1.35, this.ctl.pos.z - 0.01);   // the lift arrives right where you stand
+          this.sfx.play('bank', { pos: b, count: 0 });
+        }
       } else this.rideHold = 0;
+      this.works.setLiftVisible(!!this.ride);
       return;
     }
+    this.works.setLiftVisible(true);
     // haul up with the beacon
     const top = surfaceY(b.x, b.z) + 3;
     const speed = Math.max(4, this.stats.liftSpeed * 4);
@@ -1626,12 +1633,12 @@ class Game {
     this.physAcc += dt;
     const move = playing && inp.locked && !this.ride;
     // on touch the LIFT button rides and JUMP only jumps; on a keyboard, jump at the beacon rides
-    this.updateRide(dt, playing && inp.locked && (this.touch ? !!this.touchLift : inp.is('jump')));
+    this.updateRide(dt, playing && inp.locked && (inp.is('lift') || !!this.touchLift));
     while (this.physAcc >= PHYS_STEP && !this.ride) {
       this.ctl.step(PHYS_STEP, {
         forward: move ? (inp.is('forward') ? 1 : 0) - (inp.is('back') ? 1 : 0) : 0,
         strafe: move ? (inp.is('right') ? 1 : 0) - (inp.is('left') ? 1 : 0) : 0,
-        sprint: move && inp.is('sprint'), jump: move && inp.is('jump') && (this.touch || !this.liftReady),
+        sprint: move && inp.is('sprint'), jump: move && inp.is('jump'),
       });
       this.physAcc -= PHYS_STEP;
     }
@@ -1789,7 +1796,9 @@ class Game {
     this.hudT -= dt;
     if (this.hudT <= 0 && (this.view === 'fp' || this.view === 'fpIn')) { this.hudT = 0.1; this.updateHud(depthHere); }
 
-    this.gfx.render(dt, this.time);
+    // a full-screen menu covers the world: redraw it only now and then, so the menu stays smooth
+    this.menuRenderT = (this.menuRenderT || 0) - dt;
+    if (!this.menus.open || this.menuRenderT <= 0 || this.postcardPending) { this.menuRenderT = 0.5; this.gfx.render(dt, this.time); }
     if (this.postcardPending) this.takePostcard();
     inp.endFrame();
   }
@@ -1827,12 +1836,12 @@ class Game {
     let prompt = null;
     const deep = this.depthAt(this.ctl.pos.x, this.ctl.pos.y, this.ctl.pos.z) > 1.4;
     const full = c.count >= st.carry - 0.01;
-    const jump = this.touch ? 'LIFT ▲' : this.keyName('jump');   // on touch the lift has its own button
+    const jump = this.touch ? 'LIFT ▲' : this.keyName('lift');   // the lift has its own key / button
     if (this.aimTerminal) prompt = this.canUpgrade() ? `Upgrade terminal · ${this.clickWord()} to open the upgrade tree` : 'Upgrade terminal';
     else if (this.ride) prompt = 'Riding the lift up';
-    else if (this.atBeacon && deep) prompt = `Hold ${jump} to ride the lift up and out of the crater`;
+    else if (this.rideHold > 0) prompt = 'The lift is coming…';
     else if (this.atDepot && c.count > 0.01) prompt = `Delivering your pack · ${Math.round(c.count)} slots left · ${Math.round(st.deliver)} a second`;
-    else if (full) prompt = deep ? `Pack full · ride the lift up (hold ${jump} by the beacon ◆) and deliver it at the depot ⛟` : 'Pack full · deliver it at the depot ⛟ by the Outfitter\u2019s hut';
+    else if (full) prompt = deep ? `Pack full · hold ${jump} to ride the lift up, then deliver it at the depot ⛟` : 'Pack full · deliver it at the depot ⛟ by the Outfitter\u2019s hut';
     else if (this.chain.n > 0 && this.coins.loose.some((k) => k.sky)) prompt = `Aurora Chain ${this.chain.n} · sky coins worth ×${Math.min(4, 1 + 0.2 * this.chain.n).toFixed(1)}`;
     else if (this.climaxOn && this.time % 40 < 6) prompt = 'The core wakes · the storms are silent · catch the falling coins';
     else if (this.weather && !this.climaxOn && FAMILIES[this.tools.family].id === 'melt') prompt = this.weather.state === 'calm' ? `Wind window · ${Math.ceil(this.weather.left)} s · melting pays double` : `Storm · melting is weak · calm in about ${Math.ceil(this.weather.left)} s`;
@@ -1843,11 +1852,11 @@ class Game {
       prompt = `${it.data.name} · ${P.kind === 'heat' ? 'frozen shut: melt the ice right next to it' : P.kind === 'tide' ? 'tide-sealed: wait beside it while the tide turns' : 'light-sealed: hold your focused lamp on it'} (${Math.round(100 * (it.progress || 0) / P.need)}%)`;
     }
     else if (this.frozen.needleNear) prompt = `✦ The Golden Needle is right here in the ice (${Math.round(this.frozen.needleNear.clear * 100)}% dug clear) · dig next to it to knock it free; it flies to you`;
-    else if (deep && this.time - (this.liftHintAt || -99) < 6) prompt = `Stand by the glowing lift beacon ◆ and hold ${jump} to ride up`;
+    else if (deep && this.time - (this.liftHintAt || -99) < 6) prompt = `Hold ${jump} anywhere in the crater to ride the lift up`;
     // first-time explanations
     const tips = this.state.tips || (this.state.tips = {});
     if (full && !tips.full) { tips.full = 1; this.hud.notice('Your pack is full', 'Coins you free go into your pack first. They only count once delivered: ride the lift up and stand at the depot ⛟ next to the Outfitter\u2019s hut, and the pack pours into the vault. Bigger packs and a faster depot are upgrades.', '', 12000); }
-    if (deep && !tips.deep && this.craterDepth() > 2.5) { tips.deep = 1; this.liftHintAt = this.time; this.hud.notice('Getting out of the crater', `The lift beacon ◆ follows you down. Stand next to it and hold ${jump} to ride it up to the rim.`, '', 12000); }
+    if (deep && !tips.deep && this.craterDepth() > 2.5) { tips.deep = 1; this.liftHintAt = this.time; this.hud.notice('Getting out of the crater', `Hold ${jump} anywhere in the crater: the lift comes up under you and carries you to the rim.`, '', 12000); }
     else if (!this.tools.available(st, this.tools.family)) prompt = FAMILIES[this.tools.family].id === 'planet' ? 'Locked · buy Satellite Mirrors in the Planet tree' : 'Locked · buy this tree\'s first upgrade';
     this.hud.update({
       coins: e.coins, rate: this.measuredRate(), carried: c.count, carryCap: st.carry, carriedValue: c.value * this.bankMult(),

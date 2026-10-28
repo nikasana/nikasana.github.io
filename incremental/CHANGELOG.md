@@ -1,5 +1,13 @@
 # Changelog
 
+## Upgrade screen as a tech tree, a lift key, a lighter menu
+- The upgrade screen is laid out like a game's tech tree: one branch at a time (tabs along the top, each with a green count of what you can buy there), drawn top to bottom from the branch's first, cheap steps (START) to its late, costly ones (STEP 2, 3, …), every upgrade below the ones it needs, with the lines lit for what you own. Every card says in one line what it does ("+0.012 m bite radius", "New tool: Drill"); a locked card says what it still needs.
+- "All" is an overview: a card per branch with its progress, how many you can buy there, and its next step.
+- Left: the vault, Ready to buy (best value first) and Coming up; each row now explains itself in one line too, and double-clicking a row (double-tap on touch) buys it right there. Right: the selected upgrade with before → after numbers, BUY and Buy max.
+- Search lists the matching upgrades; clicking one opens its branch and scrolls to it.
+- Much less lag: only the branch on screen is drawn and refreshed, it scrolls natively (wheel, trackpad, drag), there are no constantly animating glows or blurred panels, and the 3D world behind a full-screen menu is only redrawn twice a second.
+- The lift has its own key: hold R (rebindable; LIFT on touch) anywhere down in a crater and the lift comes up under you and carries you to the rim. It no longer hovers over you in holes: it is out of sight until it carries you. Space only jumps.
+
 ## Needle fix, centimetre readout, frosted floors, coins that stay on the floor
 - Fixed: the Golden Needle could stay stuck in the ice after you dug right up to it (it only counted as free when its exact centre was in open air, and it is thin). Now any dig or melt that reaches it knocks it free, mostly-dug-out also counts, and once free it drifts to you through open air and is taken from 2.6 m. It is also bigger and glows brighter.
 - Close to the needle a prompt says it is right here and how much of it is dug clear; when you take it, a notice says what comes next (dig on to the GOAL depth to finish the planet, spend your coins at the hut).
