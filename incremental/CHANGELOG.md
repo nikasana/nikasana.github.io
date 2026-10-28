@@ -10,6 +10,7 @@
 - Depth gauge redone: SURFACE at the top and this planet's GOAL depth at the bottom, with labelled marks (10, 50, 100, 250, 500 m) instead of unlabelled lines; a dot labelled YOU follows you up and down; a notch marks the deepest point dug; the Golden Needle's depth band shows in gold (bright while you are in it), and with Needle Sense a gold diamond marks its exact depth.
 - Finding the needle: everyone now feels it within 8 m (Needle Sense from 19 m), and a readout under the crosshair says how far it is and whether to dig down.
 - Touch: JUMP and LIFT are separate buttons. LIFT is a wide, glowing blue button that appears only next to the lift beacon in the crater; JUMP only jumps. Notices on phones are smaller, sit beside the depth gauge, and show the newest two.
+- Fixed (crews): a crewmate going quiet for a moment (for example while another loads in) no longer counts as the host leaving, which could split a crew in two; a closing tab says goodbye at once, and rejoining waits longer for a busy host.
 - Fixed: freeing one of the new coin kinds could stop the game with an audio error (the clink sound only knew five kinds).
 
 ## Mobile: phones and tablets

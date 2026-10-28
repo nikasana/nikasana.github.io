@@ -110,7 +110,7 @@ export class LocalTransport extends Emitter {
     this.isHost = false;
     this.open(code);
     return new Promise((res, rej) => {
-      const to = setTimeout(() => rej(new Error('No crew host answered on this machine. Open the host tab first.')), 4000);
+      const to = setTimeout(() => rej(new Error('No crew host answered on this machine. Open the host tab first.')), 10000);   // a busy host tab can be slow to answer
       this.pendingJoin = () => { clearTimeout(to); this.emit('open', this.id); res(this.id); };
       this.post({ t: '_hello' });
     });
