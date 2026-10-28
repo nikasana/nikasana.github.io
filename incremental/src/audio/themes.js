@@ -31,7 +31,12 @@ export const THEMES = [
     root: 50, mode: [0, 2, 3, 5, 7, 8, 10], prog: [0, 5, 6, 4, 0, 3, 6, 5],
     bpm: [72, 118], bright: 0.9, glass: 0.8, mallet: 1.1, brass: 1.0, bowed: 0.9, perc: 1.5,
   },
-  { id: 'auralis', name: 'Sky Choir', planet: 'auralis', desc: 'Auralis. Shimmering choir pads.', locked: true },
+  {
+    id: 'auralis', name: 'Sky Choir', planet: 'auralis',
+    desc: 'Auralis. Shimmering choir pads under a slow lydian sky, glass bells for the falling coins.',
+    root: 60, mode: [0, 2, 4, 6, 7, 9, 11], prog: [0, 4, 5, 1, 0, 3, 4, 1],
+    bpm: [50, 86], bright: 1.2, glass: 1.4, mallet: 0.7, brass: 0.4, bowed: 0.8, perc: 0.4, choir: 1.0,
+  },
   { id: 'omega', name: 'All Rivers', planet: 'omega', desc: 'Omega. Every theme at once.', locked: true },
 ];
 

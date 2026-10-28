@@ -4,7 +4,7 @@ import { h, clear } from './dom.js';
 import { format, formatTime, numberFormat } from '../core/big.js';
 import { TREES, NODES, NODE_BY_ID } from '../econ/data/nodes.js';
 import { SYNERGIES } from '../econ/data/synergies.js';
-import { MILESTONES, CREW_MILESTONES, CAPSULES } from '../econ/data/milestones.js';
+import { MILESTONES, CREW_MILESTONES, CAPSULES, ROLES, ROLE_BY_ID } from '../econ/data/milestones.js';
 import { THEMES, VARIATIONS } from '../audio/themes.js';
 import { PRESETS } from '../render/graphics.js';
 import { ACTION_LABELS, keyLabel } from '../player/input.js';
@@ -104,7 +104,7 @@ export class Menus {
     const g = this.game, e = g.econ;
     const cells = [
       ['Vault', format(e.coins)], ['Crater', `${g.craterDepth().toFixed(1)} m`], ['Upgrades bought', e.purchases], ['Resonances', `${Object.keys(e.found).length} / ${SYNERGIES.length}`],
-      ['Time on planet', formatTime(e.time)], ['Sea level', `+${M.seaLevelCm(e).toFixed(2)} cm`], ['Lifetime earned', format(e.total)], ['Milestones', `${Object.keys(e.milestones).length} / ${MILESTONES.length}`],
+      ['Time on planet', formatTime(e.time)], ['Sea level', `+${M.seaLevelCm(e).toFixed(2)} cm`], ['Lifetime earned', format(e.total)], ['Milestones', `${Object.keys(e.milestones).length} / ${MILESTONES.filter((m) => m.planet === '*' || m.planet === e.planet).length}`],
     ];
     clear(this.pauseStats).append(...cells.map(([a, b]) => h('div', {}, h('span.eyebrow', {}, a), h('b', {}, String(b)))));
   }
@@ -148,7 +148,7 @@ export class Menus {
         const done = { ...(g.profile.capsules || {}), ...(g.state.capsules || {}) };
         body.append(h('div.coll', {}, CAPSULES.map((c) => h(`div.card${done[c.id] ? '' : '.blank'}`, {},
           h('h4', {}, done[c.id] ? c.name : 'Unopened capsule'),
-          h('p', {}, done[c.id] ? c.contents.lore : `${c.planet[0].toUpperCase() + c.planet.slice(1)}, frozen around ${c.depth} m down.${c.puzzle ? (c.puzzle.kind === 'heat' ? ' Frost-sealed.' : ' Fog-sealed.') : ''}`))),
+          h('p', {}, done[c.id] ? c.contents.lore : `${c.planet[0].toUpperCase() + c.planet.slice(1)}, frozen around ${c.depth} m down.${c.puzzle ? ({ heat: ' Frost-sealed.', light: ' Light-sealed.', tide: ' Tide-sealed.' }[c.puzzle.kind]) : ''}`))),
           h(`div.card${g.state.needle ? '' : '.blank'}`, {}, h('h4', {}, g.state.needle ? 'The Golden Needle' : 'Golden Needle'),
             h('p', {}, g.state.needle ? 'Found. One per planet, and this one is yours.' : 'One is hidden on every planet. Needle Sense helps you feel for it.'))));
       } else if (t === 'mutations') {
@@ -173,7 +173,7 @@ export class Menus {
             h('p', {}, pc ? `Melted through at the ${pc.pole === 'S' ? 'South' : 'North'} pole, ${Math.round(pc.depth)} m.` : 'Not yet. Reach the goal depth to send a postcard.'));
         })));
       } else if (t === 'milestones') {
-        body.append(h('div.coll', {}, MILESTONES.map((m) => h(`div.card${e.milestones[m.id] !== undefined ? '' : '.blank'}`, {},
+        body.append(h('div.coll', {}, MILESTONES.filter((m) => m.planet === '*' || m.planet === e.planet).map((m) => h(`div.card${e.milestones[m.id] !== undefined ? '' : '.blank'}`, {},
           h('h4', {}, `${m.icon} ${m.name}`), h('p', {}, e.milestones[m.id] !== undefined ? `Reached at ${formatTime(e.milestones[m.id])}. Paid ${m.bonusSec} s of income.` : `Pays ${m.bonusSec} s of income.`)))));
       }
     };
@@ -225,7 +225,13 @@ export class Menus {
             h('button.btn.primary', { onclick: (ev) => { navigator.clipboard?.writeText(link).then(() => { ev.target.textContent = 'Link copied'; }, () => { linkBox.select(); }); } }, 'Copy invite link'),
             c.lostHost ? h('button.btn', { onclick: async () => { await c.resumeAsHost(); render(); } }, 'Resume as host') : null,
             h('button.btn.danger', { onclick: () => { g.crewLeave(); render(); } }, 'Leave crew')),
-          h('div.eyebrow', {}, 'Members'), h('div.members', {}, c.memberList().map((m) => h('div', {}, h('span', {}, m.name), h('span', {}, m.host ? 'host' : '')))),
+          h('div.eyebrow', {}, 'Members'), h('div.members', {}, c.memberList().map((m) => h('div', {}, h('span', {}, `${m.role ? ROLE_BY_ID[m.role].icon + ' ' : ''}${m.name}`), h('span', {}, [m.role ? ROLE_BY_ID[m.role].name : '', m.host ? 'host' : ''].filter(Boolean).join(' · '))))),
+          h('div.eyebrow', {}, 'Your role (optional)'),
+          h('div.roles', {}, [null, ...ROLES].map((r) => h(`button.btn${(g.settings.crewRole || null) === (r ? r.id : null) ? '.primary' : ''}`, {
+            title: r ? r.desc : 'No specialty.',
+            onclick: () => { g.settings.crewRole = r ? r.id : null; g.saveSettings(); g.statsDirty = true; render(); },
+          }, r ? `${r.icon} ${r.name}` : 'None'))),
+          h('p.small', { style: { color: 'var(--haze)', margin: 0 } }, `${(g.settings.crewRole && ROLE_BY_ID[g.settings.crewRole].desc) || 'Pick a tool tree to specialise in.'} A crew with different roles shares a bonus: now ×${c.mix.toFixed(2)} income (+4% for each extra role).`),
           status);
         const linkBox = h('input', { type: 'text', value: link, readonly: true, style: { textTransform: 'none', fontSize: '12px', letterSpacing: 0 } });
         left.append(linkBox);

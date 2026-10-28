@@ -15,6 +15,18 @@ export const MUTANTS = [
     desc: 'Warm to the touch. Melting it lights a heat-vein combo at once.', perk: 'Heat Skin: lava bursts spare your pack; Ember Heart: hotter melting.' },
   { id: 'obsidice', name: 'Obsidice', planet: 'cinderice', color: [0.3, 0.22, 0.4], glow: 0.08, effect: 'obsidian',
     desc: 'Black volcanic glass. Very hard to cut, but it holds three times the coins.', perk: 'Glass Eye: clean breaks on rich seams.' },
+  { id: 'brineice', name: 'Brineice', planet: 'tidalis', color: [0.3, 0.9, 0.75], glow: 0.25, effect: 'brine',
+    desc: 'Salty slush that gives way at a touch: melting it pays double.', perk: 'Salt Blood: your torch cuts a wider hole.' },
+  { id: 'pearlice', name: 'Pearlice', planet: 'tidalis', color: [0.96, 0.92, 0.84], glow: 0.35, effect: 'pearl',
+    desc: 'Layered like a pearl. It holds two and a half times the coins.', perk: 'Deep Lungs: you carry more before you must bank.' },
+  { id: 'ventice', name: 'Ventice', planet: 'gale', color: [0.78, 0.88, 1.0], glow: 0.2, effect: 'gust',
+    desc: 'Full of trapped wind. Breaking it lets out a gust that sweeps loose coins to you.', perk: 'Wind Runner: you walk faster, and storms steal less heat.' },
+  { id: 'stormglass', name: 'Stormglass', planet: 'gale', color: [0.55, 0.6, 0.98], glow: 0.55, effect: 'charge',
+    desc: 'Charged by lightning. Melting it opens a short calm of your own.', perk: 'Storm Heart: hotter melting.' },
+  { id: 'lumice', name: 'Lumice', planet: 'auralis', color: [0.5, 1.0, 0.7], glow: 1.0, effect: 'lum',
+    desc: 'Holds a scrap of aurora. Breaking it calls a sky coin down to you.', perk: 'Sky Eyes: auroras and sky coins come more often.' },
+  { id: 'prismice', name: 'Prismice', planet: 'auralis', color: [1.0, 0.7, 0.95], glow: 0.6, effect: 'prism',
+    desc: 'Splits light into colours. It holds twice the coins and breaks clean more often.', perk: 'Prism Hands: clean breaks everywhere.' },
 ];
 
 export const MUTANT_BY_ID = Object.fromEntries(MUTANTS.map((m) => [m.id, m]));

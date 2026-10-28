@@ -19,7 +19,7 @@ export const TREES = [
   { id: 'style', name: 'Style', icon: '🎨', color: '#ff9fc4', origin: [1, 0], label: [1000, 420] },
   { id: 'luck', name: 'Luck & Secrets', icon: '🍀', color: '#c8f07a', origin: [-1, 0], label: [-1000, 900] },
   { id: 'audio', name: 'Audio', icon: '🎼', color: '#f2c9ff', origin: [-1, 0], label: [-1000, -230] },
-  { id: 'dna', name: 'DNA', icon: '🧬', color: '#7dffb2', origin: [0, 1], label: [0, 1040] },
+  { id: 'dna', name: 'DNA', icon: '🧬', color: '#7dffb2', origin: [0, 1], label: [0, 1200] },
 ];
 
 const N = (tree, id, name, icon, desc, c0, max, parents, effects, gx, gy, extra = {}) =>
@@ -165,6 +165,13 @@ export const NODES = [
   N('dna', 'dna_ember', 'Ember Heart', '❤️‍🔥', 'Emberice DNA. Hotter melting.', 7000, 8, ['dna_heatskin'], [['meltPower', 'mul', 0.06]], 0, 0, { mutation: 'emberice', at: [-460, 790] }),
   N('dna', 'dna_glass', 'Glass Eye', '🔮', 'Obsidice DNA. You see the seams in volcanic glass: clean breaks on rich ice.', 6000, 6, [], [['richCrit', 'add', 0.05]], 0, 0, { root: true, mutation: 'obsidice', at: [460, 640] }),
   N('dna', 'dna_hands', 'More Hands', '🙌', 'Capstone. Two tools at once: every strike lands twice, and the second hit opens its own crater.', 120000, 1, ['dna_arms', 'dna_steady'], [['hands', 'set', 1], ['digRate', 'mul', 0.1]], 0, 0, { kind: 'cap', mutation: 'tarfrost', at: [115, 930] }),
+  N('dna', 'dna_salt', 'Salt Blood', '🧂', 'Brineice DNA. Your torch cuts a wider hole.', 5000, 6, [], [['meltRadius', 'add', 0.04]], 0, 0, { root: true, mutation: 'brineice', at: [690, 640] }),
+  N('dna', 'dna_lungs', 'Deep Lungs', '🫁', 'Pearlice DNA. You carry more before you must bank.', 6000, 5, [], [['carry', 'add', 6]], 0, 0, { root: true, mutation: 'pearlice', at: [690, 790] }),
+  N('dna', 'dna_wind', 'Wind Runner', '🌬️', 'Ventice DNA. You walk faster, and storms steal less of your heat.', 6000, 6, [], [['walkSpeed', 'add', 0.04], ['stormShield', 'add', 0.06]], 0, 0, { root: true, mutation: 'ventice', at: [-690, 640] }),
+  N('dna', 'dna_storm', 'Storm Heart', '⚡', 'Stormglass DNA. Hotter melting.', 9000, 8, [], [['meltPower', 'mul', 0.05]], 0, 0, { root: true, mutation: 'stormglass', at: [-690, 790] }),
+  N('dna', 'dna_sky', 'Sky Eyes', '🌠', 'Lumice DNA. Auroras and lone sky coins come more often.', 8000, 5, [], [['auroraRate', 'add', 0.1]], 0, 0, { root: true, mutation: 'lumice', at: [-345, 930] }),
+  N('dna', 'dna_prism', 'Prism Hands', '🌈', 'Prismice DNA. Clean breaks everywhere.', 10000, 6, [], [['crit', 'add', 0.015]], 0, 0, { root: true, mutation: 'prismice', at: [345, 930] }),
+  N('dna', 'dna_apex', 'Apex Form', '🧬', 'Capstone of DNA, for a body made from six worlds of ice: faster, longer reach, harder blows, hotter melting, sharper eyes.', 400000, 1, ['dna_hands', 'dna_salt', 'dna_wind', 'dna_sky'], [['walkSpeed', 'add', 0.1], ['reach', 'add', 0.4], ['digRate', 'mul', 0.06], ['meltPower', 'mul', 0.06], ['nightVision', 'add', 0.3]], 0, 0, { at: [0, 1080] }),
 ];
 
 export const NODE_BY_ID = Object.fromEntries(NODES.map((n) => [n.id, n]));

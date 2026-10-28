@@ -88,3 +88,12 @@ Choices made where the build prompt is silent, and the reasons. Updated every ba
 - Auto Swing counts as +0.12 activity in the sim; it only works while standing still and aiming at ice, so it saves effort rather than replacing play.
 - Quartermaster spends at most a quarter of the vault per buy and skips choose-one nodes so it never makes a permanent choice for the player.
 - Luck nodes are small, capped boosts (capsules, auroras, finds, the needle hint) so collecting stays a side reward next to the main economy.
+
+## Batch 6: Auralis
+- Auralis trades ice for sky: coin density is 6.4 (Frostara-like planets 7-8) and the sim adds a sky income share of 34% North and 20% South, lifted by Aurora Charm and Sky Eyes. Sky coins are priced in seconds of measured income (12 s each, 24 s for a lone coin), so they scale with progress and never break the wait curve.
+- The Aurora Chain multiplier is 1 + 0.2 × (catches - 1), capped at ×4 after 16 catches. Only coins within 30 m of you break it when they fade, so a chain is never lost to a coin you could not have reached.
+- Sky coins fall at 1.6 m/s from 8-12 m and hover for the rest of a 20 s life (30 s for lone coins): long enough to walk to, short enough that order matters.
+- Milestone counters (sky coins, finds, capsules, wind windows, best chain, best vein combo) live in econ.actions, so a crewmate's progress reaches the host the same way resonance actions do. Running bests are sent as "max", not added.
+- Crew Roles are +15% on one stat of your tree, only while in a crew; the shared mix bonus is +4% per extra distinct role (max +12% with four). It is small on purpose: roles reward talking about who does what, not forcing it.
+- Host migration elects the lowest peer id among the remaining members, so every member reaches the same answer without a vote. The heir waits 1.5 s, then hosts the crew code from its own copy; if the old id is still held it rejoins instead and tries again.
+- The DNA capstone Apex Form needs mutant ice from three worlds (More Hands, Salt Blood, Wind Runner, Sky Eyes), so it lands late in a campaign.

@@ -146,7 +146,7 @@ export class Sfx {
     out.gain.value = 0.32 * (o.gain ?? 1);
     const ctx = this.e.ctx;
     // copper, silver, gold, and the glassy ring of a gem
-    const base = [2350, 3300, 2750, 4400, 1500][tier] * vary(1, 0.06);
+    const base = [2350, 3300, 2750, 4400, 1500][tier] * vary(1, 0.06) * (o.pitch || 1);
     const dur = [0.18, 0.4, 0.55, 0.9, 1.3][tier];
     for (const [ratio, amp] of [[1, 1], [2.76, 0.45], [5.4, 0.2]]) {
       const c = ctx.createOscillator(); c.type = 'sine'; c.frequency.value = base * ratio;

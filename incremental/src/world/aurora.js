@@ -53,14 +53,22 @@ export class Aurora {
     this.t = 0;
     this.active = false;
     this.fade = 0;
+    this.ambient = 0;   // a faint standing aurora (Auralis)
   }
 
-  start(duration = 60) { this.active = true; this.left = duration; this.group.visible = true; }
+  // colours: [low edge, high edge]; a new pair is picked for every aurora
+  start(duration = 60) {
+    this.active = true; this.left = duration; this.group.visible = true;
+    const P = [[[0.25, 1.0, 0.55], [0.55, 0.3, 1.0]], [[0.3, 0.95, 0.85], [0.95, 0.35, 0.7]], [[0.6, 1.0, 0.4], [0.3, 0.5, 1.0]], [[1.0, 0.45, 0.6], [0.45, 0.35, 1.0]]];
+    const [a, b] = P[Math.floor(Math.random() * P.length)];
+    this.uniforms.uColA.value.setRGB(...a); this.uniforms.uColB.value.setRGB(...b);
+  }
 
   update(dt, time, camPos) {
     this.uniforms.uTime.value = time;
     if (this.active) { this.left -= dt; if (this.left <= 0) this.active = false; }
-    this.fade = Math.max(0, Math.min(1, this.fade + (this.active ? dt / 3 : -dt / 4)));
+    const want = this.active ? 1 : this.ambient;
+    this.fade = Math.max(0, Math.min(1, this.fade + Math.sign(want - this.fade) * Math.min(Math.abs(want - this.fade), dt / (want > this.fade ? 3 : 4))));
     this.uniforms.uAlpha.value = this.fade;
     this.group.visible = this.fade > 0.001;
     this.group.position.set(camPos.x, 0, camPos.z);

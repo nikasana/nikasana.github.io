@@ -253,6 +253,8 @@ export class FrozenThings {
       // a sealed capsule waits for its trick (warmth or lamplight), then opens like any other
       const sealed = it.kind === 'capsule' && it.data.puzzle && (it.progress || 0) < it.data.puzzle.need;
       if (sealed && dPlayer < 3.5) this.sealedNear = it;
+      // tide-sealed: freed, it opens once you wait beside it for the tide to turn
+      if (sealed && it.freed && it.data.puzzle.kind === 'tide' && dPlayer < 3.5) this.puzzle('tide', p, dt, 1);
       if (it.freed && dPlayer < 2.0 && !sealed) {
         it.done = true;
         this.emit(it.kind, it);
@@ -290,7 +292,7 @@ export class FrozenThings {
 
   // a crewmate took this one: drop it here too
   removeFind(id) {
-    const it = this.items.find((i) => i.kind === 'find' && i.id === id && !i.done);
+    const it = this.items.find((i) => ((i.kind === 'find' && i.id === id) || (i.kind === 'capsule' && i.data.id === id) || (i.kind === 'needle' && id === 'needle')) && !i.done);
     if (it) { it.done = true; this.animateOut(it); }
   }
 

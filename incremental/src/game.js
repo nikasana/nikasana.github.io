@@ -30,7 +30,7 @@ import { DevMenu, PerfOverlay } from './ui/devmenu.js';
 import { h } from './ui/dom.js';
 import { Crew } from './net/crew.js';
 import * as M from './econ/model.js';
-import { PLANET_BY_ID, strataProps } from './econ/data/planets.js';
+import { PLANETS, PLANET_BY_ID, strataProps } from './econ/data/planets.js';
 import { COINS, tierWeights } from './econ/data/coins.js';
 import { MILESTONES, CREW_MILESTONES } from './econ/data/milestones.js';
 import { SYNERGY_BY_ID } from './econ/data/synergies.js';
@@ -92,6 +92,8 @@ class Game {
     this.stakes = buildStakes(this.atmo);
     this.gfx.scene.add(this.stakes);
     this.coins = new CoinSystem(this.gfx.scene, this.volume, this.atmo, ['copper', 'silver', 'gold']);
+    this.coins.onSkyMiss = (c) => this.missSky(c);
+    this.chain = { n: 0, t: 0 };
     this.coins.useIcePass(this.gfx);
     this.aurora = new Aurora(this.gfx.scene);
     this.auroraT = 300 + Math.random() * 240;
@@ -188,7 +190,8 @@ class Game {
     this.frozen.on('unsealed', (it) => { this.sfx.play('creak', { pos: it.mesh.position }); this.hud.notice('The seal gives', `${it.data.name} is open. Walk up to it.`, 'money', 5000); });
     this.crew.on('notice', (t) => this.hud.notice('Crew', t));
     this.crew.on('crewMilestones', (done, fresh) => this.onCrewMilestones(done, fresh));
-    this.crew.on('hostLost', () => this.hud.notice('Host left', 'You keep playing from your copy of the crew. Rejoining automatically, or resume as host from the crew screen.', 'heat', 7000));
+    this.crew.on('hostLost', () => this.hud.notice('Host left', this.crew.heir ? 'You are taking over as host, from your copy of the crew.' : 'You keep playing from your copy of the crew while a crewmate takes over as host.', 'heat', 7000));
+    this.crew.on('migrated', () => { this.hud.notice('You host the crew now', 'Crewmates rejoin you automatically. The crater, vault and milestones carry on.', 'money', 7000); this.save(); });
     addEventListener('beforeunload', () => this.save());
     document.addEventListener('visibilitychange', () => { if (document.hidden) this.save(); });
   }
@@ -311,6 +314,8 @@ class Game {
     w.left -= dt;
     if (w.left <= 0) {
       const toCalm = w.state === 'storm';
+      if (!toCalm && this.calmMelted) this.countAction('windows');
+      this.calmMelted = false;
       w.state = toCalm ? 'calm' : 'storm';
       const [a, b] = toCalm ? W.calm : W.storm;
       w.left = a + Math.random() * (b - a);
@@ -344,20 +349,85 @@ class Game {
     return [Math.cos(a) * c.speed, Math.sin(a) * c.speed];
   }
 
-  // Aurora (first version): curtains in the sky and coins drifting down around you for a minute.
-  startAurora() {
-    this.auroraT = (300 + Math.random() * 240) / (1 + (this.stats.auroraRate || 0));
-    this.aurora.start(60);
-    const p = this.ctl.pos, value = Math.max(5, this.measuredRate() * 12);
-    const tier = this.planet.coinTiers.includes('gem') ? 3 : 2;
-    for (let k = 0, n = Math.round(14 * (1 + (this.stats.auroraCoins || 0))); k < n; k++) {
-      const a = Math.random() * Math.PI * 2, d = 4 + Math.random() * 18;
-      const x = p.x + Math.cos(a) * d, z = p.z + Math.sin(a) * d;
-      const floorY = Math.max(surfaceY(x, z), this.volume.floorBelow(x, surfaceY(x, z) + 2, z, 40));
-      this.coins.spawnSky(new THREE.Vector3(x, surfaceY(x, z) + 14 + Math.random() * 8, z), tier, value, floorY);
-    }
+  // Auroras: curtains of light while sky coins drift down one after another. Catching them in
+  // sequence builds the Aurora Chain (each catch is worth more); a coin that fades uncaught breaks it.
+  auroraGap() {
+    const A = this.planet.aurora?.[this.econ.pole];
+    const [a, b] = A ? A.every : [300, 540];
+    return (a + Math.random() * (b - a)) / (1 + (this.stats.auroraRate || 0));
+  }
+
+  startAurora(remote = false) {
+    this.auroraT = this.auroraGap();
+    const dur = this.planet.aurora?.dur || 60;
+    this.aurora.start(dur);
+    const n = Math.round((this.planet.aurora?.coins || 14) * (1 + (this.stats.auroraCoins || 0)));
+    // a handful at once, then the rest one by one until shortly before the light fades
+    const first = Math.min(6, n);
+    for (let k = 0; k < first; k++) this.dropSkyCoin(false);
+    this.skyQueue = { left: n - first, every: (dur - 18) / Math.max(1, n - first), t: 2 };
     this.music.cue('swell');
-    this.hud.notice('Aurora', 'Light is falling from the sky, and coins with it. Catch them before the aurora fades.', 'resonance', 8000);
+    if (!remote && this.crew.active && this.crew.isHost) this.crew.event({ k: 'aurora' });
+    this.hud.notice('Aurora', 'Coins are falling from the sky. Catch them one after another to build the Aurora Chain; a coin that fades uncaught breaks it.', 'resonance', 8000);
+  }
+
+  // one sky coin, ahead of you so you can watch it come down; lone ones are rarer and richer (Auralis)
+  dropSkyCoin(lone) {
+    const p = this.ctl.pos, f = this.ctl.forward();
+    const a = Math.atan2(f.z, f.x) + (Math.random() - 0.5) * (lone ? 4 : 2.6);
+    const d = (lone ? 8 : 4) + Math.random() * (lone ? 16 : 12);
+    const x = p.x + Math.cos(a) * d, z = p.z + Math.sin(a) * d;
+    const top = surfaceY(x, z);
+    const floorY = Math.max(top, this.volume.floorBelow(x, top + 2, z, 40));
+    const tiers = this.planet.coinTiers;
+    const tier = lone && tiers.includes('relic') ? 4 : tiers.includes('gem') ? 3 : 2;
+    const value = Math.max(5, this.measuredRate() * (lone ? 24 : 12));
+    const at = new THREE.Vector3(x, floorY + 8 + Math.random() * 4, z);
+    this.coins.spawnSky(at, tier, value, floorY, lone ? 30 : 20);
+    if (lone) {
+      this.particles.streak(at.clone().add(new THREE.Vector3(-6, 14, 3)), at, COIN_RGB[tier]);
+      this.hud.notice('A sky coin', 'A lone coin is falling from the sky. Catch it before it fades.', '', 3500);
+    }
+  }
+
+  catchSky(c, at) {
+    const ch = this.chain;
+    ch.n += 1; ch.t = this.time;
+    const mult = Math.min(4, 1 + 0.2 * (ch.n - 1));
+    const v = c.value * this.bankMult() * mult;
+    this.earn(v);
+    if (this.crew.active && !this.crew.isHost) this.crew.bank(v, null);
+    this.crew.count('crewSky', 1);
+    this.countAction('sky');
+    this.countMax('chainBest', ch.n);
+    this.sfx.play('clink', { tier: c.tier, gain: 0.9, pitch: 1 + 0.035 * Math.min(ch.n - 1, 20) });
+    this.particles.glint(at, COIN_RGB[c.tier], 0.3 + 0.02 * Math.min(ch.n, 15));
+    if (ch.n >= 3 && ch.n % 5 === 0) { this.hud.notice(`Aurora Chain ${ch.n}`, `Each sky coin is now worth ×${mult.toFixed(1)}. Keep catching.`, 'money', 2500); this.music.cue('motif', 2); }
+  }
+
+  missSky(c) {
+    this.particles.glint(c.p, COIN_RGB[c.tier], 0.2);
+    // only a coin you could have reached breaks the chain
+    if (this.chain.n > 0 && c.p.distanceTo(this.ctl.pos) < 30) {
+      if (this.chain.n >= 3) this.hud.notice('Chain broken', `A sky coin faded. Your chain reached ${this.chain.n}.`, '', 3000);
+      this.chain.n = 0;
+    }
+  }
+
+  updateSky(dt) {
+    const q = this.skyQueue;
+    if (q && q.left > 0 && (q.t -= dt) <= 0) { q.t = q.every; q.left--; this.dropSkyCoin(false); }
+    // Auralis: a lone sky coin now and then, between auroras
+    const A = this.planet.aurora?.[this.econ.pole];
+    if (A && this.started && (this.loneT -= dt) <= 0) {
+      this.loneT = (A.skyEvery[0] + Math.random() * (A.skyEvery[1] - A.skyEvery[0])) / (1 + (this.stats.auroraRate || 0));
+      this.dropSkyCoin(true);
+    }
+    // sky coins sparkle as they fall
+    if ((this.sparkT = (this.sparkT || 0) - dt) <= 0) {
+      this.sparkT = 0.25;
+      for (const c of this.coins.loose) if (c.sky && c.p.y > c.floorY + 1.6 && Math.random() < 0.5) this.particles.glint(c.p, COIN_RGB[c.tier], 0.1);
+    }
   }
 
   // Style tree: skins, crater grade and camera mode (each can be switched off in Settings > Game)
@@ -405,6 +475,12 @@ class Game {
     this.coins.current = p.current ? (x, z) => this.currentAt(x, z) : null;
     // Gale: the weather cycle starts in a storm
     this.weather = p.weather ? { state: 'storm', left: p.weather.storm[0] } : null;
+    // Auralis: a faint standing aurora and lone sky coins between auroras
+    this.aurora.ambient = p.aurora ? 0.22 : 0;
+    this.chain = { n: 0, t: 0 };
+    this.skyQueue = null;
+    this.loneT = p.aurora ? 12 : 0;
+    if (p.aurora) this.auroraT = Math.min(this.auroraT, 40);
     this.tools.meltFactor = 1;
     // mutant ice pockets for this planet and pole; types already found stay unlocked for DNA
     this.mutants = mutantPockets(p, pole, surfaceY);
@@ -491,6 +567,9 @@ class Game {
       this.statsDirty = true;
       if (!this.buffs.length) this.hud.notice('Boost worn off', '', '', 2500);
     }
+    // Crew Roles count only while in a crew
+    const role = this.crew.active ? this.settings.crewRole || null : null, mix = this.crew.active ? this.crew.mix : 1;
+    if ((this.econ.role || null) !== role || (this.econ.roleMix || 1) !== mix) { this.econ.role = role; this.econ.roleMix = mix; this.statsDirty = true; }
     if (this.statsDirty || !this._stats) {
       this._stats = M.computeStats(this.econ);
       for (const b of this.buffs || []) this._stats[b.stat] *= b.mult;
@@ -608,6 +687,15 @@ class Game {
       this.discoverMutant(mut);
       if (mut.type === 'tarfrost') s.removed *= 2;   // holds twice the coins
       if (mut.type === 'obsidice') s.removed *= 3;   // volcanic glass: three times the coins
+      if (mut.type === 'pearlice') s.removed *= 2.5;
+      if (mut.type === 'prismice') { s.removed *= 2; this.particles.glint(s.point, [1, 0.7, 0.95], 0.25); }
+      if (mut.type === 'ventice') {
+        // a gust sweeps the loose coins around you into your pack
+        for (const c of this.coins.loose) if (!c.sky && c.p.distanceTo(s.point) < 10) c.magnet = true;
+        for (let i = 0; i < 3; i++) this.particles.steam(s.point, s.normal, 1.2);
+        this.sfx.play('creak', { pos: s.point, pitch: 1.5, gain: 0.5 });
+      }
+      if (mut.type === 'lumice' && this.time - (this.lumT || -99) > 20) { this.lumT = this.time; this.dropSkyCoin(true); }
       if (mut.type === 'chimeice') {
         this.sfx.play('shatter', { pos: s.point, pitch: 1.6, gain: 0.8 });
         this.music.cue('motif', 2);
@@ -640,6 +728,7 @@ class Game {
       if (this.lava.veinDistance(m.point) < 1.0) {
         if (this.veinCombo < 1) this.hud.notice('Heat vein', 'Melt along the vein to build the combo. Leave it and the combo fades.', '', 3500);
         this.veinCombo = Math.min(5, Math.max(1, this.veinCombo) + dt * 0.6);
+        if (this.veinCombo >= Math.floor((this.econ.actions.veinBest || 0) + 1)) this.countMax('veinBest', Math.floor(this.veinCombo));
         this.veinT = this.time;
       }
       if (this.veinCombo > 1) lavaMult *= 1 + (this.veinCombo - 1) * 0.35;
@@ -649,9 +738,23 @@ class Game {
     if (mut) {
       this.discoverMutant(mut);
       if (mut.type === 'emberice') { this.veinCombo = Math.max(this.veinCombo || 0, 2.5); this.veinT = this.time; }
+      if (mut.type === 'brineice') m.lavaMult = (m.lavaMult || 1) * 2;   // salty slush: melting it pays double
+      if (mut.type === 'stormglass' && this.weather && this.weather.state === 'storm') {
+        // a calm of your own: the storm breaks for a few seconds
+        this.weather.state = 'calm'; this.weather.left = 8;
+        this.hud.notice('Stormglass', 'The charge breaks the storm around you for a few seconds. Melt now.', 'money', 3000);
+      }
     }
+    if ((this.calmBonus || 1) > 1 && m.removed > 0) this.calmMelted = true;
     this.addDust(m.removed, m.depth, (m.lavaMult || 1) * (this.calmBonus || 1));
     if (m.removed > 0) this.water.add(m.point, m.removed);
+  }
+
+  // a running best (chain, combo): members report it, the host keeps the highest
+  countMax(a, v) {
+    if (v <= (this.econ.actions[a] || 0)) return;
+    if (this.crew.active && !this.crew.isHost) { this.crew.action(a, v); this.econ.actions[a] = v; return; }
+    this.econ.actions[a] = v;
   }
 
   countAction(a) {
@@ -741,6 +844,7 @@ class Game {
     const bonus = Math.max(20, this.measuredRate() * (f.sec + it.depth * 1.6)) * (1 + (this.stats.findMult || 0));
     (this.profile.findTypes ||= {})[f.id] = Date.now(); this.writeProfile();
     this.earn(bonus);
+    this.countAction('finds');
     let extra = '';
     if (f.relic) { this.econ.legacy *= f.relic; this.statsDirty = true; extra = ` · +${Math.round((f.relic - 1) * 100)}% income for good`; }
     if (f.buff) { (this.buffs ||= []).push({ ...f.buff, until: this.time + f.buff.dur, name: f.name }); this.statsDirty = true; extra = ` · ${f.desc}`; }
@@ -763,7 +867,9 @@ class Game {
     this.sfx.play('capsule', { pos: it.mesh.position });
     this.music.cue('capsule');
     this.hud.notice(`Time capsule: ${c.name}`, `${c.contents.lore} It held ${format(bonus)} coins.`, 'money', 9000);
-    if (this.crew.isHost) this.crew.event({ k: 'capsule', id: c.id, bonus });
+    if (this.crew.active) { this.crew.event({ k: 'capsule', id: c.id, bonus }); if (!this.crew.isHost) this.crew.bank(bonus, []); }
+    this.crew.count('crewCapsules', 1);
+    this.countAction('capsules');
     this.save();
   }
 
@@ -771,11 +877,12 @@ class Game {
     const bonus = Math.max(500, this.measuredRate() * it.data.rewardSec);
     this.earn(bonus);
     this.state.needle = true;
+    this.countAction('needle');
     this.music.cue('stinger');
     this.gfx.flash = 0.35;
     this.flashT = 0.6;
     this.hud.notice('The Golden Needle', `Found. One is hidden on every planet. Worth ${format(bonus)} coins.`, 'money', 9000);
-    if (this.crew.isHost) this.crew.event({ k: 'needle', bonus });
+    if (this.crew.active) { this.crew.event({ k: 'needle', bonus }); if (!this.crew.isHost) this.crew.bank(bonus, []); }
     this.save();
   }
 
@@ -834,7 +941,7 @@ class Game {
     this.music.cue('swell');
     this.enterPlay();
     this.hud.notice(`${this.planet.icon} Welcome to ${this.planet.name}`, `${this.planet.rule}. Your ${from.name} legacy: ×${opts.legacy.toFixed(2)} income here.`, 'money', 12000);
-    if (this.crew.active && this.crew.isHost) this.crew.resync();
+    if (this.crew.active && this.crew.isHost) { this.crew.count('crewPlanets', 1); this.crew.resync(); }
   }
 
   onCrewMilestones(done, fresh) {
@@ -975,7 +1082,7 @@ class Game {
     el.innerHTML = '';
     el.hidden = false;
     el.append(
-      h('div.ptitle', {}, h('div.eyebrow', {}, `Planet 1 of 7 · ${p.rule}`), h('h2', {}, p.name), h('div.eyebrow', {}, `Your crater: ${e.pole === 'N' ? 'North' : 'South'} pole · ${p.poles[e.pole].name}`)),
+      h('div.ptitle', {}, h('div.eyebrow', {}, `Planet ${PLANETS.indexOf(p) + 1} of ${PLANETS.length} · ${p.rule}`), h('h2', {}, p.name), h('div.eyebrow', {}, `Your crater: ${e.pole === 'N' ? 'North' : 'South'} pole · ${p.poles[e.pole].name}`)),
       h('div.readouts', {},
         h('div', {}, h('span.eyebrow', {}, 'Crater depth'), h('b', {}, `${this.craterDepth().toFixed(1)} m`)),
         h('div', {}, h('span.eyebrow', {}, 'Sea level'), h('b', {}, `+${M.seaLevelCm(e).toFixed(2)} cm`)),
@@ -1003,7 +1110,7 @@ class Game {
   playerState() {
     const p = this.ctl.pos;
     const ts = this.tools.state(this.stats);
-    return { p: [+p.x.toFixed(2), +p.y.toFixed(2), +p.z.toFixed(2)], y: +this.ctl.yaw.toFixed(3), pi: +this.ctl.pitch.toFixed(3), f: ts.family, u: ts.using };
+    return { p: [+p.x.toFixed(2), +p.y.toFixed(2), +p.z.toFixed(2)], y: +this.ctl.yaw.toFixed(3), pi: +this.ctl.pitch.toFixed(3), f: ts.family, u: ts.using, r: this.settings.crewRole || null };
   }
 
   crewSnapshot() {
@@ -1039,7 +1146,7 @@ class Game {
     if (JSON.stringify(e.levels) !== prevLevels || Object.keys(e.found).length !== prevFound) { this.statsDirty = true; this.menus.refresh(); }
   }
 
-  crewAction(a, n) { this.econ.actions[a] = (this.econ.actions[a] || 0) + n; for (const s of M.discover(this.econ)) this.onResonance(s); }
+  crewAction(a, n) { this.econ.actions[a] = a.endsWith('Best') ? Math.max(this.econ.actions[a] || 0, n) : (this.econ.actions[a] || 0) + n; for (const s of M.discover(this.econ)) this.onResonance(s); }
 
   crewBuy(id) { const res = M.buy(this.econ, id); if (res) this.afterBuy(id, res); }
 
@@ -1048,12 +1155,13 @@ class Game {
   crewEvent(ev, from = null) {
     if (ev.k === 'res') { const s = SYNERGY_BY_ID[ev.id]; if (s) { this.hud.notice('Resonance', `${s.name}. The crew found it.`, 'resonance'); this.music.cue('resonance'); } }
     else if (ev.k === 'ms') { const m = MILESTONES.find((x) => x.id === ev.id); if (m) { this.hud.notice(`${m.icon} Milestone: ${m.name}`, `+${format(Big.parse(ev.bonus))} coins for the crew.`, 'money'); this.music.cue('motif', m.motif); } }
-    else if (ev.k === 'capsule') { this.state.capsules[ev.id] = Date.now(); this.hud.notice('Time capsule opened', `+${format(ev.bonus)} coins for the crew.`, 'money'); }
-    else if (ev.k === 'needle') { this.state.needle = true; this.music.cue('stinger'); this.hud.notice('The Golden Needle', 'A crewmate found it.', 'money'); }
+    else if (ev.k === 'capsule') { this.state.capsules[ev.id] = Date.now(); this.frozen.removeFind(ev.id); this.hud.notice('Time capsule opened', `+${format(ev.bonus)} coins for the crew.`, 'money'); }
+    else if (ev.k === 'needle') { this.state.needle = true; this.frozen.removeFind('needle'); this.music.cue('stinger'); this.hud.notice('The Golden Needle', 'A crewmate found it.', 'money'); }
     else if (ev.k === 'find') {
       (this.state.finds ||= {})[ev.id] = Date.now(); this.frozen.removeFind(ev.id);
       if (from && ev.relic) { this.econ.legacy *= ev.relic; this.statsDirty = true; } this.hud.notice(ev.name || 'A find', `A crewmate dug it out: +${format(ev.bonus)} coins for the crew.`, 'money'); }
     else if (ev.k === 'buy') { this.sfx.play('buy', { step: this.econ.purchases }); }
+    else if (ev.k === 'aurora') this.startAurora(true);
   }
 
   async crewCreate() {
@@ -1238,9 +1346,10 @@ class Game {
   devMilestone(id) {
     const m = MILESTONES.find((x) => x.id === id);
     if (!m || this.econ.milestones[id] !== undefined) return;
-    if (m.kind === 'depth') this.econ.depth = Math.max(this.econ.depth, m.value);
-    else this.econ.melted = Math.max(this.econ.melted, 6000 * Math.pow(m.value / 5, 1 / 0.6) + 1);
-    this.checkMilestones();
+    if (m.planet !== '*' && m.planet !== this.econ.planet) { this.hud.notice('Dev', `${m.name} belongs to ${m.planet}.`); return; }
+    const { bonus } = M.awardMilestone(this.econ, m, this.measuredRate());
+    this.hud.notice(`${m.icon} Milestone: ${m.name}`, `+${format(bonus)} coins.`, 'money', 7000);
+    this.music.cue('motif', m.motif ?? 0);
   }
   devCrewMilestone(id) { this.profile.crewMilestones = { ...(this.profile.crewMilestones || {}), [id]: Date.now() }; this.onCrewMilestones(this.profile.crewMilestones, [id]); }
   devResonance(id) { if (this.econ.found[id] !== undefined) return; this.econ.found[id] = this.econ.time; this.onResonance(SYNERGY_BY_ID[id]); }
@@ -1409,7 +1518,7 @@ class Game {
       canTake: (c) => c.sky || carried.count + 1 <= st.carry,
       take: (c) => {
         // aurora coins are caught straight into the vault
-        if (c.sky) { this.earn(c.value * this.bankMult()); this.sfx.play('clink', { tier: c.tier, gain: 0.9 }); this.particles.glint(chest.clone().addScaledVector(dir, 0.6), COIN_RGB[c.tier], 0.3); return; }
+        if (c.sky) { this.catchSky(c, chest.clone().addScaledVector(dir, 0.6)); return; }
         carried.count += 1; carried.value += c.value; carried.ids.push(c.id);
         if (carried.ids.length > 400) carried.ids.splice(0, carried.ids.length - 400);
         this.sfx.play('clink', { tier: c.tier, gain: 0.7 });
@@ -1450,7 +1559,7 @@ class Game {
     this.updateMutants(dt, eye);
     this.aurora.update(dt, this.time, eye);
     if (this.started && !(this.crew.active && !this.crew.isHost) && (this.auroraT -= dt) <= 0) this.startAurora();
-    if (!this.aurora.active && this.aurora.fade <= 0) this.coins.loose = this.coins.loose.filter((c) => !c.sky);
+    this.updateSky(dt);
     // Current Reading: drifting motes show which way the current runs
     if (this.planet.current) {
       this.curT = (this.curT || 0) - dt;
@@ -1557,12 +1666,13 @@ class Game {
     if (this.ride) prompt = 'Riding the lift up';
     else if (this.atBeacon && deep) prompt = c.value > 0 ? `Banking your pack · hold ${jump} to ride the lift up` : `Hold ${jump} to ride the lift up and out of the crater`;
     else if (full) prompt = 'Pack full · walk to the glowing lift beacon ◆ to bank it';
+    else if (this.chain.n > 0 && this.coins.loose.some((k) => k.sky)) prompt = `Aurora Chain ${this.chain.n} · sky coins worth ×${Math.min(4, 1 + 0.2 * this.chain.n).toFixed(1)}`;
     else if (this.weather && FAMILIES[this.tools.family].id === 'melt') prompt = this.weather.state === 'calm' ? `Wind window · ${Math.ceil(this.weather.left)} s · melting pays double` : `Storm · melting is weak · calm in about ${Math.ceil(this.weather.left)} s`;
     else if (this.lavaHeat > 0.25) prompt = `Heat ${Math.round(this.lavaHeat * 100)}% · lava below: ease off the torch or it bursts`;
     else if (this.veinCombo > 1) prompt = `Heat vein ×${this.veinCombo.toFixed(1)}`;
     else if (this.frozen.sealedNear) {
       const it = this.frozen.sealedNear, P = it.data.puzzle;
-      prompt = `${it.data.name} · ${P.kind === 'heat' ? 'frozen shut: melt the ice right next to it' : 'fog-sealed: hold your focused lamp on it'} (${Math.round(100 * (it.progress || 0) / P.need)}%)`;
+      prompt = `${it.data.name} · ${P.kind === 'heat' ? 'frozen shut: melt the ice right next to it' : P.kind === 'tide' ? 'tide-sealed: wait beside it while the tide turns' : 'light-sealed: hold your focused lamp on it'} (${Math.round(100 * (it.progress || 0) / P.need)}%)`;
     }
     else if (deep && this.time - (this.liftHintAt || -99) < 6) prompt = `Stand by the glowing lift beacon ◆ and hold ${jump} to ride up`;
     // first-time explanations

@@ -107,6 +107,35 @@ export class PlanetView {
     this.clouds = new THREE.Mesh(new THREE.SphereGeometry(1.012, 128, 96), new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader: GLOBE_V, fragmentShader: CLOUD_F, transparent: true, depthWrite: false }));
     this.atmo = new THREE.Mesh(new THREE.SphereGeometry(1.06, 96, 64), new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader: GLOBE_V, fragmentShader: ATMO_F, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.FrontSide }));
     this.scene.add(this.globe, this.clouds, this.atmo);
+    // aurora ribbons (Auralis): a wavy curtain ringing each pole
+    this.ribbons = new THREE.Group();
+    const ribMat = new THREE.ShaderMaterial({
+      uniforms: this.uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+      vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 ); }',
+      fragmentShader: `uniform float uTime; varying vec2 vUv;
+        float h( float x ) { return fract( sin( x * 91.7 ) * 43758.5 ); }
+        float n( float x ) { float i = floor( x ), f = fract( x ); f = f * f * ( 3.0 - 2.0 * f ); return mix( h( i ), h( i + 1.0 ), f ); }
+        void main() {
+          float rays = n( vUv.x * 90.0 + uTime * 0.8 ) * 0.6 + n( vUv.x * 230.0 - uTime * 1.3 ) * 0.4;
+          float a = smoothstep( 0.0, 0.15, vUv.y ) * ( 1.0 - smoothstep( 0.3, 1.0, vUv.y ) ) * ( 0.3 + rays );
+          vec3 col = mix( vec3( 0.25, 1.0, 0.55 ), vec3( 0.6, 0.3, 1.0 ), smoothstep( 0.25, 0.9, vUv.y ) );
+          gl_FragColor = vec4( col * a * 0.9, a );
+        }`,
+    });
+    for (const side of [1, -1]) {
+      const g = new THREE.CylinderGeometry(0.4, 0.5, 0.22, 160, 1, true);
+      const pa = g.attributes.position;
+      for (let i = 0; i < pa.count; i++) {
+        const x = pa.getX(i), z = pa.getZ(i), a = Math.atan2(z, x), w = 1 + 0.12 * Math.sin(a * 5) + 0.05 * Math.sin(a * 13);
+        pa.setX(i, x * w); pa.setZ(i, z * w);
+      }
+      const m = new THREE.Mesh(g, ribMat);
+      m.position.y = side * 0.97;
+      if (side < 0) m.rotation.x = Math.PI;
+      this.ribbons.add(m);
+    }
+    this.ribbons.visible = false;
+    this.scene.add(this.ribbons);
     // stars
     const N = 3000, pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
     for (let i = 0; i < N; i++) {
@@ -131,6 +160,7 @@ export class PlanetView {
     u.uLand.value.setRGB(...p.land);
     u.uSeed.value = (p.seed % 97) / 10;
     u.uPole.value = pole === 'N' ? 1 : -1;
+    this.ribbons.visible = !!p.aurora;
   }
 
   // world-state readouts: depth fraction, heat 0..1, sea cm
@@ -162,6 +192,7 @@ export class PlanetView {
     this.t += dt;
     this.uniforms.uTime.value = this.t;
     if (!this.dragging && !this.zoomIn) this.yaw += dt * 0.05;
+    this.ribbons.rotation.y += dt * 0.03;
     const pole = this.uniforms.uPole.value;
     if (this.zoomIn) this.pitch += ((pole > 0 ? 1.45 : -1.45) - this.pitch) * Math.min(1, dt * 3);
     this.dist += (this.target - this.dist) * Math.min(1, dt * (this.zoomIn ? 3.5 : 2.2));

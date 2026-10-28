@@ -36,6 +36,8 @@ export class DevMenu {
     const coinAmt = num('dev-coins', 1000);
     const legacyIn = num('dev-legacy', 1);
     const nodeSel = h('select', { id: 'dev-node' }, TREES.map((t) => h('optgroup', { label: t.name }, NODES.filter((n) => n.tree === t.id).map((n) => h('option', { value: n.id }, n.name)))));
+    const msSel = h('select', { id: 'dev-ms' }, MILESTONES.map((m) => h('option', { value: m.id }, `${m.planet === '*' ? '' : m.planet + ': '}${m.name}`)));
+    const crewSel = h('select', { id: 'dev-crewms' }, CREW_MILESTONES.map((m) => h('option', { value: m.id }, m.name)));
     const synSel = h('select', { id: 'dev-syn' }, SYNERGIES.map((s) => h('option', { value: s.id }, s.name)));
     clear(this.el).append(
       h('h2', {}, 'Dev menu', h('small', {}, '` to close · flags the save')),
@@ -54,10 +56,9 @@ export class DevMenu {
       sec('Events',
         h('div.row', {}, B('Complete this planet', () => { this.flag('Planet complete'); g.econ.depth = Math.max(g.econ.depth, g.planet.goalDepth); g.completePlanet(); }), B('Find here', () => { this.flag('Find'); g.devBring('find'); }), B('Mutant ice ahead', () => { this.flag('Mutant'); g.devMutant(); }), B('Lava ahead', () => { this.flag('Lava'); g.devLava(); }), B('Next weather phase', () => { this.flag('Weather'); if (g.weather) g.weather.left = 0; })),
         h('div.row', {}, B('Time capsule here', () => { this.flag('Capsule'); g.devBring('capsule'); }), B('Golden Needle here', () => { this.flag('Needle'); g.devBring('needle'); }), B('Reveal needle', () => { this.flag('Needle reveal'); g.devRevealNeedle(); })),
-        h('div.row', {}, ...MILESTONES.map((m) => B(m.name, () => { this.flag(m.name); g.devMilestone(m.id); }))),
-        h('div.row', {}, ...CREW_MILESTONES.map((m) => B(`Crew: ${m.name}`, () => { this.flag(m.name); g.devCrewMilestone(m.id); }))),
+        h('div.row', {}, msSel, B('Reach milestone', () => { this.flag('Milestone'); g.devMilestone(msSel.value); }), crewSel, B('Crew milestone', () => { this.flag('Crew milestone'); g.devCrewMilestone(crewSel.value); })),
         h('div.row', {}, synSel, B('Trigger resonance', () => { this.flag('Resonance'); g.devResonance(synSel.value); })),
-        h('div.row', {}, B('Refreeze pools now', () => { for (const p of g.water.pools) p.idle = 1e3, p.frozen = 0.99; }), B('Aurora now', () => { this.flag('Aurora'); g.startAurora(); }))),
+        h('div.row', {}, B('Refreeze pools now', () => { for (const p of g.water.pools) p.idle = 1e3, p.frozen = 0.99; }), B('Aurora now', () => { this.flag('Aurora'); g.startAurora(); }), B('Sky coin now', () => { this.flag('Sky coin'); g.dropSkyCoin(true); }), B('Chain +5', () => { this.flag('Chain'); g.chain.n += 5; }))),
       sec('Time',
         h('div.row', {}, B('×1', () => { g.timeScale = 1; this.build(); }, g.timeScale === 1), B('×10', () => { this.flag('×10 time'); g.timeScale = 10; this.build(); }, g.timeScale === 10), B('×100', () => { this.flag('×100 time'); g.timeScale = 100; this.build(); }, g.timeScale === 100)),
         h('div.row', {}, B('Simulate 1 h away', () => { this.flag('Offline 1 h'); g.devOffline(3600); }), B('Simulate 8 h away', () => { this.flag('Offline 8 h'); g.devOffline(8 * 3600); }))),
