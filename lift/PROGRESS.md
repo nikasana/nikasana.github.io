@@ -2,6 +2,26 @@
 
 Live: https://nikasana.github.io/lift/
 
+## Batch 3: Economy (done)
+
+Plan: upgrade tracks, helper pipeline, guards against single-action play, the panel shop, offline progress and the catalog. Check: in simulated play, balanced play outpaces any single-action play.
+
+Delivered (`src/economy.js`, panel tabs in `src/main.js`):
+- Three tracks with two upgrades each: Shovel (power, reach), Brush (speed, shine), Lamp (brightness, wiring). A power tier is ×4 for ×6 the cost. Each upgrade has a flavour name ("Get some sleep", "Open a window", ...) and the panel shows its effect before → after.
+- Helpers form a three-stage pipeline (Sweeper bot → Mop bot → Firefly). Throughput is the slowest stage, the panel names the bottleneck, and price is ×1.15 per purchase. Helpers work only in visited rooms, finishing them one at a time nearest you first, twice as fast in your room (aura).
+- Guards: balance bonus of +10 % Glow per level of your lowest track. Floor rank (lowest of three floor meters) is in place and fed by sorties in batch 5.
+- Hand power scales with income: every cell you clear or polish also pays 0.36 s of current idle income.
+- Offline: 50 % income for up to 8 h, helpers keep extending territory, and you earn a rested charge per 2 h (max 3). The return screen reports time away, Glow, rooms finished and rested charges.
+- The panel's top line shows Glow, income per second, floor and rank. Upgrades, Helpers, Floors, Catalog and Settings tabs fit a phone.
+
+Checks run:
+- `node --test`: 27/27 pass. In a 20-minute simulated night (3 seeds), balanced play earned 10–17× clear-only, 40–48× polish-only and 17–18× light-only. The first upgrade is affordable after about 19 s of efficient sweeping (about 30 s for a person). Also tested: power tier ×4 / cost ×6, the pipeline bottleneck, visited-only helpers with aura, the balance bonus, and offline (half pace, 8 h cap, rested, short gaps ignored).
+- Browser (desktop + phone): the panel opens in the lift, an upgrade and one of each helper are bought from the panel, helpers clear cells, and a reload after 3 h away shows the return screen. Batches 1–2 still pass and there are no console errors.
+
+Decisions:
+- Fireflies are the pipeline's last stage. They carry finished cells' Glow home rather than buying lamps for you, so they never spend your Glow without asking.
+- Track level = the sum of that track's two upgrade levels.
+
 ## Batch 2: World (done)
 
 Plan: seeded infinite rooms, the lift and floors, six biomes, modifiers, set pieces, map and sliding. Check: walk 30 rooms out and back and get the same rooms at a steady frame rate. Added on request: five graphics levels plus Auto, and a generative score.

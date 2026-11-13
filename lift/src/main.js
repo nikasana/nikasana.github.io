@@ -1,6 +1,7 @@
 // Entry point: wires the pure game state to rendering, input, UI, audio and saving.
 import { CFG, roomSide, doorWidth } from './config.js';
 import * as Game from './game.js';
+import * as Econ from './economy.js';
 import * as Save from './save.js';
 import { t, fmt, setLang } from './strings.js';
 import { World } from './render/scene.js';
@@ -39,6 +40,7 @@ async function load() {
 }
 
 async function save() {
+  if (window.__liftNoSave) return; // test hook
   try { game.lastTs = Date.now(); await Save.put(SAVE_KEY, Game.serialize(game)); dirtySave = false; } catch (e) { console.warn('save failed', e); }
 }
 function markSave() { dirtySave = true; }
@@ -106,13 +108,48 @@ function rideTo(f) {
 
 function setupPanel() {
   panel.setTabs([
+    { id: 'upgrades', label: () => t('tabUpgrades'), render: renderUpgrades },
+    { id: 'helpers', label: () => t('tabHelpers'), render: renderHelpers },
     { id: 'floors', label: () => t('tabFloors'), render: renderFloors },
     { id: 'catalog', label: () => t('tabCatalog'), render: renderCatalog },
     { id: 'settings', label: () => t('tabSettings'), render: renderSettings },
-  ], (top) => top.append(el('span', {}, el('b', {}, fmt(game.player.glow) + ' ✦'), ' ', t('glow'))));
+  ], renderTop);
   panel.onClose = () => { if (!input.touch && running) input.requestLock(); };
 }
 
+function renderTop(top) {
+  const f = game.pos.floor, fl = Game.floorState(game, f);
+  top.append(el('span', {}, el('b', {}, t('topGlow', { glow: fmt(game.player.glow) }))), el('span', {}, t('topRate', { rate: fmt(Game.incomeRate(game)) })),
+    el('span', {}, t('topFloor', { n: f }) + ' · ' + t('topRank', { n: fl.rank })));
+  if (game.player.rested) top.append(el('span', {}, t('topRested', { n: game.player.rested })));
+}
+const fmtEff = (id, v) => (id === 'power' || id === 'speed' ? fmt(v) : id === 'reach' || id === 'shine' ? v.toFixed(2) : String(v));
+function renderUpgrades(body, rerender) {
+  const p = game.player, f = game.pos.floor;
+  for (const [track, ids] of Object.entries(Econ.TRACKS)) {
+    const tl = Game.trackLevel(p, track);
+    body.append(el('h3', {}, `${t('track_' + track)} · ${t('trackLevel', { n: tl })} · ${tl >= CFG.ability.unlockLevel ? t('abilityReady') : t('abilityAt', { n: CFG.ability.unlockLevel })}`));
+    for (const id of ids) {
+      const lvl = p.upgrades[id], cost = Econ.upgradeCost(id, lvl);
+      const a = fmtEff(id, Econ.upgradeEffect(id, lvl, f)), b = fmtEff(id, Econ.upgradeEffect(id, lvl + 1, f));
+      body.append(el('div', { class: 'row' },
+        el('div', { class: 'grow' }, el('div', { class: 'name' }, `${t('up_' + id)} · ${t('lvl', { n: lvl })}`), el('div', { class: 'flav' }, t('fl_' + id)), el('div', { class: 'sub' }, t('ef_' + id, { a, b }))),
+        el('button', { class: 'buy', disabled: p.glow < cost, onclick: () => { if (Econ.buyUpgrade(game, id).ok) { audio.buy(); markSave(); save(); rerender(); } } }, t('buyFor', { cost: fmt(cost) }))));
+    }
+  }
+  body.append(el('p', { class: 'note' }, t('balanceNote', { pct: Math.round(CFG.balanceBonus * 100 * Game.lowestTrack(p)) })));
+}
+function renderHelpers(body, rerender) {
+  const p = game.player, pipe = Econ.pipeline(game);
+  body.append(el('p', { class: 'note' }, pipe.bottleneck ? t('pipeInfo', { rate: pipe.cellsPerSec.toFixed(1) }) + ' ' + t('pipeNeck', { name: t('h_' + pipe.bottleneck) }) : t('pipeIdle')));
+  for (const k of Econ.HELPERS) {
+    const n = p.helpers[k], cost = Econ.helperCost(k, n);
+    body.append(el('div', { class: 'row' },
+      el('div', { class: 'grow' }, el('div', { class: 'name' }, `${t('h_' + k)} ×${n}` + (pipe.bottleneck === k ? '  ◂' : '')), el('div', { class: 'sub' }, t('hd_' + k))),
+      el('button', { class: 'buy', disabled: p.glow < cost, onclick: () => { if (Econ.buyHelper(game, k).ok) { audio.buy(); markSave(); save(); rerender(); } } }, t('buyFor', { cost: fmt(cost) }))));
+  }
+  body.append(el('p', { class: 'note' }, t('auraNote')));
+}
 function renderFloors(body) {
   for (let f = 0; f <= game.house.maxFloor + 1; f++) {
     const open = Game.floorUnlocked(game, f), fl = Game.floorState(game, f);
@@ -242,6 +279,9 @@ function update(dt) {
   Game.tickIncome(game, Date.now());
   Game.tickRooms(game, dt);
   Game.tickDoors(game, dt);
+  const hw = Econ.tickHelpers(game, dt, f, rx, rz, auraRadius());
+  if (hw.cells) for (const k of hw.touched) { const v = world.views.get(k); if (v) { v.syncClutter(); v.refreshFloor(); } }
+  panelT += dt; if (panel.open && panelT > 0.5 && panel.cur !== 'settings') { panelT = 0; panel.refresh(); }
   for (const v of world.views.values()) {
     const { x, z } = v.info;
     v.setDoors([0, 1, 2, 3].map((sd) => Game.edgeBlocked(game, f, x, z, sd)));
@@ -283,7 +323,8 @@ function update(dt) {
   autoQuality(dt);
   if (!skipRender) world.frame(dt, { x: p.x, y: CFG.player.eye, z: p.z, yaw: p.yaw, pitch: p.pitch, fov: s.fov }, s.warmMode);
 }
-let pruneT = 0, musicAct = 0;
+let pruneT = 0, musicAct = 0, panelT = 0;
+function auraRadius() { return 0; }
 function canSlide(p, f, S) {
   const [rx, rz] = roomOf(p.x, p.z, S);
   const r = Game.room(game, f, rx, rz);
@@ -314,11 +355,20 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
-function startScreen() {
+function awayCard(away) {
+  if (!away || away.secs < 60) return null;
+  const h = away.secs / 3600;
+  const time = h >= 1 ? t('hours', { n: h.toFixed(1) }) : t('minutes', { n: Math.round(away.secs / 60) });
+  return el('div', { class: 'note' }, el('h3', {}, t('welcomeBack')), el('div', {}, t('awayFor', { time })), el('div', {}, t('awayGlow', { glow: fmt(away.glow) })),
+    away.rooms ? el('div', {}, t('awayRooms', { n: away.rooms })) : null, away.rested ? el('div', {}, t('awayRested', { n: game.player.rested })) : null,
+    away.waveReady ? el('div', {}, t('awayWave')) : null);
+}
+function startScreen(away) {
   const card = el('div', { class: 'card' },
     el('h1', {}, t('title')),
     el('p', {}, t('tagline')),
     el('p', { class: 'note' }, input.touch ? t('hintTouch') : t('hintDesktop')),
+    awayCard(away),
     el('button', { id: 'begin', onclick: begin }, game.player.lifetimeGlow > 0 ? t('continue') : t('start')));
   UI.overlay(card);
 }
@@ -340,8 +390,8 @@ async function main() {
   setupPanel();
   const S = roomSide(game.pos.floor);
   world.updateLoaded(game.pos.floor, ...roomOf(game.pos.x, game.pos.z, S));
-  game.lastTs = Date.now();
-  startScreen();
+  const away = Econ.applyOffline(game, Date.now());
+  startScreen(away);
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
   addEventListener('pagehide', () => save());
   requestAnimationFrame(loop);

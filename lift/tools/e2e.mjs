@@ -15,10 +15,14 @@ window.__bot = function (tx, tz) {
   if (done) { inp.tool = false; for (const k of ['KeyW', 'KeyS', 'KeyA', 'KeyD']) inp.keys.delete(k); inp.move.x = inp.move.y = 0; return true; }
   const cell = S / 16; const R = L.Game.toolRadius(g.player);
   let best = null, bd = 0;
+  const ah = 0.9 + R, tcx = g.pos.x - Math.sin(g.pos.yaw) * ah, tcz = g.pos.z - Math.cos(g.pos.yaw) * ah;
+  for (let pass = 0; pass < 2 && !best; pass++)
   for (let jj = 0; jj < 16 && !best; jj++) for (let ii = 0; ii < 16; ii++) {
     const i = jj & 1 ? 15 - ii : ii, k = jj * 16 + i;
     const need = !r.clearedDone ? r.c[k] > 0 : r.g[k] > 0.1;
     if (!need || (window.__skip && window.__skip.has(tx + ',' + tz + ',' + k))) continue;
+    // keep moving: cells already under the tool are being worked on (first pass skips them)
+    if (pass === 0 && Math.hypot(tx * S - S / 2 + (i + 0.5) * cell - tcx, tz * S - S / 2 + (jj + 0.5) * cell - tcz) < R * 0.75) continue;
     best = [tx * S - S / 2 + (i + 0.5) * cell, tz * S - S / 2 + (jj + 0.5) * cell, jj, k]; break;
   }
   if (!best) return true;
@@ -105,6 +109,34 @@ const BATCHES = {
       if (shots) await page.screenshot({ path: `${shots}/${name}-q${lvl}.png`, timeout: 120000 });
     }
     await page.evaluate(() => window.__lift.world.setQuality(2));
+  },
+  async 3(page, check, name, shots) {
+    await page.evaluate(() => { const L = window.__lift, g = L.game; g.pos.x = 0; g.pos.z = 0.8; g.player.glow += 20000; L.input.events.push({ type: 'key', code: 'KeyE' }); L.simulate(0.1); });
+    const tabs = await page.evaluate(() => [...document.querySelectorAll('#panel .tab')].map((b) => b.textContent));
+    check('B3 panel opens in the lift with Upgrades and Helpers', tabs.includes('Upgrades') && tabs.includes('Helpers'), tabs.join(', '));
+    const bought = await page.evaluate(() => { const b = [...document.querySelectorAll('#panel .body button.buy')].find((x) => !x.disabled); const g = window.__lift.game; const before = JSON.stringify(g.player.upgrades); b && b.click(); return before !== JSON.stringify(g.player.upgrades); });
+    check('B3 buying an upgrade from the panel works', bought);
+    if (shots) await page.screenshot({ path: `${shots}/${name}-b3-upgrades.png`, timeout: 120000 });
+    await page.evaluate(() => { [...document.querySelectorAll('#panel .tab')].find((b) => b.textContent === 'Helpers').click(); });
+    const helpers = await page.evaluate(() => { for (let i = 0; i < 3; i++) [...document.querySelectorAll('#panel .body button.buy')][i].click(); return window.__lift.game.player.helpers; });
+    check('B3 one of each helper bought', helpers.sweeper === 1 && helpers.mop === 1 && helpers.firefly === 1, JSON.stringify(helpers));
+    if (shots) await page.screenshot({ path: `${shots}/${name}-b3-helpers.png`, timeout: 120000 });
+    const worked = await page.evaluate(() => {
+      const L = window.__lift, g = L.game; L.panel.hide();
+      L.Game.visit(g, 0, -1, 0);
+      const count = () => { let n = 0; for (const r of g.rooms.values()) if (r.visited) n += r.c.filter((v) => v > 0).length; return n; };
+      const c0 = count(); L.simulate(20); return c0 - count(); });
+    check('B3 helpers work a visited room', worked > 0, `${worked} cells in 20 s`);
+    await page.evaluate(async () => { const g = window.__lift.game; await window.__lift.save(); });
+    await page.evaluate(async () => { const L = window.__lift; const S = await import('./src/save.js'); window.__liftNoSave = true; const o = L.Game.serialize(L.game); o.lastTs = Date.now() - 3 * 3600 * 1000; await S.put('main', o); });
+    await page.reload({ waitUntil: 'load' });
+    await page.waitForFunction(() => window.__lift && window.__lift.world, null, { timeout: 20000 });
+    const welcome = await page.evaluate(() => document.querySelector('#overlay').textContent);
+    check('B3 return screen reports time away, Glow and rested charges', /Welcome back/.test(welcome) && /Rested/.test(welcome), welcome.slice(0, 160));
+    if (shots) await page.screenshot({ path: `${shots}/${name}-b3-return.png`, timeout: 120000 });
+    await page.evaluate(BOT); await page.evaluate(WALK);
+    await page.click('#begin');
+    await page.evaluate(() => { window.__lift.game.settings.quality = '2'; window.__lift.world.setQuality(2); });
   },
 };
 

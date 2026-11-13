@@ -17,12 +17,12 @@ export const CFG = {
   patch: 8,                 // biome patch size in rooms
   biomeMix: 0.7,
   upgrades: {
-    power:  { track: 'shovel', base: 900, growth: 6 },
-    reach:  { track: 'shovel', base: 400, growth: 4 },
-    speed:  { track: 'brush',  base: 300, growth: 3.5 },
-    shine:  { track: 'brush',  base: 1000, growth: 4 },
-    bright: { track: 'lamp',   base: 700, growth: 6 },
-    wiring: { track: 'lamp',   base: 500, growth: 5 },
+    power:  { track: 'shovel', base: 1800, growth: 6 },
+    reach:  { track: 'shovel', base: 800, growth: 4 },
+    speed:  { track: 'brush',  base: 370, growth: 3.5 },
+    shine:  { track: 'brush',  base: 2000, growth: 4 },
+    bright: { track: 'lamp',   base: 1400, growth: 6 },
+    wiring: { track: 'lamp',   base: 1000, growth: 5 },
   },
   helpers: { sweeper: 100, mop: 150, firefly: 200, growth: 1.15, cellsPerSec: 0.5, auraMult: 2 },
   balanceBonus: 0.10,
