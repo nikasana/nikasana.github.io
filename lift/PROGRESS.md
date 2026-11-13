@@ -2,6 +2,40 @@
 
 Live: https://nikasana.github.io/lift/
 
+## Batch 2: World (done)
+
+Plan: seeded infinite rooms, the lift and floors, six biomes, modifiers, set pieces, map and sliding. Check: walk 30 rooms out and back and get the same rooms at a steady frame rate. Added on request: five graphics levels plus Auto, and a generative score.
+
+Delivered:
+- Six biomes, each a row in `BIOMES` (palette, clutter shape, Tide character, ceiling range, music key). Each floor mixes two of them 70/30 in 8×8 patches; the lift's 5×5 neighbourhood always uses the floor's main biome.
+- Modifiers: normal 80 %, deep (3× clutter) 10 %, warm (finished and lit for free) 5 %, sealed 5 %. Sealed rooms have 5× clutter, and their doorways stay shut until you pay Glow at the door.
+- Six primitive set pieces (tree under a skylight, chair under a lamp, stairs to a glowing window, aquarium, a lone door, a small moon), one room in 40. Each becomes a catalog entry (+1 % Glow), as do the rare finds (1 cell in 500).
+- Doors per doorway (shut doors hold for a time; used by the Tide in batch 4).
+- The lift: a Floors tab in the panel rides between open floors. Room size is 8 + 2×floor (max 30).
+- Map (M / MAP): known rooms coloured by state (cleared, polished, lit), plus the lift, sealed rooms, set pieces and a player arrow. It has layers for later overlays.
+- Sliding (Shift / SLIDE) on lit, polished floor at 2× walking speed with momentum.
+- Graphics levels 1–5 + Auto (Settings):
+  1. Flat Lambert materials, no post-processing.
+  2. Physically based materials, ACES tone mapping, contact shading.
+  3. Glossy polished floors with reflections, light shafts, dust motes, vignette and split-tone grading.
+  4. Half-resolution bloom, more clutter.
+  5. Full-resolution bloom, film grain, densest clutter.
+  Auto starts at 4 on desktop and 2 on phones, and steps down when frames stay under 45 / 27 fps.
+- Music (`src/music.js`): a generative score, all synthesized. Detuned pads on a per-biome chord progression, a bell-piano melody whose density follows player activity, a bass pulse, a string layer for Quiet floors and a Tide swell layer, all through a generated convolution reverb. Its volume is separate from sound effects.
+
+Checks run:
+- `node --test`: 20/20 pass. New tests: rooms are a pure function, room size, modifier and set-piece frequencies, 70/30 patches, deep/warm, sealed doors, door timers, catalog, lift, save.
+- `node tools/e2e.mjs <url> 1,2` (desktop 1280×720 and Pixel 7 with touch): walked 30 rooms out and back, with 31 rooms seen and 0 mismatches on the return. 9 rooms are loaded and memory stays bounded (55 rooms kept). Frame time doesn't grow; levels 1, 3 and 5 all render. No console errors.
+
+Decisions:
+- The next floor opens after 8 lit rooms. This is an interim rule until batch 4 (Quiet floors).
+- The lift's 5×5 neighbourhood always uses the main biome, so the first room is always a ball room.
+- Set pieces don't collide (you walk through the tree).
+
+Known issues:
+- Frame time numbers come from software GL and don't reflect a real GPU.
+- Doorways to sealed rooms show door panels from both sides.
+
 ## Batch 1: MVP (done)
 
 Plan: walking on desktop and touch, one biome (Playroom), 16×16 cell grid per room with clutter piles and grime, Clear / Polish / Light, Glow, lamps bought at the room switch, IndexedDB save. Check: a room can be finished in under a minute on both; a reload keeps it.

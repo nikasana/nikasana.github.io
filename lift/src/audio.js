@@ -1,4 +1,5 @@
 // Synthesized WebAudio: no audio files.
+import { Music } from './music.js';
 export class Audio {
   constructor() { this.ctx = null; this.vol = 0.7; this.last = {}; }
   init() {

@@ -3,7 +3,7 @@ import * as Game from '../src/game.js';
 
 // Sweep a room in a lawnmower pattern at a given tool speed until it is cleared and polished.
 // Returns seconds taken (or Infinity past the limit).
-export function sweepRoom(s, f, x, z, { speedMult = 1, limit = 300, dt = 1 / 30, onEvent } = {}) {
+export function sweepRoom(s, f, x, z, { speedMult = 1, limit = 300, dt = 1 / 30, onEvent, phase = 'all' } = {}) {
   const S = roomSide(f);
   const R = Game.toolRadius(s.player);
   const v = Game.walkSpeed(f) * 0.8 * speedMult;
@@ -19,7 +19,8 @@ export function sweepRoom(s, f, x, z, { speedMult = 1, limit = 300, dt = 1 / 30,
       t += lane / v;
     }
   };
-  while (t < limit && !(r.clearedDone && r.polishedDone)) {
+  const finished = () => (phase === 'clear' ? r.clearedDone : r.clearedDone && r.polishedDone);
+  while (t < limit && !finished()) {
     const ev = Game.toolStep(s, f, x, z, lx, lz, dt);
     if (onEvent && ev) onEvent(ev, t);
     // the player lingers a little while something is under the tool
@@ -27,5 +28,16 @@ export function sweepRoom(s, f, x, z, { speedMult = 1, limit = 300, dt = 1 / 30,
     else if (ev.mode === 'clear' || ev.mode === 'polish') { step(); }
     t += dt;
   }
-  return r.clearedDone && r.polishedDone ? t : Infinity;
+  return finished() ? t : Infinity;
+}
+
+// Spiral order of rooms around the lift.
+export function spiral(n) {
+  const out = []; let x = 0, z = 0, dx = 0, dz = -1;
+  for (let i = 0; out.length < n; i++) {
+    if (!(x === 0 && z === 0)) out.push([x, z]);
+    if (x === z || (x < 0 && x === -z) || (x > 0 && x === 1 - z)) { const t = dx; dx = -dz; dz = t; }
+    x += dx; z += dz;
+  }
+  return out;
 }

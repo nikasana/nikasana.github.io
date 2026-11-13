@@ -45,7 +45,7 @@ export function floorBiomes(seed, floor, enabled = BIOMES.length) {
 
 export function biomeAt(seed, floor, x, z, enabled = BIOMES.length) {
   const [a, b] = floorBiomes(seed, floor, enabled);
-  if (x === 0 && z === 0) return BIOMES[a];
+  if (Math.abs(x) <= 2 && Math.abs(z) <= 2) return BIOMES[a];   // the lift's neighbourhood is the floor's main biome
   const px = Math.floor(x / CFG.patch), pz = Math.floor(z / CFG.patch);
   return hashFloat(seed, floor, px, pz, 91) < CFG.biomeMix ? BIOMES[a] : BIOMES[b];
 }

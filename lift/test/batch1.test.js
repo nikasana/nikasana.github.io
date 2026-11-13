@@ -37,7 +37,7 @@ test('clearing pays Glow and materials; polish needs bare floor', () => {
   const s = Game.newGame(3);
   const r = Game.room(s, 0, 1, 0);
   const ev = Game.toolStep(s, 0, 1, 0, 0, 0, 0.5);
-  assert.equal(ev.mode, 'clear'); assert.ok(ev.glow > 0); assert.ok(s.player.materials.balls > 0);
+  assert.equal(ev.mode, 'clear'); assert.ok(ev.glow > 0); assert.ok(s.player.materials[Game.info(s, 0, 1, 0).biome.mat] > 0);
   // polish does nothing on cells that still have clutter
   const cells = R.cellsInCircle(8, 8, 2);
   const before = r.g[cells[0]];

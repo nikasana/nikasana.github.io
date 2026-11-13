@@ -1,9 +1,10 @@
 // Pure game state and rules. No DOM, no Three.js.
 import { CFG, roomSide, floorScale } from './config.js';
-import { roomInfo, roomKey, parseKey, MATERIALS, rareCell, rareKind } from './world.js';
+import { roomInfo, roomKey, parseKey, MATERIALS, BIOMES, rareCell, rareKind } from './world.js';
 import * as R from './roomstate.js';
 
-export const ENABLED_BIOMES = { n: 1 };
+export const ENABLED_BIOMES = { n: BIOMES.length };
+export const SIDE_DIR = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 
 export function newPlayer() {
   return {
@@ -28,7 +29,7 @@ export function newGame(seed) {
     house: { seed: seed >>> 0, maxFloor: 0, floors: { 0: newFloor() } },
     rooms: new Map(), infos: new Map(),
     pos: { floor: 0, x: 0, y: 0, z: 0, yaw: 0, pitch: 0 },
-    lastTs: 0, combo: 1, comboT: 0, settings: {},
+    lastTs: 0, combo: 1, comboT: 0, settings: {}, doors: new Map(),
   };
 }
 
@@ -210,11 +211,59 @@ export function tickRooms(s, dt) {
   for (const [k, r] of s.rooms) if (!r.lit && r.touched && r.clearedDone) R.settleDust(r, dt);
 }
 
+export function addCatalog(s, id) {
+  if (s.player.catalog.includes(id)) return false;
+  s.player.catalog.push(id); return true;
+}
+// Returns a list of events: 'new', 'set:<kind>' when a catalog entry is found.
 export function visit(s, f, x, z) {
   const r = room(s, f, x, z);
-  if (!r.visited) { r.visited = true; r.touched = true; s.player.stats.rooms++; return true; }
+  if (r.visited) return null;
+  r.visited = true; r.touched = true; s.player.stats.rooms++;
+  const inf = info(s, f, x, z), ev = { first: true };
+  if (inf.setPiece && addCatalog(s, 'set:' + inf.setPiece)) ev.catalog = 'set:' + inf.setPiece;
+  return ev;
+}
+
+// ---------- doors, sealed rooms ----------
+export const isSealed = (s, f, x, z) => info(s, f, x, z).modifier === 'sealed' && !room(s, f, x, z).flags.open;
+export const sealCost = (f) => CFG.sealed.openCost * floorScale(f);
+export function openSealed(s, f, x, z) {
+  if (!isSealed(s, f, x, z)) return { ok: false };
+  const c = sealCost(f);
+  if (s.player.glow < c) return { ok: false, why: 'glow', cost: c };
+  s.player.glow -= c; const r = room(s, f, x, z); r.flags.open = 1; r.touched = true;
+  return { ok: true, cost: c };
+}
+export function edgeKey(f, x, z, side) {
+  const [dx, dz] = SIDE_DIR[side];
+  // canonical: the west/north room of the pair, with side 1 (east) or 2 (south)
+  if (side === 0) return `${f}:${x}:${z - 1}:2`;
+  if (side === 3) return `${f}:${x - 1}:${z}:1`;
+  return `${f}:${x}:${z}:${side}`;
+}
+export function doorShut(s, f, x, z, side) { return (s.doors.get(edgeKey(f, x, z, side)) || 0) > 0; }
+export function shutDoor(s, f, x, z, side, secs) { s.doors.set(edgeKey(f, x, z, side), secs); }
+export function tickDoors(s, dt) { for (const [k, v] of s.doors) { if (v - dt <= 0) s.doors.delete(k); else s.doors.set(k, v - dt); } }
+export function edgeBlocked(s, f, x, z, side) {
+  const [dx, dz] = SIDE_DIR[side];
+  return doorShut(s, f, x, z, side) || isSealed(s, f, x, z) || isSealed(s, f, x + dx, z + dz);
+}
+
+// ---------- floors ----------
+export const floorUnlocked = (s, f) => f >= 0 && f <= s.house.maxFloor;
+export function travel(s, f) {
+  if (!floorUnlocked(s, f)) return false;
+  floorState(s, f);
+  s.pos.floor = f; s.pos.x = 0; s.pos.z = 0.8; s.pos.yaw = 0;
+  return true;
+}
+// Batch 2 interim rule (replaced by Quiet floors in batch 4): 8 lit rooms open the next floor.
+export function checkFloorUnlock(s, f) {
+  if (f === s.house.maxFloor && floorUnlockReady(s, f)) { s.house.maxFloor = f + 1; floorState(s, f + 1); return true; }
   return false;
 }
+export function floorUnlockReady(s, f) { return floorState(s, f).litCount >= 8; }
 
 // ---------- save ----------
 export function serialize(s) {

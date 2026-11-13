@@ -17,12 +17,12 @@ export const CFG = {
   patch: 8,                 // biome patch size in rooms
   biomeMix: 0.7,
   upgrades: {
-    power:  { track: 'shovel', base: 300, growth: 6 },
-    reach:  { track: 'shovel', base: 150, growth: 4 },
-    speed:  { track: 'brush',  base: 120, growth: 3.5 },
-    shine:  { track: 'brush',  base: 400, growth: 4 },
-    bright: { track: 'lamp',   base: 250, growth: 6 },
-    wiring: { track: 'lamp',   base: 200, growth: 5 },
+    power:  { track: 'shovel', base: 900, growth: 6 },
+    reach:  { track: 'shovel', base: 400, growth: 4 },
+    speed:  { track: 'brush',  base: 300, growth: 3.5 },
+    shine:  { track: 'brush',  base: 1000, growth: 4 },
+    bright: { track: 'lamp',   base: 700, growth: 6 },
+    wiring: { track: 'lamp',   base: 500, growth: 5 },
   },
   helpers: { sweeper: 100, mop: 150, firefly: 200, growth: 1.15, cellsPerSec: 0.5, auraMult: 2 },
   balanceBonus: 0.10,
@@ -47,6 +47,15 @@ export const CFG = {
   signs: { roomShare: 0.35, trueShare: 0.6, testTime: 1.5, region: 10, falseReward: 20 },
   dawn: { minFloor: 3, divisor: 50000 },
   gadgetCost: 30,
+  // Graphics levels, chosen in Settings (or Auto). Each level adds to the one before it.
+  quality: [
+    { id: 1, std: false, tone: false, env: false, shafts: false, motes: 0,   bloom: 0,    bloomRes: 0,   grade: false, grain: 0,    contact: false, pr: 1.0,  ipu: 1 },
+    { id: 2, std: true,  tone: true,  env: false, shafts: false, motes: 0,   bloom: 0,    bloomRes: 0,   grade: false, grain: 0,    contact: true,  pr: 1.25, ipu: 1 },
+    { id: 3, std: true,  tone: true,  env: true,  shafts: true,  motes: 40,  bloom: 0,    bloomRes: 0,   grade: true,  grain: 0,    contact: true,  pr: 1.5,  ipu: 2 },
+    { id: 4, std: true,  tone: true,  env: true,  shafts: true,  motes: 80,  bloom: 0.4, bloomRes: 0.5, grade: true,  grain: 0,    contact: true,  pr: 1.75, ipu: 2 },
+    { id: 5, std: true,  tone: true,  env: true,  shafts: true,  motes: 140, bloom: 0.5,  bloomRes: 1,   grade: true,  grain: 0.016, contact: true, pr: 2.0,  ipu: 3 },
+  ],
+  autoQuality: { desktop: 4, mobile: 2, lowFps: 45, lowFpsMobile: 27, window: 4 },
   perf: { desktopPixelRatio: 1.5, mobilePixelRatio: 1.25, itemsPerUnitDesktop: 2, itemsPerUnitMobile: 1, maxLights: 4 },
 };
 

@@ -1,5 +1,5 @@
 // Primitive-built set pieces and the lift cabin.
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from 'three';
 
 const lam = (c) => new THREE.MeshLambertMaterial({ color: c });
 const glow = (c) => new THREE.MeshBasicMaterial({ color: c });
