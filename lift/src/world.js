@@ -117,6 +117,12 @@ export function initialClutter(info) {
     for (const p of info.props) if (Math.abs(lx - p.x) < p.w / 2 + 0.15 && Math.abs(lz - p.z) < p.d / 2 + 0.15) v = 0;
     out[j * G + i] = Math.min(v, 1.6) * mult;
   }
+  // the rooms around the lift are always full: the first minute should not depend on luck
+  if (Math.abs(info.x) + Math.abs(info.z) === 1) {
+    let tot = 0; for (let k = 0; k < G * G; k++) tot += out[k];
+    const k2 = CFG.firstRoomUnits / Math.max(1, tot);
+    for (let k = 0; k < G * G; k++) out[k] = Math.min(1.6, out[k] * k2);
+  }
   return out;
 }
 

@@ -11,20 +11,23 @@ const WARM = new THREE.Color(1.0, 0.84, 0.62);
 const TMP = new THREE.Color();
 
 const geoCache = {};
-export function itemGeometry(kind) {
-  if (geoCache[kind]) return geoCache[kind];
+// detail: 0 low (levels 1-2), 1 medium (level 3), 2 high (levels 4-5)
+export function itemGeometry(kind, detail = 1) {
+  const key = kind + detail;
+  if (geoCache[key]) return geoCache[key];
   let g;
   switch (kind) {
-    case 'ball': g = new THREE.IcosahedronGeometry(1, 2); break;
-    case 'foam': g = new THREE.IcosahedronGeometry(1, 1); break;
+    case 'ball': g = new THREE.IcosahedronGeometry(1, detail); break;
+    case 'foam': g = new THREE.IcosahedronGeometry(1, Math.max(0, detail - 1)); break;
     case 'paper': g = new THREE.BoxGeometry(1.4, 0.05, 1.0); break;
-    case 'leaf': { g = new THREE.CircleGeometry(1, 7); g.scale(1.1, 0.6, 1); g.rotateX(-Math.PI / 2); break; }
+    case 'leaf': { g = new THREE.CircleGeometry(1, detail ? 7 : 5); g.scale(1.1, 0.6, 1); g.rotateX(-Math.PI / 2); break; }
     case 'book': g = new THREE.BoxGeometry(1.3, 0.45, 1.0); break;
-    case 'popcorn': g = new THREE.DodecahedronGeometry(1, 0); break;
+    case 'popcorn': g = detail ? new THREE.DodecahedronGeometry(1, 0) : new THREE.OctahedronGeometry(1, 0); break;
     default: g = new THREE.BoxGeometry(1, 1, 1);
   }
-  geoCache[kind] = g; return g;
+  geoCache[key] = g; return g;
 }
+export const detailFor = (q) => (q.id <= 2 ? 0 : q.id === 3 ? 1 : 2);
 const ITEM_ROUGH = { ball: 0.28, foam: 0.55, paper: 0.9, leaf: 0.7, book: 0.75, popcorn: 0.85 };
 
 function hashf(a, b, c) { let h = Math.imul(a ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(b + 0x632be5ab, 0xc2b2ae35) ^ Math.imul(c + 0x1b873593, 0x27d4eb2f); h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; return (h >>> 0) / 4294967296; }
@@ -182,7 +185,7 @@ export class RoomView {
     this.ipu = ipu;
     const count = G * G * this.K;
     this.clutterMat = makeMat(q, { color: 0xffffff, roughness: ITEM_ROUGH[b.item] ?? 0.6, envMapIntensity: 0.35 });
-    const mesh = new THREE.InstancedMesh(itemGeometry(b.item), this.clutterMat, count);
+    const mesh = new THREE.InstancedMesh(itemGeometry(b.item, detailFor(q)), this.clutterMat, count);
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     const S = info.side, cell = S / G;
     const col = new THREE.Color();

@@ -2,5 +2,5 @@
   "name": "lift",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node --test test/*.test.js" }
+  "scripts": { "test": "node --test --test-force-exit test/*.test.js" }
 }

@@ -8,7 +8,7 @@ import { ShaderPass } from '../../vendor/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from '../../vendor/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from '../../vendor/addons/environments/RoomEnvironment.js';
 import { CFG, roomSide } from '../config.js';
-import { RoomView, itemGeometry, makeMat } from './roomview.js';
+import { RoomView, itemGeometry, makeMat, detailFor } from './roomview.js';
 import { buildSetPiece, buildCabin } from './props.js';
 import * as Game from '../game.js';
 import { roomKey } from '../world.js';
@@ -145,7 +145,7 @@ export class World {
     const kind = view.info.biome.item;
     if (this.flyKind !== kind) {
       if (this.flyMesh) { this.scene.remove(this.flyMesh); this.flyMesh.dispose(); }
-      this.flyMesh = new THREE.InstancedMesh(itemGeometry(kind), this.mat({ color: 0xffffff, emissive: 0x332211, roughness: 0.4 }), this.flyN);
+      this.flyMesh = new THREE.InstancedMesh(itemGeometry(kind, detailFor(this.q)), this.mat({ color: 0xffffff, emissive: 0x332211, roughness: 0.4 }), this.flyN);
       this.flyMesh.frustumCulled = false; this.flyKind = kind;
       const z = new THREE.Matrix4().makeScale(0, 0, 0), w = new THREE.Color(1, 1, 1);
       for (let i = 0; i < this.flyN; i++) { this.flyMesh.setMatrixAt(i, z); this.flyMesh.setColorAt(i, w); }

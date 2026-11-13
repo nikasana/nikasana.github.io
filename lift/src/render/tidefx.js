@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { CFG, roomSide, doorWidth } from '../config.js';
 import * as Game from '../game.js';
-import { itemGeometry, glowTexture } from './roomview.js';
+import { itemGeometry, glowTexture, detailFor } from './roomview.js';
 
 const MAX_LANES = 6;
 function h3(a, b, c) { let h = Math.imul(a ^ 0x27d4eb2f, 0x165667b1) ^ Math.imul(b + 0x9e3779b9, 0x85ebca6b) ^ Math.imul(c + 7, 0xc2b2ae35); h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; return (h >>> 0) / 4294967296; }
@@ -69,10 +69,10 @@ export class TideFX {
   meshFor(kind) {
     let m = this.meshes.get(kind);
     const cap = this.cap;
-    if (m && m.userData.cap !== cap) { this.scene.remove(m); m.dispose(); m = null; }
+    if (m && (m.userData.cap !== cap || m.userData.q !== this.world.q.id)) { this.scene.remove(m); m.dispose(); m = null; }
     if (!m) {
-      m = new THREE.InstancedMesh(itemGeometry(kind), this.world.mat({ color: 0xffffff, roughness: 0.45, emissive: 0x000000, envMapIntensity: 0.4 }), cap);
-      m.userData.cap = cap; m.frustumCulled = false; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      m = new THREE.InstancedMesh(itemGeometry(kind, detailFor(this.world.q)), this.world.mat({ color: 0xffffff, roughness: 0.45, emissive: 0x000000, envMapIntensity: 0.4 }), cap);
+      m.userData.cap = cap; m.userData.q = this.world.q.id; m.frustumCulled = false; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       const c = new THREE.Color(1, 1, 1); for (let i = 0; i < cap; i++) m.setColorAt(i, c);
       this.scene.add(m); this.meshes.set(kind, m);
     }

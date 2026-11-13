@@ -2,6 +2,61 @@
 
 Live: https://nikasana.github.io/lift/
 
+## Batch 9: Polish (done)
+
+Plan: performance, comfort settings, the first minute and a balance pass. Check: the targets under "Design pillars" and "Performance" are measured and met.
+
+Measured:
+
+| Target | Result | How |
+|---|---|---|
+| A room takes 20–40 s | 33–36 s at floors 0, 3, 6 and 9 (room 8 → 26 m) at the matching tier | `test/batch9.test.js`, lawnmower sweep simulation |
+| A wave takes 1–2 min | 80–110 s (floor 0 waves 1 and 3, floor 3 waves 1 and 5) | `test/batch9.test.js` |
+| Skill moves the result by about ±40 % | slow hands −32 %, sharp hands +35 % Glow/s with the same upgrades | `test/batch9.test.js` |
+| Neither layer wins alone | floor-0 tools on floor 3 take >120 s per room | `test/batch9.test.js` |
+| An active minute = 5–10 idle minutes | simulation: 9.4–9.8 (floor 0), 7.7–8.2 (floor 3), 7.4–8.8 (floor 6). Browser bot, real loop, floor 0: 9.5 desktop / 8.2 phone | `test/batch6.test.js`, e2e B6 |
+| First upgrade in about 30 s | ~19 s of efficient simulated sweeping; browser bot 10–17 s (a person is slower) | `test/batch9.test.js`, e2e B9 |
+| ≤ 4 dynamic lights, InstancedMesh clutter, no shadows, capped pixel ratio | 4 point lights; all clutter, Tide and flying items instanced | e2e B9 |
+| Draw calls and triangles | desktop L1 41 calls / 88 k triangles, L3 62 / 0.41 M, L5 75 / 1.65 M. Phone L1 33 / 0.11 M, L2 33 / 0.11 M, L3 48 / 0.47 M (with a wave on screen) | e2e B9, `renderer.info` |
+| CPU cost of game logic | 0.3–0.4 ms per frame with a wave and the tool active | e2e B9 |
+| 60 fps integrated GPU / 30 fps mid-range phone | **Not measurable here.** The container has only software GL (2–20 fps for any scene). Auto graphics starts at level 4 on desktop and 2 on phones and steps down while fps stays under 45 / 27, so the target is enforced at runtime | — |
+
+Changes:
+- Walking speed now scales with room size (0.4 + 0.45 m/s per metre of room), so rooms take the same time at every depth ("scale grows, reaction time does not").
+- Clutter geometry detail follows the graphics level: levels 1–2 use 20-triangle items, cutting triangles 4–7×.
+- The rooms around the lift always hold a full room of balls (300 units), so the first minute doesn't depend on the seed. Cell worth is 0.85 and the cheapest upgrade costs 350.
+- First minute: you start in the lift with its doors open onto a ball room, and the HUD shows one line of control hints until the first room is mostly cleared.
+- Comfort: warm mode, FOV slider, no head bob (the camera never bobs), H always returns to the lift, graphics levels and sensitivity.
+- Saves now run strictly one after another, so a burst of autosaves can't land out of order.
+- The test tooling gained a lawnmower bot and per-device runs (`DEVICES=desktop`).
+
+Checks run: `node --test` 62/62; browser batches 1–9 on desktop and phone.
+
+## Batch 8: Co-op (done)
+
+Plan: the Net module, the shared house, ping, and saves in every browser. Check: two browsers join by link and hold a wave; a guest can host the house afterwards; solo is unaffected.
+
+Delivered (`src/net.js`, `src/render/others.js`, the Together tab):
+- The Net module is optional. It's created only when you invite or open an invite link (`#room=CODE`), and the game never needs it.
+- PeerJS 1.5.4 (vendored, loaded on demand) connects a host and up to three guests; a fifth player is told the house is full. There is no lobby and no text chat.
+- The host owns the house: seed, room state, floor progress, waves and the Tide simulation, rebroadcast to guests 5×/s.
+- Each player keeps their own Glow, upgrades, helpers, Clarity, sorties and gadgets, and takes their earnings home.
+- Room edits merge by taking the minimum of clutter and grime, since hands only ever make rooms cleaner, so simultaneous work never conflicts. Floods come from the host as authoritative "set" updates.
+- Lamps, shut doors, sweeping and lamp boosts at the fronts, and sortie points all go to the host.
+- Anchors found go to everyone. False signs differ per player (a per-browser salt) and true ones are shared.
+- Q drops a pillar of light for everyone. Other players appear as soft figures of light (no faces).
+- Wave pressure is ×1.5 per extra player.
+- Saves: every browser keeps its own house in its own save and a copy of each shared house (`shared:CODE`). Any player can host that house later from the Together tab.
+- On connection failure: a quiet message, your own house comes back, and you continue solo.
+- `?profile=name` keeps a separate save slot, so several people can share one machine (and tests can open two "browsers" in one).
+
+Checks run:
+- `node --test`: 57 pass. Two Net instances over BroadcastChannel join and share the seed and lit rooms while each keeps their own Glow. Also tested: pressure ×1.5, guest clearing merges into the host, host floods are authoritative, Anchors reach everyone, ping, a guest's saved copy hosted for a third player, and a fifth player turned away.
+- Browser (desktop + phone): two tabs of the real game, host and guest via an invite link (`&local=1`). Same seed and 2 players; the guest's clearing reached the host; the host's wave was seen by the guest and held on both; after both left, the guest hosted the saved house and a third tab joined it with the same seed and lit rooms. No errors in the other tabs. The full solo regression (batches 1–7) passes.
+
+Not run:
+- Real WebRTC through PeerJS. This sandbox can't reach the public PeerJS broker (0.peerjs.com), so the browser test used the module's same-browser BroadcastChannel transport. The PeerJS path uses the same message layer but is untested here.
+
 ## Batch 7: Long game (done)
 
 Plan: signs, Anchors, Dawn, notes, achievements, the cosmetic layer and audio. Check: two true rays meet on the Anchor; Dawn keeps what it should.

@@ -10,6 +10,9 @@ import * as Gad from './gadgets.js';
 import { SignFX } from './render/signfx.js';
 import * as Act from './action.js';
 import * as Long from './longgame.js';
+import { Net, parseHash, applyRoom, sharedSave, houseOf } from './net.js';
+import * as R from './roomstate.js';
+import { OthersFX } from './render/others.js';
 import * as Save from './save.js';
 import { t, fmt, setLang } from './strings.js';
 import { World } from './render/scene.js';
@@ -26,7 +29,8 @@ if (input.touch) document.body.classList.add('touch');
 const audio = new Audio();
 const panel = new UI.Panel();
 const map = new MapView(document.getElementById('map'));
-const SAVE_KEY = 'main';
+// ?profile=name keeps a separate save slot (several players on one machine, and tests).
+const SAVE_KEY = 'main' + (new URLSearchParams(location.search).get('profile') ? ':' + new URLSearchParams(location.search).get('profile') : '');
 
 let game, world, tidefx, signfx;
 let gameTime = 0, frames = 0;
@@ -47,9 +51,18 @@ async function load() {
   setLang(game.settings.lang || (navigator.language || 'en').slice(0, 2));
 }
 
-async function save() {
+// Saves run one after another, so the newest state always lands last.
+let saveChain = Promise.resolve();
+function save() { saveChain = saveChain.then(saveNow, saveNow); return saveChain; }
+async function saveNow() {
   if (window.__liftNoSave) return; // test hook
-  try { game.lastTs = Date.now(); await Save.put(SAVE_KEY, Game.serialize(game)); dirtySave = false; } catch (e) { console.warn('save failed', e); }
+  try {
+    game.lastTs = Date.now();
+    const mine = ownHouse ? { ...game, house: ownHouse.house, rooms: ownHouse.rooms, pos: ownHouse.pos, tide: null } : game;
+    await Save.put(SAVE_KEY, Game.serialize(mine));
+    if (net && net.alive) await Save.put('shared:' + net.code, { ...sharedSave(game), code: net.code, at: Date.now() });
+    dirtySave = false;
+  } catch (e) { console.warn('save failed', e); }
 }
 function markSave() { dirtySave = true; }
 
@@ -96,9 +109,9 @@ function nearDoor() {
 }
 function interact() {
   const an = nearAnchor();
-  if (an) { const a = Signs.takeAnchor(game, game.pos.floor, an.rx, an.rz); if (a) { UI.toast(t('anchorFound', { name: t('an_' + a.kind), habit: t('hb_' + a.kind) })); audio.rare(); refreshSigns(); markSave(); save(); } return; }
+  if (an) { const a = Signs.takeAnchor(game, game.pos.floor, an.rx, an.rz); if (a) { if (net) net.anchor(game.pos.floor, a.x, a.z, a.kind); UI.toast(t('anchorFound', { name: t('an_' + a.kind), habit: t('hb_' + a.kind) })); audio.rare(); refreshSigns(); markSave(); save(); } return; }
   const door = nearDoor();
-  if (door) { Game.shutDoor(game, game.pos.floor, door.rx, door.rz, door.side, CFG.tide.doorHold); audio.tone(196, 0.3, 'square', 0.06); audio.burst(0.15, 300, 0.12, 1); return; }
+  if (door) { Game.shutDoor(game, game.pos.floor, door.rx, door.rz, door.side, CFG.tide.doorHold); if (net) net.door(game.pos.floor, door.rx, door.rz, door.side, CFG.tide.doorHold); audio.tone(196, 0.3, 'square', 0.06); audio.burst(0.15, 300, 0.12, 1); return; }
   const sealed = nearSealed();
   if (sealed) {
     const res = Game.openSealed(game, game.pos.floor, sealed.x, sealed.z);
@@ -109,13 +122,13 @@ function interact() {
   if (sw) {
     if (Game.room(game, game.pos.floor, sw.rx, sw.rz).lit) {
       const b = Act.boostLamp(game, game.pos.floor, sw.rx, sw.rz);
-      if (b.ok) { audio.lamp(); UI.toast(t('lampBoosted')); const v = world.viewFor(game.pos.floor, sw.rx, sw.rz); if (v) v.lampBoost = 1.8; } else audio.deny();
+      if (b.ok) { if (net && !net.isHost()) net.boost(sw.rx, sw.rz, 0.3); audio.lamp(); UI.toast(t('lampBoosted')); const v = world.viewFor(game.pos.floor, sw.rx, sw.rz); if (v) v.lampBoost = 1.8; } else audio.deny();
       return;
     }
     const res = Game.buyLamp(game, game.pos.floor, sw.rx, sw.rz);
     if (res.ok) Act.flowStep(game, 0, 'light');
     if (res.ok) {
-      audio.lamp(); UI.toast(t('roomLit')); markSave(); save();
+      audio.lamp(); UI.toast(t('roomLit')); markSave(); save(); if (net) net.lamp(`${game.pos.floor}:${sw.rx}:${sw.rz}`);
       if (Game.checkFloorUnlock(game, game.pos.floor)) { UI.toast(t('floorOpen', { n: game.house.maxFloor })); audio.bell(); }
     } else audio.deny();
     return;
@@ -146,6 +159,7 @@ function setupPanel() {
     { id: 'anchors', label: () => t('tabAnchors'), render: renderAnchors },
     { id: 'diary', label: () => t('tabDiary'), render: renderDiary },
     { id: 'catalog', label: () => t('tabCatalog'), render: renderCatalog },
+    { id: 'together', label: () => t('tabTogether'), render: renderTogether },
     { id: 'settings', label: () => t('tabSettings'), render: renderSettings },
   ], renderTop);
   panel.onClose = () => { if (!input.touch && running) input.requestLock(); };
@@ -216,10 +230,12 @@ function callWave(opts = {}) {
 }
 const tideHooks = {
   onContact: (l, x, z) => tidefx && tidefx.onContact(l, x, z, Game.room(game, game.pos.floor, x, z).lit),
-  onFlood: (x, z) => { const v = world.viewFor(game.pos.floor, x, z); if (v) v.syncClutter(); if (v) v.refreshFloor(); UI.toast(t('tideFlood')); audio.tone(130, 0.8, 'sine', 0.1); },
+  onFlood: (x, z) => { if (net) net.send({ t: 'room', key: `${game.pos.floor}:${x}:${z}`, mode: 'set', r: packRoom(Game.room(game, game.pos.floor, x, z)) }); const v = world.viewFor(game.pos.floor, x, z); if (v) v.syncClutter(); if (v) v.refreshFloor(); UI.toast(t('tideFlood')); audio.tone(130, 0.8, 'sine', 0.1); },
   onEnd: (w) => tideEnded(w),
 };
+function packRoom(r) { return { c: Array.from(r.c, (v) => Math.min(255, Math.round(v * 40))), g: Array.from(r.g, (v) => Math.round(v * 255)), l: r.lit ? 1 : 0, f: r.flags, cd: r.clearedDone ? 1 : 0, pd: r.polishedDone ? 1 : 0, t: r.total, v: r.visited ? 1 : 0 }; }
 function tideEnded(w) {
+  if (net && net.isHost()) for (const [x, z] of w.flooded) net.send({ t: 'room', key: `${w.f}:${x}:${z}`, mode: 'set', r: packRoom(Game.room(game, w.f, x, z)) });
   if (tidefx) tidefx.onEnd(w);
   for (const v of world.views.values()) { v.syncClutter(); v.refreshFloor(); }
   if (w.kind === 'wave') {
@@ -303,6 +319,71 @@ function nearAnchor() {
   const ax = rx * S + v.anchorMesh.position.x, az = rz * S + v.anchorMesh.position.z;
   return Math.hypot(game.pos.x - ax, game.pos.z - az) < 2 ? { rx, rz, kind: v.anchor.kind } : null;
 }
+let sharedList = null;
+function renderTogether(body, rerender) {
+  body.append(el('p', { class: 'note' }, t('coopNote')));
+  if (net && net.alive) {
+    body.append(el('p', {}, t('coopPlayers', { n: net.players() })));
+    if (net.isHost()) {
+      const link = net.link();
+      body.append(el('p', { class: 'sub' }, t('coopLink')), el('textarea', { readonly: true }, link),
+        el('button', { class: 'plain', onclick: () => { navigator.clipboard && navigator.clipboard.writeText(link); UI.toast(t('coopCopied')); } }, t('coopCopy')));
+    } else body.append(el('p', { class: 'note' }, t('coopGuestWave')));
+    body.append(el('p', {}), el('button', { class: 'plain', onclick: () => { leaveCoop(); rerender(); } }, t('coopLeave')));
+    return;
+  }
+  body.append(el('button', { class: 'buy', onclick: async () => { await startHost(); rerender(); } }, t('coopHost')));
+  body.append(el('h3', {}, t('coopShared')));
+  if (!sharedList) { Save.keys().then((ks) => { sharedList = ks.filter((k) => String(k).startsWith('shared:')).map((k) => k.slice(7)); rerender(); }); return; }
+  if (!sharedList.length) body.append(el('p', { class: 'note' }, t('coopNone')));
+  for (const code of sharedList) body.append(el('div', { class: 'row' }, el('div', { class: 'grow' }, code), el('button', { class: 'plain', onclick: async () => { await hostShared(code); rerender(); } }, t('coopHostShared'))));
+}
+const netHooks = {
+  getGame: () => game,
+  setHouse: (house, rooms) => enterHouse(house, rooms),
+  onRoom: (key) => { const [f, x, z] = key.split(':').map(Number); const v = world.viewFor(f, x, z); if (v) { v.syncClutter(); v.refreshFloor(); } },
+  onPing: (x, z, c) => { signfx.ping(x, z, THREE_Color(c)); audio.chime(4); },
+  onAnchor: (kind) => { UI.toast(t('anchorFound', { name: t('an_' + kind), habit: t('hb_' + kind) })); audio.rare(); },
+  onPeers: () => { panel.refresh(); },
+  onFail: (e) => { UI.toast(String(e && e.message) === 'full' ? t('coopFull') : t('coopFail')); restoreOwnHouse(); net = null; },
+};
+function THREE_Color(c) { const h = Math.floor(c * 360); return `hsl(${h},70%,75%)`; }
+// Swap in a shared house, keeping your own player; your own house waits in your save.
+function enterHouse(house, rooms) {
+  if (!ownHouse) ownHouse = { house: game.house, rooms: game.rooms, pos: { ...game.pos } };
+  game.house = { ...house, floors: { ...house.floors } };
+  for (const f of Object.keys(game.house.floors)) game.house.floors[f] = { ...Game.newFloor(), ...game.house.floors[f] };
+  game.rooms = new Map(); game.infos = new Map(); game.tide = null; game.sortie = null; game.mods = {};
+  for (const [k, p] of Object.entries(rooms || {})) applyRoom(game, k, p, 'set');
+  Game.recomputeAll(game);
+  game.pos = { floor: 0, x: 0, y: 0, z: 0.8, yaw: 0, pitch: 0 };
+  world.setGame(game); tidefx && tidefx.clear();
+  UI.toast(t('coopJoined'));
+}
+function restoreOwnHouse() {
+  if (!ownHouse) return;
+  game.house = ownHouse.house; game.rooms = ownHouse.rooms; game.infos = new Map(); game.pos = ownHouse.pos; game.tide = null;
+  ownHouse = null; Game.recomputeAll(game); world.setGame(game); tidefx && tidefx.clear();
+}
+async function startHost(code) {
+  net = new Net(netHooks);
+  try { const local = !!(parseHash() || {}).local || !!window.__liftLocalNet; await net.hostRoom(code, local); history.replaceState(null, '', '#room=' + net.code + (local ? '&local=1' : '')); save(); }
+  catch (e) { netHooks.onFail(e); }
+}
+async function hostShared(code) {
+  const blob = await Save.get('shared:' + code);
+  if (!blob) return;
+  const rooms = {}; for (const [k, ro] of Object.entries(blob.rooms)) { const r = R.deserializeRoom(ro); rooms[k] = { c: Array.from(r.c, (v) => Math.round(v * 40)), g: Array.from(r.g, (v) => Math.round(v * 255)), l: r.lit ? 1 : 0, f: r.flags, cd: r.clearedDone ? 1 : 0, pd: r.polishedDone ? 1 : 0, t: r.total, v: r.visited ? 1 : 0 }; }
+  enterHouse(blob.house, rooms);
+  await startHost(code);
+}
+async function joinFromLink() {
+  const h = parseHash(); if (!h) return;
+  UI.toast(t('coopJoining'));
+  net = new Net(netHooks);
+  try { await net.join(h.code, h.local); } catch (e) { netHooks.onFail(e); }
+}
+function leaveCoop() { if (net) net.close(); net = null; history.replaceState(null, '', location.pathname); restoreOwnHouse(); save(); }
 function renderAnchors(body) {
   const p = game.player;
   body.append(el('p', { class: 'note' }, t('anchorsNote')));
@@ -471,14 +552,14 @@ function update(dt) {
         if (v) { v.syncClutter(evt.cells); v.refreshFloor(); world.spawnFlyers(v, evt.cells, null); }
         audio.clear(evt.units, game.combo, Game.info(game, f, trx, trz).biome.item);
       }
-      if ((evt.mode === 'clear' || evt.mode === 'polish') && game.tide) Tide.sweepBoost(game, f, trx, trz, dt);
+      if ((evt.mode === 'clear' || evt.mode === 'polish') && game.tide) { if (Tide.sweepBoost(game, f, trx, trz, dt) && net && !net.isHost()) net.boost(trx, trz, CFG.tide.sweepBoost * dt); }
       if (evt.mode === 'polish') {
         active = true; if (v) v.refreshFloor(); audio.polish(evt.polished);
       }
       if (evt.rare) { const id = 'find:' + evt.rare; if (Game.addCatalog(game, id)) { UI.toast(t('catalogNew', { name: t('cat_find_' + evt.rare) })); audio.rare(); } }
       if (evt.finishedClear) { const ni = Long.findNote(game, f, trx, trz); if (ni !== null) { UI.toast(t('noteFound', { text: t('note_' + ni) })); audio.chime(2); } if (v) { v.syncClutter(); v.refreshFloor(); } UI.toast(t('roomCleared')); audio.done(); markSave(); }
       if (evt.finishedPolish) { if (v) v.refreshFloor(); refreshSigns(); UI.toast(t('roomPolished')); audio.done(); markSave(); }
-      if (evt.mode && evt.mode !== 'idle') dirtySave = true;
+      if (evt.mode && evt.mode !== 'idle') { dirtySave = true; if (net) net.markRoom(`${f}:${trx}:${trz}`); }
     }
   }
   Game.tickCombo(game, dt, active);
@@ -526,8 +607,10 @@ function update(dt) {
   }
   if ((game.player.anchors.phone || 0) > 0 && !inCabinNow) { game.phoneT = (game.phoneT || 0) + dt; if (game.phoneT > 120) { game.phoneT = 0; if (Signs.phoneRay(game, f, rx, rz)) { UI.toast(t('phoneRay')); audio.chime(5); } } }
   if (signfx) signfx.update(dt, game);
+  if (net) net.tick(dt);
+  if (others) others.update(dt, net, f);
   const hw = Econ.tickHelpers(game, dt, f, rx, rz, auraRadius());
-  if (hw.cells) for (const k of hw.touched) { const v = world.views.get(k); if (v) { v.syncClutter(); v.refreshFloor(); } }
+  if (hw.cells) for (const k of hw.touched) { const v = world.views.get(k); if (v) { v.syncClutter(); v.refreshFloor(); } if (net) net.markRoom(k); }
   panelT += dt; if (panel.open && panelT > 0.5 && panel.cur !== 'settings') { panelT = 0; panel.refresh(); }
   for (const v of world.views.values()) {
     const { x, z } = v.info;
@@ -545,6 +628,8 @@ function update(dt) {
     const pol = Math.floor(100 * polishPct(r));
     UI.hud(t('hudRoom', { glow: fmt(game.player.glow), c, p: pol, lit: r.lit ? t('hudLit') : '' }) + tideHud() + (s.authorNotes ? '  ·  ' + (Long.AUTHOR_NOTES[Game.info(game, f, rx, rz).biome.id] || '') : ''));
   }
+  // first minute: one line of control hints until the first room is cleared
+  if (game.player.stats.cleared < 40 && !panel.open && game.player.lifetimeGlow < 400) UI.hud((input.touch ? t('hintTouch') : t('hintDesktop')));
   // prompt
   let pr = '';
   const sw = nearSwitch(), sealed = nearSealed();
@@ -595,7 +680,7 @@ function drawTideOnMap(x, o) {
 let signT = 0, longT = 0, inCabinNow = true;
 function refreshSigns() { if (!signfx) return; for (const v of world.views.values()) signfx.refresh(v, game, signOpts()); }
 const signOpts = () => ({ echo: !!game.mods.echo, salt: net ? net.salt() : 0 });
-function sortiePaid(r) { if (!r) return; UI.toast(t(r.clean ? 'sortiePaidClean' : 'sortiePaid', { glow: fmt(r.pay) })); audio.done(); markSave(); save(); }
+function sortiePaid(r) { if (!r) return; if (net && !net.isHost() && r.so) net.sortiePts(r.so.floor, r.so.action); UI.toast(t(r.clean ? 'sortiePaidClean' : 'sortiePaid', { glow: fmt(r.pay) })); audio.done(); markSave(); save(); }
 function drawSortieOnMap(x, o) {
   const p = game.player;
   x.lineWidth = 1.5 * o.dpr;
@@ -612,7 +697,7 @@ function drawSortieOnMap(x, o) {
 }
 let pruneT = 0, musicAct = 0, panelT = 0, rankT = 0, tideClearT = 0, hitStop = 0, wasFull = false;
 const abilitySeen = {};
-const net = null;
+let net = null, ownHouse = null, others = null;
 function auraRadius() { return Act.auraRadius(game); }
 function canSlide(p, f, S) {
   const [rx, rz] = roomOf(p.x, p.z, S);
@@ -687,6 +772,7 @@ async function main() {
   world = new World(canvas, game, { mobile: input.touch, fov: settings().fov, quality: q0 });
   for (const id of ['bMap', 'bSlide']) document.getElementById(id).classList.remove('locked');
   tidefx = new TideFX(world, audio);
+  others = new OthersFX(world);
   signfx = new SignFX(world);
   world.onViewCreated = (v) => signfx.refresh(v, game, signOpts());
   map.layers.push(drawTideOnMap, drawSortieOnMap);
@@ -697,12 +783,13 @@ async function main() {
   const away = Econ.applyOffline(game, Date.now());
   if (away.secs > 3600) Long.checkAchievements(game, { restedAway: true });
   startScreen(away);
+  joinFromLink();
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
   addEventListener('pagehide', () => save());
   requestAnimationFrame(loop);
   // Test hook: run the real update loop for N seconds of game time without drawing, calling bot() each step.
   const simulate = (secs, bot, dt = 1 / 30) => { skipRender = true; let t = 0; try { while (t < secs) { if (bot && bot()) break; update(dt); gameTime += dt; t += dt; } } finally { skipRender = false; } return t; };
   const renderBench = (n) => { const p = game.pos; const t0 = performance.now(); for (let i = 0; i < n; i++) world.frame(1 / 60, { x: p.x, y: CFG.player.eye, z: p.z, yaw: p.yaw, pitch: p.pitch, fov: settings().fov }, false); world.renderer.getContext().finish(); return (performance.now() - t0) / n; };
-  window.__lift = { Long, doDawn, Act, useAbility, So, Signs, Gad, get signfx() { return signfx; }, refreshSigns, Tide, get tidefx() { return tidefx; }, callWave, simulate, renderBench, get game() { return game; }, get time() { return gameTime; }, get frames() { return frames; }, world, input, save, Game, panel, map };
+  window.__lift = { Econ, get net() { return net; }, startHost, hostShared, leaveCoop, Long, doDawn, Act, useAbility, So, Signs, Gad, get signfx() { return signfx; }, refreshSigns, Tide, get tidefx() { return tidefx; }, callWave, simulate, renderBench, get game() { return game; }, get time() { return gameTime; }, get frames() { return frames; }, world, input, save, Game, panel, map };
 }
 main();

@@ -37,3 +37,7 @@ export function importText(text) {
   if (!s.startsWith('LIFT1:')) throw new Error('bad');
   return JSON.parse(decodeURIComponent(escape(atob(s.slice(6)))));
 }
+export async function keys() {
+  const db = await open();
+  return new Promise((res) => { const tx = db.transaction(STORE, 'readonly'); const req = tx.objectStore(STORE).getAllKeys(); req.onsuccess = () => { db.close(); res(req.result); }; req.onerror = () => { db.close(); res([]); }; });
+}

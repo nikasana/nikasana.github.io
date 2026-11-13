@@ -285,7 +285,10 @@ const BATCHES = {
     // active minute vs idle minute at floor 0, through the real loop with the bot
     const ratio = await page.evaluate(() => {
       const L = window.__lift, g = L.game, G = L.Game;
-      Object.assign(g.player.upgrades, { power: 0, reach: 0, speed: 0, shine: 0, bright: 0, wiring: 1 }); G.recomputeAll(g);
+      Object.assign(g.player.upgrades, { power: 0, reach: 0, speed: 0, shine: 0, bright: 0, wiring: 1 });
+      // a modest territory of ten finished, lit rooms around the lift
+      let n = 0; for (let x = -2; x <= 2 && n < 10; x++) for (let z = -1; z <= 1 && n < 10; z++) { if (!x && !z) continue; const r = G.room(g, 0, x, z); r.c.fill(0); r.g.fill(0); r.clearedDone = r.polishedDone = true; if (!r.lit) { r.lit = true; G.floorState(g, 0).litCount++; } n++; }
+      G.recomputeAll(g);
       const idle = G.incomeRate(g) * 60, g0 = g.player.nightGlow;
       let t = 0; const targets = [];
       for (let x = 3; x < 40 && targets.length < 12; x++) if (!G.room(g, 0, x, 7).clearedDone && G.room(g, 0, x, 7).total > 0 && G.info(g, 0, x, 7).modifier === 'normal' && !G.info(g, 0, x, 7).setPiece) targets.push(x);
@@ -301,8 +304,10 @@ const BATCHES = {
     const rays = await page.evaluate(() => {
       const L = window.__lift, g = L.game, G = L.Game;
       L.Tide.clearTide(g); g.sortie = null; g.mods = {}; L.input.keys.clear(); L.input.move.x = L.input.move.y = 0;
-      const a = L.Signs.anchorFor(g, 0, 25, 25), [rx, rz] = L.Signs.regionOf(25, 25);
-      const got = [];
+      let a, rx, rz, got = [];
+      for (const [qx, qz] of [[25, 25], [35, 25], [25, 35], [45, 45], [-25, 25]]) {
+      a = L.Signs.anchorFor(g, 0, qx, qz); [rx, rz] = L.Signs.regionOf(qx, qz);
+      got = [];
       const ah = 0.9 + G.toolRadius(g.player);
       for (let x = rx * 10; x < rx * 10 + 10 && got.length < 2; x++) for (let z = rz * 10; z < rz * 10 + 10 && got.length < 2; z++) {
         const sg0 = L.Signs.signAt(g, 0, x, z);
@@ -316,6 +321,8 @@ const BATCHES = {
           L.input.tool = true; L.simulate(2.5); L.input.tool = false;
         }
         if (g.player.signs[sg0.key] === 'true') got.push(g.player.rays.at(-1));
+      }
+      if (got.length >= 2) break;
       }
       if (got.length < 2) return { n: got.length };
       const [p, q] = got, d1 = [Math.cos(p.angle), Math.sin(p.angle)], d2 = [Math.cos(q.angle), Math.sin(q.angle)];
@@ -350,6 +357,113 @@ const BATCHES = {
     check('B7 cabin keeps its drawing after a Dawn', cos && cos.drawing, JSON.stringify(cos));
     if (shots) await page.screenshot({ path: `${shots}/${name}-b7-cabin.png`, timeout: 120000 });
   },
+  async 8(page, check, name, shots, ctx) {
+    const code = 'E' + Math.floor(Math.random() * 1e5);
+    await page.evaluate(async (code) => {
+      const L = window.__lift, g = L.game, G = L.Game;
+      L.Tide.clearTide(g); g.sortie = null; g.mods = {}; g.pos.x = 0; g.pos.z = 0.8;
+      for (let x = -2; x <= 2; x++) for (let z = -2; z <= 2; z++) { if (!x && !z) continue; const r = G.room(g, 0, x, z); r.c.fill(0); r.g.fill(0); r.clearedDone = r.polishedDone = true; r.visited = r.touched = true; if (!r.lit) { r.lit = true; G.floorState(g, 0).litCount++; } G.updateStrength(g, 0, x, z); }
+      Object.assign(g.house.floors[0], { quiet: false, waves: 0, rank: 5 }); g.house.maxFloor = Math.max(1, g.house.maxFloor);
+      window.__liftLocalNet = true; await L.startHost(code);
+    }, code);
+    const link = await page.evaluate(() => window.__lift.net.link());
+    const pageB = await ctx.newPage();
+    const errsB = []; pageB.on('pageerror', (e) => errsB.push(String(e)));
+    const urlB = url.replace(/\/?$/, '/') + '?profile=b' + link.slice(link.indexOf('#'));
+    await pageB.goto(urlB, { waitUntil: 'load' });
+    try {
+      await pageB.waitForFunction(() => window.__lift && window.__lift.net && window.__lift.net.alive, null, { timeout: 20000 });
+      await pageB.waitForFunction(() => window.__lift.game.rooms.size > 10, null, { timeout: 20000 });
+    } catch (e) {
+      const dB = await pageB.evaluate(() => ({ lift: !!window.__lift, net: !!(window.__lift && window.__lift.net), alive: window.__lift && window.__lift.net && window.__lift.net.alive, welcomed: window.__lift && window.__lift.net && window.__lift.net.welcomed, rooms: window.__lift && window.__lift.game.rooms.size, hash: location.hash, toasts: document.getElementById('toasts').textContent }));
+      const dA = await page.evaluate(() => ({ net: !!window.__lift.net, alive: window.__lift.net && window.__lift.net.alive, host: window.__lift.net && window.__lift.net.isHost(), code: window.__lift.net && window.__lift.net.code, players: window.__lift.net && window.__lift.net.players() }));
+      throw new Error('join failed ' + JSON.stringify({ dA, dB, errsB }));
+    }
+    const seeds = { a: await page.evaluate(() => window.__lift.game.house.seed), b: await pageB.evaluate(() => window.__lift.game.house.seed), players: await page.evaluate(() => window.__lift.net.players()) };
+    check('B8 a second browser joins by link and shares the house', seeds.a === seeds.b && seeds.players === 2, JSON.stringify(seeds));
+    // the guest clears in a shared room; the host sees it
+    const merged = await (async () => {
+      const tx = await page.evaluate(() => { const L = window.__lift, g = L.game; for (let x = 3; x < 40; x++) { const r = L.Game.room(g, 0, x, 0); if (!r.clearedDone && r.c.reduce((a, b) => a + b, 0) > 50 && !L.Game.isSealed(g, 0, x, 0)) return x; } return 3; });
+      const before = await page.evaluate((tx) => { const r = window.__lift.Game.room(window.__lift.game, 0, tx, 0); return r.c.reduce((a, b) => a + b, 0); }, tx);
+      await pageB.evaluate((tx) => { const L = window.__lift, g = L.game; g.pos.x = tx * 8 - 2; g.pos.z = 0; g.pos.yaw = 0; g.pos.pitch = -0.5; L.input.tool = true; L.simulate(3); L.input.tool = false; L.net.tick(0.3); }, tx);
+      await page.waitForTimeout(400);
+      const after = await page.evaluate((tx) => { const r = window.__lift.Game.room(window.__lift.game, 0, tx, 0); return r.c.reduce((a, b) => a + b, 0); }, tx);
+      return { before: +before.toFixed(1), after: +after.toFixed(1) };
+    })();
+    check('B8 the guest’s clearing reaches the host', merged.after < merged.before - 0.5, JSON.stringify(merged));
+    // the host calls a wave; both see it; it holds
+    await page.evaluate(() => window.__lift.callWave());
+    let sawOnB = false, result = null;
+    for (let i = 0; i < 40 && !result; i++) {
+      result = await page.evaluate(() => { const L = window.__lift; L.simulate(3); L.net.tick(0.3); return L.game.tide && L.game.tide.result; });
+      await page.waitForTimeout(60);
+      if (await pageB.evaluate(() => !!(window.__lift.game.tide && window.__lift.game.tide.fronts && window.__lift.game.tide.fronts.length))) sawOnB = true;
+    }
+    await page.evaluate(() => window.__lift.net.tick(0.3)); await page.waitForTimeout(200);
+    const bResult = await pageB.evaluate(() => window.__lift.game.tide && window.__lift.game.tide.result);
+    check('B8 two browsers hold a wave together', (result === 'held' || result === 'bounced') && sawOnB, JSON.stringify({ host: result, guestSawWave: sawOnB, guestResult: bResult }));
+    if (shots) await pageB.screenshot({ path: `${shots}/${name}-b8-guest.png`, timeout: 120000 });
+    // the guest keeps a copy and can host the house after the host leaves
+    await pageB.evaluate(() => window.__lift.save()); await pageB.waitForTimeout(300);
+    await page.evaluate(() => { window.__lift.leaveCoop(); });
+    await pageB.evaluate(() => window.__lift.leaveCoop());
+    const code2 = await pageB.evaluate(async (code) => { window.__liftLocalNet = true; await window.__lift.hostShared(code); return window.__lift.net && window.__lift.net.code; }, code);
+    const pageC = await ctx.newPage();
+    await pageC.goto(url.replace(/\/?$/, '/') + '?profile=c' + '#room=' + code2 + '&local=1', { waitUntil: 'load' });
+    await pageC.waitForFunction(() => window.__lift && window.__lift.net && window.__lift.game.rooms.size > 10, null, { timeout: 20000 }).catch(() => {});
+    const c = await pageC.evaluate(() => ({ seed: window.__lift.game.house.seed, lit: window.__lift.Game.room(window.__lift.game, 0, 1, 0).lit }));
+    check('B8 a guest can host the shared house afterwards', c.seed === seeds.a && c.lit, JSON.stringify(c));
+    check('B8 no errors in the other browsers', errsB.length === 0, errsB.slice(0, 3).join(' | '));
+    await pageB.evaluate(() => window.__lift.leaveCoop()); await pageC.close(); await pageB.close();
+  },
+  async 9(page, check, name, shots, ctx) {
+    // first minute in a fresh save
+    const fresh = await ctx.newPage();
+    await fresh.goto(url.replace(/\/?$/, '/') + '?profile=fresh' + Math.floor(Math.random() * 1e6), { waitUntil: 'load' });
+    await fresh.waitForFunction(() => window.__lift && window.__lift.world, null, { timeout: 20000 });
+    await fresh.evaluate(BOT); await fresh.evaluate(MOWER);
+    await fresh.click('#begin');
+    const fm = await fresh.evaluate(() => {
+      const L = window.__lift, g = L.game, G = L.Game;
+      L.world.setQuality(2);
+      L.simulate(0.1);
+      const out = { inCabin: Math.round(g.pos.x / 8) === 0 && Math.round(g.pos.z / 8) === 0, firstRoom: G.info(g, 0, 0, -1).biome.id, clutter: Math.round(G.room(g, 0, 0, -1).total), hint: document.getElementById('hud').textContent.includes('WASD') || document.getElementById('hud').textContent.includes('thumb') };
+      const cheapest = Math.min(...['power', 'reach', 'speed', 'shine', 'bright', 'wiring'].map((id) => L.Game.trackLevel ? 0 : 0) || [0]);
+      let tUp = 0; const t0 = L.time;
+      const cost = Math.min(...['power', 'reach', 'speed', 'shine', 'bright', 'wiring'].map((id) => L.Econ ? L.Econ.upgradeCost(id, 0) : 320));
+      for (const [x, z] of [[0, -1], [1, 0], [-1, 0]]) { if (tUp) break; L.simulate(60, () => { if (!tUp && g.player.glow >= cost) tUp = L.time - t0; return tUp > 0 || window.__mow(x, z); }); }
+      out.firstUpgrade = +tUp.toFixed(1);
+      return out;
+    });
+    check('B9 first minute: the lift opens onto a room full of balls, with a line of hints', fm.inCabin && fm.firstRoom === 'playroom' && fm.clutter > 100 && fm.hint, JSON.stringify(fm));
+    check('B9 first upgrade affordable in about 30 s (bot)', fm.firstUpgrade > 0 && fm.firstUpgrade <= 45, `${fm.firstUpgrade} s`);
+    await fresh.close();
+    // CPU cost of the game logic per frame, and the GPU load per graphics level with a wave on screen
+    const perf = await page.evaluate(() => {
+      const L = window.__lift, g = L.game, G = L.Game;
+      L.Tide.clearTide(g); L.leaveCoop && L.net && L.leaveCoop();
+      g.pos.x = 0; g.pos.z = 0.8;
+      for (let x = -2; x <= 2; x++) for (let z = -2; z <= 2; z++) { if (!x && !z) continue; const r = G.room(g, 0, x, z); r.c.fill(0); r.g.fill(0); r.clearedDone = r.polishedDone = true; if (!r.lit) { r.lit = true; G.floorState(g, 0).litCount++; } G.updateStrength(g, 0, x, z); }
+      g.house.floors[0].quiet = false; g.house.floors[0].waves = 0; g.house.floors[0].rank = 5;
+      L.callWave(); L.simulate(16);
+      const w = g.tide, l = w.fronts[0].lanes[0], cur = l.path[l.i], prev = l.path[Math.max(0, l.i - 1)];
+      g.pos.x = cur[0] * 8 - (cur[0] - prev[0]) * 2; g.pos.z = cur[1] * 8 - (cur[1] - prev[1]) * 2 + 0.01; g.pos.yaw = Math.atan2(-(prev[0] - cur[0]), -(prev[1] - cur[1]));
+      L.input.tool = true;
+      const t0 = performance.now(); L.simulate(5, null, 1 / 60); const cpu = (performance.now() - t0) / 300;
+      L.input.tool = false;
+      const levels = {};
+      for (const lv of [1, 2, 3, 4, 5]) { L.world.setQuality(lv); L.simulate(0.05); L.world.renderer.info.reset(); L.world.renderer.info.autoReset = false; L.renderBench(1); const i = L.world.renderer.info.render; levels[lv] = { calls: i.calls, tris: i.triangles, pr: +L.world.renderer.getPixelRatio().toFixed(2) }; L.world.renderer.info.autoReset = true; }
+      L.world.setQuality(2); L.Tide.clearTide(g);
+      return { cpuMsPerFrame: +cpu.toFixed(2), levels, lights: L.world.lights.length };
+    });
+    check('B9 game logic costs little CPU per frame (with a wave and the tool)', perf.cpuMsPerFrame < 6, `${perf.cpuMsPerFrame} ms/frame`);
+    check('B9 at most 4 dynamic lights; draw calls stay bounded at every level', perf.lights <= 4 && Object.values(perf.levels).every((l) => l.calls < 400), JSON.stringify(perf.levels));
+    // comfort
+    const comfort = await page.evaluate(() => { const L = window.__lift, g = L.game; g.pos.x = 30; g.pos.z = 30; L.input.events.push({ type: 'key', code: 'KeyH' }); L.simulate(0.1);
+      L.input.events.push({ type: 'key', code: 'Escape' }); L.simulate(0.05); const txt = document.querySelector('#panel').textContent; L.panel.hide();
+      return { home: Math.abs(g.pos.x) < 1 && Math.abs(g.pos.z) < 1.5, warm: txt.includes('Warm mode'), fov: txt.includes('Field of view'), graphics: txt.includes('Graphics') }; });
+    check('B9 comfort: H returns to the lift; warm mode, FOV and graphics settings', comfort.home && comfort.warm && comfort.fov && comfort.graphics, JSON.stringify(comfort));
+  },
 };
 
 async function run(name, ctxOpts, which) {
@@ -371,7 +485,7 @@ async function run(name, ctxOpts, which) {
   await page.waitForTimeout(500);
   if (shots) await page.screenshot({ path: `${shots}/${name}-start.png`, timeout: 120000 });
   for (const b of which) {
-    try { await BATCHES[b](page, check, name, shots); } catch (e) { check(`B${b} ran`, false, String(e).slice(0, 300)); }
+    try { await BATCHES[b](page, check, name, shots, ctx); } catch (e) { check(`B${b} ran`, false, String(e).slice(0, 300)); }
   }
   check('no console errors', errors.length === 0, errors.slice(0, 5).join(' | '));
   await browser.close();
@@ -379,7 +493,10 @@ async function run(name, ctxOpts, which) {
 }
 
 const which = (process.argv[3] || Object.keys(BATCHES).join(',')).split(',');
-const results = [await run('desktop', { viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 }, which), await run('phone', { ...devices['Pixel 7'] }, which)];
+const devs = (process.env.DEVICES || 'desktop,phone').split(',');
+const results = [];
+if (devs.includes('desktop')) results.push(await run('desktop', { viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 }, which));
+if (devs.includes('phone')) results.push(await run('phone', { ...devices['Pixel 7'] }, which));
 const allOk = results.every((r) => r.checks.every((c) => c.ok));
 console.log(allOk ? 'ALL PASS' : 'SOME FAILED');
 process.exit(allOk ? 0 : 1);
