@@ -250,7 +250,8 @@ export function contacts(s) {
 // Random Tides on floors that are not yet Quiet.
 export function maybeRandom(s, f, dt) {
   const fl = Game.floorState(s, f);
-  if (fl.quiet || s.tide || fl.litCount < 4 || (s.mods && s.mods.noTides)) { s.randomT = 0; return null; }
+  const loud = s.sortie && s.sortie.loud;
+  if ((fl.quiet && !loud) || s.tide || fl.litCount < 4 || (s.mods && s.mods.noTides)) { s.randomT = 0; return null; }
   s.randomT = (s.randomT || 0) + dt;
   if (s.randomT < T.randomEvery) return null;
   s.randomT = 0;

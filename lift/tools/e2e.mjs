@@ -227,6 +227,49 @@ const BATCHES = {
     const gad = await page.evaluate(() => { const L = window.__lift, g = L.game; g.pos.x = 0; g.pos.z = 0.8; g.pos.yaw = 0; for (const m of Object.keys(g.player.materials)) g.player.materials[m] += 100; L.So.buyGadget(g, 'paper'); g.settings.gadget = 'plane'; L.input.events.push({ type: 'key', code: 'KeyG' }); L.simulate(0.1); return [1, 2, 3, 4, 5].every((i) => L.Game.room(g, 0, 0, -i).flags.mapped); });
     check('B5 gadget: paper plane maps five rooms', gad);
   },
+  async 6(page, check, name, shots) {
+    const res = await page.evaluate(() => {
+      const L = window.__lift, g = L.game, G = L.Game, out = {};
+      L.Tide.clearTide(g); g.sortie = null; g.mods = {};
+      L.input.keys.clear(); L.input.move.x = L.input.move.y = 0; L.input.tool = false;
+      Object.assign(g.player.upgrades, { power: 3, reach: 2, speed: 3, shine: 2, bright: 3, wiring: 2 });
+      G.recomputeAll(g);
+      g.pos.x = 0; g.pos.z = -10; L.simulate(0.2);
+      // Dash: find a cluttered room north of the lift and dash into it
+      let z0 = -2; while (G.room(g, 0, 0, z0).clearedDone || G.info(g, 0, 0, z0).modifier === 'sealed') z0--;
+      const r = G.room(g, 0, 0, z0); const before = r.c.reduce((a, b) => a + b, 0);
+      g.pos.x = 0; g.pos.z = z0 * 8 + 4.3; g.pos.yaw = 0; L.simulate(0.2);
+      const x0 = g.pos.z; L.input.events.push({ type: 'key', code: 'Digit1' }); L.simulate(0.3);
+      out.dash = { moved: +(x0 - g.pos.z).toFixed(2), cleared: +(before - r.c.reduce((a, b) => a + b, 0)).toFixed(1), fov: L.world.fovKick > 0 };
+      // Flash during a wave relights a dark lamp and pushes fronts
+      const lr = G.room(g, 0, 1, 0); if (!lr.lit) { lr.lit = true; G.floorState(g, 0).litCount++; }
+      g.house.floors[0].quiet = false; g.house.floors[0].waves = 0;
+      L.Tide.startWave(g, 0); L.simulate(30, () => L.Tide.contacts(g).length > 0);
+      lr.lit = false; lr.flags.out = 1; G.floorState(g, 0).litCount--;
+      g.pos.x = 8; g.pos.z = 0; L.simulate(0.1); L.input.events.push({ type: 'key', code: 'Digit3' }); L.simulate(0.1);
+      out.flash = { relit: lr.lit };
+      L.Tide.clearTide(g);
+      // Flow: alternate clearing and polishing
+      out.flow0 = g.flow || 0;
+      return out;
+    });
+    check('B6 Dash lunges forward and ploughs a trench', res.dash.moved > 2 && res.dash.cleared > 5 && res.dash.fov, JSON.stringify(res.dash));
+    check('B6 Flash relights a fading lamp', res.flash.relit, JSON.stringify(res.flash));
+    // active minute vs idle minute at floor 0, through the real loop with the bot
+    const ratio = await page.evaluate(() => {
+      const L = window.__lift, g = L.game, G = L.Game;
+      Object.assign(g.player.upgrades, { power: 0, reach: 0, speed: 0, shine: 0, bright: 0, wiring: 1 }); G.recomputeAll(g);
+      const idle = G.incomeRate(g) * 60, g0 = g.player.nightGlow;
+      let t = 0; const targets = [];
+      for (let x = 3; x < 40 && targets.length < 12; x++) if (!G.room(g, 0, x, 7).clearedDone && G.room(g, 0, x, 7).total > 0 && G.info(g, 0, x, 7).modifier === 'normal' && !G.info(g, 0, x, 7).setPiece) targets.push(x);
+      for (const x of targets) { if (t >= 60) break; g.pos.x = x * 8; g.pos.z = 7 * 8 + 3; window.__skip = new Set(); t += L.simulate(60 - t, () => window.__bot(x, 7)); }
+      return { idle: Math.round(idle), active: Math.round(g.player.nightGlow - g0), ratio: +((g.player.nightGlow - g0) / idle).toFixed(2), secs: Math.round(t) };
+    });
+    check('B6 an active minute is worth 5-10 idle minutes (floor 0, real loop, bot)', ratio.ratio >= 5 && ratio.ratio <= 10, JSON.stringify(ratio));
+    const flow = await page.evaluate(() => window.__lift.game.flow);
+    check('B6 Flow fills with continuous action', flow > 0.3, String(flow && flow.toFixed(2)));
+    if (shots) await page.screenshot({ path: `${shots}/${name}-b6.png`, timeout: 120000 });
+  },
 };
 
 async function run(name, ctxOpts, which) {

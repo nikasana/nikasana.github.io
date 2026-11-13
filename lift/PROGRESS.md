@@ -2,6 +2,34 @@
 
 Live: https://nikasana.github.io/lift/
 
+## Batch 6: Action (done)
+
+Plan: abilities, Flow, aura, on-the-spot boosts, bounce, Loud mode, and feedback polish (hit-stop, wider FOV on slide and dash, sound that scales with quantity). Check: an active minute is worth 5–10 idle minutes at floors 0, 3 and 6.
+
+Delivered (`src/action.js`):
+- Abilities unlock at level 5 of each track, on keys 1–3 (touch buttons 1–3 appear when unlocked):
+  - Dash (Shovel): a 6 m lunge that ploughs a clear trench.
+  - Gloss (Brush): 5 s of ×20 polish; fronts pressing on your room slide back.
+  - Flash (Lamp): lamps within 2 rooms pulse, relight lamps that went out, add +30 % for the wave and push contacted fronts back a room.
+  - Each cooldown shortens 2 % per helper of that track's stage (sweepers / mops / fireflies), down to 35 %.
+- Flow: a meter (thin bar at the bottom) filled by continuous action, 3× faster when you switch between Clear, Polish and Light. At full Flow the helpers' aura (×2 work) also covers neighbouring rooms.
+- Glow at the front: during a wave, E at a lit room's switch spends Glow (half a lamp's price) to boost that lamp +30 % for the wave.
+- Bounce at 3× pressure (logic from batch 4) pays the full reward at once.
+- Loud mode: on Quiet floors each sortie offer has a Loud option (×2 reward; random Tides come back for the sortie).
+- Feedback: hit-stop (Dash, Flash), FOV +18 on Dash and +8 while sliding, both easing back. Clear sounds layer more voices with more quantity; Dash plays a big clear.
+
+Checks run:
+- `node --test`: 49/49 pass. Simulated active minute vs idle minute, 2 seeds per floor: 9.96 / 9.73 on floor 0, 6.95 / 6.79 on floor 3, 5.64 / 8.22 on floor 6, all within 5–10. Also tested: unlocks and cooldowns, Dash trench, Gloss, Flash, Flow ×3 and full-Flow aura, lamp boost, Loud mode. A new test checks that every string key the code uses exists in the strings table.
+- Browser (desktop + phone):
+  - Dash moved 6 m and cleared a trench (112 / 86 clutter units) with the FOV kick.
+  - Flash relit a lamp that had gone out.
+  - The bot playing a real minute on floor 0 earned 5.4× / 6.1× the idle minute (in-game income runs on wall-clock time, so this excludes the idle income during that minute; counting it would add about 1).
+  - Flow reached full. Batches 1–5 still pass.
+
+Known issues:
+- Floor 0's simulated ratio sits near the top of the band (9.7–10.0). The browser bot measures about 6.
+- Ability readiness on touch buttons shows only as opacity.
+
 ## Batch 5: Sorties (done)
 
 Plan: the board, six sortie types, rank, extraction, risk, mutators and gadgets. Check: every type completes; a clean exit pays +50 %.

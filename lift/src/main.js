@@ -8,6 +8,7 @@ import * as So from './sorties.js';
 import * as Signs from './signs.js';
 import * as Gad from './gadgets.js';
 import { SignFX } from './render/signfx.js';
+import * as Act from './action.js';
 import * as Save from './save.js';
 import { t, fmt, setLang } from './strings.js';
 import { World } from './render/scene.js';
@@ -105,7 +106,13 @@ function interact() {
   }
   const sw = nearSwitch();
   if (sw) {
+    if (Game.room(game, game.pos.floor, sw.rx, sw.rz).lit) {
+      const b = Act.boostLamp(game, game.pos.floor, sw.rx, sw.rz);
+      if (b.ok) { audio.lamp(); UI.toast(t('lampBoosted')); const v = world.viewFor(game.pos.floor, sw.rx, sw.rz); if (v) v.lampBoost = 1.8; } else audio.deny();
+      return;
+    }
     const res = Game.buyLamp(game, game.pos.floor, sw.rx, sw.rz);
+    if (res.ok) Act.flowStep(game, 0, 'light');
     if (res.ok) {
       audio.lamp(); UI.toast(t('roomLit')); markSave(); save();
       if (Game.checkFloorUnlock(game, game.pos.floor)) { UI.toast(t('floorOpen', { n: game.house.maxFloor })); audio.bell(); }
@@ -240,10 +247,12 @@ function renderSorties(body, rerender) {
     const r = riskSel[o.id] || 1;
     const pay = Math.round(o.reward * So.riskMult(r) * (So.MUT[o.mutator].reward || 1));
     const risk = el('select', { onchange: (e) => { riskSel[o.id] = +e.target.value; rerender(); } }, [1, 2, 3, 4, 5].map((n) => el('option', { value: n, selected: n === r }, t('risk', { n }))));
+    const quietF = Game.floorState(game, f).quiet, loud = quietF && riskSel['loud' + o.id];
     body.append(el('div', { class: 'row' }, el('div', { class: 'grow' },
       el('div', { class: 'name' }, `${sortieName(o)} · ${t('act_' + o.action)}`), el('div', { class: 'sub' }, sortieDesc(o)), el('div', { class: 'sub' }, t('mut_' + o.mutator)),
-      el('div', { class: 'sub' }, t('reward', { glow: fmt(pay) }) + ' · ', risk)),
-      el('button', { class: 'buy', onclick: () => { So.start(game, o, r); UI.toast(t('sortieStarted', { name: sortieName(o) })); audio.bell(); markSave(); save(); panel.hide(); } }, t('startSortie'))));
+      el('div', { class: 'sub' }, t('reward', { glow: fmt(pay * (loud ? 2 : 1)) }) + ' · ', risk),
+      quietF ? el('label', { class: 'sub' }, el('input', { type: 'checkbox', checked: !!loud, onchange: (e) => { riskSel['loud' + o.id] = e.target.checked; rerender(); } }), ' ' + t('loud')) : null),
+      el('button', { class: 'buy', onclick: () => { So.start(game, o, r, loud); UI.toast(t('sortieStarted', { name: sortieName(o) })); audio.bell(); markSave(); save(); panel.hide(); } }, t('startSortie'))));
   }
   body.append(el('p', { class: 'note' }, t('riskNote', { m: So.riskMult(5).toFixed(1) })));
 }
@@ -257,6 +266,26 @@ function renderGadgets(body, rerender) {
       el('button', { class: 'plain', onclick: () => { settings().gadget = g; rerender(); } }, t('select')),
       el('button', { class: 'buy', disabled: (p.materials[mat] || 0) < So.gadgetCost(), onclick: () => { if (So.buyGadget(game, mat)) { audio.buy(); markSave(); rerender(); } } }, t('gadgetBuy', { n: So.gadgetCost(), mat: t('mat_' + mat) }))));
   }
+}
+function useAbility(id) {
+  if (!Act.unlocked(game, id)) return;
+  if (!Act.ready(game, id)) { audio.deny(); return; }
+  const f = game.pos.floor, S = roomSide(f);
+  if (id === 'dash') {
+    const d = Act.dash(game);
+    // move with collision in small steps
+    const steps = 12; const sx = game.pos.x, sz = game.pos.z;
+    for (let i = 1; i <= steps; i++) { tmpP.x = game.pos.x + (d.tx - sx) / steps; tmpP.z = game.pos.z + (d.tz - sz) / steps; collide(tmpP, S, blocked, propsAt); game.pos.x = tmpP.x; game.pos.z = tmpP.z; }
+    for (const k of d.rooms) { const [x, z] = k.split(':').map(Number); const v = world.viewFor(f, x, z); if (v) { v.syncClutter(); v.refreshFloor(); } }
+    world.fovKick = 18; hitStop = 0.07; audio.whoosh(); audio.clear(d.units, 2, Game.info(game, f, ...roomOf(game.pos.x, game.pos.z, S)).biome.item);
+  } else if (id === 'gloss') {
+    Act.gloss(game); audio.burst(0.6, 5000, 0.08, 2); world.fovKick = 6;
+  } else if (id === 'flash') {
+    const r = Act.flash(game);
+    for (const [x, z] of r.pulsed) { const v = world.viewFor(f, x, z); if (v) v.lampBoost = 2.2; }
+    hitStop = 0.06; audio.lamp(); audio.sparks(5);
+  }
+  Act.flowStep(game, 0, id === 'dash' ? 'clear' : id === 'gloss' ? 'polish' : 'light');
 }
 function useGadget() {
   const g = settings().gadget || 'glowstick';
@@ -328,6 +357,7 @@ function renderSettings(body, rerender) {
 const tmpP = { x: 0, z: 0 };
 let skipRender = false;
 function update(dt) {
+  if (hitStop > 0) { hitStop -= dt; dt *= 0.06; }
   const { ev, look, wheel } = input.poll();
   if (wheel && !panel.open) cycleGadget(wheel);
   const s = settings();
@@ -340,6 +370,9 @@ function update(dt) {
       case 'KeyH': goHome(); break;
       case 'KeyM': map.toggle(); break;
       case 'KeyG': useGadget(); break;
+      case 'Digit1': useAbility('dash'); break;
+      case 'Digit2': useAbility('gloss'); break;
+      case 'Digit3': useAbility('flash'); break;
       case 'KeyQ': { const fx = -Math.sin(game.pos.yaw), fz = -Math.cos(game.pos.yaw); signfx.ping(game.pos.x + fx * 3, game.pos.z + fz * 3); audio.chime(4); if (net) net.ping(game.pos.x + fx * 3, game.pos.z + fz * 3); break; }
       case 'Escape': openPanel('settings'); break;
     }
@@ -386,7 +419,7 @@ function update(dt) {
       toolMode = 'test';
       if (res.done) { UI.toast(res.true ? t('signTrue') : t('signLetGo')); res.true ? audio.rare() : audio.chime(0); refreshSigns(); markSave(); }
     }
-    const evt = Game.toolStep(game, f, trx, trz, lx, lz, dt);
+    const evt = Game.toolStep(game, f, trx, trz, lx, lz, dt, Act.glossing(game) ? { polishMult: 20 } : undefined);
     if (evt) {
       if (toolMode !== 'test') toolMode = evt.mode;
       const v = world.viewFor(f, trx, trz);
@@ -406,6 +439,18 @@ function update(dt) {
     }
   }
   Game.tickCombo(game, dt, active);
+  Act.tick(game, dt);
+  Act.flowStep(game, dt, active ? toolMode : null);
+  if (game.flowFull && !wasFull) { UI.toast(t('flowFull')); audio.chime(6); }
+  wasFull = !!game.flowFull;
+  const fb = document.getElementById('flowbar'); fb.style.display = game.flow > 0.02 ? 'block' : 'none'; fb.firstChild.style.width = (game.flow * 100).toFixed(0) + '%';
+  for (const [id, a] of Object.entries(Act.ABILITIES)) {
+    const un = Act.unlocked(game, id), btn = document.getElementById('bA' + a.key);
+    if (un && !abilitySeen[id]) { abilitySeen[id] = true; if (game.player.lifetimeGlow > 0 && running) { UI.toast(t('abilityUnlocked', { name: t('ab_' + id), k: a.key })); audio.rare(); } }
+    btn.classList.toggle('locked', !un); btn.style.opacity = Act.ready(game, id) ? 1 : 0.4;
+  }
+  world.fovKick = Math.max(sliding ? 8 : 0, world.fovKick - dt * 30);
+  for (const v of world.views.values()) if (v.lampBoost > 1) v.lampBoost = Math.max(1, v.lampBoost - dt * 1.2);
   world.placeRing(toolX, toolZ, R, toolMode);
   world.ring.visible = !(trx === 0 && trz === 0);
   world.ringFill.visible = world.ring.visible;
@@ -459,7 +504,7 @@ function update(dt) {
   else if (sealed) pr = t(input.touch ? 'sealedOpenTouch' : 'sealedOpen', { cost: fmt(Game.sealCost(f)) });
   else if (sw) {
     const r = Game.room(game, f, sw.rx, sw.rz);
-    if (r.lit) pr = t('switchLit');
+    if (r.lit) pr = game.tide && !game.tide.result ? t(input.touch ? 'boostLampTouch' : 'boostLamp', { cost: fmt(Act.boostCost(game, f)) }) : t('switchLit');
     else if (!Game.canWire(game, f, sw.rx, sw.rz)) pr = t('switchFar');
     else { const cost = fmt(Game.lampCost(game, f)); pr = t(input.touch ? 'switchBuyTouch' : 'switchBuy', { cost }); }
   } else if (inCabin && !panel.open) pr = t(input.touch ? 'panelOpenTouch' : 'panelOpen');
@@ -515,9 +560,10 @@ function drawSortieOnMap(x, o) {
   const mark = (rx, rz, col) => { const [cx, cz] = o.roomPx(rx, rz); x.strokeStyle = col; x.lineWidth = 3 * o.dpr; x.strokeRect(cx - o.cell * 0.42, cz - o.cell * 0.42, o.cell * 0.84, o.cell * 0.84); };
   if (so.type === 'line' || so.type === 'hall') mark(...so.target, 'rgba(255,240,200,0.95)');
 }
-let pruneT = 0, musicAct = 0, panelT = 0, rankT = 0, tideClearT = 0;
+let pruneT = 0, musicAct = 0, panelT = 0, rankT = 0, tideClearT = 0, hitStop = 0, wasFull = false;
+const abilitySeen = {};
 const net = null;
-function auraRadius() { return 0; }
+function auraRadius() { return Act.auraRadius(game); }
 function canSlide(p, f, S) {
   const [rx, rz] = roomOf(p.x, p.z, S);
   const r = Game.room(game, f, rx, rz);
@@ -606,6 +652,6 @@ async function main() {
   // Test hook: run the real update loop for N seconds of game time without drawing, calling bot() each step.
   const simulate = (secs, bot, dt = 1 / 30) => { skipRender = true; let t = 0; try { while (t < secs) { if (bot && bot()) break; update(dt); gameTime += dt; t += dt; } } finally { skipRender = false; } return t; };
   const renderBench = (n) => { const p = game.pos; const t0 = performance.now(); for (let i = 0; i < n; i++) world.frame(1 / 60, { x: p.x, y: CFG.player.eye, z: p.z, yaw: p.yaw, pitch: p.pitch, fov: settings().fov }, false); world.renderer.getContext().finish(); return (performance.now() - t0) / n; };
-  window.__lift = { So, Signs, Gad, get signfx() { return signfx; }, refreshSigns, Tide, get tidefx() { return tidefx; }, callWave, simulate, renderBench, get game() { return game; }, get time() { return gameTime; }, get frames() { return frames; }, world, input, save, Game, panel, map };
+  window.__lift = { Act, useAbility, So, Signs, Gad, get signfx() { return signfx; }, refreshSigns, Tide, get tidefx() { return tidefx; }, callWave, simulate, renderBench, get game() { return game; }, get time() { return gameTime; }, get frames() { return frames; }, world, input, save, Game, panel, map };
 }
 main();

@@ -189,7 +189,7 @@ export function toolStep(s, f, x, z, lx, lz, dt, opts = {}) {
     const rc2 = rareCell(inf);
     if (rc2 >= 0 && res.cells.includes(rc2) && r.c[rc2] <= 0 && !r.flags.rare) { r.flags.rare = 1; ev.rare = rareKind(inf, rc2); }
   } else {
-    const amt = R.polishAt(r, tmpCells, polishRate(p) * (opts.rateMult ?? 1), dt);
+    const amt = R.polishAt(r, tmpCells, polishRate(p) * (opts.rateMult ?? 1) * (opts.polishMult ?? 1), dt);
     ev.mode = amt > 0 ? 'polish' : 'idle'; ev.polished = amt;
     ev.glow = amt * hand * s.combo;
     p.stats.polished += amt;

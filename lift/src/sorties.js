@@ -58,8 +58,8 @@ export function board(s, f) {
   return list;
 }
 
-export function start(s, offer, risk = 1) {
-  const so = { ...offer, risk: Math.max(1, Math.min(5, risk)), state: 'active', progress: 0, t: 0 };
+export function start(s, offer, risk = 1, loud = false) {
+  const so = { ...offer, risk: Math.max(1, Math.min(5, risk)), state: 'active', progress: 0, t: 0, loud: !!(loud && Game.floorState(s, offer.floor).quiet) };
   if (so.type === 'haul') so.base = s.player.materials[so.mat] || 0;
   if (so.type === 'check') so.base = s.player.stats.signs || 0;
   if (so.type === 'hall') { (s.house.halls ||= []).push(roomKey(so.floor, ...so.target)); s.infos.delete(roomKey(so.floor, ...so.target)); s.rooms.delete(roomKey(so.floor, ...so.target)); }
@@ -136,7 +136,7 @@ export const inCabin = (s) => { const S = 8 + 2 * s.pos.floor > 30 ? 30 : 8 + 2 
 export function finish(s, clean) {
   const so = s.sortie; if (!so || so.state === 'done') return null;
   const fl = Game.floorState(s, so.floor);
-  let pay = so.reward * riskMult(so.risk) * (MUT[so.mutator]?.reward || 1);
+  let pay = so.reward * riskMult(so.risk) * (MUT[so.mutator]?.reward || 1) * (so.loud ? 2 : 1);
   if (clean) pay *= 1 + C.cleanExit;
   if (s.player.rested > 0) { pay *= 2; s.player.rested--; so.rested = true; }
   pay = Math.round(pay);
