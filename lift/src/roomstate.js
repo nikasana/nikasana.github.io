@@ -114,3 +114,4 @@ export function deserializeRoom(o) {
   return { c, g, total: o.t, lit: !!o.l, lampFade: 0, visited: !!o.v, touched: true, flags: o.f || {},
     clearedDone: !!o.cd, polishedDone: !!o.pd, strength: 0 };
 }
+

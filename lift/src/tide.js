@@ -147,7 +147,7 @@ export function tick(s, dt, hooks = {}) {
   for (const fr of w.fronts) {
     if (w.t < fr.start) { anyActive = true; continue; }
     // lighting the source room (a vent in a dark room) ends the flow from that side
-    if (!fr.sourceLit && Game.room(s, f, ...fr.source).lit) { fr.sourceLit = true; for (const l of fr.lanes) if (l.state === 'moving' || l.state === 'contact') l.state = 'held'; }
+    if (!fr.sourceLit && (Game.room(s, f, ...fr.source).lit || Game.room(s, f, ...fr.source).flags.glowT > 0)) { fr.sourceLit = true; for (const l of fr.lanes) if (l.state === 'moving' || l.state === 'contact') l.state = 'held'; }
     for (const l of fr.lanes) {
       if (l.state === 'held' || l.state === 'arrived') continue;
       anyActive = true;
@@ -160,7 +160,7 @@ export function tick(s, dt, hooks = {}) {
         if (r.lit && l.p < 0.05 && !r.flags.sprout) { l.state = 'contact'; l.contactT = 0; w.contacts++; hooks.onContact && hooks.onContact(l, x, z); continue; }
         if (r.lit && r.flags.sprout) { l.state = 'held'; hooks.onHold && hooks.onHold(l, x, z); continue; }
         const slow = doorSlow(s, f, l);
-        l.p += dt / (T.step * slow);
+        l.p += dt * ((s.mods && s.mods.tideSpeed) || 1) / (T.step * slow);
         if (l.p >= 1) { l.p = 0; l.i++; }
       } else if (l.state === 'contact') {
         const prev = l.path[Math.max(0, l.i - 1)];
@@ -250,7 +250,7 @@ export function contacts(s) {
 // Random Tides on floors that are not yet Quiet.
 export function maybeRandom(s, f, dt) {
   const fl = Game.floorState(s, f);
-  if (fl.quiet || s.tide || fl.litCount < 4) { s.randomT = 0; return null; }
+  if (fl.quiet || s.tide || fl.litCount < 4 || (s.mods && s.mods.noTides)) { s.randomT = 0; return null; }
   s.randomT = (s.randomT || 0) + dt;
   if (s.randomT < T.randomEvery) return null;
   s.randomT = 0;

@@ -175,6 +175,58 @@ const BATCHES = {
     check('B4 floor 0 becomes Quiet and floor 1 opens', quiet.q && quiet.max >= 1, JSON.stringify(quiet));
     if (shots) await page.screenshot({ path: `${shots}/${name}-b4-quiet.png`, timeout: 120000 });
   },
+  async 5(page, check, name, shots) {
+    // start a Haul from the panel's Sorties tab
+    await page.evaluate(() => { const L = window.__lift, g = L.game; L.Tide.clearTide(g); g.sortie = null; g.mods = {}; g.pos.x = 0; g.pos.z = 0.8; L.input.events.push({ type: 'key', code: 'KeyE' }); L.simulate(0.1);
+      [...document.querySelectorAll('#panel .tab')].find((b) => b.textContent === 'Sorties').click(); });
+    if (shots) await page.screenshot({ path: `${shots}/${name}-b5-board.png`, timeout: 120000 });
+    const started = await page.evaluate(() => { const L = window.__lift; const rows = [...document.querySelectorAll('#panel .row')]; const haul = rows.find((r) => r.textContent.startsWith('Haul')); haul.querySelector('button.buy').click(); return L.game.sortie && { type: L.game.sortie.type, goal: L.game.sortie.goal, mat: L.game.sortie.mat }; });
+    check('B5 a sortie starts from the board', started && started.type === 'haul', JSON.stringify(started));
+    // play it: clear rooms of the right biome with the bot until extraction
+    const ext = await page.evaluate(() => {
+      const L = window.__lift, g = L.game, G = L.Game;
+      g.sortie.goal = 60; // keep the run short in software GL
+      const rooms = []; for (let r = 1; r < 8 && rooms.length < 6; r++) for (const [x, z] of [[r, -r], [-r, r], [r, r], [-r, -r], [0, -r - 2], [r + 2, 0]]) { const inf = G.info(g, 0, x, z); if (inf.biome.mat === g.sortie.mat && !inf.cabin && inf.modifier !== 'sealed') rooms.push([x, z]); }
+      for (const [x, z] of rooms) { if (g.sortie.state !== 'active') break; const r = G.room(g, 0, x, z); r.c.fill(0); r.clearedDone = false; for (let k = 0; k < 256; k++) r.c[k] = 0.6; r.total = 153; g.pos.x = x * 8; g.pos.z = z * 8 + 3; window.__skip = new Set(); L.simulate(60, () => window.__bot(x, z) || g.sortie.state !== 'active'); }
+      return g.sortie && g.sortie.state;
+    });
+    check('B5 the Haul fills and the lift bell rings (extraction)', ext === 'extract', String(ext));
+    const pay = await page.evaluate(() => {
+      const L = window.__lift, g = L.game; const reward = g.sortie.reward * L.So.riskMult(g.sortie.risk) * L.So.MUT[g.sortie.mutator].reward; const g0 = g.player.glow;
+      // walk home: the walker heads for room x = 0 along z = 0
+      g.pos.z = 0; g.pos.x = Math.round(g.pos.x / 8) * 8; const tz = Math.round(g.pos.z / 8);
+      L.simulate(80, () => window.__walk(0) || !g.sortie);
+      if (g.sortie) { g.pos.x = 0; g.pos.z = 0.5; L.simulate(0.2); }
+      return { reward: Math.round(reward), got: Math.round(g.player.glow - g0), left: g.sortie ? g.sortie.state : 'done' };
+    });
+    check('B5 clean exit pays +50 %', pay.left === 'done' && pay.got >= Math.round(pay.reward * 1.5) && pay.got < pay.reward * 1.5 + 50000, JSON.stringify(pay));
+    // signs: find a polished room with a true sign and test it with the real tool
+    const sign = await page.evaluate(() => {
+      const L = window.__lift, g = L.game, G = L.Game;
+      L.input.keys.clear(); L.input.move.x = L.input.move.y = 0; L.input.tool = false;
+      const cands = [];
+      for (let x = -6; x <= 6; x++) for (let z = -6; z <= 6; z++) { const c = L.Signs.signAt(g, 0, x, z); if (c && c.true && Math.abs(x) + Math.abs(z) > 2 && G.info(g, 0, x, z).modifier !== 'sealed' && !G.info(g, 0, x, z).props.length) cands.push(c); }
+      const rays0 = (g.player.rays || []).length;
+      for (const sg of cands.slice(0, 6)) {
+        const r = G.room(g, 0, sg.x, sg.z); r.c.fill(0); r.g.fill(0); r.clearedDone = r.polishedDone = true; r.visited = r.touched = true;
+        const S = 8, i = sg.cell % 16, j = (sg.cell / 16) | 0; const cx = sg.x * S - 4 + (i + 0.5) * 0.5, cz = sg.z * S - 4 + (j + 0.5) * 0.5;
+        const ah = 0.9 + G.toolRadius(g.player);
+        for (const yaw of [0, Math.PI, Math.PI / 2, -Math.PI / 2]) {
+          if (g.player.signs && g.player.signs[sg.key]) break;
+          g.pos.x = cx + Math.sin(yaw) * ah; g.pos.z = cz + Math.cos(yaw) * ah; g.pos.yaw = yaw; g.pos.pitch = -0.6; L.simulate(0.1); L.refreshSigns();
+          if (Math.hypot(g.pos.x - Math.sin(yaw) * ah - cx, g.pos.z - Math.cos(yaw) * ah - cz) > 0.2) continue;   // a wall is in the way
+          L.input.tool = true; L.simulate(2.5); L.input.tool = false;
+        }
+        if (g.player.signs[sg.key]) return { rays: (g.player.rays || []).length - rays0, state: g.player.signs[sg.key], tried: cands.indexOf(sg) + 1 };
+      }
+      return { rays: 0, candidates: cands.length };
+    });
+    check('B5 holding the tool on a sign tests it (true sign adds a ray)', sign.state === 'true' && sign.rays === 1, JSON.stringify(sign));
+    if (shots) { await page.evaluate(() => { const L = window.__lift; L.world.setQuality(4); L.simulate(0.05); L.renderBench(1); }); await page.screenshot({ path: `${shots}/${name}-b5-sign.png`, timeout: 120000 }); await page.evaluate(() => window.__lift.world.setQuality(2)); }
+    // gadgets from the panel, used with G
+    const gad = await page.evaluate(() => { const L = window.__lift, g = L.game; g.pos.x = 0; g.pos.z = 0.8; g.pos.yaw = 0; for (const m of Object.keys(g.player.materials)) g.player.materials[m] += 100; L.So.buyGadget(g, 'paper'); g.settings.gadget = 'plane'; L.input.events.push({ type: 'key', code: 'KeyG' }); L.simulate(0.1); return [1, 2, 3, 4, 5].every((i) => L.Game.room(g, 0, 0, -i).flags.mapped); });
+    check('B5 gadget: paper plane maps five rooms', gad);
+  },
 };
 
 async function run(name, ctxOpts, which) {

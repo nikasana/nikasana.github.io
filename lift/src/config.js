@@ -12,7 +12,7 @@ export const CFG = {
   lamp: { base: 40, growth: 1.25, fadeTime: 3 },
   sealed: { openCost: 25 },
   modifiers: { normal: 0.80, deep: 0.10, warm: 0.05, sealed: 0.05 },
-  clutterMult: { normal: 1, deep: 3, warm: 0, sealed: 5 },
+  clutterMult: { normal: 1, deep: 3, warm: 0, sealed: 5, hall: 4 },
   setPieceEvery: 40,
   patch: 8,                 // biome patch size in rooms
   biomeMix: 0.7,

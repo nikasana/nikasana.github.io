@@ -2,6 +2,44 @@
 
 Live: https://nikasana.github.io/lift/
 
+## Batch 5: Sorties (done)
+
+Plan: the board, six sortie types, rank, extraction, risk, mutators and gadgets. Check: every type completes; a clean exit pays +50 %.
+
+Delivered (`src/sorties.js`, `src/gadgets.js`, `src/signs.js`, `src/render/signfx.js`):
+- The board (Sorties tab) always offers one sortie per action:
+  - Clear: Haul (collect an amount of one biome's material).
+  - Polish: Check (test N signs) or Search (find the region's Anchor).
+  - Light: Chain (N lit rooms in a straight line from the lift) or Line (connect the lift to a marked room through lit rooms).
+  - Every third rank adds a Great hall: an enormous room (4× clutter, tall ceiling) to clear, polish and light.
+  - Rank 10 adds a Deep run (hauls on three floors in a row).
+- Completing a sortie adds 4 points to its floor meter (a Great hall adds to all three), so it raises rank. Each rank gives +5 % income on that floor.
+- Extraction: when the goal is met the lift bell rings and a final Tide starts. Reaching the lift within 90 s is a clean exit (+50 %). Missing it costs only the bonus; H returns at once without it. Rested charges double the payout.
+- Risk 1–5 is chosen per offer: ×1 to ×2 reward, with stronger and more frequent Tides while the sortie is out.
+- One mutator per sortie, each changing a rule while out: Draft (the Tide moves 1.6× faster), Double clutter (clearing ×0.5), Thick fog, Slick floor, Echo (twice the signs, the extras false), Gold vein (clearing pays ×2), Dim lamps (Strength ×0.6), Quiet hour (no Tides, ×0.7 reward).
+- Gadgets (Gadgets tab; G uses, mouse wheel picks; on touch, ITEM). Each costs 30 of its biome's material:
+  - Glowstick: lights the room ahead for a minute. A glowstick in a vent room stops that front.
+  - Soap strip: the Tide passes the doorway 3× slower.
+  - Paper plane: maps five rooms ahead.
+  - Bookmark: place, then use again to return.
+  - Sprout: the room never floods.
+  - Snack: 30 s of double combo.
+- Signs and Anchors (core here, long game in batch 7): one Anchor per 10×10 region. Signs appear on polished floors in 35 % of rooms, 60 % of them true. Holding the tool on a sign for 1.5 s tests it: a false one dissolves with a small reward and "Let go"; a true one glows and adds a ray to the map. Anchors lie under clutter and are taken with E. Signs are abstract symbols with an arrow (rings, triangle, diamond, wave, spiral, cross, dots, arc), never eyes, faces, people, cameras, digits or letters.
+- Q drops a pillar of light (ping).
+
+Checks run:
+- `node --test`: 40/40 pass. Every sortie type completes (Haul, Check, Search, Chain, Line, Great hall, Deep run). A clean exit pays exactly 1.5× and the timer running out pays 1×. Also covered: risk 5 = 2×, Quiet hour 0.7×, sortie points raise rank and +5 % income per rank, mutators change rules, every gadget works, sign shares (35 % / 60 %), two true rays meet exactly on the Anchor, and co-op true signs are shared while false ones differ.
+- Browser (desktop + phone):
+  - A Haul started from the board was played with the bot until the bell; walking back to the lift paid exactly +50 % (440 → 660 and 520 → 780).
+  - Holding the tool on a true sign tested it and added a ray.
+  - A paper plane bought and thrown with G mapped five rooms.
+  - Batches 1–4 still pass and there are no console errors.
+
+Decisions:
+- Check and Search need signs, so the sign and Anchor core landed here rather than in batch 7.
+- Line targets are 4 + rank rooms out. A Great hall is a marked room 3–4 rooms from the lift.
+- The final Tide of an extraction is one front at 55–95 % (rising with risk). Quiet hour skips it.
+
 ## Batch 4: The Tide (done)
 
 Plan: waves, Strength against pressure, forecast, soft fail, Noise, Quiet floor, and the beauty pass. Check: floor 0 waves hold with idle hands; a Great Tide needs play.

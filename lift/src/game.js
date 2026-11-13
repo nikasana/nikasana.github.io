@@ -29,7 +29,7 @@ export function newGame(seed) {
     house: { seed: seed >>> 0, maxFloor: 0, floors: { 0: newFloor() } },
     rooms: new Map(), infos: new Map(),
     pos: { floor: 0, x: 0, y: 0, z: 0, yaw: 0, pitch: 0 },
-    lastTs: 0, combo: 1, comboT: 0, settings: {}, doors: new Map(),
+    lastTs: 0, combo: 1, comboT: 0, settings: {}, doors: new Map(), mods: {}, sortie: null, tide: null,
   };
 }
 
@@ -38,7 +38,11 @@ export const floorState = (s, f) => (s.house.floors[f] ||= newFloor());
 export function info(s, f, x, z) {
   const k = roomKey(f, x, z);
   let i = s.infos.get(k);
-  if (!i) { i = roomInfo(s.house.seed, f, x, z, ENABLED_BIOMES.n); s.infos.set(k, i); }
+  if (!i) {
+    i = roomInfo(s.house.seed, f, x, z, ENABLED_BIOMES.n);
+    if (s.house.halls && s.house.halls.includes(k)) i = { ...i, modifier: 'hall', hall: true, setPiece: null, ceil: i.ceil + 3, props: [] };
+    s.infos.set(k, i);
+  }
   return i;
 }
 export function room(s, f, x, z) {
@@ -64,7 +68,7 @@ export const trackLevel = (p, track) => {
 };
 export const lowestTrack = (p) => Math.min(trackLevel(p, 'shovel'), trackLevel(p, 'brush'), trackLevel(p, 'lamp'));
 export const toolRadius = (p) => CFG.tool.baseRadius * (1 + CFG.tool.reachStep * p.upgrades.reach);
-export const clearRate = (p, f) => CFG.clear.baseRate * Math.pow(4, p.upgrades.power - f);
+export const clearRate = (p, f, mods) => CFG.clear.baseRate * Math.pow(4, p.upgrades.power - f) * ((mods && mods.clearMult) || 1);
 export const polishRate = (p) => CFG.polish.baseRate * (1 + CFG.polish.speedStep * p.upgrades.speed);
 export const shine = (p) => 1 + CFG.polish.shineStep * p.upgrades.shine;
 export const lampLevel = (p) => 1 + p.upgrades.bright;
@@ -83,7 +87,7 @@ export function updateStrength(s, f, x, z) {
   const r = room(s, f, x, z);
   const fl = floorState(s, f);
   const old = r.strength || 0;
-  r.strength = x === 0 && z === 0 ? 0 : R.roomStrength(r, lampLevel(s.player), shine(s.player));
+  r.strength = x === 0 && z === 0 ? 0 : R.roomStrength(r, lampLevel(s.player), shine(s.player)) * ((s.mods && s.mods.strengthMult) || 1);
   fl.strengthSum += r.strength - old;
   return r.strength;
 }
@@ -176,9 +180,9 @@ export function toolStep(s, f, x, z, lx, lz, dt, opts = {}) {
   const hand = incomeRate(s) * CFG.glow.handSeconds * (opts.handMult ?? 1);
   const mult = glowMult(s, f);
   if (hasClutter) {
-    const res = R.clearAt(r, tmpCells, clearRate(p, f) * (opts.rateMult ?? 1), dt);
+    const res = R.clearAt(r, tmpCells, clearRate(p, f, s.mods) * (opts.rateMult ?? 1), dt);
     ev.mode = 'clear'; ev.units = res.units; ev.cells = res.cells;
-    const worth = CFG.glow.cellWorth * floorScale(f) * mult * s.combo;
+    const worth = CFG.glow.cellWorth * floorScale(f) * mult * s.combo * ((s.mods && s.mods.glowMult) || 1) * (s.snackT > 0 ? 2 : 1);
     ev.glow = res.units * (worth + hand);
     p.materials[inf.biome.mat] = (p.materials[inf.biome.mat] || 0) + res.units;
     p.stats.cleared += res.units;
@@ -268,7 +272,7 @@ export function checkFloorUnlock(s, f) {
 export function serialize(s) {
   const rooms = {};
   for (const [k, r] of s.rooms) if (r.touched || r.visited || r.lit) rooms[k] = R.serializeRoom(r);
-  return { v: s.v, seed: s.seed, player: s.player, house: { ...s.house, rooms }, pos: s.pos, lastTs: s.lastTs, settings: s.settings };
+  return { v: s.v, seed: s.seed, player: s.player, house: { ...s.house, rooms }, pos: s.pos, lastTs: s.lastTs, settings: s.settings, sortie: s.sortie, bookmark: s.bookmark || null };
 }
 export function deserialize(o) {
   const s = newGame(o.seed);
@@ -284,6 +288,8 @@ export function deserialize(o) {
   s.pos = { ...s.pos, ...o.pos };
   s.lastTs = o.lastTs || 0;
   s.settings = o.settings || {};
+  s.sortie = o.sortie || null; s.bookmark = o.bookmark || null;
+  if (s.sortie && s.sortie.state === 'extract') s.sortie.extractT = Math.max(s.sortie.extractT, 30);
   recomputeAll(s);
   for (const fl of Object.values(s.house.floors)) {
     fl.lamps = 0;

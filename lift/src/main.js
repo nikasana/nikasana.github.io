@@ -4,6 +4,10 @@ import * as Game from './game.js';
 import * as Econ from './economy.js';
 import * as Tide from './tide.js';
 import { TideFX } from './render/tidefx.js';
+import * as So from './sorties.js';
+import * as Signs from './signs.js';
+import * as Gad from './gadgets.js';
+import { SignFX } from './render/signfx.js';
 import * as Save from './save.js';
 import { t, fmt, setLang } from './strings.js';
 import { World } from './render/scene.js';
@@ -22,7 +26,7 @@ const panel = new UI.Panel();
 const map = new MapView(document.getElementById('map'));
 const SAVE_KEY = 'main';
 
-let game, world, tidefx;
+let game, world, tidefx, signfx;
 let gameTime = 0, frames = 0;
 let running = false, lastFrame = performance.now(), saveTimer = 0, dirtySave = false;
 const vel = { x: 0, z: 0 };
@@ -89,6 +93,8 @@ function nearDoor() {
   return null;
 }
 function interact() {
+  const an = nearAnchor();
+  if (an) { const a = Signs.takeAnchor(game, game.pos.floor, an.rx, an.rz); if (a) { UI.toast(t('anchorFound', { name: t('an_' + a.kind), habit: t('hb_' + a.kind) })); audio.rare(); refreshSigns(); markSave(); save(); } return; }
   const door = nearDoor();
   if (door) { Game.shutDoor(game, game.pos.floor, door.rx, door.rz, door.side, CFG.tide.doorHold); audio.tone(196, 0.3, 'square', 0.06); audio.burst(0.15, 300, 0.12, 1); return; }
   const sealed = nearSealed();
@@ -112,6 +118,7 @@ function openPanel(tab) { input.exitLock(); panel.show(tab); }
 function goHome() {
   game.pos.x = 0; game.pos.z = 0.8; game.pos.yaw = 0; vel.x = vel.z = 0;
   audio.whoosh();
+  if (game.sortie && game.sortie.state === 'extract') sortiePaid(So.finish(game, false));
 }
 function rideTo(f) {
   if (f === game.pos.floor || !Game.travel(game, f)) return;
@@ -125,6 +132,8 @@ function setupPanel() {
   panel.setTabs([
     { id: 'upgrades', label: () => t('tabUpgrades'), render: renderUpgrades },
     { id: 'helpers', label: () => t('tabHelpers'), render: renderHelpers },
+    { id: 'sorties', label: () => t('tabSorties'), render: renderSorties },
+    { id: 'gadgets', label: () => t('tabGadgets'), render: renderGadgets },
     { id: 'floors', label: () => t('tabFloors'), render: renderFloors },
     { id: 'catalog', label: () => t('tabCatalog'), render: renderCatalog },
     { id: 'settings', label: () => t('tabSettings'), render: renderSettings },
@@ -212,6 +221,56 @@ function tideEnded(w) {
   if (w.result !== 'lost') audio.done();
   tideClearT = 5; markSave(); save();
 }
+function sortieName(o) { return t('so_' + o.type); }
+function sortieDesc(o) {
+  if (o.type === 'haul') return t('sod_haul', { n: o.goal, mat: t('mat_' + o.mat) });
+  if (o.type === 'deep') return t('sod_deep', { a: o.floors[0], b: o.floors[1], c: o.floors[2] });
+  return t('sod_' + o.type, { n: o.goal });
+}
+const riskSel = {};
+function renderSorties(body, rerender) {
+  const f = game.pos.floor, so = game.sortie;
+  if (so) {
+    body.append(el('div', { class: 'row' }, el('div', { class: 'grow' },
+      el('div', { class: 'name' }, t('sortieActive', { name: sortieName(so), p: so.progress, g: so.goal })), el('div', { class: 'sub' }, sortieDesc(so)), el('div', { class: 'sub' }, t('mut_' + so.mutator))),
+      el('button', { class: 'plain', onclick: () => { So.abandon(game); rerender(); } }, t('abandon'))));
+    return;
+  }
+  for (const o of So.board(game, f)) {
+    const r = riskSel[o.id] || 1;
+    const pay = Math.round(o.reward * So.riskMult(r) * (So.MUT[o.mutator].reward || 1));
+    const risk = el('select', { onchange: (e) => { riskSel[o.id] = +e.target.value; rerender(); } }, [1, 2, 3, 4, 5].map((n) => el('option', { value: n, selected: n === r }, t('risk', { n }))));
+    body.append(el('div', { class: 'row' }, el('div', { class: 'grow' },
+      el('div', { class: 'name' }, `${sortieName(o)} · ${t('act_' + o.action)}`), el('div', { class: 'sub' }, sortieDesc(o)), el('div', { class: 'sub' }, t('mut_' + o.mutator)),
+      el('div', { class: 'sub' }, t('reward', { glow: fmt(pay) }) + ' · ', risk)),
+      el('button', { class: 'buy', onclick: () => { So.start(game, o, r); UI.toast(t('sortieStarted', { name: sortieName(o) })); audio.bell(); markSave(); save(); panel.hide(); } }, t('startSortie'))));
+  }
+  body.append(el('p', { class: 'note' }, t('riskNote', { m: So.riskMult(5).toFixed(1) })));
+}
+function renderGadgets(body, rerender) {
+  const p = game.player;
+  body.append(el('h3', {}, t('materials')), el('p', { class: 'note' }, Object.entries(p.materials).map(([m, n]) => `${t('mat_' + m)} ${fmt(n)}`).join(' · ')));
+  for (const [mat, g] of Object.entries(So.GADGETS)) {
+    const sel = settings().gadget === g;
+    body.append(el('div', { class: 'row' }, el('div', { class: 'grow' },
+      el('div', { class: 'name' }, `${t('g_' + g)} ${t('owned', { n: p.gadgets[g] || 0 })}` + (sel ? ' · ' + t('selected') : '')), el('div', { class: 'sub' }, t('gd_' + g))),
+      el('button', { class: 'plain', onclick: () => { settings().gadget = g; rerender(); } }, t('select')),
+      el('button', { class: 'buy', disabled: (p.materials[mat] || 0) < So.gadgetCost(), onclick: () => { if (So.buyGadget(game, mat)) { audio.buy(); markSave(); rerender(); } } }, t('gadgetBuy', { n: So.gadgetCost(), mat: t('mat_' + mat) }))));
+  }
+}
+function useGadget() {
+  const g = settings().gadget || 'glowstick';
+  const res = Gad.use(game, g);
+  if (res.ok) { audio.whoosh(); UI.toast(res.returned ? t('bookmarkBack') : t('gadgetUsed', { name: t('g_' + g) })); if (g === 'plane' || g === 'glowstick') map.draw(game); markSave(); }
+  else { audio.deny(); UI.toast(res.why === 'unlit' ? t('sproutNeedsLight') : t('gadgetNone', { name: t('g_' + g) })); }
+}
+function cycleGadget(d) { const o = Gad.GADGET_ORDER, i = o.indexOf(settings().gadget || 'glowstick'); settings().gadget = o[(i + d + o.length) % o.length]; UI.toast(t('g_' + settings().gadget)); }
+function nearAnchor() {
+  const f = game.pos.floor, S = roomSide(f); const [rx, rz] = roomOf(game.pos.x, game.pos.z, S);
+  const v = world.viewFor(f, rx, rz); if (!v || !v.anchorMesh) return null;
+  const ax = rx * S + v.anchorMesh.position.x, az = rz * S + v.anchorMesh.position.z;
+  return Math.hypot(game.pos.x - ax, game.pos.z - az) < 2 ? { rx, rz, kind: v.anchor.kind } : null;
+}
 function renderFloors(body) {
   renderTide(body);
   body.append(el('h3', {}, t('tabFloors')));
@@ -270,6 +329,7 @@ const tmpP = { x: 0, z: 0 };
 let skipRender = false;
 function update(dt) {
   const { ev, look, wheel } = input.poll();
+  if (wheel && !panel.open) cycleGadget(wheel);
   const s = settings();
   for (const e of ev) {
     if (e.type !== 'key') continue;
@@ -279,6 +339,8 @@ function update(dt) {
       case 'KeyE': interact(); break;
       case 'KeyH': goHome(); break;
       case 'KeyM': map.toggle(); break;
+      case 'KeyG': useGadget(); break;
+      case 'KeyQ': { const fx = -Math.sin(game.pos.yaw), fz = -Math.cos(game.pos.yaw); signfx.ping(game.pos.x + fx * 3, game.pos.z + fz * 3); audio.chime(4); if (net) net.ping(game.pos.x + fx * 3, game.pos.z + fz * 3); break; }
       case 'Escape': openPanel('settings'); break;
     }
   }
@@ -297,7 +359,7 @@ function update(dt) {
   const speed = Game.walkSpeed(f) * (sliding ? CFG.player.slideMult : 1);
   const tx = wx * speed, tz = wz * speed;
   const onGloss = canSlide(p, f, S);
-  const a = Math.min(1, (sliding ? 2.2 : onGloss && wl < 0.1 ? CFG.player.slideFriction : CFG.player.accel) * dt);
+  const a = Math.min(1, (game.mods.slick ? 2.4 : sliding ? 2.2 : onGloss && wl < 0.1 ? CFG.player.slideFriction : CFG.player.accel) * dt);
   if (sliding && Math.hypot(vel.x, vel.z) > 1) audio.slide();
   vel.x += (tx - vel.x) * a; vel.z += (tz - vel.z) * a;
   tmpP.x = p.x + vel.x * dt; tmpP.z = p.z + vel.z * dt;
@@ -318,9 +380,15 @@ function update(dt) {
   let active = false;
   if (input.tool && !panel.open) {
     const lx = toolX - trx * S, lz = toolZ - trz * S;
+    const sv = world.viewFor(f, trx, trz);
+    if (sv && sv.sign && !sv.sign.state && sv.signMesh && Math.hypot(sv.signMesh.position.x - lx, sv.signMesh.position.z - lz) < R) {
+      const res = Signs.testStep(game, sv.sign, dt);
+      toolMode = 'test';
+      if (res.done) { UI.toast(res.true ? t('signTrue') : t('signLetGo')); res.true ? audio.rare() : audio.chime(0); refreshSigns(); markSave(); }
+    }
     const evt = Game.toolStep(game, f, trx, trz, lx, lz, dt);
     if (evt) {
-      toolMode = evt.mode;
+      if (toolMode !== 'test') toolMode = evt.mode;
       const v = world.viewFor(f, trx, trz);
       if (evt.mode === 'clear') {
         active = true;
@@ -333,7 +401,7 @@ function update(dt) {
       }
       if (evt.rare) { const id = 'find:' + evt.rare; if (Game.addCatalog(game, id)) { UI.toast(t('catalogNew', { name: t('cat_find_' + evt.rare) })); audio.rare(); } }
       if (evt.finishedClear) { if (v) { v.syncClutter(); v.refreshFloor(); } UI.toast(t('roomCleared')); audio.done(); markSave(); }
-      if (evt.finishedPolish) { if (v) v.refreshFloor(); UI.toast(t('roomPolished')); audio.done(); markSave(); }
+      if (evt.finishedPolish) { if (v) v.refreshFloor(); refreshSigns(); UI.toast(t('roomPolished')); audio.done(); markSave(); }
       if (evt.mode && evt.mode !== 'idle') dirtySave = true;
     }
   }
@@ -352,6 +420,17 @@ function update(dt) {
   if (!game.tide && (!net || net.isHost())) { const rw = Tide.maybeRandom(game, f, dt); if (rw) { audio.bell(); UI.toast(t('tideStirs', { dir: t('side_' + rw.fronts[0].side) })); } }
   if (tidefx) tidefx.update(simDt, game, [rx, rz]);
   rankT += dt; if (rankT > 1) { rankT = 0; if (Tide.updateRank(game, f)) { UI.toast(t('rankUp', { n: Game.floorState(game, f).rank })); audio.chime(Game.floorState(game, f).rank); } }
+  // sorties, gadgets, signs
+  Gad.tick(game, dt);
+  const sev = So.update(game, dt);
+  if (sev && sev.event === 'extract') {
+    audio.bell(); UI.toast(t('extractNow', { t: CFG.sortie.extractTime }));
+    if (!game.mods.noTides && !game.tide && Game.floorState(game, f).litCount > 0) Tide.startWave(game, f, { kind: 'final', share: 0.45 + 0.1 * game.sortie.risk });
+  } else if (sev && sev.event === 'done') sortiePaid(sev);
+  if (game.sortie && game.sortie.state === 'extract' && rx === 0 && rz === 0) sortiePaid(So.finish(game, true));
+  const rt = So.riskTide(game, dt); if (rt) { audio.bell(); UI.toast(t('tideStirs', { dir: t('side_' + rt.fronts[0].side) })); }
+  signT += dt; if (signT > 0.5) { signT = 0; refreshSigns(); }
+  if (signfx) signfx.update(dt, game);
   const hw = Econ.tickHelpers(game, dt, f, rx, rz, auraRadius());
   if (hw.cells) for (const k of hw.touched) { const v = world.views.get(k); if (v) { v.syncClutter(); v.refreshFloor(); } }
   panelT += dt; if (panel.open && panelT > 0.5 && panel.cur !== 'settings') { panelT = 0; panel.refresh(); }
@@ -364,7 +443,7 @@ function update(dt) {
 
   // HUD
   const inCabin = rx === 0 && rz === 0;
-  if (inCabin) UI.hud(t('hudCabin', { glow: fmt(game.player.glow), rate: fmt(Game.incomeRate(game)) }));
+  if (inCabin) UI.hud(t('hudCabin', { glow: fmt(game.player.glow), rate: fmt(Game.incomeRate(game)) }) + tideHud());
   else {
     const r = Game.room(game, f, rx, rz);
     const c = Math.floor(Game.info(game, f, rx, rz) && (r.clearedDone ? 100 : 100 * (1 - sumC(r) / Math.max(1e-6, r.total))));
@@ -374,8 +453,9 @@ function update(dt) {
   // prompt
   let pr = '';
   const sw = nearSwitch(), sealed = nearSealed();
-  const door = nearDoor();
-  if (door) pr = t(input.touch ? 'doorShutTouch' : 'doorShut', { n: CFG.tide.doorHold });
+  const door = nearDoor(), an = nearAnchor();
+  if (an) pr = t(input.touch ? 'anchorTakeTouch' : 'anchorTake', { name: t('an_' + an.kind) });
+  else if (door) pr = t(input.touch ? 'doorShutTouch' : 'doorShut', { n: CFG.tide.doorHold });
   else if (sealed) pr = t(input.touch ? 'sealedOpenTouch' : 'sealedOpen', { cost: fmt(Game.sealCost(f)) });
   else if (sw) {
     const r = Game.room(game, f, sw.rx, sw.rz);
@@ -397,6 +477,7 @@ function update(dt) {
   }
   autoQuality(dt);
   const quiet = Game.floorState(game, f).quiet ? 1 : 0;
+  const fogM = game.mods.fog || 1; world.scene.fog.near = S * 0.7 * fogM; world.scene.fog.far = S * 2.4 * fogM;
   if (audio.ctx) audio.setQuiet(quiet);
   if (!skipRender) world.frame(dt, { x: p.x, y: CFG.player.eye, z: p.z, yaw: p.yaw, pitch: p.pitch, fov: s.fov }, s.warmMode, quiet);
 }
@@ -415,6 +496,24 @@ function drawTideOnMap(x, o) {
       x.beginPath(); x.arc(o.roomPx(px, pz)[0], o.roomPx(px, pz)[1], o.cell * 0.14, 0, Math.PI * 2); x.fill();
     }
   }
+}
+let signT = 0;
+function refreshSigns() { if (!signfx) return; for (const v of world.views.values()) signfx.refresh(v, game, signOpts()); }
+const signOpts = () => ({ echo: !!game.mods.echo, salt: net ? net.salt() : 0 });
+function sortiePaid(r) { if (!r) return; UI.toast(t(r.clean ? 'sortiePaidClean' : 'sortiePaid', { glow: fmt(r.pay) })); audio.done(); markSave(); save(); }
+function drawSortieOnMap(x, o) {
+  const p = game.player;
+  x.lineWidth = 1.5 * o.dpr;
+  for (const r of p.rays || []) {
+    if (r.f !== o.f) continue;
+    const [sx, sz] = o.roomPx(r.x, r.z);
+    x.strokeStyle = r.phone ? 'rgba(200,180,255,0.7)' : 'rgba(255,215,140,0.85)';
+    if (r.phone) x.setLineDash([4 * o.dpr, 4 * o.dpr]);
+    x.beginPath(); x.moveTo(sx, sz); x.lineTo(sx + Math.cos(r.angle) * o.cell * 40, sz + Math.sin(r.angle) * o.cell * 40); x.stroke(); x.setLineDash([]);
+  }
+  const so = game.sortie; if (!so || so.floor !== o.f) return;
+  const mark = (rx, rz, col) => { const [cx, cz] = o.roomPx(rx, rz); x.strokeStyle = col; x.lineWidth = 3 * o.dpr; x.strokeRect(cx - o.cell * 0.42, cz - o.cell * 0.42, o.cell * 0.84, o.cell * 0.84); };
+  if (so.type === 'line' || so.type === 'hall') mark(...so.target, 'rgba(255,240,200,0.95)');
 }
 let pruneT = 0, musicAct = 0, panelT = 0, rankT = 0, tideClearT = 0;
 const net = null;
@@ -438,10 +537,15 @@ function autoQuality(dt) {
   const low = input.touch ? CFG.autoQuality.lowFpsMobile : CFG.autoQuality.lowFps;
   if (autoCooldown <= 0 && fps < low && world.level > 1) { autoLevel = world.level - 1; world.setQuality(autoLevel); autoCooldown = 6; }
 }
+function sortieHud() {
+  const so = game.sortie; if (!so) return '';
+  if (so.state === 'extract') return t('extractHud', { t: Math.ceil(so.extractT) });
+  return t('sortieDoneHud', { name: t('so_' + so.type), p: so.progress, g: so.goal });
+}
 function tideHud() {
-  const w = game.tide; if (!w || w.result) return '';
+  const w = game.tide; if (!w || w.result) return sortieHud();
   const left = Math.max(0, Math.ceil(w.duration - w.t));
-  return t('hudTide', { t: `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` });
+  return t('hudTide', { t: `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` }) + sortieHud();
 }
 function sumC(r) { let s = 0; for (let k = 0; k < r.c.length; k++) s += r.c[k]; return s; }
 function polishPct(r) { if (r.polishedDone) return 1; let s = 0; for (let k = 0; k < r.g.length; k++) s += r.c[k] > 0 ? 0 : 1 - r.g[k]; return s / r.g.length; }
@@ -487,7 +591,10 @@ async function main() {
   world = new World(canvas, game, { mobile: input.touch, fov: settings().fov, quality: q0 });
   for (const id of ['bMap', 'bSlide']) document.getElementById(id).classList.remove('locked');
   tidefx = new TideFX(world, audio);
-  map.layers.push(drawTideOnMap);
+  signfx = new SignFX(world);
+  world.onViewCreated = (v) => signfx.refresh(v, game, signOpts());
+  map.layers.push(drawTideOnMap, drawSortieOnMap);
+  for (const id of ['bGadget', 'bPing']) document.getElementById(id).classList.remove('locked');
   setupPanel();
   const S = roomSide(game.pos.floor);
   world.updateLoaded(game.pos.floor, ...roomOf(game.pos.x, game.pos.z, S));
@@ -499,6 +606,6 @@ async function main() {
   // Test hook: run the real update loop for N seconds of game time without drawing, calling bot() each step.
   const simulate = (secs, bot, dt = 1 / 30) => { skipRender = true; let t = 0; try { while (t < secs) { if (bot && bot()) break; update(dt); gameTime += dt; t += dt; } } finally { skipRender = false; } return t; };
   const renderBench = (n) => { const p = game.pos; const t0 = performance.now(); for (let i = 0; i < n; i++) world.frame(1 / 60, { x: p.x, y: CFG.player.eye, z: p.z, yaw: p.yaw, pitch: p.pitch, fov: settings().fov }, false); world.renderer.getContext().finish(); return (performance.now() - t0) / n; };
-  window.__lift = { Tide, get tidefx() { return tidefx; }, callWave, simulate, renderBench, get game() { return game; }, get time() { return gameTime; }, get frames() { return frames; }, world, input, save, Game, panel, map };
+  window.__lift = { So, Signs, Gad, get signfx() { return signfx; }, refreshSigns, Tide, get tidefx() { return tidefx; }, callWave, simulate, renderBench, get game() { return game; }, get time() { return gameTime; }, get frames() { return frames; }, world, input, save, Game, panel, map };
 }
 main();
