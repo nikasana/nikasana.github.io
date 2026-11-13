@@ -138,6 +138,43 @@ const BATCHES = {
     await page.click('#begin');
     await page.evaluate(() => { window.__lift.game.settings.quality = '2'; window.__lift.world.setQuality(2); });
   },
+  async 4(page, check, name, shots) {
+    // a floor-0 territory: rooms on every side of the lift, finished and lit
+    await page.evaluate(() => {
+      const L = window.__lift, g = L.game, G = L.Game;
+      g.pos.x = 0; g.pos.z = 0.8; g.player.glow += 1e6;
+      for (let x = -2; x <= 2; x++) for (let z = -2; z <= 2; z++) {
+        if (!x && !z) continue;
+        const r = G.room(g, 0, x, z); r.c.fill(0); r.g.fill(0); r.clearedDone = r.polishedDone = true; r.visited = r.touched = true;
+        if (!r.lit) G.buyLamp(g, 0, x, z) || null;
+        if (!r.lit) { r.lit = true; G.floorState(g, 0).litCount++; }
+        G.updateStrength(g, 0, x, z);
+      }
+      for (const v of L.world.views.values()) { v.syncClutter(); v.refreshFloor(); }
+      L.Tide.updateRank(g, 0);
+    });
+    const rank = await page.evaluate(() => window.__lift.game.house.floors[0].rank);
+    check('B4 rank from the three floor meters', rank >= 3, `rank ${rank}`);
+    for (let k = 1; k <= 3; k++) {
+      const fc = await page.evaluate(() => { const L = window.__lift; return L.Tide.forecast(L.game, 0); });
+      await page.evaluate(() => window.__lift.callWave());
+      // stand near the first contact so the wave is on screen
+      if (k === 1) {
+        await page.evaluate(() => window.__lift.simulate(14));
+        await page.evaluate(() => { const L = window.__lift, g = L.game, w = g.tide; const l = w.fronts[0].lanes[Math.floor(w.fronts[0].lanes.length / 2)]; const cur = l.path[l.i], prev = l.path[Math.max(0, l.i - 1)]; const S = 8; g.pos.x = cur[0] * S - (cur[0] - prev[0]) * 1.5; g.pos.z = cur[1] * S - (cur[1] - prev[1]) * 1.5 + 0.01; g.pos.yaw = Math.atan2(-(prev[0] - cur[0]), -(prev[1] - cur[1])); g.pos.pitch = -0.05; L.world.setQuality(4); L.simulate(0.2); L.renderBench(1); });
+        const inst = await page.evaluate(() => { let n = 0; for (const m of window.__lift.tidefx.meshes.values()) n += m.count; return n; });
+        check('B4 the wave is drawn with many instanced items', inst > 300, `${inst} items on screen`);
+        if (shots) await page.screenshot({ path: `${shots}/${name}-b4-wave.png`, timeout: 120000 });
+        await page.evaluate(() => window.__lift.world.setQuality(2));
+      }
+      const res = await page.evaluate(() => { const L = window.__lift; L.simulate(200, () => L.game.tide && L.game.tide.result); const w = L.game.tide; return w ? { r: w.result, t: Math.round(w.t), flooded: w.flooded.length } : null; });
+      check(`B4 floor 0 wave ${k} holds with idle hands`, res && (res.r === 'held' || res.r === 'bounced'), `${fc.mood} (pressure ${Math.round(fc.pressure * 100)}, strength ${Math.round(fc.held * 100)}) -> ${JSON.stringify(res)}`);
+      await page.evaluate(() => window.__lift.simulate(6));
+    }
+    const quiet = await page.evaluate(() => ({ q: window.__lift.game.house.floors[0].quiet, max: window.__lift.game.house.maxFloor }));
+    check('B4 floor 0 becomes Quiet and floor 1 opens', quiet.q && quiet.max >= 1, JSON.stringify(quiet));
+    if (shots) await page.screenshot({ path: `${shots}/${name}-b4-quiet.png`, timeout: 120000 });
+  },
 };
 
 async function run(name, ctxOpts, which) {

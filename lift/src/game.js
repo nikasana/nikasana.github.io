@@ -258,12 +258,11 @@ export function travel(s, f) {
   s.pos.floor = f; s.pos.x = 0; s.pos.z = 0.8; s.pos.yaw = 0;
   return true;
 }
-// Batch 2 interim rule (replaced by Quiet floors in batch 4): 8 lit rooms open the next floor.
+// The next floor opens when this floor is Quiet (its Great Tide was held). See tide.js.
 export function checkFloorUnlock(s, f) {
-  if (f === s.house.maxFloor && floorUnlockReady(s, f)) { s.house.maxFloor = f + 1; floorState(s, f + 1); return true; }
+  if (f === s.house.maxFloor && floorState(s, f).quiet) { s.house.maxFloor = f + 1; floorState(s, f + 1); return true; }
   return false;
 }
-export function floorUnlockReady(s, f) { return floorState(s, f).litCount >= 8; }
 
 // ---------- save ----------
 export function serialize(s) {
@@ -281,7 +280,7 @@ export function deserialize(o) {
   const { rooms, ...house } = o.house;
   s.house = { ...s.house, ...house };
   for (const f of Object.keys(s.house.floors)) s.house.floors[f] = { ...newFloor(), ...s.house.floors[f] };
-  for (const [k, ro] of Object.entries(rooms || {})) s.rooms.set(k, R.deserializeRoom(ro));
+  for (const [k, ro] of Object.entries(rooms || {})) { const r = R.deserializeRoom(ro); if (r.flags.out) { delete r.flags.out; r.lit = true; } s.rooms.set(k, r); }
   s.pos = { ...s.pos, ...o.pos };
   s.lastTs = o.lastTs || 0;
   s.settings = o.settings || {};

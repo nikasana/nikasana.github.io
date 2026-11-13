@@ -57,6 +57,15 @@ export const STRINGS = {
     welcomeBack: 'Welcome back', awayFor: 'Away for {time}.', awayGlow: 'Glow earned: {glow} ✦ (half pace while away)', awayRooms: 'Rooms your helpers finished: {n}',
     awayRested: 'Rested charges: {n} — the next sortie or wave pays double.', awayWave: 'A wave is ready to be called.', ok: 'Carry on',
     hours: '{n} h', minutes: '{n} min',
+    tideTitle: 'The Tide', noise: 'Noise {n}%', wavesHeld: 'Waves held {a} / {b}', rankLine: 'Floor rank {r} · cleared {c} · polished {p} · lit {l} rooms (rank needs {n} of each per step)',
+    forecast: 'Pressure {p}, Strength {s} — {mood}', mood_calm: 'calm', mood_close: 'close', mood_hard: 'hard',
+    waveName: 'Wave {k} of {n}', greatTide: 'The Great Tide', frontsLine: 'Fronts: {list}', side_0: 'north', side_1: 'east', side_2: 'south', side_3: 'west',
+    openSides: 'Nothing lit to the {list} — the Tide would walk straight to the lift.', callWave: 'Call the wave', waveLocked: 'Reach floor rank {k} to call this wave.',
+    floorQuiet: 'This floor is Quiet. Income ×2, no random Tides.', waveActive: 'A wave is under way.',
+    tideComing: 'The Tide is coming — from the {dir}', tideStirs: 'The Tide stirs — from the {dir}', tideHeld: 'The wave ebbs. +{glow} ✦', tideHeldRested: 'The wave ebbs. +{glow} ✦ (rested ×2)',
+    tideBounced: 'The wave turns away at once. +{glow} ✦', tideLost: 'The Tide reached the lift. Nothing banked is lost — the retry will be 10% weaker.',
+    tideFlood: 'A room went dark', floorQuietNow: 'The floor is Quiet', hudTide: '  ·  the Tide {t}', doorShut: 'E: shut this door (holds {n} s)', doorShutTouch: 'USE: shut this door (holds {n} s)',
+    rankUp: 'Floor rank {n}', randomTideLine: 'Random Tides come while the floor is loud.',
   },
 };
 

@@ -2,6 +2,39 @@
 
 Live: https://nikasana.github.io/lift/
 
+## Batch 4: The Tide (done)
+
+Plan: waves, Strength against pressure, forecast, soft fail, Noise, Quiet floor, and the beauty pass. Check: floor 0 waves hold with idle hands; a Great Tide needs play.
+
+Delivered (`src/tide.js` pure, `src/render/tidefx.js` visuals):
+- The Tide is the clutter returning. Each front starts at a glowing vent in a dark room and travels room by room along lanes toward the lift. At every lit room it presses on the doorway in 5 s pulses. If the room's defense beats the pressure, it holds; if not, the lamp goes out and clutter floods back.
+- Defense = room Strength × (1 + player boost ≤ 60 % + helper share ≤ 20 %; 0 on a Great Tide). The player adds Strength by sweeping or polishing in a contacted room and by shutting doors (E near a doorway during a wave; each holds 20 s, contact pauses while shut). Lighting a front's vent room ends the flow from that side.
+- Floor 0 has 3 waves at 50 / 65 / 80 %; later floors have 5 at 50 / 70 / 90 / 110 / 140 % of average room Strength. Fronts grow from one direction to four, and the last wave is the Great Tide from every side. Wave k unlocks at floor rank k, where rank = lowest of the cleared / polished / lit floor meters (4 rooms each per rank, plus sortie points in batch 5).
+- Forecast in the Floors tab, e.g. "Pressure 65, Strength 100 — calm / close / hard". It lists the fronts and warns about sides with nothing lit.
+- Soft fail: if any lane reaches the lift, the wave isn't counted. Flooded rooms keep their lamp but must be cleared again, nothing banked is lost, and the retry is 10 % weaker.
+- A bounce at 3× pressure turns the wave away at once with full reward. Rested charges double a wave's reward. Co-op pressure is ×1.5 per extra player.
+- Noise falls one step per held wave. Holding the Great Tide makes the floor Quiet: income ×2, no random Tides, warmer grade and fog, the string layer in the music, and the next floor unlocks. This replaces the batch 2 interim rule. Random Tides (one front at 40 %) come every ~5 min while a floor is loud.
+- Beauty pass:
+  - The wave is a body of instanced biome clutter (500–3200 items by graphics level) with a curling crest and a shader-drawn glowing front line.
+  - Motion per biome: balls roll and bounce, foam swells, paper flutters, leaves spiral, books stack, popcorn pops.
+  - Items warm near lit rooms. Where a front breaks on a lit doorway there's a 0.55 s slow-motion beat, a spark spray and a sound swell, plus a fine continuous spray while it presses.
+  - A held wave ebbs: items roll back, shrink and dissolve into rising motes.
+  - The surf sound follows the nearest front; vents glow on the floor and on the map; fronts show on the map.
+  - Items never come through walls, only doorways.
+
+Checks run:
+- `node --test`: 33/33 pass.
+  - Floor 0: 3 seeds × 3 waves all hold idle; floor 0 never exceeds 80 %; each wave lasts 80–110 s.
+  - Floor 2: waves 1–4 hold idle with helpers; the Great Tide is lost idle and held with play.
+  - Also covered: soft fail (lamps stay, Glow kept, wave not counted, retry ×0.9), forecast moods, rank gating, vent lighting, doors, co-op ×2.25 for 3 players.
+- Browser (desktop + phone): rank 5–6 from the meters, and all three floor-0 waves held through the real game loop with idle hands (80 / 90 / 110 s, 0 floods). The wave was drawn with 2400 items (desktop, level 4) / 900 (phone). Floor 0 went Quiet and floor 1 opened. No console errors.
+
+Decisions:
+- Lanes come in along each lit row or column from outside, then along the axis to the lift. A side with nothing lit is an open side; the forecast warns about it.
+- Fronts come first from the sides where the house is strongest.
+- "Helpers alone hold at most 80 %" is modelled as a helper share capped at +20 % of a room's Strength, and none against a Great Tide.
+- An active wave isn't saved. A reload ends it with no result, and lamps that went out during it are relit.
+
 ## Batch 3: Economy (done)
 
 Plan: upgrade tracks, helper pipeline, guards against single-action play, the panel shop, offline progress and the catalog. Check: in simulated play, balanced play outpaces any single-action play.

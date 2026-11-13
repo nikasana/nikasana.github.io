@@ -2,6 +2,8 @@
 import { CFG, roomSide, doorWidth } from './config.js';
 import * as Game from './game.js';
 import * as Econ from './economy.js';
+import * as Tide from './tide.js';
+import { TideFX } from './render/tidefx.js';
 import * as Save from './save.js';
 import { t, fmt, setLang } from './strings.js';
 import { World } from './render/scene.js';
@@ -20,7 +22,7 @@ const panel = new UI.Panel();
 const map = new MapView(document.getElementById('map'));
 const SAVE_KEY = 'main';
 
-let game, world;
+let game, world, tidefx;
 let gameTime = 0, frames = 0;
 let running = false, lastFrame = performance.now(), saveTimer = 0, dirtySave = false;
 const vel = { x: 0, z: 0 };
@@ -75,7 +77,20 @@ function nearSealed() {
   }
   return null;
 }
+function nearDoor() {
+  if (!game.tide || game.tide.result) return null;
+  const f = game.pos.floor, S = roomSide(f);
+  const [rx, rz] = roomOf(game.pos.x, game.pos.z, S);
+  for (let side = 0; side < 4; side++) {
+    const [dx, dz] = Game.SIDE_DIR[side];
+    const cx = rx * S + dx * S / 2, cz = rz * S + dz * S / 2;
+    if (Math.hypot(game.pos.x - cx, game.pos.z - cz) < 1.8 && !Game.edgeBlocked(game, f, rx, rz, side)) return { rx, rz, side };
+  }
+  return null;
+}
 function interact() {
+  const door = nearDoor();
+  if (door) { Game.shutDoor(game, game.pos.floor, door.rx, door.rz, door.side, CFG.tide.doorHold); audio.tone(196, 0.3, 'square', 0.06); audio.burst(0.15, 300, 0.12, 1); return; }
   const sealed = nearSealed();
   if (sealed) {
     const res = Game.openSealed(game, game.pos.floor, sealed.x, sealed.z);
@@ -150,7 +165,56 @@ function renderHelpers(body, rerender) {
   }
   body.append(el('p', { class: 'note' }, t('auraNote')));
 }
+function renderTide(body) {
+  const f = game.pos.floor, fl = Game.floorState(game, f), n = Tide.wavesOnFloor(f), m = Tide.meters(game, f);
+  body.append(el('h3', {}, t('tideTitle') + ' · ' + t('floorName', { n: f })),
+    el('div', { class: 'sub' }, t('noise', { n: Tide.noiseFor(game, f) }) + ' · ' + t('wavesHeld', { a: fl.waves, b: n })),
+    el('div', { class: 'bar' }, el('i', { style: `width:${100 - Tide.noiseFor(game, f)}%` })),
+    el('p', { class: 'note' }, t('rankLine', { r: fl.rank, c: m.clear, p: m.polish, l: m.light, n: Tide.ROOMS_PER_RANK })));
+  if (fl.quiet) { body.append(el('p', { class: 'note' }, t('floorQuiet'))); return; }
+  const fc = Tide.forecast(game, f, net ? net.players() : 1);
+  const P = Math.round(fc.pressure * 100), Sg = Math.round(fc.held * 100);
+  body.append(el('div', { class: 'row' }, el('div', { class: 'grow' },
+    el('div', { class: 'name' }, fc.great ? t('greatTide') : t('waveName', { k: fc.k, n })),
+    el('div', { class: 'sub ' + fc.mood }, t('forecast', { p: P, s: Sg, mood: t('mood_' + fc.mood) })),
+    el('div', { class: 'sub' }, t('frontsLine', { list: frontSides(fc).map((i) => t('side_' + i)).join(', ') })),
+    fc.open.length ? el('div', { class: 'sub hard' }, t('openSides', { list: fc.open.map((i) => t('side_' + i)).join(', ') })) : null,
+    !fc.unlocked ? el('div', { class: 'sub' }, t('waveLocked', { k: fc.k })) : null),
+    el('button', { class: 'buy', disabled: !fc.unlocked || !!(game.tide && !game.tide.result) || (net && !net.isHost()), onclick: () => callWave() }, t('callWave'))));
+  body.append(el('p', { class: 'note' }, t('randomTideLine')));
+}
+function frontSides(fc) {
+  if (fc.fronts === 4) return [0, 1, 2, 3];
+  const terr = []; for (const [k, r] of game.rooms) { const [rf, x, z] = k.split(':').map(Number); if (rf === game.pos.floor && r.lit && (x || z)) terr.push([x, z]); }
+  return Tide.sideOrder(terr).slice(0, fc.fronts);
+}
+function callWave(opts = {}) {
+  const w = Tide.startWave(game, game.pos.floor, { players: net ? net.players() : 1, ...opts });
+  panel.hide();
+  if (w.result === 'bounced') { tideEnded(w); return; }
+  UI.toast(t('tideComing', { dir: w.fronts.map((fr) => t('side_' + fr.side)).join(', ') }));
+  audio.bell();
+}
+const tideHooks = {
+  onContact: (l, x, z) => tidefx && tidefx.onContact(l, x, z, Game.room(game, game.pos.floor, x, z).lit),
+  onFlood: (x, z) => { const v = world.viewFor(game.pos.floor, x, z); if (v) v.syncClutter(); if (v) v.refreshFloor(); UI.toast(t('tideFlood')); audio.tone(130, 0.8, 'sine', 0.1); },
+  onEnd: (w) => tideEnded(w),
+};
+function tideEnded(w) {
+  if (tidefx) tidefx.onEnd(w);
+  for (const v of world.views.values()) { v.syncClutter(); v.refreshFloor(); }
+  if (w.kind === 'wave') {
+    if (w.result === 'held') UI.toast(t(w.rested ? 'tideHeldRested' : 'tideHeld', { glow: fmt(w.reward) }));
+    else if (w.result === 'bounced') UI.toast(t('tideBounced', { glow: fmt(w.reward) }));
+    else UI.toast(t('tideLost'));
+    if (w.quiet) { UI.toast(t('floorQuietNow')); UI.toast(t('floorOpen', { n: game.house.maxFloor })); audio.done(); }
+  }
+  if (w.result !== 'lost') audio.done();
+  tideClearT = 5; markSave(); save();
+}
 function renderFloors(body) {
+  renderTide(body);
+  body.append(el('h3', {}, t('tabFloors')));
   for (let f = 0; f <= game.house.maxFloor + 1; f++) {
     const open = Game.floorUnlocked(game, f), fl = Game.floorState(game, f);
     const here = f === game.pos.floor;
@@ -262,7 +326,9 @@ function update(dt) {
         active = true;
         if (v) { v.syncClutter(evt.cells); v.refreshFloor(); world.spawnFlyers(v, evt.cells, null); }
         audio.clear(evt.units, game.combo, Game.info(game, f, trx, trz).biome.item);
-      } else if (evt.mode === 'polish') {
+      }
+      if ((evt.mode === 'clear' || evt.mode === 'polish') && game.tide) Tide.sweepBoost(game, f, trx, trz, dt);
+      if (evt.mode === 'polish') {
         active = true; if (v) v.refreshFloor(); audio.polish(evt.polished);
       }
       if (evt.rare) { const id = 'find:' + evt.rare; if (Game.addCatalog(game, id)) { UI.toast(t('catalogNew', { name: t('cat_find_' + evt.rare) })); audio.rare(); } }
@@ -279,6 +345,13 @@ function update(dt) {
   Game.tickIncome(game, Date.now());
   Game.tickRooms(game, dt);
   Game.tickDoors(game, dt);
+  // the Tide
+  const simDt = tidefx && tidefx.slowmo > 0 ? dt * 0.35 : dt;
+  if (game.tide && !game.tide.result && game.tide.f === f && (!net || net.isHost())) Tide.tick(game, simDt, tideHooks);
+  if (game.tide && game.tide.result) { tideClearT -= dt; if (tideClearT <= 0) Tide.clearTide(game); }
+  if (!game.tide && (!net || net.isHost())) { const rw = Tide.maybeRandom(game, f, dt); if (rw) { audio.bell(); UI.toast(t('tideStirs', { dir: t('side_' + rw.fronts[0].side) })); } }
+  if (tidefx) tidefx.update(simDt, game, [rx, rz]);
+  rankT += dt; if (rankT > 1) { rankT = 0; if (Tide.updateRank(game, f)) { UI.toast(t('rankUp', { n: Game.floorState(game, f).rank })); audio.chime(Game.floorState(game, f).rank); } }
   const hw = Econ.tickHelpers(game, dt, f, rx, rz, auraRadius());
   if (hw.cells) for (const k of hw.touched) { const v = world.views.get(k); if (v) { v.syncClutter(); v.refreshFloor(); } }
   panelT += dt; if (panel.open && panelT > 0.5 && panel.cur !== 'settings') { panelT = 0; panel.refresh(); }
@@ -296,12 +369,14 @@ function update(dt) {
     const r = Game.room(game, f, rx, rz);
     const c = Math.floor(Game.info(game, f, rx, rz) && (r.clearedDone ? 100 : 100 * (1 - sumC(r) / Math.max(1e-6, r.total))));
     const pol = Math.floor(100 * polishPct(r));
-    UI.hud(t('hudRoom', { glow: fmt(game.player.glow), c, p: pol, lit: r.lit ? t('hudLit') : '' }));
+    UI.hud(t('hudRoom', { glow: fmt(game.player.glow), c, p: pol, lit: r.lit ? t('hudLit') : '' }) + tideHud());
   }
   // prompt
   let pr = '';
   const sw = nearSwitch(), sealed = nearSealed();
-  if (sealed) pr = t(input.touch ? 'sealedOpenTouch' : 'sealedOpen', { cost: fmt(Game.sealCost(f)) });
+  const door = nearDoor();
+  if (door) pr = t(input.touch ? 'doorShutTouch' : 'doorShut', { n: CFG.tide.doorHold });
+  else if (sealed) pr = t(input.touch ? 'sealedOpenTouch' : 'sealedOpen', { cost: fmt(Game.sealCost(f)) });
   else if (sw) {
     const r = Game.room(game, f, sw.rx, sw.rz);
     if (r.lit) pr = t('switchLit');
@@ -321,9 +396,28 @@ function update(dt) {
     audio.music.setState({ activity: musicAct, quiet: Game.floorState(game, f).quiet ? 1 : 0, warmth: Game.room(game, f, rx, rz).lit ? 1 : 0 });
   }
   autoQuality(dt);
-  if (!skipRender) world.frame(dt, { x: p.x, y: CFG.player.eye, z: p.z, yaw: p.yaw, pitch: p.pitch, fov: s.fov }, s.warmMode);
+  const quiet = Game.floorState(game, f).quiet ? 1 : 0;
+  if (audio.ctx) audio.setQuiet(quiet);
+  if (!skipRender) world.frame(dt, { x: p.x, y: CFG.player.eye, z: p.z, yaw: p.yaw, pitch: p.pitch, fov: s.fov }, s.warmMode, quiet);
 }
-let pruneT = 0, musicAct = 0, panelT = 0;
+function drawTideOnMap(x, o) {
+  const w = game.tide; if (!w || w.result || w.f !== o.f) return;
+  for (const fr of w.fronts) {
+    const [sx, sz] = o.roomPx(...fr.source);
+    x.strokeStyle = fr.sourceLit ? 'rgba(255,220,160,0.4)' : 'rgba(160,180,255,0.9)'; x.lineWidth = 2 * o.dpr;
+    x.beginPath(); x.arc(sx, sz, o.cell * 0.3, 0, Math.PI * 2); x.stroke();
+    for (const l of fr.lanes) {
+      if (l.state === 'held' || l.state === 'arrived') continue;
+      const cur = l.path[l.i], prev = l.path[Math.max(0, l.i - 1)];
+      const px = prev[0] + (cur[0] - prev[0]) * (0.5 + (l.state === 'contact' ? 0 : l.p)), pz = prev[1] + (cur[1] - prev[1]) * (0.5 + (l.state === 'contact' ? 0 : l.p));
+      const [hx, hz] = o.roomPx(px - 0.5 * (cur[0] - prev[0]) + 0.5 * (cur[0] - prev[0]), pz);
+      x.fillStyle = l.state === 'contact' ? 'rgba(255,230,170,0.95)' : 'rgba(170,190,255,0.9)';
+      x.beginPath(); x.arc(o.roomPx(px, pz)[0], o.roomPx(px, pz)[1], o.cell * 0.14, 0, Math.PI * 2); x.fill();
+    }
+  }
+}
+let pruneT = 0, musicAct = 0, panelT = 0, rankT = 0, tideClearT = 0;
+const net = null;
 function auraRadius() { return 0; }
 function canSlide(p, f, S) {
   const [rx, rz] = roomOf(p.x, p.z, S);
@@ -343,6 +437,11 @@ function autoQuality(dt) {
   const fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0;
   const low = input.touch ? CFG.autoQuality.lowFpsMobile : CFG.autoQuality.lowFps;
   if (autoCooldown <= 0 && fps < low && world.level > 1) { autoLevel = world.level - 1; world.setQuality(autoLevel); autoCooldown = 6; }
+}
+function tideHud() {
+  const w = game.tide; if (!w || w.result) return '';
+  const left = Math.max(0, Math.ceil(w.duration - w.t));
+  return t('hudTide', { t: `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` });
 }
 function sumC(r) { let s = 0; for (let k = 0; k < r.c.length; k++) s += r.c[k]; return s; }
 function polishPct(r) { if (r.polishedDone) return 1; let s = 0; for (let k = 0; k < r.g.length; k++) s += r.c[k] > 0 ? 0 : 1 - r.g[k]; return s / r.g.length; }
@@ -387,6 +486,8 @@ async function main() {
   autoLevel = q0;
   world = new World(canvas, game, { mobile: input.touch, fov: settings().fov, quality: q0 });
   for (const id of ['bMap', 'bSlide']) document.getElementById(id).classList.remove('locked');
+  tidefx = new TideFX(world, audio);
+  map.layers.push(drawTideOnMap);
   setupPanel();
   const S = roomSide(game.pos.floor);
   world.updateLoaded(game.pos.floor, ...roomOf(game.pos.x, game.pos.z, S));
@@ -398,6 +499,6 @@ async function main() {
   // Test hook: run the real update loop for N seconds of game time without drawing, calling bot() each step.
   const simulate = (secs, bot, dt = 1 / 30) => { skipRender = true; let t = 0; try { while (t < secs) { if (bot && bot()) break; update(dt); gameTime += dt; t += dt; } } finally { skipRender = false; } return t; };
   const renderBench = (n) => { const p = game.pos; const t0 = performance.now(); for (let i = 0; i < n; i++) world.frame(1 / 60, { x: p.x, y: CFG.player.eye, z: p.z, yaw: p.yaw, pitch: p.pitch, fov: settings().fov }, false); world.renderer.getContext().finish(); return (performance.now() - t0) / n; };
-  window.__lift = { simulate, renderBench, get game() { return game; }, get time() { return gameTime; }, get frames() { return frames; }, world, input, save, Game, panel, map };
+  window.__lift = { Tide, get tidefx() { return tidefx; }, callWave, simulate, renderBench, get game() { return game; }, get time() { return gameTime; }, get frames() { return frames; }, world, input, save, Game, panel, map };
 }
 main();
