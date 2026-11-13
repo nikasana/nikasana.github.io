@@ -24,6 +24,12 @@ export class Audio {
     this.surfFilter = this.ctx.createBiquadFilter(); this.surfFilter.type = 'lowpass'; this.surfFilter.frequency.value = 500;
     src.connect(this.surfFilter); this.surfFilter.connect(this.surf); this.surf.connect(this.master); src.start();
   }
+  // Each biome tunes the room tone a little differently.
+  setBiome(id) {
+    if (!this.ctx || this.biome === id) return; this.biome = id;
+    const base = { playroom: 55, pools: 49, office: 58.3, greenhouse: 61.7, library: 46.2, cinema: 51.9 }[id] || 55;
+    this.drones.forEach((d, i) => d.o.frequency.setTargetAtTime(base * [1, 1.5, 2][i], this.ctx.currentTime, 3));
+  }
   setVolume(v) { this.vol = v; if (this.master) this.master.gain.value = v; }
   setQuiet(on) { if (this.quietGain) this.quietGain.gain.setTargetAtTime(on ? 1 : 0, this.ctx.currentTime, 2); }
   setSurf(level) { if (this.surf) { this.surf.gain.setTargetAtTime(Math.min(0.4, level * 0.4), this.ctx.currentTime, 0.4); this.surfFilter.frequency.setTargetAtTime(300 + level * 900, this.ctx.currentTime, 0.4); } }

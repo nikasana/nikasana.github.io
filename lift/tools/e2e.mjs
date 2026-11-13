@@ -47,6 +47,33 @@ window.__bot = function (tx, tz) {
   return false;
 };`;
 
+// Lawnmower bot: sweeps lanes across a room facing along z, strafing; leftovers go to the cell bot.
+const MOWER = `
+window.__mow = function (tx, tz) {
+  const L = window.__lift, g = L.game, inp = L.input, f = g.pos.floor, S = 8 + 2 * f > 30 ? 30 : 8 + 2 * f;
+  const r = L.Game.room(g, f, tx, tz);
+  if (r.clearedDone && r.polishedDone) { inp.tool = false; for (const k of ['KeyW', 'KeyS', 'KeyA', 'KeyD']) inp.keys.delete(k); inp.move.x = inp.move.y = 0; return true; }
+  const m = window.__mowS ||= { lane: 0, dir: 1, pass: 0, stuck: 0, lx: 0, lz: 0, key: '' };
+  const key = tx + ':' + tz; if (m.key !== key) Object.assign(m, { lane: 0, dir: 1, pass: 0, stuck: 0, key });
+  if (m.pass >= 2) return window.__bot(tx, tz);
+  const R = L.Game.toolRadius(g.player), ah = 0.9 + R, lanes = Math.ceil((S - 0.6) / (R * 1.5));
+  const zl = tz * S - S / 2 + 0.45 + m.lane * (S - 0.9) / Math.max(1, lanes - 1);
+  const north = zl - tz * S < S / 2 - ah - 0.6;   // face north (tool ahead at -z) unless the lane hugs the south wall
+  g.pos.yaw = north ? 0 : Math.PI; g.pos.pitch = -0.5;
+  const pz = zl + (north ? ah : -ah);
+  const xe = tx * S + m.dir * (S / 2 - 0.5);
+  const dx = xe - g.pos.x, dz = pz - g.pos.z;
+  // strafe along the lane, correcting depth
+  const right = north ? 1 : -1;
+  const mx = Math.abs(dx) > 0.3 ? Math.sign(dx) * right : 0, my = Math.abs(dz) > 0.15 ? -Math.sign(dz) * (north ? 1 : -1) : 0;
+  if (inp.touch) { inp.move.x = mx; inp.move.y = my; }
+  else { for (const k of ['KeyW', 'KeyS', 'KeyA', 'KeyD']) inp.keys.delete(k); if (my > 0) inp.keys.add('KeyW'); if (my < 0) inp.keys.add('KeyS'); if (mx > 0) inp.keys.add('KeyD'); if (mx < 0) inp.keys.add('KeyA'); }
+  inp.tool = true;
+  const moved = Math.hypot(g.pos.x - m.lx, g.pos.z - m.lz); m.lx = g.pos.x; m.lz = g.pos.z;
+  m.stuck = moved < 0.004 ? m.stuck + 1 : 0;
+  if (Math.abs(dx) <= 0.3 || m.stuck > 15) { m.dir = -m.dir; m.lane++; m.stuck = 0; if (m.lane >= lanes) { m.lane = 0; m.pass++; } }
+  return false;
+};`;
 const WALK = `
 window.__walk = function (targetX) {
   const L = window.__lift, g = L.game, inp = L.input, S = 8 + 2 * g.pos.floor;
@@ -73,8 +100,8 @@ window.__walk = function (targetX) {
 const BATCHES = {
   async 1(page, check, name, shots) {
     const t0 = Date.now();
-    const secs = await page.evaluate(() => window.__lift.simulate(120, () => window.__bot(0, -1)));
-    const done = await page.evaluate(() => window.__bot(0, -1));
+    const secs = await page.evaluate(() => { const g = window.__lift.game; g.pos.x = 0; g.pos.z = -3; return window.__lift.simulate(120, () => window.__mow(0, -1)); });
+    const done = await page.evaluate(() => window.__mow(0, -1));
     check('B1 room finished < 60 s (game time)', done && secs < 60, `${secs.toFixed(1)} s game time, ${((Date.now() - t0) / 1000).toFixed(0)} s wall`);
     await page.waitForTimeout(400);
     if (shots) await page.screenshot({ path: `${shots}/${name}-b1-room.png` });
@@ -84,7 +111,7 @@ const BATCHES = {
     await page.waitForTimeout(300);
     await page.reload({ waitUntil: 'load' });
     await page.waitForFunction(() => window.__lift && window.__lift.world, null, { timeout: 20000 });
-    await page.evaluate(BOT); await page.evaluate(WALK);
+    await page.evaluate(BOT); await page.evaluate(WALK); await page.evaluate(MOWER);
     const kept = await page.evaluate(() => { const L = window.__lift; const r = L.Game.room(L.game, 0, 0, -1); return { c: r.clearedDone, p: r.polishedDone, l: r.lit }; });
     check('B1 reload keeps the room', kept.c && kept.p && kept.l, JSON.stringify(kept));
     await page.click('#begin');
@@ -134,7 +161,7 @@ const BATCHES = {
     const welcome = await page.evaluate(() => document.querySelector('#overlay').textContent);
     check('B3 return screen reports time away, Glow and rested charges', /Welcome back/.test(welcome) && /Rested/.test(welcome), welcome.slice(0, 160));
     if (shots) await page.screenshot({ path: `${shots}/${name}-b3-return.png`, timeout: 120000 });
-    await page.evaluate(BOT); await page.evaluate(WALK);
+    await page.evaluate(BOT); await page.evaluate(WALK); await page.evaluate(MOWER);
     await page.click('#begin');
     await page.evaluate(() => { window.__lift.game.settings.quality = '2'; window.__lift.world.setQuality(2); });
   },
@@ -270,6 +297,59 @@ const BATCHES = {
     check('B6 Flow fills with continuous action', flow > 0.3, String(flow && flow.toFixed(2)));
     if (shots) await page.screenshot({ path: `${shots}/${name}-b6.png`, timeout: 120000 });
   },
+  async 7(page, check, name, shots) {
+    const rays = await page.evaluate(() => {
+      const L = window.__lift, g = L.game, G = L.Game;
+      L.Tide.clearTide(g); g.sortie = null; g.mods = {}; L.input.keys.clear(); L.input.move.x = L.input.move.y = 0;
+      const a = L.Signs.anchorFor(g, 0, 25, 25), [rx, rz] = L.Signs.regionOf(25, 25);
+      const got = [];
+      const ah = 0.9 + G.toolRadius(g.player);
+      for (let x = rx * 10; x < rx * 10 + 10 && got.length < 2; x++) for (let z = rz * 10; z < rz * 10 + 10 && got.length < 2; z++) {
+        const sg0 = L.Signs.signAt(g, 0, x, z);
+        if (!sg0 || !sg0.true || (got.length && Math.abs(Math.sin(sg0.angle - got[0].angle)) < 0.3) || G.info(g, 0, x, z).props.length) continue;
+        const r = G.room(g, 0, x, z); r.c.fill(0); r.g.fill(0); r.clearedDone = r.polishedDone = true; r.visited = r.touched = true;
+        const i = sg0.cell % 16, j = (sg0.cell / 16) | 0, cx = x * 8 - 4 + (i + 0.5) * 0.5, cz = z * 8 - 4 + (j + 0.5) * 0.5;
+        for (const yaw of [0, Math.PI, Math.PI / 2, -Math.PI / 2]) {
+          if (g.player.signs && g.player.signs[sg0.key]) break;
+          g.pos.x = cx + Math.sin(yaw) * ah; g.pos.z = cz + Math.cos(yaw) * ah; g.pos.yaw = yaw; g.pos.pitch = -0.6; L.simulate(0.1); L.refreshSigns();
+          if (Math.hypot(g.pos.x - Math.sin(yaw) * ah - cx, g.pos.z - Math.cos(yaw) * ah - cz) > 0.2) continue;
+          L.input.tool = true; L.simulate(2.5); L.input.tool = false;
+        }
+        if (g.player.signs[sg0.key] === 'true') got.push(g.player.rays.at(-1));
+      }
+      if (got.length < 2) return { n: got.length };
+      const [p, q] = got, d1 = [Math.cos(p.angle), Math.sin(p.angle)], d2 = [Math.cos(q.angle), Math.sin(q.angle)];
+      const t1 = ((q.x - p.x) * d2[1] - (q.z - p.z) * d2[0]) / (d1[0] * d2[1] - d1[1] * d2[0]);
+      const meet = [p.x + d1[0] * t1, p.z + d1[1] * t1];
+      // clear the Anchor's room and take it with E
+      const ar = G.room(g, 0, a.x, a.z); ar.c.fill(0); ar.clearedDone = true;
+      const ai = a.cell % 16, aj = (a.cell / 16) | 0; g.pos.x = a.x * 8 - 4 + (ai + 0.5) * 0.5; g.pos.z = a.z * 8 - 4 + (aj + 0.5) * 0.5 + 1; L.simulate(0.2); L.refreshSigns();
+      const before = g.player.anchors[a.kind] || 0; L.input.events.push({ type: 'key', code: 'KeyE' }); L.simulate(0.1);
+      return { n: 2, meet: meet.map((v) => +v.toFixed(3)), anchor: [a.x, a.z], took: (g.player.anchors[a.kind] || 0) - before, kind: a.kind };
+    });
+    check('B7 two true rays meet on the Anchor', rays.n === 2 && Math.hypot(rays.meet[0] - rays.anchor[0], rays.meet[1] - rays.anchor[1]) < 0.01, JSON.stringify(rays));
+    check('B7 the Anchor is taken with E', rays.took === 1, rays.kind);
+    if (shots) await page.screenshot({ path: `${shots}/${name}-b7-anchor.png`, timeout: 120000 });
+    // map with rays
+    if (shots) { await page.evaluate(() => { const L = window.__lift; L.map.toggle(true); L.simulate(0.05); }); await page.screenshot({ path: `${shots}/${name}-b7-map.png`, timeout: 120000 }); await page.evaluate(() => window.__lift.map.toggle(false)); }
+    // Dawn from the Diary tab
+    const dawn = await page.evaluate(async () => {
+      const L = window.__lift, g = L.game;
+      g.house.maxFloor = Math.max(3, g.house.maxFloor); g.player.nightGlow = 50000 * 9; const clar = g.player.clarity, anchors = JSON.stringify(g.player.anchors), cat = g.player.catalog.length;
+      g.pos.x = 0; g.pos.z = 0.8; L.input.events.push({ type: 'key', code: 'KeyE' }); L.simulate(0.1);
+      [...document.querySelectorAll('#panel .tab')].find((b) => b.textContent === 'Diary').click();
+      document.querySelector('#panel textarea').value = 'The hallway was warm.';
+      return { clar, anchors, cat, seed: g.seed };
+    });
+    await page.evaluate(() => [...document.querySelectorAll('#panel button.buy')].find((b) => b.textContent === 'Let the night end').click());
+    await page.waitForTimeout(500);
+    const after = await page.evaluate(() => { const g = window.__lift.game; return { clar: g.player.clarity, anchors: JSON.stringify(g.player.anchors), cat: g.player.catalog.length, seed: g.seed, glow: g.player.glow, power: g.player.upgrades.power, maxFloor: g.house.maxFloor, diary: g.player.diary.at(-1) && g.player.diary.at(-1).line }; });
+    check('B7 Dawn grants Clarity and keeps Anchors, catalog and diary', after.clar === dawn.clar + 3 && after.anchors === dawn.anchors && after.cat === dawn.cat && after.diary === 'The hallway was warm.', JSON.stringify({ before: dawn, after }));
+    check('B7 Dawn resets Glow, upgrades, floors and the house', after.glow < 1 && after.power === 0 && after.maxFloor === 0 && after.seed !== dawn.seed);
+    const cos = await page.evaluate(() => { const L = window.__lift; L.simulate(2.2); const v = L.world.viewFor(0, 0, 0); return v && Object.fromEntries(Object.entries(v.cosmetics).map(([k, m]) => [k, m.visible])); });
+    check('B7 cabin keeps its drawing after a Dawn', cos && cos.drawing, JSON.stringify(cos));
+    if (shots) await page.screenshot({ path: `${shots}/${name}-b7-cabin.png`, timeout: 120000 });
+  },
 };
 
 async function run(name, ctxOpts, which) {
@@ -280,10 +360,11 @@ async function run(name, ctxOpts, which) {
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(String(e)));
   const res = { name, checks: [] };
+  page.on('dialog', (d) => d.accept().catch(() => {}));
   const check = (label, ok, info = '') => { res.checks.push({ label, ok, info }); console.log(`${ok ? 'PASS' : 'FAIL'} [${name}] ${label} ${info}`); };
   await page.goto(url, { waitUntil: 'load' });
   await page.waitForFunction(() => window.__lift && window.__lift.world, null, { timeout: 20000 });
-  await page.evaluate(BOT); await page.evaluate(WALK);
+  await page.evaluate(BOT); await page.evaluate(WALK); await page.evaluate(MOWER);
   await page.click('#begin');
   // software GL in this container is slow: run the checks at level 2, then render each level explicitly
   await page.evaluate(() => { window.__lift.game.settings.quality = '2'; window.__lift.world.setQuality(2); });

@@ -58,7 +58,7 @@ export class SignFX {
       if (sg) {
         const sz = Math.min(1.6, 1.15 * Math.sqrt(S / 8));
         const m = new THREE.Mesh(new THREE.PlaneGeometry(sz, sz), new THREE.MeshBasicMaterial({ map: signTexture(sg.symbol), transparent: true, depthWrite: false,
-          color: sg.state === 'true' ? 0xff9a2a : 0x5a4fb8, opacity: 0.92 }));
+          color: sg.state === 'true' ? 0xff9a2a : 0x5a4fb8, opacity: !sg.true && !sg.state && (s.player.anchors.mirror || 0) > 0 ? 0.4 : 0.92 }));
         m.rotation.order = 'YXZ'; m.rotation.set(-Math.PI / 2, -sg.angle, 0);
         const i = sg.cell % G, j = (sg.cell / G) | 0;
         m.position.set(-S / 2 + (i + 0.5) * cell, 0.025, -S / 2 + (j + 0.5) * cell);

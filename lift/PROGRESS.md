@@ -2,6 +2,38 @@
 
 Live: https://nikasana.github.io/lift/
 
+## Batch 7: Long game (done)
+
+Plan: signs, Anchors, Dawn, notes, achievements, the cosmetic layer and audio. Check: two true rays meet on the Anchor; Dawn keeps what it should.
+
+Delivered (`src/longgame.js`, plus the signs and Anchors from batch 5):
+- The six Anchors' habits work:
+  - Clock "Wait": half the untested false signs fade.
+  - Notebook "Check": tests take 0.55× as long.
+  - Coin "Coincidences happen": the true share rises to 75 %.
+  - Phone "Ask someone": a dotted true ray every 2 min.
+  - Mirror "Not everything is about me": false signs look paler.
+  - Window "Look wider": the map shows 11 rooms out instead of 7.
+  - Duplicates raise rank (+10 % Glow each).
+  - The Anchors tab lists them.
+- Dawn (Diary tab, from floor 3): Clarity = floor(√(night's Glow / 50 000)), each point +10 % Glow forever. It resets Glow, upgrades, helpers, floors and the house with a new seed, and keeps Clarity, Anchors, catalog, notes, small wins, diary and settings. You may write one diary line first.
+- 20 notes from a previous resident, calmer with depth (5 per tier, opened at floors 0 / 1 / 3 / 5). They turn up when a room holding one is cleared (1 room in 25, and every sealed room) and are kept in the Diary.
+- 10 small wins: Left the room, One thing at a time, Asked instead of assuming, Let it be enough, Stayed for all of it, Made it back, Rested, Called it a night, Kept going, Noticed something nice.
+- Cosmetics:
+  - The house warms from blue to amber as a floor is lit (grade, fog, music filter), fully on Quiet floors.
+  - The cabin gains a mug (first lamp), a plant (first wave held), a blanket (first Quiet floor) and a drawing (first Dawn or 5 small wins).
+- Author's notes toggle (Settings) shows one line per biome from the editable `AUTHOR_NOTES` table (draft placeholders) on the HUD.
+- Audio: each biome retunes the room tone. Music changes key per biome and warms when lit (batch 2), with the Quiet layer and Tide swell (batch 4).
+
+Checks run:
+- `node --test`: 54/54 pass. Rays meet on the Anchor (3 seeds) and it can be taken only once, after its cell is cleared. Also tested: Notebook / Coin / Phone / duplicate bonus, Dawn keeps and resets (plus a save round trip), notes calmer with depth (all 20 reachable deep down, sealed rooms always hold one), small wins, cosmetics, author's notes for every biome.
+- Browser (desktop + phone):
+  - Two true signs tested with the real tool gave rays that meet exactly on the Anchor's room (mirror / coin).
+  - E took the Anchor.
+  - Dawn from the Diary tab with a diary line: Clarity 0 → 3, Anchors and diary kept; Glow, upgrades, floors and seed reset.
+  - The cabin shows the drawing and blanket after Dawn.
+  - Batches 1–6 still pass.
+
 ## Batch 6: Action (done)
 
 Plan: abilities, Flow, aura, on-the-spot boosts, bounce, Loud mode, and feedback polish (hit-stop, wider FOV on slide and dash, sound that scales with quantity). Check: an active minute is worth 5–10 idle minutes at floors 0, 3 and 6.

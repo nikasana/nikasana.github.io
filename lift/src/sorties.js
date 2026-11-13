@@ -147,6 +147,7 @@ export function finish(s, clean) {
   else fl.sortiePts[so.action] += pts;
   fl.sortieN = (fl.sortieN || 0) + 1;
   s.player.stats.sorties++;
+  if (clean) s.player.stats.cleanExits = (s.player.stats.cleanExits || 0) + 1;
   so.state = 'done'; so.paid = pay; so.clean = clean;
   s.sortie = null; s.mods = {};
   Tide.updateRank(s, so.floor);

@@ -9,6 +9,7 @@ import * as Signs from './signs.js';
 import * as Gad from './gadgets.js';
 import { SignFX } from './render/signfx.js';
 import * as Act from './action.js';
+import * as Long from './longgame.js';
 import * as Save from './save.js';
 import { t, fmt, setLang } from './strings.js';
 import { World } from './render/scene.js';
@@ -142,6 +143,8 @@ function setupPanel() {
     { id: 'sorties', label: () => t('tabSorties'), render: renderSorties },
     { id: 'gadgets', label: () => t('tabGadgets'), render: renderGadgets },
     { id: 'floors', label: () => t('tabFloors'), render: renderFloors },
+    { id: 'anchors', label: () => t('tabAnchors'), render: renderAnchors },
+    { id: 'diary', label: () => t('tabDiary'), render: renderDiary },
     { id: 'catalog', label: () => t('tabCatalog'), render: renderCatalog },
     { id: 'settings', label: () => t('tabSettings'), render: renderSettings },
   ], renderTop);
@@ -300,6 +303,45 @@ function nearAnchor() {
   const ax = rx * S + v.anchorMesh.position.x, az = rz * S + v.anchorMesh.position.z;
   return Math.hypot(game.pos.x - ax, game.pos.z - az) < 2 ? { rx, rz, kind: v.anchor.kind } : null;
 }
+function renderAnchors(body) {
+  const p = game.player;
+  body.append(el('p', { class: 'note' }, t('anchorsNote')));
+  for (const k of Signs.ANCHORS) {
+    const n = p.anchors[k] || 0;
+    body.append(el('div', { class: 'row' }, el('div', { class: 'grow' },
+      el('div', { class: 'name' }, `${t('an_' + k)} — “${t('hb_' + k)}”`), el('div', { class: 'sub' }, n ? `${t('and_' + k)} · ${t('anchorRank', { n })}` : t('anchorNone')))));
+  }
+}
+function renderDiary(body, rerender) {
+  const p = game.player;
+  body.append(el('div', { class: 'top' }, t('clarityNow', { n: p.clarity, pct: Math.round(p.clarity * CFG.clarityBonus * 100) })));
+  body.append(el('h3', {}, t('dawnTitle')));
+  if (!Long.dawnAvailable(game)) body.append(el('p', { class: 'note' }, t('dawnLocked')));
+  else {
+    const line = el('textarea', { placeholder: t('dawnLine'), maxlength: 200 });
+    body.append(el('p', { class: 'note' }, t('dawnInfo', { n: Long.clarityGain(game) })), line,
+      el('button', { class: 'buy', onclick: () => { if (confirm(t('dawnConfirm'))) doDawn(line.value); } }, t('dawnGo')));
+  }
+  body.append(el('h3', {}, t('diaryTitle')));
+  if (!p.diary.length) body.append(el('p', { class: 'note' }, t('diaryNone')));
+  for (const d of p.diary) body.append(el('p', { class: 'flav' }, `${d.night}. ${d.line}`));
+  body.append(el('h3', {}, t('achTitle')));
+  for (const a of Long.ACHIEVEMENTS) { const got = p.achievements.includes(a); body.append(el('div', { class: 'row' }, el('div', { class: 'grow' }, el('div', { class: 'name', style: got ? '' : 'opacity:.45' }, (got ? '✦ ' : '· ') + t('ach_' + a)), el('div', { class: 'sub' }, t('achd_' + a))))); }
+  body.append(el('h3', {}, t('notesTitle')));
+  if (!p.notes.length) body.append(el('p', { class: 'note' }, t('notesNone')));
+  for (const i of [...p.notes].sort((a, b) => a - b)) body.append(el('p', { class: 'flav' }, '“' + t('note_' + i) + '”'));
+}
+function doDawn(line) {
+  const r = Long.dawn(game, line);
+  if (!r) return;
+  Tide.clearTide(game);
+  game = r.game; game.settings = { ...defaults, ...game.settings };
+  world.setGame(game); tidefx && tidefx.clear();
+  panel.hide(); save();
+  UI.toast(t('dawnDone', { n: game.player.clarity })); audio.done();
+  checkAch();
+}
+function checkAch(ctx) { for (const a of Long.checkAchievements(game, ctx)) { UI.toast(t('achGot', { name: t('ach_' + a) })); audio.rare(); } }
 function renderFloors(body) {
   renderTide(body);
   body.append(el('h3', {}, t('tabFloors')));
@@ -344,6 +386,7 @@ function renderSettings(body, rerender) {
     range('volume', t('volume'), 0, 1, 0.05, () => audio.setVolume(s.volume)),
     range('music', t('music'), 0, 1, 0.05, () => audio.setMusic(s.music)),
     check('warmMode', t('warmMode')),
+    check('authorNotes', t('authorNotes')),
     el('h3', {}, t('exportSave')),
     el('div', {}, el('button', { class: 'plain', onclick: async () => { await save(); ta.value = Save.exportText(Game.serialize(game)); ta.select(); } }, t('exportSave')), ' ',
       el('button', { class: 'plain', onclick: () => { try { const o = Save.importText(ta.value); game = Game.deserialize(o); game.settings = { ...defaults, ...game.settings }; world.setGame(game); save(); UI.toast(t('importDone')); } catch (e) { UI.toast(t('importBad')); } } }, t('importSave'))),
@@ -433,7 +476,7 @@ function update(dt) {
         active = true; if (v) v.refreshFloor(); audio.polish(evt.polished);
       }
       if (evt.rare) { const id = 'find:' + evt.rare; if (Game.addCatalog(game, id)) { UI.toast(t('catalogNew', { name: t('cat_find_' + evt.rare) })); audio.rare(); } }
-      if (evt.finishedClear) { if (v) { v.syncClutter(); v.refreshFloor(); } UI.toast(t('roomCleared')); audio.done(); markSave(); }
+      if (evt.finishedClear) { const ni = Long.findNote(game, f, trx, trz); if (ni !== null) { UI.toast(t('noteFound', { text: t('note_' + ni) })); audio.chime(2); } if (v) { v.syncClutter(); v.refreshFloor(); } UI.toast(t('roomCleared')); audio.done(); markSave(); }
       if (evt.finishedPolish) { if (v) v.refreshFloor(); refreshSigns(); UI.toast(t('roomPolished')); audio.done(); markSave(); }
       if (evt.mode && evt.mode !== 'idle') dirtySave = true;
     }
@@ -475,6 +518,13 @@ function update(dt) {
   if (game.sortie && game.sortie.state === 'extract' && rx === 0 && rz === 0) sortiePaid(So.finish(game, true));
   const rt = So.riskTide(game, dt); if (rt) { audio.bell(); UI.toast(t('tideStirs', { dir: t('side_' + rt.fronts[0].side) })); }
   signT += dt; if (signT > 0.5) { signT = 0; refreshSigns(); }
+  longT += dt;
+  if (longT > 2) {
+    longT = 0; checkAch();
+    const cab = world.viewFor(f, 0, 0); if (cab && cab.cosmetics) { const it = Long.cabinItems(game); for (const k of Object.keys(cab.cosmetics)) cab.cosmetics[k].visible = !!it[k]; }
+    map.radius = (game.player.anchors.window || 0) > 0 ? 11 : 7;
+  }
+  if ((game.player.anchors.phone || 0) > 0 && !inCabinNow) { game.phoneT = (game.phoneT || 0) + dt; if (game.phoneT > 120) { game.phoneT = 0; if (Signs.phoneRay(game, f, rx, rz)) { UI.toast(t('phoneRay')); audio.chime(5); } } }
   if (signfx) signfx.update(dt, game);
   const hw = Econ.tickHelpers(game, dt, f, rx, rz, auraRadius());
   if (hw.cells) for (const k of hw.touched) { const v = world.views.get(k); if (v) { v.syncClutter(); v.refreshFloor(); } }
@@ -487,13 +537,13 @@ function update(dt) {
   world.updateFlyers(dt, p.x, CFG.player.eye, p.z);
 
   // HUD
-  const inCabin = rx === 0 && rz === 0;
+  const inCabin = rx === 0 && rz === 0; inCabinNow = inCabin;
   if (inCabin) UI.hud(t('hudCabin', { glow: fmt(game.player.glow), rate: fmt(Game.incomeRate(game)) }) + tideHud());
   else {
     const r = Game.room(game, f, rx, rz);
     const c = Math.floor(Game.info(game, f, rx, rz) && (r.clearedDone ? 100 : 100 * (1 - sumC(r) / Math.max(1e-6, r.total))));
     const pol = Math.floor(100 * polishPct(r));
-    UI.hud(t('hudRoom', { glow: fmt(game.player.glow), c, p: pol, lit: r.lit ? t('hudLit') : '' }) + tideHud());
+    UI.hud(t('hudRoom', { glow: fmt(game.player.glow), c, p: pol, lit: r.lit ? t('hudLit') : '' }) + tideHud() + (s.authorNotes ? '  ·  ' + (Long.AUTHOR_NOTES[Game.info(game, f, rx, rz).biome.id] || '') : ''));
   }
   // prompt
   let pr = '';
@@ -517,14 +567,14 @@ function update(dt) {
   map.draw(game);
   if (audio.music) {
     musicAct += ((active ? 1 : 0) - musicAct) * Math.min(1, dt * 0.5);
-    audio.music.setBiome(Game.info(game, f, rx, rz).biome.id);
+    audio.music.setBiome(Game.info(game, f, rx, rz).biome.id); audio.setBiome(Game.info(game, f, rx, rz).biome.id);
     audio.music.setState({ activity: musicAct, quiet: Game.floorState(game, f).quiet ? 1 : 0, warmth: Game.room(game, f, rx, rz).lit ? 1 : 0 });
   }
   autoQuality(dt);
-  const quiet = Game.floorState(game, f).quiet ? 1 : 0;
+  const quiet = Game.floorState(game, f).quiet ? 1 : 0, warmth = Long.floorWarmth(game, f);
   const fogM = game.mods.fog || 1; world.scene.fog.near = S * 0.7 * fogM; world.scene.fog.far = S * 2.4 * fogM;
   if (audio.ctx) audio.setQuiet(quiet);
-  if (!skipRender) world.frame(dt, { x: p.x, y: CFG.player.eye, z: p.z, yaw: p.yaw, pitch: p.pitch, fov: s.fov }, s.warmMode, quiet);
+  if (!skipRender) world.frame(dt, { x: p.x, y: CFG.player.eye, z: p.z, yaw: p.yaw, pitch: p.pitch, fov: s.fov }, s.warmMode, warmth);
 }
 function drawTideOnMap(x, o) {
   const w = game.tide; if (!w || w.result || w.f !== o.f) return;
@@ -542,7 +592,7 @@ function drawTideOnMap(x, o) {
     }
   }
 }
-let signT = 0;
+let signT = 0, longT = 0, inCabinNow = true;
 function refreshSigns() { if (!signfx) return; for (const v of world.views.values()) signfx.refresh(v, game, signOpts()); }
 const signOpts = () => ({ echo: !!game.mods.echo, salt: net ? net.salt() : 0 });
 function sortiePaid(r) { if (!r) return; UI.toast(t(r.clean ? 'sortiePaidClean' : 'sortiePaid', { glow: fmt(r.pay) })); audio.done(); markSave(); save(); }
@@ -645,6 +695,7 @@ async function main() {
   const S = roomSide(game.pos.floor);
   world.updateLoaded(game.pos.floor, ...roomOf(game.pos.x, game.pos.z, S));
   const away = Econ.applyOffline(game, Date.now());
+  if (away.secs > 3600) Long.checkAchievements(game, { restedAway: true });
   startScreen(away);
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
   addEventListener('pagehide', () => save());
@@ -652,6 +703,6 @@ async function main() {
   // Test hook: run the real update loop for N seconds of game time without drawing, calling bot() each step.
   const simulate = (secs, bot, dt = 1 / 30) => { skipRender = true; let t = 0; try { while (t < secs) { if (bot && bot()) break; update(dt); gameTime += dt; t += dt; } } finally { skipRender = false; } return t; };
   const renderBench = (n) => { const p = game.pos; const t0 = performance.now(); for (let i = 0; i < n; i++) world.frame(1 / 60, { x: p.x, y: CFG.player.eye, z: p.z, yaw: p.yaw, pitch: p.pitch, fov: settings().fov }, false); world.renderer.getContext().finish(); return (performance.now() - t0) / n; };
-  window.__lift = { Act, useAbility, So, Signs, Gad, get signfx() { return signfx; }, refreshSigns, Tide, get tidefx() { return tidefx; }, callWave, simulate, renderBench, get game() { return game; }, get time() { return gameTime; }, get frames() { return frames; }, world, input, save, Game, panel, map };
+  window.__lift = { Long, doDawn, Act, useAbility, So, Signs, Gad, get signfx() { return signfx; }, refreshSigns, Tide, get tidefx() { return tidefx; }, callWave, simulate, renderBench, get game() { return game; }, get time() { return gameTime; }, get frames() { return frames; }, world, input, save, Game, panel, map };
 }
 main();
