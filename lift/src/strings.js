@@ -1,4 +1,5 @@
 // Every user-facing string lives here.
+import { RU } from './strings_ru.js';
 export const STRINGS = {
   en: {
     title: 'Lift',
@@ -66,6 +67,7 @@ export const STRINGS = {
     tideBounced: 'The wave turns away at once. +{glow} ✦', tideLost: 'The Tide reached the lift. Nothing banked is lost — the retry will be 10% weaker.',
     tideFlood: 'A room went dark', floorQuietNow: 'The floor is Quiet', hudTide: '  ·  the Tide {t}', doorShut: 'E: shut this door (holds {n} s)', doorShutTouch: 'USE: shut this door (holds {n} s)',
     rankUp: 'Floor rank {n}',
+    lang_auto: 'Auto (from the browser)', lang_en: 'English', lang_ru: 'Русский',
     tabTogether: 'Together', coopTitle: 'Play together', coopNote: 'Invite up to three friends by link. You keep your own Glow and upgrades; the house belongs to the host. Q drops a pillar of light.',
     coopHost: 'Invite a friend', coopLink: 'Send this link:', coopCopy: 'Copy link', coopCopied: 'Link copied', coopPlayers: '{n} in the house', coopLeave: 'Leave and go home',
     coopJoining: 'Joining a friend’s house…', coopJoined: 'You are in a friend’s house', coopFail: 'Could not reach the other house — carrying on alone.', coopFull: 'That house is full.',
@@ -115,6 +117,13 @@ export const STRINGS = {
   },
 };
 
+STRINGS.ru = RU;
+export const LANGS = ['en', 'ru'];
+// Default from the browser, fallback English.
+export function detectLang(list = (typeof navigator !== 'undefined' && (navigator.languages || [navigator.language])) || []) {
+  for (const l of list) { const c = String(l || '').slice(0, 2).toLowerCase(); if (STRINGS[c]) return c; }
+  return 'en';
+}
 let lang = 'en';
 export function setLang(l) { lang = STRINGS[l] ? l : 'en'; }
 export function getLang() { return lang; }

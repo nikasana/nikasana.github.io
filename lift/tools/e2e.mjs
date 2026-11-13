@@ -445,7 +445,7 @@ const BATCHES = {
       g.pos.x = 0; g.pos.z = 0.8;
       for (let x = -2; x <= 2; x++) for (let z = -2; z <= 2; z++) { if (!x && !z) continue; const r = G.room(g, 0, x, z); r.c.fill(0); r.g.fill(0); r.clearedDone = r.polishedDone = true; if (!r.lit) { r.lit = true; G.floorState(g, 0).litCount++; } G.updateStrength(g, 0, x, z); }
       g.house.floors[0].quiet = false; g.house.floors[0].waves = 0; g.house.floors[0].rank = 5;
-      L.callWave(); L.simulate(16);
+      L.Tide.startWave(g, 0, { duration: 600 }); L.simulate(16);
       const w = g.tide, l = w.fronts[0].lanes[0], cur = l.path[l.i], prev = l.path[Math.max(0, l.i - 1)];
       g.pos.x = cur[0] * 8 - (cur[0] - prev[0]) * 2; g.pos.z = cur[1] * 8 - (cur[1] - prev[1]) * 2 + 0.01; g.pos.yaw = Math.atan2(-(prev[0] - cur[0]), -(prev[1] - cur[1]));
       L.input.tool = true;
@@ -463,6 +463,52 @@ const BATCHES = {
       L.input.events.push({ type: 'key', code: 'Escape' }); L.simulate(0.05); const txt = document.querySelector('#panel').textContent; L.panel.hide();
       return { home: Math.abs(g.pos.x) < 1 && Math.abs(g.pos.z) < 1.5, warm: txt.includes('Warm mode'), fov: txt.includes('Field of view'), graphics: txt.includes('Graphics') }; });
     check('B9 comfort: H returns to the lift; warm mode, FOV and graphics settings', comfort.home && comfort.warm && comfort.fov && comfort.graphics, JSON.stringify(comfort));
+  },
+  async 10(page, check, name, shots, ctx) {
+    const browser = ctx.browser();
+    const ruCtx = await browser.newContext({ ...(name === 'phone' ? devices['Pixel 7'] : { viewport: { width: 1280, height: 720 } }), locale: 'ru-RU' });
+    const p2 = await ruCtx.newPage();
+    const errs = []; p2.on('pageerror', (e) => errs.push(String(e)));
+    await p2.goto(url, { waitUntil: 'load' });
+    await p2.waitForFunction(() => window.__lift && window.__lift.world, null, { timeout: 20000 });
+    const startText = await p2.evaluate(() => document.getElementById('overlay').textContent);
+    check('B10 a Russian browser starts in Russian', /Тихая игра/.test(startText) && /Начать/.test(startText), startText.slice(0, 80));
+    await p2.click('#begin');
+    // English words that may legitimately remain: key names, units, the brand-free symbols
+    const allowed = new Set(['E', 'WASD', 'Shift', 'G', 'Q', 'M', 'H', 'English', 'Lv', 'K', 'M', 'B', 'T', 'LIFT1']);
+    const scan = await p2.evaluate((allowedList) => {
+      const allowed = new Set(allowedList), L = window.__lift, g = L.game, found = new Set();
+      L.world.setQuality(2);
+      g.player.glow = 1e7; g.house.maxFloor = 3; for (const m of Object.keys(g.player.materials)) g.player.materials[m] = 100;
+      const words = (txt) => { for (const w of (txt.match(/[A-Za-z]{2,}/g) || [])) if (!allowed.has(w)) found.add(w); };
+      words(document.getElementById('hud').textContent);
+      L.input.events.push({ type: 'key', code: 'KeyE' }); L.simulate(0.1);
+      const tabs = [...document.querySelectorAll('#panel .tab')].map((b) => b.textContent);
+      for (let i = 0; i < tabs.length; i++) {
+        [...document.querySelectorAll('#panel .tab')][i].click();
+        // textareas hold save text / links; select options are checked too
+        const body = document.querySelector('#panel'); const clone = body.cloneNode(true); clone.querySelectorAll('textarea').forEach((t) => t.remove());
+        words(clone.textContent);
+      }
+      L.panel.hide();
+      for (const id of ['bTool', 'bUse', 'bSlide', 'bMap', 'bHome', 'bGadget']) words(document.getElementById(id).textContent);
+      return { tabs, english: [...found] };
+    }, [...allowed]);
+    check('B10 no untranslated text in the HUD, buttons and every panel tab', scan.english.length === 0, JSON.stringify(scan));
+    if (shots) { await p2.evaluate(() => { const L = window.__lift; L.input.events.push({ type: 'key', code: 'KeyE' }); L.simulate(0.1); [...document.querySelectorAll('#panel .tab')][0].click(); }); await p2.screenshot({ path: `${shots}/${name}-b10-ru.png`, timeout: 120000 }); }
+    // switch to English in Settings
+    const back = await p2.evaluate(() => {
+      const L = window.__lift; if (!L.panel.open) { L.input.events.push({ type: 'key', code: 'KeyE' }); L.simulate(0.1); }
+      [...document.querySelectorAll('#panel .tab')].find((b) => b.textContent === 'Настройки').click();
+      const sel = [...document.querySelectorAll('#panel select')].find((x) => [...x.options].some((o) => o.value === 'en'));
+      sel.value = 'en'; sel.dispatchEvent(new Event('change'));
+      return [...document.querySelectorAll('#panel .tab')].map((b) => b.textContent).join(',');
+    });
+    check('B10 the language switch brings English back, complete', back.includes('Upgrades') && back.includes('Settings'), back);
+    check('B10 no errors in Russian', errs.length === 0, errs.slice(0, 3).join(' | '));
+    await ruCtx.close();
+    const en = await page.evaluate(() => [...document.querySelectorAll('[data-s]')].map((b) => b.textContent).join(','));
+    check('B10 an English browser stays in English', en.includes('TOOL'), en);
   },
 };
 

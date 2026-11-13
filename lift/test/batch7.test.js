@@ -90,5 +90,5 @@ test('achievements and cosmetics follow small real wins', () => {
   s.player.stats.lamps = 1; s.player.stats.wavesHeld = 1; assert.ok(Long.cabinItems(s).mug && Long.cabinItems(s).plant);
   assert.equal(Long.floorWarmth(s, 0), 0); Game.floorState(s, 0).litCount = 15; assert.equal(Long.floorWarmth(s, 0), 0.5);
   Game.floorState(s, 0).quiet = true; assert.equal(Long.floorWarmth(s, 0), 1);
-  for (const b of BIOMES) assert.ok(Long.AUTHOR_NOTES[b.id], b.id);
+  for (const b of BIOMES) assert.ok(Long.AUTHOR_NOTES.en[b.id], b.id);
 });

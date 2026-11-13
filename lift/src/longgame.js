@@ -74,10 +74,20 @@ export function dawn(s, diaryLine = '', newSeed) {
 
 // ---------- author's notes: one editable line per biome ----------
 export const AUTHOR_NOTES = {
-  playroom: 'Draft: the ball room is where it started — mess that is fun to move.',
-  pools: 'Draft: pools are for slowness. The foam forgives.',
-  office: 'Draft: the office is the worry pile. Paper weighs nothing once it is sorted.',
-  greenhouse: 'Draft: leaves come back every season, and that is fine.',
-  library: 'Draft: the books are every unanswered thought. Shelve one.',
-  cinema: 'Draft: the cinema is the loud part of the night. It goes quiet when you light it.',
+  en: {
+    playroom: 'Draft: the ball room is where it started — mess that is fun to move.',
+    pools: 'Draft: pools are for slowness. The foam forgives.',
+    office: 'Draft: the office is the worry pile. Paper weighs nothing once it is sorted.',
+    greenhouse: 'Draft: leaves come back every season, and that is fine.',
+    library: 'Draft: the books are every unanswered thought. Shelve one.',
+    cinema: 'Draft: the cinema is the loud part of the night. It goes quiet when you light it.',
+  },
+  ru: {
+    playroom: 'Черновик: всё началось с комнаты с мячиками — с беспорядка, который приятно разбирать.',
+    pools: 'Черновик: бассейны — для медленности. Пена всё прощает.',
+    office: 'Черновик: офис — это гора тревог. Разобранная бумага ничего не весит.',
+    greenhouse: 'Черновик: листья возвращаются каждый сезон, и это нормально.',
+    library: 'Черновик: книги — это все вопросы без ответа. Поставьте одну на полку.',
+    cinema: 'Черновик: кинотеатр — самая шумная часть ночи. Он затихает, когда в нём зажигают свет.',
+  },
 };

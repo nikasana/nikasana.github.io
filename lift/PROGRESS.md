@@ -2,6 +2,28 @@
 
 Live: https://nikasana.github.io/lift/
 
+All ten batches are done. Run the checks from `lift/`:
+- `npm test` (the logic modules under `node --test`)
+- `node tools/e2e.mjs http://localhost:8765/lift/ 1,2,…,10` (headless Chromium at desktop size and on a Pixel 7 with touch; `DEVICES=desktop` or `phone` to run one)
+
+Known issues (overall):
+- Real-GPU frame rates are unmeasured: this container has only software GL. Auto graphics steps down at runtime to hold 45 / 27 fps.
+- Real WebRTC (PeerJS) co-op is untested: the PeerJS broker is unreachable from the container. Co-op was verified with the same message layer over BroadcastChannel between tabs.
+- Set pieces don't block movement. The light switch is always on the north wall.
+- Batch 8 has no commit of its own; its work shipped in the batch 9 commit.
+
+## Batch 10: Russian (done)
+
+Plan: a full Russian translation of every in-game string and a language switch. Check: no untranslated string; English still complete.
+
+Delivered:
+- `src/strings_ru.js` translates all 365 English keys with the same placeholders. The previous resident's notes and the small wins are written in gender-neutral forms, since Russian past tense would otherwise assign a gender. The author's notes table is bilingual.
+- Language switch in Settings: Auto (from the browser, falling back to English), English or Русский. Switching relabels the buttons and the page title at once.
+
+Checks run:
+- `node --test`: 66/66. Russian has every key and no extras, placeholders match key by key, and no string is left identical to English (except language names). English is complete, the switch falls back to English for unknown languages, `detectLang` works, and no user-facing text is hard-coded outside the tables.
+- Browser (desktop + phone) in a `ru-RU` browser: the start screen is Russian. A scan of the HUD, the touch buttons and all ten panel tabs found no English words (apart from key names like E/WASD and number suffixes). Switching to English in Settings brings back complete English labels, there are no errors, and an English browser stays English.
+
 ## Batch 9: Polish (done)
 
 Plan: performance, comfort settings, the first minute and a balance pass. Check: the targets under "Design pillars" and "Performance" are measured and met.
@@ -32,7 +54,7 @@ Changes:
 
 Checks run: `node --test` 62/62; browser batches 1–9 on desktop and phone.
 
-## Batch 8: Co-op (done)
+## Batch 8: Co-op (done — shipped inside the batch 9 commit)
 
 Plan: the Net module, the shared house, ping, and saves in every browser. Check: two browsers join by link and hold a wave; a guest can host the house afterwards; solo is unaffected.
 

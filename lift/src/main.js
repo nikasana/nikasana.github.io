@@ -14,7 +14,7 @@ import { Net, parseHash, applyRoom, sharedSave, houseOf } from './net.js';
 import * as R from './roomstate.js';
 import { OthersFX } from './render/others.js';
 import * as Save from './save.js';
-import { t, fmt, setLang } from './strings.js';
+import { t, fmt, setLang, getLang, detectLang, LANGS } from './strings.js';
 import { World } from './render/scene.js';
 import { Input } from './input.js';
 import { Audio } from './audio.js';
@@ -48,7 +48,8 @@ async function load() {
   if (data) { try { game = Game.deserialize(data); } catch (e) { console.warn('bad save', e); } }
   if (!game) { game = Game.newGame((Math.random() * 2 ** 32) >>> 0); game.pos = { floor: 0, x: 0, y: 0, z: 0.8, yaw: 0, pitch: 0 }; }
   game.settings = { ...defaults, ...game.settings };
-  setLang(game.settings.lang || (navigator.language || 'en').slice(0, 2));
+  setLang(game.settings.lang || detectLang());
+  applyLangToPage();
 }
 
 // Saves run one after another, so the newest state always lands last.
@@ -65,6 +66,7 @@ async function saveNow() {
   } catch (e) { console.warn('save failed', e); }
 }
 function markSave() { dirtySave = true; }
+function applyLangToPage() { document.documentElement.lang = getLang(); document.title = t('title'); UI.localizeButtons(); }
 
 // ---------- doors / props for collision ----------
 function blocked(rx, rz, side) { return Game.edgeBlocked(game, game.pos.floor, rx, rz, side); }
@@ -456,6 +458,9 @@ function renderSettings(body, rerender) {
     el('option', { value: 'auto', selected: s.quality === 'auto' }, t('qAuto', { n: world.level })),
     [1, 2, 3, 4, 5].map((n) => el('option', { value: String(n), selected: String(s.quality) === String(n) }, t('q' + n))));
   body.append(el('label', { class: 'set' }, t('graphics'), qsel), el('p', { class: 'note' }, t('graphicsNote')));
+  const lsel = el('select', { onchange: (e) => { s.lang = e.target.value || null; setLang(s.lang || detectLang()); applyLangToPage(); markSave(); rerender(); } },
+    el('option', { value: '', selected: !s.lang }, t('lang_auto')), LANGS.map((l) => el('option', { value: l, selected: s.lang === l }, t('lang_' + l))));
+  body.append(el('label', { class: 'set' }, t('language'), lsel));
   const range = (key, label, min, max, step, apply) => el('label', { class: 'set' }, label,
     el('input', { type: 'range', min, max, step, value: s[key], oninput: (e) => { s[key] = +e.target.value; apply && apply(); markSave(); } }));
   const check = (key, label, apply) => el('label', { class: 'set' }, label,
@@ -626,7 +631,7 @@ function update(dt) {
     const r = Game.room(game, f, rx, rz);
     const c = Math.floor(Game.info(game, f, rx, rz) && (r.clearedDone ? 100 : 100 * (1 - sumC(r) / Math.max(1e-6, r.total))));
     const pol = Math.floor(100 * polishPct(r));
-    UI.hud(t('hudRoom', { glow: fmt(game.player.glow), c, p: pol, lit: r.lit ? t('hudLit') : '' }) + tideHud() + (s.authorNotes ? '  ·  ' + (Long.AUTHOR_NOTES[Game.info(game, f, rx, rz).biome.id] || '') : ''));
+    UI.hud(t('hudRoom', { glow: fmt(game.player.glow), c, p: pol, lit: r.lit ? t('hudLit') : '' }) + tideHud() + (s.authorNotes ? '  ·  ' + ((Long.AUTHOR_NOTES[getLang()] || Long.AUTHOR_NOTES.en)[Game.info(game, f, rx, rz).biome.id] || '') : ''));
   }
   // first minute: one line of control hints until the first room is cleared
   if (game.player.stats.cleared < 40 && !panel.open && game.player.lifetimeGlow < 400) UI.hud((input.touch ? t('hintTouch') : t('hintDesktop')));
